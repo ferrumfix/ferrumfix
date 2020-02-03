@@ -1,0 +1,26 @@
+[package]
+name = "fasters"
+version = "0.1.0"
+edition = "2018"
+authors = ["Filippo Costa @neysofu"]
+homepage = "https://github.com/neysofu/fasters"
+repository = "https://github.com/neysofu/fasters"
+publish = true
+readme = "README.md"
+keywords = ["fix", "fast", "protocol", "finance", "streaming"]
+categories = ["network-programming", "parser-implementations", "encoding"]
+license = "MIT"
+maintenance = { status = "actively-developed" }
+
+[features]
+gen = ["codegen", "nom"]
+
+[dependencies]
+bitvec = "0.14"
+failure = "0.1.5"
+codegen = { version = "0.1.1", optional = true }
+nom = { version = "5", optional = true }
+
+[dev-dependencies]
+quickcheck = "0.8"
+quickcheck_macros = "0.8"
