@@ -11,17 +11,12 @@ keywords = ["fix", "fast", "protocol", "finance", "streaming"]
 categories = ["network-programming", "parser-implementations", "encoding"]
 license = "MIT"
 
-[features]
-default = ["fixml", "compact"]
-fixml = ["quick-xml"]
-compact = ["nom"]
-
 [dependencies]
 bitvec = "0.14"
 failure = "0.1.5"
 codegen = "0.1.1"
-quick-xml = { version = "0.17.2", optional = true }
-nom = { version = "5", optional = true }
+quick-xml = "0.17.2"
+nom = "5"
 
 [dev-dependencies]
 quickcheck = "0.8"

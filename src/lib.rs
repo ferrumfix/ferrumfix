@@ -4,6 +4,7 @@
 
 mod codec;
 mod err;
+mod fixml;
 mod settings;
 mod template;
 

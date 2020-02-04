@@ -1,5 +1,3 @@
-use crate::template::Element;
-use std::collections::HashMap;
 use std::default::Default;
 
 /// Code generation settings.
@@ -8,8 +6,6 @@ pub struct Settings {
     pub lang: ProgrammingLanguage,
     /// String case policy. All fields and names will be transformed accordingly.
     pub string_case: StringCase,
-    /// Custom tag mapping.
-    pub dictionary: HashMap<String, Element>,
 }
 
 impl Default for Settings {
@@ -17,7 +13,6 @@ impl Default for Settings {
         Settings {
             lang: ProgrammingLanguage::Rust,
             string_case: StringCase::Unchanged,
-            dictionary: HashMap::new(),
         }
     }
 }

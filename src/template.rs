@@ -1,4 +1,5 @@
-use crate::err::Result;
+use crate::err::{Error, Result};
+use crate::fixml;
 use crate::settings::Settings;
 use codegen::Scope;
 use quick_xml::events::Event;
@@ -43,12 +44,13 @@ impl Template {
     pub fn new() -> Self {
         Template {
             name: String::new(),
-            id: -1,
+            id: 0,
             elements: vec![],
             dictionary: HashMap::new(),
         }
     }
 
+    /// Custom tag mapping.
     pub fn new_dict(dictionary: HashMap<String, Element>) -> Self {
         Template {
             name: String::new(),
@@ -68,22 +70,10 @@ impl Template {
         self
     }
 
-    #[cfg(fixml)]
     pub fn from_fixml<S: AsRef<str>>(xml: S) -> Result<Self> {
-        let mut reader = Reader::from_str(xml);
-        reader.trim_text(true);
-        let mut txt = Vec::new();
-        let mut buf = Vec::new();
-        loop {
-            match reader.read_event(&mut buf) {
-                Ok(Event::Start(ref e)) => unimplemented!(),
-                Ok(Event::Eof) => break,
-            }
-        }
-        unimplemented!()
+        fixml::State::new(xml.as_ref()).consume()
     }
 
-    #[cfg(compact)]
     /// Parses a template definition using the traditional FIX `tag=value` syntax.
     pub fn from_compact<S: AsRef<str>>(formula: S) -> Result<Self> {
         let formula = formula.as_ref();
