@@ -25,18 +25,17 @@ impl<'s> State<'s> {
         let mut buf = Vec::new();
         loop {
             match self.reader.read_event(&mut buf) {
-                Ok(Event::Start(ref e)) => self.open_tag(e.name(), e.attributes())?,
-                Ok(Event::End(ref e)) => unimplemented!(),
+                Ok(Event::Start(ref e)) => self.transition_open_tag(e.name(), e.attributes())?,
+                Ok(Event::End(ref e)) => self.transition_close_tag(e.name())?,
                 Ok(Event::Empty(ref e)) => unimplemented!(),
-                Ok(Event::Eof) => break,
+                Ok(Event::Eof) => return Ok(self.template),
                 Ok(_) => (),
                 Err(e) => return Err(e.into()),
             }
         }
-        Ok(self.template)
     }
 
-    fn open_tag(&mut self, name: &[u8], attrs: Attributes) -> Result<()> {
+    fn transition_open_tag(&mut self, name: &[u8], attrs: Attributes) -> Result<()> {
         if self.is_root && name == b"FIXML" {
             for attr in attrs {
                 if attr?.key == b"v" {
@@ -52,11 +51,7 @@ impl<'s> State<'s> {
         Ok(())
     }
 
-    fn transition_close_tag(&mut self, name: String) -> Result<()> {
-        Ok(())
-    }
-
-    fn transition_eof(&mut self) -> Result<()> {
+    fn transition_close_tag(&mut self, name: &[u8]) -> Result<()> {
         Ok(())
     }
 }

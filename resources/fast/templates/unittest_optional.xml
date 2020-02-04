@@ -1,0 +1,99 @@
+<templates>
+  <template name="unittest" id="3">
+    <typeRef name="unittestdata"/>"
+    <int32 name="int32_nop" presence="optional" id="1">
+    </int32>
+    <uInt32 name="uint32_nop" presence="optional" id="2">
+    </uInt32>
+    <int64 name="int64_nop" presence="optional" id="3">
+    </int64>
+    <uInt64 name="uint64_nop" presence="optional" id="4">
+    </uInt64>
+    <decimal name="decimal_nop" presence="optional" id="5">
+    </decimal>
+    <string name="asciistring_nop" charset="ascii" presence="optional" id="6">
+    </string>
+    <string name="utf8string_nop" charset="unicode" presence="optional" id="7">
+    </string>
+    <byteVector name="bytevector_nop" presence="optional" id="8">
+    </byteVector>
+    <int32 name="int32_const" presence="optional" id="9"><constant value="-90"/>
+    </int32>
+    <uInt32 name="uint32_const" presence="optional" id="10"><constant value="100"/>
+    </uInt32>
+    <int64 name="int64_const" presence="optional" id="11"><constant value="-5000000000"/>
+    </int64>
+    <uInt64 name="uint64_const" presence="optional" id="12"><constant value="5000000000"/>
+    </uInt64>
+    <decimal name="decimal_const" presence="optional" id="13"><constant value="1.2345"/>
+    </decimal>
+    <string name="asciistring_const" charset="ascii" presence="optional" id="14"><constant value="constant asciistring"/>
+    </string>
+    <string name="utf8string_const" charset="unicode" presence="optional" id="15"><constant value="constant utf8string"/>
+    </string>
+    <byteVector name="bytevector_const" presence="optional" id="16"><constant value="constant bytevector"/>
+    </byteVector>
+    <int32 name="int32_default" presence="optional" id="17"><default value="-190"/>
+    </int32>
+    <uInt32 name="uint32_default" presence="optional" id="18"><default value="200"/>
+    </uInt32>
+    <int64 name="int64_default" presence="optional" id="19"><default value="-6000000000"/>
+    </int64>
+    <uInt64 name="uint64_default" presence="optional" id="20"><default value="6000000000"/>
+    </uInt64>
+    <decimal name="decimal_default" presence="optional" id="21"><default value="5.4321"/>
+    </decimal>
+    <string name="asciistring_default" charset="ascii" presence="optional" id="22"><default value="default asciistring"/>
+    </string>
+    <string name="utf8string_default" charset="unicode" presence="optional" id="23"><default value="default utf8string"/>
+    </string>
+    <byteVector name="bytevector_default" presence="optional" id="24"><default value="default bytevectorblabla"/>
+    </byteVector>
+    <int32 name="int32_copy" presence="optional" id="25"><copy/>
+    </int32>
+    <uInt32 name="uint32_copy" presence="optional" id="26"><copy/>
+    </uInt32>
+    <int64 name="int64_copy" presence="optional" id="27"><copy/>
+    </int64>
+    <uInt64 name="uint64_copy" presence="optional" id="28"><copy/>
+    </uInt64>
+    <decimal name="decimal_copy" presence="optional" id="29"><copy value="1.2345"/>
+    </decimal>
+    <string name="asciistring_copy" charset="ascii" presence="optional" id="30"><copy/>
+    </string>
+    <string name="utf8string_copy" charset="unicode" presence="optional" id="31"><copy/>
+    </string>
+    <byteVector name="bytevector_copy" presence="optional" id="32"><copy/>
+    </byteVector>
+    <int32 name="int32_delta" presence="optional" id="33"><copy/>
+    </int32>
+    <uInt32 name="uint32_delta" presence="optional" id="34"><delta/>
+    </uInt32>
+    <int64 name="int64_delta" presence="optional" id="35"><delta/>
+    </int64>
+    <uInt64 name="uint64_delta" presence="optional" id="36"><delta/>
+    </uInt64>
+    <decimal name="decimal_delta" presence="optional" id="37"><delta/>
+    </decimal>
+    <string name="asciistring_delta" charset="ascii" presence="optional" id="38"><delta/>
+    </string>
+    <string name="utf8string_delta" charset="unicode" presence="optional" id="39"><delta/>
+    </string>
+    <byteVector name="bytevector_delta" presence="optional" id="40"><delta/>
+    </byteVector>
+    <int32 name="int32_incre" presence="optional" id="41"><increment value="1"/>
+    </int32>
+    <uInt32 name="uint32_incre" presence="optional" id="42"><increment value="1"/>
+    </uInt32>
+    <int64 name="int64_incre" presence="optional" id="43"><increment value="1"/>
+    </int64>
+    <uInt64 name="uint64_incre" presence="optional" id="44"><increment value="1"/>
+    </uInt64> 
+    <string name="asciistring_tail" charset="ascii" presence="optional" id="45"><tail/>
+    </string>
+    <string name="utf8string_tail" charset="unicode" presence="optional" id="46"><tail/>
+    </string>
+    <byteVector name="bytevector_tail" presence="optional" id="47"><tail/>
+    </byteVector>
+    </template>
+</templates>
