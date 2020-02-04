@@ -1,5 +1,4 @@
 use crate::codec::Codec;
-use crate::op::Operator;
 use crate::{Message, Result};
 
 pub struct Nullable<U>(FieldInner<U>);
@@ -50,7 +49,7 @@ impl<U: Operator> Field<U> for Nullable<U> {
     fn encode_to_message(&mut self, value: Self::Item, msg: &mut Message) -> Result<()> {
         if let Some(value) = value {
             if !self.op().can_omit(&value) {
-                value.encode_to_writer(&mut msg.payload)?;
+                value.encode_to(&mut msg.payload)?;
                 self.op_mut().replace(value);
             }
         }
@@ -71,7 +70,7 @@ impl<U: Operator> Field<U> for Mandatory<U> {
 
     fn encode_to_message(&mut self, value: Self::Item, msg: &mut Message) -> Result<()> {
         if !self.op().can_omit(&value) {
-            value.encode_to_writer(&mut msg.payload)?;
+            value.encode_to(&mut msg.payload)?;
             self.op_mut().replace(value);
         }
         Ok(())

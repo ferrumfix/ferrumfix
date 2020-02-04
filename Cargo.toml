@@ -10,10 +10,10 @@ readme = "README.md"
 keywords = ["fix", "fast", "protocol", "finance", "streaming"]
 categories = ["network-programming", "parser-implementations", "encoding"]
 license = "MIT"
-maintenance = { status = "actively-developed" }
 
 [features]
-gen = ["codegen", "nom"]
+default = ["xml"]
+xml = ["codegen", "nom"]
 
 [dependencies]
 bitvec = "0.14"

@@ -1,2 +1,2 @@
-mod gen;
 mod parser;
+mod templategen;
