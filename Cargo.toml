@@ -12,13 +12,15 @@ categories = ["network-programming", "parser-implementations", "encoding"]
 license = "MIT"
 
 [features]
-default = ["xml"]
-xml = ["codegen", "nom"]
+default = ["fixml", "compact"]
+fixml = ["quick-xml"]
+compact = ["nom"]
 
 [dependencies]
 bitvec = "0.14"
 failure = "0.1.5"
-codegen = { version = "0.1.1", optional = true }
+codegen = "0.1.1"
+quick-xml = { version = "0.17.2", optional = true }
 nom = { version = "5", optional = true }
 
 [dev-dependencies]
