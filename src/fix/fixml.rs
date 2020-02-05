@@ -1,11 +1,10 @@
 use crate::err::{Error, Result};
-use crate::template::Template;
 use quick_xml::events::attributes::Attributes;
 use quick_xml::events::Event;
 use quick_xml::Reader;
 
 pub struct State<'s> {
-    template: Template,
+    //template: Template,
     is_root: bool,
     reader: Reader<&'s [u8]>,
 }
@@ -15,20 +14,20 @@ impl<'s> State<'s> {
         let mut reader = Reader::from_str(xml);
         reader.trim_text(true);
         State {
-            template: Template::new(),
+            //template: Template::new(),
             is_root: true,
             reader,
         }
     }
 
-    pub fn consume(mut self) -> Result<Template> {
+    pub fn consume(mut self) -> Result<()> {
         let mut buf = Vec::new();
         loop {
             match self.reader.read_event(&mut buf) {
                 Ok(Event::Start(ref e)) => self.transition_open_tag(e.name(), e.attributes())?,
                 Ok(Event::End(ref e)) => self.transition_close_tag(e.name())?,
                 Ok(Event::Empty(ref e)) => unimplemented!(),
-                Ok(Event::Eof) => return Ok(self.template),
+                Ok(Event::Eof) => return Ok(()),
                 Ok(_) => (),
                 Err(e) => return Err(e.into()),
             }

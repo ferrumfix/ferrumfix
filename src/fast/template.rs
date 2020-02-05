@@ -1,5 +1,4 @@
 use crate::err::{Error, Result};
-use crate::fixml;
 use crate::settings::Settings;
 use codegen::Scope;
 use quick_xml::events::Event;
@@ -70,8 +69,9 @@ impl Template {
         self
     }
 
-    pub fn from_fixml<S: AsRef<str>>(xml: S) -> Result<Self> {
-        fixml::State::new(xml.as_ref()).consume()
+    pub fn from_xml<S: AsRef<str>>(xml: S) -> Result<Self> {
+        //fixml::State::new(xml.as_ref()).consume()
+        unimplemented!()
     }
 
     /// Parses a template definition using the traditional FIX `tag=value` syntax.

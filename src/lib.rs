@@ -1,15 +1,21 @@
-//! `fasters` is a Rust library that implements the FAST 1.2 protocol.
+//! Fasters is a standard-compliant FIX & FAST (FIX Adapted for STreaming)
+//! implementation in pure Rust.
+//!
+//! FIX and FAST functionality is kept isolated in the
+//! [`fasters::fix`](fasters::fix) and [`fasters::fast`](fasters::fast) modules,
+//! respectively.
 
 #![allow(dead_code)]
 
 mod codec;
 mod err;
-mod fixml;
+/// FAST (FIX Adapted for STreaming)-related functionality.
+pub mod fast;
+/// FIX-related functionality.
+pub mod fix;
 mod settings;
-mod template;
 
-pub use crate::err::Result;
-pub use crate::template::Template;
+pub use crate::err::{Error, Result};
 
 use std::io;
 
