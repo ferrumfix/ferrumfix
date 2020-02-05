@@ -1,4 +1,4 @@
-use crate::codec::Codec;
+use super::codec::Codec;
 use std::marker::PhantomData;
 use std::ops::Sub;
 

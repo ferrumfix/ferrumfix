@@ -7,7 +7,6 @@
 
 #![allow(dead_code)]
 
-mod codec;
 mod err;
 /// FAST (FIX Adapted for STreaming)-related functionality.
 pub mod fast;

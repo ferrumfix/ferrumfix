@@ -7,8 +7,9 @@ This is the planned feature roadmap:
 **Core features:**
 
 - [ ] Code generation (Rust, possibly others).
-- [ ] FIX.4.0-FIX.4.4.
-- [ ] FIX.5.0SP2.
+- [ ] FIX 4.2.
+- [ ] FIX 4.4.
+- [ ] FIX 5.0 Service Pack 2.
 
 **Encodings:**
 
