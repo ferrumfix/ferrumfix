@@ -8,18 +8,29 @@ Fasters is, at the time of writing, **not** production ready. I currently can't 
 
 See the following feature roadmap:
 
-**FIX:**
+**Core features:**
 
-- [ ] FIXML parser.
-- [ ] Classic tag-value pair format parser.
-- [ ] Code generation (Rust).
-- [ ] Standard (4.0 and following) tags.
-- [ ] Custom fields.
+- [ ] Code generation (Rust, possibly others).
+- [ ] FIX.4.0-FIX.4.4.
+- [ ] FIX.5.0SP2.
 
-**FAST:**
+**Encodings:**
 
-- [ ] FAST XML template definition.
-- [ ] FAST compact notation.
+- [ ] Tagvalue (classic FIX).
+- [ ] FIXML.
+- [ ] Simple Binary Encoding (SBE).
+- [ ] Google Protocol Buffers (GPB).
+- [ ] JavaScript Object Notation (JSON).
+- [ ] Abstract Syntax Notation (ASN.1).
+- [ ] FIX Adapted for STreaming (FAST).
+
+**Session protocols:**
+
+- [ ] FIX4.
+- [ ] FIXT.
+- [ ] FIXP.
+- [ ] SOFH.
+- [ ] FIXS.
 
 As dictated by [SemVer 2.0](https://semver.org/), I will bump the major version to `1` once I've settled on sensible APIs.
 
