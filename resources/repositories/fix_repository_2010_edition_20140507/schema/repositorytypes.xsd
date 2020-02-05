@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?><xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><xs:annotation xmlns:local="http://dummy.org"><xs:documentation>
+DISCLAIMER
+
+THE INFORMATION CONTAINED HEREIN AND THE FINANCIAL INFORMATION EXCHANGE PROTOCOL (COLLECTIVELY, THE "FIX PROTOCOL") ARE PROVIDED "AS IS" AND NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL MAKES ANY REPRESENTATION OR WARRANTY, EXPRESS OR IMPLIED, AS TO THE FIX PROTOCOL (OR THE RESULTS TO BE OBTAINED BY THE USE THEREOF) OR ANY OTHER MATTER AND EACH SUCH PERSON AND ENTITY SPECIFICALLY DISCLAIMS ANY WARRANTY OF ORIGINALITY, ACCURACY, COMPLETENESS, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SUCH PERSONS AND ENTITIES DO NOT WARRANT THAT THE FIX PROTOCOL WILL CONFORM TO ANY DESCRIPTION THEREOF OR BE FREE OF ERRORS. THE ENTIRE RISK OF ANY USE OF THE FIX PROTOCOL IS ASSUMED BY THE USER.
+
+NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL SHALL HAVE ANY LIABILITY FOR DAMAGES OF ANY KIND ARISING IN ANY MANNER OUT OF OR IN CONNECTION WITH ANY USER'S USE OF (OR ANY INABILITY TO USE) THE FIX PROTOCOL, WHETHER DIRECT, INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL (INCLUDING, WITHOUT LIMITATION, LOSS OF DATA, LOSS OF USE, CLAIMS OF THIRD PARTIES OR LOST PROFITS OR REVENUES OR OTHER ECONOMIC LOSS), WHETHER IN TORT (INCLUDING NEGLIGENCE AND STRICT LIABILITY), CONTRACT OR OTHERWISE, WHETHER OR NOT ANY SUCH PERSON OR ENTITY HAS BEEN ADVISED OF, OR OTHERWISE MIGHT HAVE ANTICIPATED THE POSSIBILITY OF, SUCH DAMAGES.
+
+No proprietary or ownership interest of any kind is granted with respect to the FIX Protocol (or any rights therein).
+
+Copyright 2003-2009 FIX Protocol Limited, all rights reserved
+
+REPRODUCTION
+
+FIX Protocol Limited grants permission to print in hard copy form or reproduce the FIX Protocol specification in its entirety provided that the duplicated pages retain the "Copyright FIX Protocol Limited" statement at the bottom of the page.
+
+Portions of the FIX Protocol specification may be extracted or cited in other documents (such as a document which describes one's implementation of the FIX Protocol) provided that one reference the origin of the FIX Protocol specification (HTUhttp://www.fixprotocol.orgUTH) and that the specification itself is "Copyright FIX Protocol Limited".
+FIX Protocol Limited claims no intellectual property over one's implementation (programming code) of an application which implements the behavior and details from the FIX Protocol specification. 	
+</xs:documentation></xs:annotation>
+	<!-- Basic datatypes used in the extension packs -->
+	<xs:simpleType name="id_t">
+		<xs:restriction base="xs:integer"/>
+	</xs:simpleType>
+	<xs:simpleType name="textId_t">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="language_t">
+		<xs:restriction base="xs:language"/>
+	</xs:simpleType>
+	<xs:simpleType name="changeType_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Editorial"/>
+			<xs:enumeration value="Definitional"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Name_t">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="255"/>
+			<xs:pattern value="([A-Z]|[a-z]|_)([0-9]|[A-Z]|[a-z]|_)*"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Tag_t">
+		<xs:restriction base="xs:positiveInteger"/>
+	</xs:simpleType>
+	<xs:simpleType name="FieldName_t">
+		<xs:restriction base="Name_t"/>
+	</xs:simpleType>
+	<xs:simpleType name="Datatype_t">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="255"/>
+			<xs:pattern value="([A-Z]|[a-z])([0-9]|[A-Z]|[a-z]|_|-)*"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Elaboration_t">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="536870910"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Description_t">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="536870910"/>
+		</xs:restriction>
+	</xs:simpleType>
+		<xs:simpleType name="Example_t">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="536870910"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Definition_t">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="536870910"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Edition_t">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="8"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="SymbolicName_t">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="255"/>
+			<xs:pattern value="([A-Z]|[a-z]|_)([0-9]|[A-Z]|[a-z]|_)*"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="LenRefers_t">
+		<xs:restriction base="xs:integer"/>
+	</xs:simpleType>
+	<xs:simpleType name="Enumeration_t">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="Group_t">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="Sort_t">
+		<xs:restriction base="xs:nonNegativeInteger"/>
+	</xs:simpleType>
+	<xs:simpleType name="MsgType_t">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="2"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="MessageName_t">
+		<xs:restriction base="Name_t"/>
+	</xs:simpleType>
+	<xs:simpleType name="CategoryID_t">
+		<xs:restriction base="Name_t"/>
+	</xs:simpleType>
+	<xs:simpleType name="MsgID_t">
+		<xs:restriction base="xs:positiveInteger">
+			<xs:maxExclusive value="1000"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="CompID_t">
+		<xs:restriction base="xs:positiveInteger">
+			<xs:minInclusive value="1000"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="MsgOrCompID_t">
+		<xs:union memberTypes="MsgID_t CompID_t"/>
+	</xs:simpleType>
+	<xs:simpleType name="CatComponentType_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Field"/>
+			<xs:enumeration value="Message"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="CatIncludeFile_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="components"/>
+			<xs:enumeration value="fields"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="DatatypeXML_t">
+		<xs:sequence>
+			<xs:element name="BuiltIn" type="BOOL_t"/>
+			<xs:element name="Base" type="xs:string"/>
+			<xs:element name="MinInclusive" type="xs:unsignedShort" minOccurs="0"/>
+			<xs:element name="Pattern" type="xs:string" minOccurs="0"/>
+			<xs:element name="Description" type="Description_t" minOccurs="0"/>
+			<xs:element name="Example" type="Example_t" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="SectionID_t">
+		<xs:restriction base="Name_t">
+			<xs:enumeration value="Session"/>
+			<xs:enumeration value="PreTrade"/>
+			<xs:enumeration value="Trade"/>
+			<xs:enumeration value="PostTrade"/>
+			<xs:enumeration value="Infrastructure"/>
+			<xs:enumeration value="Other"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="ComponentName_t">
+		<xs:restriction base="Name_t"/>
+	</xs:simpleType>
+	<xs:simpleType name="ComponentType_t">
+		<xs:restriction base="Name_t">
+			<xs:enumeration value="BlockRepeating"/>
+			<xs:enumeration value="ImplicitBlockRepeating"/>
+			<xs:enumeration value="Block"/>
+			<xs:enumeration value="ImplicitBlock"/>
+			<xs:enumeration value="XMLDataBlock"/>
+			<xs:enumeration value="OptimisedBlockRepeating"/>
+			<xs:enumeration value="OptimisedImplicitBlockRepeating"/>
+			<xs:enumeration value="Message"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TagText_t">
+		<xs:restriction base="xs:string"/>
+		<!-- xs:union memberTypes="Tag_t ComponentName_t" JimN 2011-05-22 - caused issues with XMLSpy XPath -->
+	</xs:simpleType>
+	<xs:simpleType name="UnionDataType_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Qty"/>
+			<xs:enumeration value="Reserved100Plus"/>
+			<xs:enumeration value="Reserved1000Plus"/>
+			<xs:enumeration value="Reserved4000Plus"/>
+			<xs:enumeration value="Tenor"/>
+			<!-- JimN - added specifically for Jira RPOS-271 -->
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Version_t">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="(FIX.2.7)|(FIX.3.0)|(FIX\.4\.[0-4])|(FIX\.5\.0(SP\d{1,2})?)|(FIXT.1.1)"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="EP_t">
+		<xs:restriction base="xs:integer"/>
+	</xs:simpleType>
+	<!-- following three types are currently used in Abbreviations.xsd -->
+	<xs:simpleType name="Term_t">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="Usage_t">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="Abbreviation_t">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="VolumeNumber_t">
+		<xs:restriction base="xs:nonNegativeInteger">
+			<xs:minInclusive value="1"/>
+			<xs:maxInclusive value="5"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="VolumeName_t">
+		<xs:restriction base="Name_t">
+			<xs:enumeration value="Volume1"/>
+			<xs:enumeration value="Volume2"/>
+			<xs:enumeration value="Volume3"/>
+			<xs:enumeration value="Volume4"/>
+			<xs:enumeration value="Volume5"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Volume_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="1"/>
+			<xs:enumeration value="2"/>
+			<xs:enumeration value="3"/>
+			<xs:enumeration value="4"/>
+			<xs:enumeration value="5"/>
+			<xs:enumeration value="6"/>
+			<xs:enumeration value="FIXT.1.1"/>
+			<xs:enumeration value="?"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="CategoryComponentType_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Field"/>
+			<xs:enumeration value="Message"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="IncludeFile_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="components"/>
+			<xs:enumeration value="fields"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="BOOL_t">
+		<xs:restriction base="xs:short">
+			<xs:enumeration value="1"/>
+			<xs:enumeration value="0"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

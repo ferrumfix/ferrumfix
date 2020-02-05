@@ -1,0 +1,3885 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+DISCLAIMER
+
+THE INFORMATION CONTAINED HEREIN AND THE FINANCIAL INFORMATION EXCHANGE PROTOCOL (COLLECTIVELY, THE "FIX PROTOCOL") ARE PROVIDED "AS IS" AND NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL MAKES ANY REPRESENTATION OR WARRANTY, EXPRESS OR IMPLIED, AS TO THE FIX PROTOCOL (OR THE RESULTS TO BE OBTAINED BY THE USE THEREOF) OR ANY OTHER MATTER AND EACH SUCH PERSON AND ENTITY SPECIFICALLY DISCLAIMS ANY WARRANTY OF ORIGINALITY, ACCURACY, COMPLETENESS, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SUCH PERSONS AND ENTITIES DO NOT WARRANT THAT THE FIX PROTOCOL WILL CONFORM TO ANY DESCRIPTION THEREOF OR BE FREE OF ERRORS. THE ENTIRE RISK OF ANY USE OF THE FIX PROTOCOL IS ASSUMED BY THE USER.
+
+NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL SHALL HAVE ANY LIABILITY FOR DAMAGES OF ANY KIND ARISING IN ANY MANNER OUT OF OR IN CONNECTION WITH ANY USER'S USE OF (OR ANY INABILITY TO USE) THE FIX PROTOCOL, WHETHER DIRECT, INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL (INCLUDING, WITHOUT LIMITATION, LOSS OF DATA, LOSS OF USE, CLAIMS OF THIRD PARTIES OR LOST PROFITS OR REVENUES OR OTHER ECONOMIC LOSS), WHETHER IN TORT (INCLUDING NEGLIGENCE AND STRICT LIABILITY), CONTRACT OR OTHERWISE, WHETHER OR NOT ANY SUCH PERSON OR ENTITY HAS BEEN ADVISED OF, OR OTHERWISE MIGHT HAVE ANTICIPATED THE POSSIBILITY OF, SUCH DAMAGES.
+
+No proprietary or ownership interest of any kind is granted with respect to the FIX Protocol (or any rights therein).
+
+Copyright 2003-2009 FIX Protocol Limited, all rights reserved
+
+REPRODUCTION
+
+FIX Protocol Limited grants permission to print in hard copy form or reproduce the FIX Protocol specification in its entirety provided that the duplicated pages retain the "Copyright FIX Protocol Limited" statement at the bottom of the page.
+
+Portions of the FIX Protocol specification may be extracted or cited in other documents (such as a document which describes one's implementation of the FIX Protocol) provided that one reference the origin of the FIX Protocol specification (HTUhttp://www.fixprotocol.orgUTH) and that the specification itself is "Copyright FIX Protocol Limited".
+FIX Protocol Limited claims no intellectual property over one's implementation (programming code) of an application which implements the behavior and details from the FIX Protocol specification. 	
+--><Enums xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" copyright="Copyright (c) FIX Protocol Ltd. All Rights Reserved." edition="2010" version="FIX.4.2" xsi:noNamespaceSchemaLocation="../../schema/Enums.xsd">
+	<Enum added="FIX.2.7">
+		<Tag>4</Tag>
+		<Value>B</Value>
+		<SymbolicName>Buy</SymbolicName>
+		<Description>Buy</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>4</Tag>
+		<Value>S</Value>
+		<SymbolicName>Sell</SymbolicName>
+		<Description>Sell</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>4</Tag>
+		<Value>T</Value>
+		<SymbolicName>Trade</SymbolicName>
+		<Description>Trade</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>4</Tag>
+		<Value>X</Value>
+		<SymbolicName>Cross</SymbolicName>
+		<Description>Cross</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>5</Tag>
+		<Value>C</Value>
+		<SymbolicName>Cancel</SymbolicName>
+		<Description>Cancel</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>5</Tag>
+		<Value>N</Value>
+		<SymbolicName>New</SymbolicName>
+		<Description>New</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>5</Tag>
+		<Value>R</Value>
+		<SymbolicName>Replace</SymbolicName>
+		<Description>Replace</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>13</Tag>
+		<Value>1</Value>
+		<SymbolicName>PerUnit</SymbolicName>
+		<Description>per share</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>13</Tag>
+		<Value>2</Value>
+		<SymbolicName>Percent</SymbolicName>
+		<Description>percentage</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>13</Tag>
+		<Value>3</Value>
+		<SymbolicName>Absolute</SymbolicName>
+		<Description>absolute</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>0</Value>
+		<SymbolicName>StayOnOfferSide</SymbolicName>
+		<Description>Stay on offerside</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>1</Value>
+		<SymbolicName>NotHeld</SymbolicName>
+		<Description>Not held</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>2</Value>
+		<SymbolicName>Work</SymbolicName>
+		<Description>Work</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>3</Value>
+		<SymbolicName>GoAlong</SymbolicName>
+		<Description>Go along</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>4</Value>
+		<SymbolicName>OverTheDay</SymbolicName>
+		<Description>Over the day</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>5</Value>
+		<SymbolicName>Held</SymbolicName>
+		<Description>Held</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>6</Value>
+		<SymbolicName>ParticipateDoNotInitiate</SymbolicName>
+		<Description>Participate don't initiate</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>7</Value>
+		<SymbolicName>StrictScale</SymbolicName>
+		<Description>Strict scale</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>8</Value>
+		<SymbolicName>TryToScale</SymbolicName>
+		<Description>Try to scale</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>9</Value>
+		<SymbolicName>StayOnBidSide</SymbolicName>
+		<Description>Stay on bidside</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>A</Value>
+		<SymbolicName>NoCross</SymbolicName>
+		<Description>No cross (cross is forbidden)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>B</Value>
+		<SymbolicName>OKToCross</SymbolicName>
+		<Description>OK to cross</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>C</Value>
+		<SymbolicName>CallFirst</SymbolicName>
+		<Description>Call first</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>D</Value>
+		<SymbolicName>PercentOfVolume</SymbolicName>
+		<Description>Percent of volume (indicates that the sender does not want to be all of the volume on the floor vs. a specific percentage)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>E</Value>
+		<SymbolicName>DoNotIncrease</SymbolicName>
+		<Description>Do not increase - DNI</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>F</Value>
+		<SymbolicName>DoNotReduce</SymbolicName>
+		<Description>Do not reduce - DNR</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>18</Tag>
+		<Value>G</Value>
+		<SymbolicName>AllOrNone</SymbolicName>
+		<Description>All or none - AON</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>18</Tag>
+		<Value>I</Value>
+		<SymbolicName>InstitutionsOnly</SymbolicName>
+		<Description>Institutions only</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>18</Tag>
+		<Value>L</Value>
+		<SymbolicName>LastPeg</SymbolicName>
+		<Description>Last peg (last sale)</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>18</Tag>
+		<Value>M</Value>
+		<SymbolicName>MidPricePeg</SymbolicName>
+		<Description>Mid-price peg (midprice of inside quote)</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>18</Tag>
+		<Value>N</Value>
+		<SymbolicName>NonNegotiable</SymbolicName>
+		<Description>Non-negotiable</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>18</Tag>
+		<Value>O</Value>
+		<SymbolicName>OpeningPeg</SymbolicName>
+		<Description>Opening peg</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>18</Tag>
+		<Value>P</Value>
+		<SymbolicName>MarketPeg</SymbolicName>
+		<Description>Market peg</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>18</Tag>
+		<Value>R</Value>
+		<SymbolicName>PrimaryPeg</SymbolicName>
+		<Description>Primary peg (primary market - buy at bid/sell at offer)</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>18</Tag>
+		<Value>S</Value>
+		<SymbolicName>Suspend</SymbolicName>
+		<Description>Suspend</Description>
+	</Enum>
+	<Enum added="FIX.4.4" addedEP="35">
+		<Tag>18</Tag>
+		<Value>T</Value>
+		<SymbolicName>FixedPegToLocalBestBidOrOfferAtTimeOfOrder</SymbolicName>
+		<Description>Fixed Peg to Local best bid or offer at time of order</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>18</Tag>
+		<Value>U</Value>
+		<SymbolicName>CustomerDisplayInstruction</SymbolicName>
+		<Description>Customer Display Instruction (Rule11Ac1-1/4)</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>18</Tag>
+		<Value>V</Value>
+		<SymbolicName>Netting</SymbolicName>
+		<Description>Netting (for Forex)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>18</Tag>
+		<Value>W</Value>
+		<SymbolicName>PegToVWAP</SymbolicName>
+		<Description>Peg to VWAP</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>20</Tag>
+		<Value>0</Value>
+		<SymbolicName>New</SymbolicName>
+		<Description>New</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>20</Tag>
+		<Value>1</Value>
+		<SymbolicName>Cancel</SymbolicName>
+		<Description>Cancel</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>20</Tag>
+		<Value>2</Value>
+		<SymbolicName>Correct</SymbolicName>
+		<Description>Correct</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>20</Tag>
+		<Value>3</Value>
+		<SymbolicName>Status</SymbolicName>
+		<Description>Status</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>21</Tag>
+		<Value>1</Value>
+		<SymbolicName>AutomatedExecutionNoIntervention</SymbolicName>
+		<Description>Automated execution order, private, no Broker intervention</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>21</Tag>
+		<Value>2</Value>
+		<SymbolicName>AutomatedExecutionInterventionOK</SymbolicName>
+		<Description>Automated execution order, public, Broker intervention OK</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>21</Tag>
+		<Value>3</Value>
+		<SymbolicName>ManualOrder</SymbolicName>
+		<Description>Manual order, best execution</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>22</Tag>
+		<Value>1</Value>
+		<SymbolicName>CUSIP</SymbolicName>
+		<Description>CUSIP</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>22</Tag>
+		<Value>2</Value>
+		<SymbolicName>SEDOL</SymbolicName>
+		<Description>SEDOL</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>22</Tag>
+		<Value>3</Value>
+		<SymbolicName>QUIK</SymbolicName>
+		<Description>QUIK</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>22</Tag>
+		<Value>4</Value>
+		<SymbolicName>ISINNumber</SymbolicName>
+		<Description>ISIN number</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>22</Tag>
+		<Value>5</Value>
+		<SymbolicName>RICCode</SymbolicName>
+		<Description>RIC code</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>22</Tag>
+		<Value>6</Value>
+		<SymbolicName>ISOCurrencyCode</SymbolicName>
+		<Description>ISO Currency Code</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>22</Tag>
+		<Value>7</Value>
+		<SymbolicName>ISOCountryCode</SymbolicName>
+		<Description>ISO Country Code</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>22</Tag>
+		<Value>8</Value>
+		<SymbolicName>ExchangeSymbol</SymbolicName>
+		<Description>Exchange Symbol</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>22</Tag>
+		<Value>9</Value>
+		<SymbolicName>ConsolidatedTapeAssociation</SymbolicName>
+		<Description>Consolidated Tape Association (CTA) Symbol (SIAC CTS/CQS line format)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>25</Tag>
+		<Value>H</Value>
+		<SymbolicName>High</SymbolicName>
+		<Description>High</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>25</Tag>
+		<Value>L</Value>
+		<SymbolicName>Low</SymbolicName>
+		<Description>Low</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>25</Tag>
+		<Value>M</Value>
+		<SymbolicName>Medium</SymbolicName>
+		<Description>Medium</Description>
+	</Enum>
+	<Enum added="FIX.4.4" addedEP="25">
+		<Tag>27</Tag>
+		<Value>L</Value>
+		<SymbolicName>Large</SymbolicName>
+		<Description>Large</Description>
+	</Enum>
+	<Enum added="FIX.4.4" addedEP="25">
+		<Tag>27</Tag>
+		<Value>M</Value>
+		<SymbolicName>Medium</SymbolicName>
+		<Description>Medium</Description>
+	</Enum>
+	<Enum added="FIX.4.4" addedEP="25">
+		<Tag>27</Tag>
+		<Value>S</Value>
+		<SymbolicName>Small</SymbolicName>
+		<Description>Small</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>28</Tag>
+		<Value>C</Value>
+		<SymbolicName>Cancel</SymbolicName>
+		<Description>Cancel</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>28</Tag>
+		<Value>N</Value>
+		<SymbolicName>New</SymbolicName>
+		<Description>New</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>28</Tag>
+		<Value>R</Value>
+		<SymbolicName>Replace</SymbolicName>
+		<Description>Replace</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>29</Tag>
+		<Value>1</Value>
+		<SymbolicName>Agent</SymbolicName>
+		<Description>Agent</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>29</Tag>
+		<Value>2</Value>
+		<SymbolicName>CrossAsAgent</SymbolicName>
+		<Description>Cross as agent</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>29</Tag>
+		<Value>3</Value>
+		<SymbolicName>CrossAsPrincipal</SymbolicName>
+		<Description>Cross as principal</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>29</Tag>
+		<Value>4</Value>
+		<SymbolicName>Principal</SymbolicName>
+		<Description>Principal</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>0</Value>
+		<SymbolicName>Heartbeat</SymbolicName>
+		<Group/>
+		<Sort>0</Sort>
+		<Description>Heartbeat</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>1</Value>
+		<SymbolicName>TestRequest</SymbolicName>
+		<Group/>
+		<Sort>1</Sort>
+		<Description>Test Request</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>2</Value>
+		<SymbolicName>ResendRequest</SymbolicName>
+		<Group/>
+		<Sort>2</Sort>
+		<Description>Resend Request</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>3</Value>
+		<SymbolicName>Reject</SymbolicName>
+		<Group/>
+		<Sort>3</Sort>
+		<Description>Reject</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>4</Value>
+		<SymbolicName>SequenceReset</SymbolicName>
+		<Group/>
+		<Sort>4</Sort>
+		<Description>Sequence Reset</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>5</Value>
+		<SymbolicName>Logout</SymbolicName>
+		<Group/>
+		<Sort>5</Sort>
+		<Description>Logout</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>6</Value>
+		<SymbolicName>IOI</SymbolicName>
+		<Group/>
+		<Sort>6</Sort>
+		<Description>Indication of Interest</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>7</Value>
+		<SymbolicName>Advertisement</SymbolicName>
+		<Group/>
+		<Sort>7</Sort>
+		<Description>Advertisement</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>8</Value>
+		<SymbolicName>ExecutionReport</SymbolicName>
+		<Group/>
+		<Sort>8</Sort>
+		<Description>Execution Report</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>9</Value>
+		<SymbolicName>OrderCancelReject</SymbolicName>
+		<Group/>
+		<Sort>9</Sort>
+		<Description>Order Cancel Reject</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>a</Value>
+		<SymbolicName>QuoteStatusRequest</SymbolicName>
+		<Group/>
+		<Sort>33</Sort>
+		<Description>Quote Status Request</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>A</Value>
+		<SymbolicName>Logon</SymbolicName>
+		<Group/>
+		<Sort>10</Sort>
+		<Description>Logon</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>B</Value>
+		<SymbolicName>News</SymbolicName>
+		<Group/>
+		<Sort>11</Sort>
+		<Description>News</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>b</Value>
+		<SymbolicName>MassQuoteAcknowledgement</SymbolicName>
+		<Group/>
+		<Sort>34</Sort>
+		<Description>Quote Acknowledgement</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>C</Value>
+		<SymbolicName>Email</SymbolicName>
+		<Group/>
+		<Sort>12</Sort>
+		<Description>Email</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>c</Value>
+		<SymbolicName>SecurityDefinitionRequest</SymbolicName>
+		<Group/>
+		<Sort>35</Sort>
+		<Description>Security Definition Request</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>D</Value>
+		<SymbolicName>NewOrderSingle</SymbolicName>
+		<Group/>
+		<Sort>13</Sort>
+		<Description>Order Single</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>d</Value>
+		<SymbolicName>SecurityDefinition</SymbolicName>
+		<Group/>
+		<Sort>36</Sort>
+		<Description>Security Definition</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>E</Value>
+		<SymbolicName>NewOrderList</SymbolicName>
+		<Group/>
+		<Sort>14</Sort>
+		<Description>Order List</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>e</Value>
+		<SymbolicName>SecurityStatusRequest</SymbolicName>
+		<Group/>
+		<Sort>37</Sort>
+		<Description>Security Status Request</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>f</Value>
+		<SymbolicName>SecurityStatus</SymbolicName>
+		<Group/>
+		<Sort>38</Sort>
+		<Description>Security Status</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>F</Value>
+		<SymbolicName>OrderCancelRequest</SymbolicName>
+		<Group/>
+		<Sort>15</Sort>
+		<Description>Order Cancel Request</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>G</Value>
+		<SymbolicName>OrderCancelReplaceRequest</SymbolicName>
+		<Group/>
+		<Sort>16</Sort>
+		<Description>Order Cancel/Replace Request</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>g</Value>
+		<SymbolicName>TradingSessionStatusRequest</SymbolicName>
+		<Group/>
+		<Sort>39</Sort>
+		<Description>Trading Session Status Request</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>H</Value>
+		<SymbolicName>OrderStatusRequest</SymbolicName>
+		<Group/>
+		<Sort>17</Sort>
+		<Description>Order Status Request</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>h</Value>
+		<SymbolicName>TradingSessionStatus</SymbolicName>
+		<Group/>
+		<Sort>40</Sort>
+		<Description>Trading Session Status</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>i</Value>
+		<SymbolicName>MassQuote</SymbolicName>
+		<Group/>
+		<Sort>41</Sort>
+		<Description>Mass Quote</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>j</Value>
+		<SymbolicName>BusinessMessageReject</SymbolicName>
+		<Group/>
+		<Sort>42</Sort>
+		<Description>Business Message Reject</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>J</Value>
+		<SymbolicName>AllocationInstruction</SymbolicName>
+		<Group/>
+		<Sort>18</Sort>
+		<Description>Allocation</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>K</Value>
+		<SymbolicName>ListCancelRequest</SymbolicName>
+		<Group/>
+		<Sort>19</Sort>
+		<Description>List Cancel Request</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>k</Value>
+		<SymbolicName>BidRequest</SymbolicName>
+		<Group/>
+		<Sort>43</Sort>
+		<Description>Bid Request</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>l</Value>
+		<SymbolicName>BidResponse</SymbolicName>
+		<Group/>
+		<Sort>44</Sort>
+		<Description>Bid Response (lowercase L)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>L</Value>
+		<SymbolicName>ListExecute</SymbolicName>
+		<Group/>
+		<Sort>20</Sort>
+		<Description>List Execute</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>m</Value>
+		<SymbolicName>ListStrikePrice</SymbolicName>
+		<Group/>
+		<Sort>45</Sort>
+		<Description>List Strike Price</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>M</Value>
+		<SymbolicName>ListStatusRequest</SymbolicName>
+		<Group/>
+		<Sort>21</Sort>
+		<Description>List Status Request</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>N</Value>
+		<SymbolicName>ListStatus</SymbolicName>
+		<Group/>
+		<Sort>22</Sort>
+		<Description>List Status</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>35</Tag>
+		<Value>P</Value>
+		<SymbolicName>AllocationInstructionAck</SymbolicName>
+		<Group/>
+		<Sort>23</Sort>
+		<Description>Allocation ACK</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>35</Tag>
+		<Value>Q</Value>
+		<SymbolicName>DontKnowTrade</SymbolicName>
+		<Group/>
+		<Sort>24</Sort>
+		<Description>Dont Know Trade (DK)</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>35</Tag>
+		<Value>R</Value>
+		<SymbolicName>QuoteRequest</SymbolicName>
+		<Group/>
+		<Sort>25</Sort>
+		<Description>Quote Request</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>35</Tag>
+		<Value>S</Value>
+		<SymbolicName>Quote</SymbolicName>
+		<Group/>
+		<Sort>26</Sort>
+		<Description>Quote</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>35</Tag>
+		<Value>T</Value>
+		<SymbolicName>SettlementInstructions</SymbolicName>
+		<Group/>
+		<Sort>27</Sort>
+		<Description>Settlement Instructions</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>V</Value>
+		<SymbolicName>MarketDataRequest</SymbolicName>
+		<Group/>
+		<Sort>28</Sort>
+		<Description>Market Data Request</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>W</Value>
+		<SymbolicName>MarketDataSnapshotFullRefresh</SymbolicName>
+		<Group/>
+		<Sort>29</Sort>
+		<Description>Market Data-Snapshot/Full Refresh</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>X</Value>
+		<SymbolicName>MarketDataIncrementalRefresh</SymbolicName>
+		<Group/>
+		<Sort>30</Sort>
+		<Description>Market Data-Incremental Refresh</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>Y</Value>
+		<SymbolicName>MarketDataRequestReject</SymbolicName>
+		<Group/>
+		<Sort>31</Sort>
+		<Description>Market Data Request Reject</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>35</Tag>
+		<Value>Z</Value>
+		<SymbolicName>QuoteCancel</SymbolicName>
+		<Group/>
+		<Sort>32</Sort>
+		<Description>Quote Cancel</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>39</Tag>
+		<Value>0</Value>
+		<SymbolicName>New</SymbolicName>
+		<Description>New</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>39</Tag>
+		<Value>1</Value>
+		<SymbolicName>PartiallyFilled</SymbolicName>
+		<Description>Partially filled</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>39</Tag>
+		<Value>2</Value>
+		<SymbolicName>Filled</SymbolicName>
+		<Description>Filled</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>39</Tag>
+		<Value>3</Value>
+		<SymbolicName>DoneForDay</SymbolicName>
+		<Description>Done for day</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>39</Tag>
+		<Value>4</Value>
+		<SymbolicName>Canceled</SymbolicName>
+		<Description>Canceled</Description>
+	</Enum>
+	<Enum added="FIX.4.4" addedEP="35">
+		<Tag>39</Tag>
+		<Value>5</Value>
+		<SymbolicName>Replaced</SymbolicName>
+		<Description>Replaced</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>39</Tag>
+		<Value>6</Value>
+		<SymbolicName>PendingCancel</SymbolicName>
+		<Description>Pending Cancel (e.g. result of Order Cancel Request)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>39</Tag>
+		<Value>7</Value>
+		<SymbolicName>Stopped</SymbolicName>
+		<Description>Stopped</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>39</Tag>
+		<Value>8</Value>
+		<SymbolicName>Rejected</SymbolicName>
+		<Description>Rejected</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>39</Tag>
+		<Value>9</Value>
+		<SymbolicName>Suspended</SymbolicName>
+		<Description>Suspended</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>39</Tag>
+		<Value>A</Value>
+		<SymbolicName>PendingNew</SymbolicName>
+		<Description>Pending New</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>39</Tag>
+		<Value>B</Value>
+		<SymbolicName>Calculated</SymbolicName>
+		<Description>Calculated</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>39</Tag>
+		<Value>C</Value>
+		<SymbolicName>Expired</SymbolicName>
+		<Description>Expired</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>39</Tag>
+		<Value>D</Value>
+		<SymbolicName>AcceptedForBidding</SymbolicName>
+		<Description>Accepted for bidding</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>39</Tag>
+		<Value>E</Value>
+		<SymbolicName>PendingReplace</SymbolicName>
+		<Description>Pending Replace (e.g. result of Order Cancel/Replace Request)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>40</Tag>
+		<Value>1</Value>
+		<SymbolicName>Market</SymbolicName>
+		<Description>Market</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>40</Tag>
+		<Value>2</Value>
+		<SymbolicName>Limit</SymbolicName>
+		<Description>Limit</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>40</Tag>
+		<Value>3</Value>
+		<SymbolicName>Stop</SymbolicName>
+		<Description>Stop</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>40</Tag>
+		<Value>4</Value>
+		<SymbolicName>StopLimit</SymbolicName>
+		<Description>Stop limit</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>40</Tag>
+		<Value>5</Value>
+		<SymbolicName>MarketOnClose</SymbolicName>
+		<Description>Market on close</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>40</Tag>
+		<Value>6</Value>
+		<SymbolicName>WithOrWithout</SymbolicName>
+		<Description>With or without</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>40</Tag>
+		<Value>7</Value>
+		<SymbolicName>LimitOrBetter</SymbolicName>
+		<Description>Limit or better</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>40</Tag>
+		<Value>8</Value>
+		<SymbolicName>LimitWithOrWithout</SymbolicName>
+		<Description>Limit with or without</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>40</Tag>
+		<Value>9</Value>
+		<SymbolicName>OnBasis</SymbolicName>
+		<Description>On basis</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>40</Tag>
+		<Value>A</Value>
+		<SymbolicName>OnClose</SymbolicName>
+		<Description>On close</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>40</Tag>
+		<Value>B</Value>
+		<SymbolicName>LimitOnClose</SymbolicName>
+		<Description>Limit on close</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>40</Tag>
+		<Value>C</Value>
+		<SymbolicName>ForexMarket</SymbolicName>
+		<Description>Forex - Market</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>40</Tag>
+		<Value>D</Value>
+		<SymbolicName>PreviouslyQuoted</SymbolicName>
+		<Description>Previously quoted</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>40</Tag>
+		<Value>E</Value>
+		<SymbolicName>PreviouslyIndicated</SymbolicName>
+		<Description>Previously indicated</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>40</Tag>
+		<Value>F</Value>
+		<SymbolicName>ForexLimit</SymbolicName>
+		<Description>Forex - Limit</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>40</Tag>
+		<Value>G</Value>
+		<SymbolicName>ForexSwap</SymbolicName>
+		<Description>Forex - Swap</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>40</Tag>
+		<Value>H</Value>
+		<SymbolicName>ForexPreviouslyQuoted</SymbolicName>
+		<Description>Forex - Previously Quoted</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>40</Tag>
+		<Value>I</Value>
+		<SymbolicName>Funari</SymbolicName>
+		<Description>Funari (Limit Day Order with unexecuted portion handled as Market On Close. e.g. Japan)</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>40</Tag>
+		<Value>P</Value>
+		<SymbolicName>Pegged</SymbolicName>
+		<Description>Pegged</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>43</Tag>
+		<Value>N</Value>
+		<SymbolicName>OriginalTransmission</SymbolicName>
+		<Description>Original transmission</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>43</Tag>
+		<Value>Y</Value>
+		<SymbolicName>PossibleDuplicate</SymbolicName>
+		<Description>Possible duplicate</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>47</Tag>
+		<Value>A</Value>
+		<SymbolicName>AgencySingleOrder</SymbolicName>
+		<Description>Agency single order</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>47</Tag>
+		<Value>B</Value>
+		<SymbolicName>ShortExemptTransactionAType</SymbolicName>
+		<Description>Short exempt transaction (refer to A type)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>47</Tag>
+		<Value>C</Value>
+		<SymbolicName>ProprietaryNonAlgo</SymbolicName>
+		<Description>Program Order, non-index arb, for Member firm/org</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>47</Tag>
+		<Value>D</Value>
+		<SymbolicName>ProgramOrderMember</SymbolicName>
+		<Description>Program Order, index arb, for Member firm/org</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>47</Tag>
+		<Value>E</Value>
+		<SymbolicName>ShortExemptTransactionForPrincipal</SymbolicName>
+		<Description>Registered Equity Market Maker trades</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>47</Tag>
+		<Value>F</Value>
+		<SymbolicName>ShortExemptTransactionWType</SymbolicName>
+		<Description>Short exempt transaction (refer to W type)</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>47</Tag>
+		<Value>H</Value>
+		<SymbolicName>ShortExemptTransactionIType</SymbolicName>
+		<Description>Short exempt transaction (refer to I type)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>47</Tag>
+		<Value>I</Value>
+		<SymbolicName>IndividualInvestor</SymbolicName>
+		<Description>Individual Investor, single order</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>47</Tag>
+		<Value>J</Value>
+		<SymbolicName>ProprietaryAlgo</SymbolicName>
+		<Description>Program Order, index arb, for individual customer</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>47</Tag>
+		<Value>K</Value>
+		<SymbolicName>AgencyAlgo</SymbolicName>
+		<Description>Program Order, non-index arb, for individual customer</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>47</Tag>
+		<Value>L</Value>
+		<SymbolicName>ShortExemptTransactionMemberAffliated</SymbolicName>
+		<Description>Short exempt transaction for member competing market-maker affiliated with the firm clearing the trade (refer to P and O types)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>47</Tag>
+		<Value>M</Value>
+		<SymbolicName>ProgramOrderOtherMember</SymbolicName>
+		<Description>Program Order, index arb, for other member</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>47</Tag>
+		<Value>N</Value>
+		<SymbolicName>AgentForOtherMember</SymbolicName>
+		<Description>Program Order, non-index arb, for other member</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>47</Tag>
+		<Value>O</Value>
+		<SymbolicName>ProprietaryTransactionAffiliated</SymbolicName>
+		<Description>Competing dealer trades</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>47</Tag>
+		<Value>P</Value>
+		<SymbolicName>Principal</SymbolicName>
+		<Description>Principal</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>47</Tag>
+		<Value>R</Value>
+		<SymbolicName>TransactionNonMember</SymbolicName>
+		<Description>Competing dealer trades</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>47</Tag>
+		<Value>S</Value>
+		<SymbolicName>SpecialistTrades</SymbolicName>
+		<Description>Specialist trades</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>47</Tag>
+		<Value>T</Value>
+		<SymbolicName>TransactionUnaffiliatedMember</SymbolicName>
+		<Description>Competing dealer trades</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>47</Tag>
+		<Value>U</Value>
+		<SymbolicName>AgencyIndexArb</SymbolicName>
+		<Description>Program Order, index arb, for other agency</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>47</Tag>
+		<Value>W</Value>
+		<SymbolicName>AllOtherOrdersAsAgentForOtherMember</SymbolicName>
+		<Description>All other orders as agent for other member</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>47</Tag>
+		<Value>X</Value>
+		<SymbolicName>ShortExemptTransactionMemberNotAffliated</SymbolicName>
+		<Description>Short exempt transaction for member competing market-maker not affiliated with the firm clearing the trade (refer to W and T types)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>47</Tag>
+		<Value>Y</Value>
+		<SymbolicName>AgencyNonAlgo</SymbolicName>
+		<Description>Program Order, non-index arb, for other agency</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>47</Tag>
+		<Value>Z</Value>
+		<SymbolicName>ShortExemptTransactionNonMember</SymbolicName>
+		<Description>Short exempt transaction for non-member competing market-maker (refer to A and R types)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>54</Tag>
+		<Value>1</Value>
+		<SymbolicName>Buy</SymbolicName>
+		<Description>Buy</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>54</Tag>
+		<Value>2</Value>
+		<SymbolicName>Sell</SymbolicName>
+		<Description>Sell</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>54</Tag>
+		<Value>3</Value>
+		<SymbolicName>BuyMinus</SymbolicName>
+		<Description>Buy minus</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>54</Tag>
+		<Value>4</Value>
+		<SymbolicName>SellPlus</SymbolicName>
+		<Description>Sell plus</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>54</Tag>
+		<Value>5</Value>
+		<SymbolicName>SellShort</SymbolicName>
+		<Description>Sell short</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>54</Tag>
+		<Value>6</Value>
+		<SymbolicName>SellShortExempt</SymbolicName>
+		<Description>Sell short exempt</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>54</Tag>
+		<Value>7</Value>
+		<SymbolicName>Undisclosed</SymbolicName>
+		<Description>Undisclosed (valid for IOI and List Order messages only)</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>54</Tag>
+		<Value>8</Value>
+		<SymbolicName>Cross</SymbolicName>
+		<Description>Cross (orders where counterparty is an exchange, valid for all messages except IOIs)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>54</Tag>
+		<Value>9</Value>
+		<SymbolicName>CrossShort</SymbolicName>
+		<Description>Cross short</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>59</Tag>
+		<Value>0</Value>
+		<SymbolicName>Day</SymbolicName>
+		<Description>Day</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>59</Tag>
+		<Value>1</Value>
+		<SymbolicName>GoodTillCancel</SymbolicName>
+		<Description>Good Till Cancel (GTC)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>59</Tag>
+		<Value>2</Value>
+		<SymbolicName>AtTheOpening</SymbolicName>
+		<Description>At the Opening (OPG)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>59</Tag>
+		<Value>3</Value>
+		<SymbolicName>ImmediateOrCancel</SymbolicName>
+		<Description>Immediate or Cancel (IOC)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>59</Tag>
+		<Value>4</Value>
+		<SymbolicName>FillOrKill</SymbolicName>
+		<Description>Fill or Kill (FOK)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>59</Tag>
+		<Value>5</Value>
+		<SymbolicName>GoodTillCrossing</SymbolicName>
+		<Description>Good Till Crossing (GTX)</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>59</Tag>
+		<Value>6</Value>
+		<SymbolicName>GoodTillDate</SymbolicName>
+		<Description>Good Till Date</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>61</Tag>
+		<Value>0</Value>
+		<SymbolicName>Normal</SymbolicName>
+		<Description>Normal</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>61</Tag>
+		<Value>1</Value>
+		<SymbolicName>Flash</SymbolicName>
+		<Description>Flash</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>61</Tag>
+		<Value>2</Value>
+		<SymbolicName>Background</SymbolicName>
+		<Description>Background</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>63</Tag>
+		<Value>0</Value>
+		<SymbolicName>Regular</SymbolicName>
+		<Description>Regular</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>63</Tag>
+		<Value>1</Value>
+		<SymbolicName>Cash</SymbolicName>
+		<Description>Cash</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>63</Tag>
+		<Value>2</Value>
+		<SymbolicName>NextDay</SymbolicName>
+		<Description>Next Day</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>63</Tag>
+		<Value>3</Value>
+		<SymbolicName>TPlus2</SymbolicName>
+		<Description>T+2</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>63</Tag>
+		<Value>4</Value>
+		<SymbolicName>TPlus3</SymbolicName>
+		<Description>T+3</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>63</Tag>
+		<Value>5</Value>
+		<SymbolicName>TPlus4</SymbolicName>
+		<Description>T+4</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>63</Tag>
+		<Value>6</Value>
+		<SymbolicName>Future</SymbolicName>
+		<Description>Future</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>63</Tag>
+		<Value>7</Value>
+		<SymbolicName>WhenAndIfIssued</SymbolicName>
+		<Description>When Issued</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>63</Tag>
+		<Value>8</Value>
+		<SymbolicName>SellersOption</SymbolicName>
+		<Description>Sellers Option</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>63</Tag>
+		<Value>9</Value>
+		<SymbolicName>TPlus5</SymbolicName>
+		<Description>T+ 5</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>71</Tag>
+		<Value>0</Value>
+		<SymbolicName>New</SymbolicName>
+		<Description>New</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>71</Tag>
+		<Value>1</Value>
+		<SymbolicName>Replace</SymbolicName>
+		<Description>Replace</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>71</Tag>
+		<Value>2</Value>
+		<SymbolicName>Cancel</SymbolicName>
+		<Description>Cancel</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>71</Tag>
+		<Value>3</Value>
+		<SymbolicName>Preliminary</SymbolicName>
+		<Description>Preliminary (without MiscFees and NetMoney)</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>71</Tag>
+		<Value>4</Value>
+		<SymbolicName>Calculated</SymbolicName>
+		<Description>Calculated (includes MiscFees and NetMoney)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>71</Tag>
+		<Value>5</Value>
+		<SymbolicName>CalculatedWithoutPreliminary</SymbolicName>
+		<Description>Calculated without Preliminary (sent unsolicited by broker, includes MiscFees and NetMoney)</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>77</Tag>
+		<Value>C</Value>
+		<SymbolicName>Close</SymbolicName>
+		<Description>Close</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>77</Tag>
+		<Value>O</Value>
+		<SymbolicName>Open</SymbolicName>
+		<Description>Open</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>81</Tag>
+		<Value>0</Value>
+		<SymbolicName>Regular</SymbolicName>
+		<Description>regular</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>81</Tag>
+		<Value>1</Value>
+		<SymbolicName>SoftDollar</SymbolicName>
+		<Description>soft dollar</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>81</Tag>
+		<Value>2</Value>
+		<SymbolicName>StepIn</SymbolicName>
+		<Description>step-in</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>81</Tag>
+		<Value>3</Value>
+		<SymbolicName>StepOut</SymbolicName>
+		<Description>step-out</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>81</Tag>
+		<Value>4</Value>
+		<SymbolicName>SoftDollarStepIn</SymbolicName>
+		<Description>soft-dollar step-in</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>81</Tag>
+		<Value>5</Value>
+		<SymbolicName>SoftDollarStepOut</SymbolicName>
+		<Description>soft-dollar step-out</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>81</Tag>
+		<Value>6</Value>
+		<SymbolicName>PlanSponsor</SymbolicName>
+		<Description>plan sponsor</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>87</Tag>
+		<Value>0</Value>
+		<SymbolicName>Accepted</SymbolicName>
+		<Description>accepted (successfully processed)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>87</Tag>
+		<Value>1</Value>
+		<SymbolicName>BlockLevelReject</SymbolicName>
+		<Description>rejected</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>87</Tag>
+		<Value>2</Value>
+		<SymbolicName>AccountLevelReject</SymbolicName>
+		<Description>partial accept</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>87</Tag>
+		<Value>3</Value>
+		<SymbolicName>Received</SymbolicName>
+		<Description>received (received, not yet processed)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>88</Tag>
+		<Value>0</Value>
+		<SymbolicName>UnknownAccount</SymbolicName>
+		<Description>unknown account(s)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>88</Tag>
+		<Value>1</Value>
+		<SymbolicName>IncorrectQuantity</SymbolicName>
+		<Description>incorrect quantity</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>88</Tag>
+		<Value>2</Value>
+		<SymbolicName>IncorrectAveragegPrice</SymbolicName>
+		<Description>incorrect average price</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>88</Tag>
+		<Value>3</Value>
+		<SymbolicName>UnknownExecutingBrokerMnemonic</SymbolicName>
+		<Description>unknown executing broker mnemonic</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>88</Tag>
+		<Value>4</Value>
+		<SymbolicName>CommissionDifference</SymbolicName>
+		<Description>commission difference</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>88</Tag>
+		<Value>5</Value>
+		<SymbolicName>UnknownOrderID</SymbolicName>
+		<Description>unknown OrderID</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>88</Tag>
+		<Value>6</Value>
+		<SymbolicName>UnknownListID</SymbolicName>
+		<Description>unknown ListID</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>88</Tag>
+		<Value>7</Value>
+		<SymbolicName>OtherSeeText</SymbolicName>
+		<Description>other</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>94</Tag>
+		<Value>0</Value>
+		<SymbolicName>New</SymbolicName>
+		<Description>New</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>94</Tag>
+		<Value>1</Value>
+		<SymbolicName>Reply</SymbolicName>
+		<Description>Reply</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>94</Tag>
+		<Value>2</Value>
+		<SymbolicName>AdminReply</SymbolicName>
+		<Description>Admin Reply</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>97</Tag>
+		<Value>N</Value>
+		<SymbolicName>OriginalTransmission</SymbolicName>
+		<Description>Original transmission</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>97</Tag>
+		<Value>Y</Value>
+		<SymbolicName>PossibleResend</SymbolicName>
+		<Description>Possible resend</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>98</Tag>
+		<Value>0</Value>
+		<SymbolicName>None</SymbolicName>
+		<Description>None / other</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>98</Tag>
+		<Value>1</Value>
+		<SymbolicName>PKCS</SymbolicName>
+		<Description>PKCS (proprietary)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>98</Tag>
+		<Value>2</Value>
+		<SymbolicName>DES</SymbolicName>
+		<Description>DES (ECB mode)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>98</Tag>
+		<Value>3</Value>
+		<SymbolicName>PKCSDES</SymbolicName>
+		<Description>PKCS/DES (proprietary)</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>98</Tag>
+		<Value>4</Value>
+		<SymbolicName>PGPDES</SymbolicName>
+		<Description>PGP/DES (defunct)</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>98</Tag>
+		<Value>5</Value>
+		<SymbolicName>PGPDESMD5</SymbolicName>
+		<Description>PGP/DES-MD5 (see app note on FIX web site)</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>98</Tag>
+		<Value>6</Value>
+		<SymbolicName>PEM</SymbolicName>
+		<Description>PEM/DES-MD5 (see app note on FIX web site)</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>102</Tag>
+		<Value>0</Value>
+		<SymbolicName>TooLateToCancel</SymbolicName>
+		<Description>Too late to cancel</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>102</Tag>
+		<Value>1</Value>
+		<SymbolicName>UnknownOrder</SymbolicName>
+		<Description>Unknown order</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>102</Tag>
+		<Value>2</Value>
+		<SymbolicName>BrokerCredit</SymbolicName>
+		<Description>Broker Option</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>102</Tag>
+		<Value>3</Value>
+		<SymbolicName>OrderAlreadyInPendingStatus</SymbolicName>
+		<Description>Order already in Pending Cancel or Pending Replace status</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>103</Tag>
+		<Value>0</Value>
+		<SymbolicName>BrokerCredit</SymbolicName>
+		<Description>Broker option</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>103</Tag>
+		<Value>1</Value>
+		<SymbolicName>UnknownSymbol</SymbolicName>
+		<Description>Unknown symbol</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>103</Tag>
+		<Value>2</Value>
+		<SymbolicName>ExchangeClosed</SymbolicName>
+		<Description>Exchange closed</Description>
+	</Enum>
+	<Enum added="FIX.2.7">
+		<Tag>103</Tag>
+		<Value>3</Value>
+		<SymbolicName>OrderExceedsLimit</SymbolicName>
+		<Description>Order exceeds limit</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>103</Tag>
+		<Value>4</Value>
+		<SymbolicName>TooLateToEnter</SymbolicName>
+		<Description>Too late to enter</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>103</Tag>
+		<Value>5</Value>
+		<SymbolicName>UnknownOrder</SymbolicName>
+		<Description>Unknown Order</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>103</Tag>
+		<Value>6</Value>
+		<SymbolicName>DuplicateOrder</SymbolicName>
+		<Description>Duplicate Order (e.g. dupe ClOrdID)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>103</Tag>
+		<Value>7</Value>
+		<SymbolicName>DuplicateOfAVerballyCommunicatedOrder</SymbolicName>
+		<Description>Duplicate of a verbally communicated order</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>103</Tag>
+		<Value>8</Value>
+		<SymbolicName>StaleOrder</SymbolicName>
+		<Description>Stale Order</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>104</Tag>
+		<Value>A</Value>
+		<SymbolicName>AllOrNone</SymbolicName>
+		<Description>All or none</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>104</Tag>
+		<Value>C</Value>
+		<SymbolicName>AtTheClose</SymbolicName>
+		<Description>At the close</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>104</Tag>
+		<Value>I</Value>
+		<SymbolicName>InTouchWith</SymbolicName>
+		<Description>In touch with</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>104</Tag>
+		<Value>L</Value>
+		<SymbolicName>Limit</SymbolicName>
+		<Description>Limit</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>104</Tag>
+		<Value>M</Value>
+		<SymbolicName>MoreBehind</SymbolicName>
+		<Description>More behind</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>104</Tag>
+		<Value>O</Value>
+		<SymbolicName>AtTheOpen</SymbolicName>
+		<Description>At the open</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>104</Tag>
+		<Value>P</Value>
+		<SymbolicName>TakingAPosition</SymbolicName>
+		<Description>Taking a position</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>104</Tag>
+		<Value>Q</Value>
+		<SymbolicName>AtTheMarket</SymbolicName>
+		<Description>At the Market (previously called Current Quote)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>104</Tag>
+		<Value>R</Value>
+		<SymbolicName>ReadyToTrade</SymbolicName>
+		<Description>Ready to trade</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>104</Tag>
+		<Value>S</Value>
+		<SymbolicName>PortfolioShown</SymbolicName>
+		<Description>Portfolio show-n</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>104</Tag>
+		<Value>T</Value>
+		<SymbolicName>ThroughTheDay</SymbolicName>
+		<Description>Through the day</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>104</Tag>
+		<Value>V</Value>
+		<SymbolicName>Versus</SymbolicName>
+		<Description>Versus</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>104</Tag>
+		<Value>W</Value>
+		<SymbolicName>Indication</SymbolicName>
+		<Description>Indication - Working away</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>104</Tag>
+		<Value>X</Value>
+		<SymbolicName>CrossingOpportunity</SymbolicName>
+		<Description>Crossing opportunity</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>104</Tag>
+		<Value>Y</Value>
+		<SymbolicName>AtTheMidpoint</SymbolicName>
+		<Description>At the Midpoint</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>104</Tag>
+		<Value>Z</Value>
+		<SymbolicName>PreOpen</SymbolicName>
+		<Description>Pre-open</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>113</Tag>
+		<Value>N</Value>
+		<SymbolicName>SenderReports</SymbolicName>
+		<Description>Indicates that party sending message will report trade</Description>
+	</Enum>
+	<Enum added="FIX.3.0">
+		<Tag>113</Tag>
+		<Value>Y</Value>
+		<SymbolicName>ReceiverReports</SymbolicName>
+		<Description>Indicates that party receiving message must report trade</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>114</Tag>
+		<Value>N</Value>
+		<SymbolicName>No</SymbolicName>
+		<Description>Indicates the broker is not required to locate</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>114</Tag>
+		<Value>Y</Value>
+		<SymbolicName>Yes</SymbolicName>
+		<Description>Indicates the broker is responsible for locating the stock</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>121</Tag>
+		<Value>N</Value>
+		<SymbolicName>DoNotExecuteForexAfterSecurityTrade</SymbolicName>
+		<Description>Do not execute Forex after security trade</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>121</Tag>
+		<Value>Y</Value>
+		<SymbolicName>ExecuteForexAfterSecurityTrade</SymbolicName>
+		<Description>Execute Forex after security trade</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>123</Tag>
+		<Value>N</Value>
+		<SymbolicName>SequenceReset</SymbolicName>
+		<Description>Sequence Reset, ignore MsgSeqNum</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>123</Tag>
+		<Value>Y</Value>
+		<SymbolicName>GapFillMessage</SymbolicName>
+		<Description>Gap Fill message, MsgSeqNum field valid</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>127</Tag>
+		<Value>A</Value>
+		<SymbolicName>UnknownSymbol</SymbolicName>
+		<Description>Unknown symbol</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>127</Tag>
+		<Value>B</Value>
+		<SymbolicName>WrongSide</SymbolicName>
+		<Description>Wrong side</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>127</Tag>
+		<Value>C</Value>
+		<SymbolicName>QuantityExceedsOrder</SymbolicName>
+		<Description>Quantity exceeds order</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>127</Tag>
+		<Value>D</Value>
+		<SymbolicName>NoMatchingOrder</SymbolicName>
+		<Description>No matching order</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>127</Tag>
+		<Value>E</Value>
+		<SymbolicName>PriceExceedsLimit</SymbolicName>
+		<Description>Price exceeds limit</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>127</Tag>
+		<Value>Z</Value>
+		<SymbolicName>Other</SymbolicName>
+		<Description>Other</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>130</Tag>
+		<Value>N</Value>
+		<SymbolicName>NotNatural</SymbolicName>
+		<Description>Not natural</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>130</Tag>
+		<Value>Y</Value>
+		<SymbolicName>Natural</SymbolicName>
+		<Description>Natural</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>139</Tag>
+		<Value>1</Value>
+		<SymbolicName>Regulatory</SymbolicName>
+		<Description>Regulatory (e.g. SEC)</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>139</Tag>
+		<Value>2</Value>
+		<SymbolicName>Tax</SymbolicName>
+		<Description>Tax</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>139</Tag>
+		<Value>3</Value>
+		<SymbolicName>LocalCommission</SymbolicName>
+		<Description>Local Commission</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>139</Tag>
+		<Value>4</Value>
+		<SymbolicName>ExchangeFees</SymbolicName>
+		<Description>Exchange Fees</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>139</Tag>
+		<Value>5</Value>
+		<SymbolicName>Stamp</SymbolicName>
+		<Description>Stamp</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>139</Tag>
+		<Value>6</Value>
+		<SymbolicName>Levy</SymbolicName>
+		<Description>Levy</Description>
+	</Enum>
+	<Enum added="FIX.4.0">
+		<Tag>139</Tag>
+		<Value>7</Value>
+		<SymbolicName>Other</SymbolicName>
+		<Description>Other</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>139</Tag>
+		<Value>8</Value>
+		<SymbolicName>Markup</SymbolicName>
+		<Description>Markup</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>139</Tag>
+		<Value>9</Value>
+		<SymbolicName>ConsumptionTax</SymbolicName>
+		<Description>Consumption Tax</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>141</Tag>
+		<Value>N</Value>
+		<SymbolicName>No</SymbolicName>
+		<Description>No</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>141</Tag>
+		<Value>Y</Value>
+		<SymbolicName>Yes</SymbolicName>
+		<Description>Yes, reset sequence numbers</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>150</Tag>
+		<Value>0</Value>
+		<SymbolicName>New</SymbolicName>
+		<Description>New</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>150</Tag>
+		<Value>1</Value>
+		<SymbolicName>PartialFill</SymbolicName>
+		<Description>Partial fill</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>150</Tag>
+		<Value>2</Value>
+		<SymbolicName>Fill</SymbolicName>
+		<Description>Fill</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>150</Tag>
+		<Value>3</Value>
+		<SymbolicName>DoneForDay</SymbolicName>
+		<Description>Done for day</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>150</Tag>
+		<Value>4</Value>
+		<SymbolicName>Canceled</SymbolicName>
+		<Description>Canceled</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>150</Tag>
+		<Value>5</Value>
+		<SymbolicName>Replaced</SymbolicName>
+		<Description>Replace</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>150</Tag>
+		<Value>6</Value>
+		<SymbolicName>PendingCancel</SymbolicName>
+		<Description>Pending Cancel (e.g. result of Order Cancel Request)</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>150</Tag>
+		<Value>7</Value>
+		<SymbolicName>Stopped</SymbolicName>
+		<Description>Stopped</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>150</Tag>
+		<Value>8</Value>
+		<SymbolicName>Rejected</SymbolicName>
+		<Description>Rejected</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>150</Tag>
+		<Value>9</Value>
+		<SymbolicName>Suspended</SymbolicName>
+		<Description>Suspended</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>150</Tag>
+		<Value>A</Value>
+		<SymbolicName>PendingNew</SymbolicName>
+		<Description>Pending New</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>150</Tag>
+		<Value>B</Value>
+		<SymbolicName>Calculated</SymbolicName>
+		<Description>Calculated</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>150</Tag>
+		<Value>C</Value>
+		<SymbolicName>Expired</SymbolicName>
+		<Description>Expired</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>150</Tag>
+		<Value>D</Value>
+		<SymbolicName>Restated</SymbolicName>
+		<Description>Restated (ExecutionRpt sent unsolicited by sellside, with ExecRestatementReason set)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>150</Tag>
+		<Value>E</Value>
+		<SymbolicName>PendingReplace</SymbolicName>
+		<Description>Pending Replace (e.g. result of Order Cancel/Replace Request)</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>160</Tag>
+		<Value>0</Value>
+		<SymbolicName>Default</SymbolicName>
+		<Description>Default</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>160</Tag>
+		<Value>1</Value>
+		<SymbolicName>StandingInstructionsProvided</SymbolicName>
+		<Description>Standing Instructions Provided</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>160</Tag>
+		<Value>2</Value>
+		<SymbolicName>SpecificAllocationAccountOverriding</SymbolicName>
+		<Description>Specific Allocation Account Overriding</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>160</Tag>
+		<Value>3</Value>
+		<SymbolicName>SpecificAllocationAccountStanding</SymbolicName>
+		<Description>Specific Allocation Account Standing</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>163</Tag>
+		<Value>C</Value>
+		<SymbolicName>Cancel</SymbolicName>
+		<Description>Cancel</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>163</Tag>
+		<Value>N</Value>
+		<SymbolicName>New</SymbolicName>
+		<Description>New</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>163</Tag>
+		<Value>R</Value>
+		<SymbolicName>Replace</SymbolicName>
+		<Description>Replace</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>165</Tag>
+		<Value>1</Value>
+		<SymbolicName>BrokerCredit</SymbolicName>
+		<Description>Brokers Instructions</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>165</Tag>
+		<Value>2</Value>
+		<SymbolicName>Institution</SymbolicName>
+		<Description>Institutions Instructions</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>166</Tag>
+		<Value>CED</Value>
+		<SymbolicName>CEDEL</SymbolicName>
+		<Description>CEDEL</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>166</Tag>
+		<Value>DTC</Value>
+		<SymbolicName>DepositoryTrustCompany</SymbolicName>
+		<Description>Depository Trust Company</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>166</Tag>
+		<Value>EUR</Value>
+		<SymbolicName>EuroClear</SymbolicName>
+		<Description>Euroclear</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>166</Tag>
+		<Value>FED</Value>
+		<SymbolicName>FederalBookEntry</SymbolicName>
+		<Description>Federal Book Entry</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>166</Tag>
+		<Value>ISO Country Code</Value>
+		<SymbolicName>LocalMarketSettleLocation</SymbolicName>
+		<Description>Local Market Settle Location</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>166</Tag>
+		<Value>PNY</Value>
+		<SymbolicName>Physical</SymbolicName>
+		<Description>Physical</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>166</Tag>
+		<Value>PTC</Value>
+		<SymbolicName>ParticipantTrustCompany</SymbolicName>
+		<Description>Participant Trust Company</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>167</Tag>
+		<Value>?</Value>
+		<SymbolicName>Wildcard</SymbolicName>
+		<Description>Wildcard entry (used on Security Definition Request message)</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>BA</Value>
+		<SymbolicName>BankersAcceptance</SymbolicName>
+		<Description>Bankers Acceptance</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>167</Tag>
+		<Value>CB</Value>
+		<SymbolicName>ConvertibleBond</SymbolicName>
+		<Description>Convertible Bond (Note not part of ISITC spec)</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>CD</Value>
+		<SymbolicName>CertificateOfDeposit</SymbolicName>
+		<Description>Certificate Of Deposit</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>CMO</Value>
+		<SymbolicName>CollateralizedMortgageObligation</SymbolicName>
+		<Description>Collateralize Mortgage Obligation</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>CORP</Value>
+		<SymbolicName>CorporateBond</SymbolicName>
+		<Description>Corporate Bond</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>CP</Value>
+		<SymbolicName>CommercialPaper</SymbolicName>
+		<Description>Commercial Paper</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>CPP</Value>
+		<SymbolicName>CorporatePrivatePlacement</SymbolicName>
+		<Description>Corporate Private Placement</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>CS</Value>
+		<SymbolicName>CommonStock</SymbolicName>
+		<Description>Common Stock</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>FHA</Value>
+		<SymbolicName>FederalHousingAuthority</SymbolicName>
+		<Description>Federal Housing Authority</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>FHL</Value>
+		<SymbolicName>FederalHomeLoan</SymbolicName>
+		<Description>Federal Home Loan</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>FN</Value>
+		<SymbolicName>FederalNationalMortgageAssociation</SymbolicName>
+		<Description>Federal National Mortgage Association</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>FOR</Value>
+		<SymbolicName>ForeignExchangeContract</SymbolicName>
+		<Description>Foreign Exchange Contract</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>FUT</Value>
+		<SymbolicName>Future</SymbolicName>
+		<Description>Future</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>GN</Value>
+		<SymbolicName>GovernmentNationalMortgageAssociation</SymbolicName>
+		<Description>Government National Mortgage Association</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>GOVT</Value>
+		<SymbolicName>TreasuriesAgencyDebenture</SymbolicName>
+		<Description>Treasuries + Agency Debenture</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>167</Tag>
+		<Value>IET</Value>
+		<SymbolicName>IOETTEMortgage</SymbolicName>
+		<Description>Mortgage IOETTE</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>MF</Value>
+		<SymbolicName>MutualFund</SymbolicName>
+		<Description>Mutual Fund</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>MIO</Value>
+		<SymbolicName>MortgageInterestOnly</SymbolicName>
+		<Description>Mortgage Interest Only</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>MPO</Value>
+		<SymbolicName>MortgagePrincipalOnly</SymbolicName>
+		<Description>Mortgage Principal Only</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>MPP</Value>
+		<SymbolicName>MortgagePrivatePlacement</SymbolicName>
+		<Description>Mortgage Private Placement</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>MPT</Value>
+		<SymbolicName>MiscellaneousPassThrough</SymbolicName>
+		<Description>Miscellaneous Pass-Thru</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>MUNI</Value>
+		<SymbolicName>MunicipalBond</SymbolicName>
+		<Description>Municipal Bond</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>NONE</Value>
+		<SymbolicName>NoSecurityType</SymbolicName>
+		<Description>No ISITC Security Type</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>OPT</Value>
+		<SymbolicName>Option</SymbolicName>
+		<Description>Option</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>PS</Value>
+		<SymbolicName>PreferredStock</SymbolicName>
+		<Description>Preferred Stock</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>RP</Value>
+		<SymbolicName>RepurchaseAgreement</SymbolicName>
+		<Description>Repurchase Agreement</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>RVRP</Value>
+		<SymbolicName>ReverseRepurchaseAgreement</SymbolicName>
+		<Description>Reverse Repurchase Agreement</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>SL</Value>
+		<SymbolicName>StudentLoanMarketingAssociation</SymbolicName>
+		<Description>Student Loan Marketing Association</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>TD</Value>
+		<SymbolicName>TimeDeposit</SymbolicName>
+		<Description>Time Deposit</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>USTB</Value>
+		<SymbolicName>USTreasuryBillOld</SymbolicName>
+		<Description>US Treasury Bill</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>WAR</Value>
+		<SymbolicName>Warrant</SymbolicName>
+		<Description>Warrant</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>167</Tag>
+		<Value>ZOO</Value>
+		<SymbolicName>CatsTigersAndLions</SymbolicName>
+		<Description>Cats, Tigers &amp; Lions (a real code: US Treasury Receipts)</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>169</Tag>
+		<Value>0</Value>
+		<SymbolicName>Other</SymbolicName>
+		<Description>Other</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>169</Tag>
+		<Value>1</Value>
+		<SymbolicName>DTCSID</SymbolicName>
+		<Description>DTC SID</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>169</Tag>
+		<Value>2</Value>
+		<SymbolicName>ThomsonALERT</SymbolicName>
+		<Description>Thomson ALERT</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>169</Tag>
+		<Value>3</Value>
+		<SymbolicName>AGlobalCustodian</SymbolicName>
+		<Description>A Global Custodian (StandInstDbName must be provided)</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>197</Tag>
+		<Value>0</Value>
+		<SymbolicName>FXNetting</SymbolicName>
+		<Description>F/X Netting</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>197</Tag>
+		<Value>1</Value>
+		<SymbolicName>FXSwap</SymbolicName>
+		<Description>F/X Swap</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>201</Tag>
+		<Value>0</Value>
+		<SymbolicName>Put</SymbolicName>
+		<Description>Put</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>201</Tag>
+		<Value>1</Value>
+		<SymbolicName>Call</SymbolicName>
+		<Description>Call</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>203</Tag>
+		<Value>0</Value>
+		<SymbolicName>Covered</SymbolicName>
+		<Description>Covered</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>203</Tag>
+		<Value>1</Value>
+		<SymbolicName>Uncovered</SymbolicName>
+		<Description>Uncovered</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>204</Tag>
+		<Value>0</Value>
+		<SymbolicName>Customer</SymbolicName>
+		<Description>Customer</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>204</Tag>
+		<Value>1</Value>
+		<SymbolicName>Firm</SymbolicName>
+		<Description>Firm</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>208</Tag>
+		<Value>N</Value>
+		<SymbolicName>DetailsShouldNotBeCommunicated</SymbolicName>
+		<Description>Details should not be communicated</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>208</Tag>
+		<Value>Y</Value>
+		<SymbolicName>DetailsShouldBeCommunicated</SymbolicName>
+		<Description>Details should be communicated</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>209</Tag>
+		<Value>1</Value>
+		<SymbolicName>Match</SymbolicName>
+		<Description>Match</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>209</Tag>
+		<Value>2</Value>
+		<SymbolicName>Forward</SymbolicName>
+		<Description>Forward</Description>
+	</Enum>
+	<Enum added="FIX.4.1">
+		<Tag>209</Tag>
+		<Value>3</Value>
+		<SymbolicName>ForwardAndMatch</SymbolicName>
+		<Description>Forward and Match</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>216</Tag>
+		<Value>1</Value>
+		<SymbolicName>TargetFirm</SymbolicName>
+		<Description>Target Firm</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>216</Tag>
+		<Value>2</Value>
+		<SymbolicName>TargetList</SymbolicName>
+		<Description>Target List</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>216</Tag>
+		<Value>3</Value>
+		<SymbolicName>BlockFirm</SymbolicName>
+		<Description>Block Firm</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>216</Tag>
+		<Value>4</Value>
+		<SymbolicName>BlockList</SymbolicName>
+		<Description>Block List</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>219</Tag>
+		<Value>1</Value>
+		<SymbolicName>CURVE</SymbolicName>
+		<Description>CURVE</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>219</Tag>
+		<Value>2</Value>
+		<SymbolicName>FiveYR</SymbolicName>
+		<Description>5-YR</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>219</Tag>
+		<Value>3</Value>
+		<SymbolicName>OLD5</SymbolicName>
+		<Description>OLD-5</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>219</Tag>
+		<Value>4</Value>
+		<SymbolicName>TenYR</SymbolicName>
+		<Description>10-YR</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>219</Tag>
+		<Value>5</Value>
+		<SymbolicName>OLD10</SymbolicName>
+		<Description>OLD-10</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>219</Tag>
+		<Value>6</Value>
+		<SymbolicName>ThirtyYR</SymbolicName>
+		<Description>30-YR</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>219</Tag>
+		<Value>7</Value>
+		<SymbolicName>OLD30</SymbolicName>
+		<Description>OLD-30</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>219</Tag>
+		<Value>8</Value>
+		<SymbolicName>ThreeMOLIBOR</SymbolicName>
+		<Description>3-MO-LIBOR</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>219</Tag>
+		<Value>9</Value>
+		<SymbolicName>SixMOLIBOR</SymbolicName>
+		<Description>6-MO-LIBOR</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>263</Tag>
+		<Value>0</Value>
+		<SymbolicName>Snapshot</SymbolicName>
+		<Description>Snapshot</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>263</Tag>
+		<Value>1</Value>
+		<SymbolicName>SnapshotAndUpdates</SymbolicName>
+		<Description>Snapshot + Updates (Subscribe)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>263</Tag>
+		<Value>2</Value>
+		<SymbolicName>DisablePreviousSnapshot</SymbolicName>
+		<Description>Disable previous Snapshot + Update Request (Unsubscribe)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>265</Tag>
+		<Value>0</Value>
+		<SymbolicName>FullRefresh</SymbolicName>
+		<Description>Full Refresh</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>265</Tag>
+		<Value>1</Value>
+		<SymbolicName>IncrementalRefresh</SymbolicName>
+		<Description>Incremental Refresh</Description>
+	</Enum>
+	<Enum added="FIX.4.4" addedEP="34">
+		<Tag>266</Tag>
+		<Value>N</Value>
+		<SymbolicName>BookEntriesShouldNotBeAggregated</SymbolicName>
+		<Description>Multiple entries per side per price allowed</Description>
+	</Enum>
+	<Enum added="FIX.4.4" addedEP="34">
+		<Tag>266</Tag>
+		<Value>Y</Value>
+		<SymbolicName>BookEntriesToBeAggregated</SymbolicName>
+		<Description>one book entry per side per price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>269</Tag>
+		<Value>0</Value>
+		<SymbolicName>Bid</SymbolicName>
+		<Description>Bid</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>269</Tag>
+		<Value>1</Value>
+		<SymbolicName>Offer</SymbolicName>
+		<Description>Offer</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>269</Tag>
+		<Value>2</Value>
+		<SymbolicName>Trade</SymbolicName>
+		<Description>Trade</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>269</Tag>
+		<Value>3</Value>
+		<SymbolicName>IndexValue</SymbolicName>
+		<Description>Index Value</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>269</Tag>
+		<Value>4</Value>
+		<SymbolicName>OpeningPrice</SymbolicName>
+		<Description>Opening Price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>269</Tag>
+		<Value>5</Value>
+		<SymbolicName>ClosingPrice</SymbolicName>
+		<Description>Closing Price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>269</Tag>
+		<Value>6</Value>
+		<SymbolicName>SettlementPrice</SymbolicName>
+		<Description>Settlement Price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>269</Tag>
+		<Value>7</Value>
+		<SymbolicName>TradingSessionHighPrice</SymbolicName>
+		<Description>Trading Session High Price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>269</Tag>
+		<Value>8</Value>
+		<SymbolicName>TradingSessionLowPrice</SymbolicName>
+		<Description>Trading Session Low Price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>269</Tag>
+		<Value>9</Value>
+		<SymbolicName>TradingSessionVWAPPrice</SymbolicName>
+		<Description>Trading Session VWAP Price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>274</Tag>
+		<Value>0</Value>
+		<SymbolicName>PlusTick</SymbolicName>
+		<Description>Plus Tick</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>274</Tag>
+		<Value>1</Value>
+		<SymbolicName>ZeroPlusTick</SymbolicName>
+		<Description>Zero-Plus Tick</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>274</Tag>
+		<Value>2</Value>
+		<SymbolicName>MinusTick</SymbolicName>
+		<Description>Minus Tick</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>274</Tag>
+		<Value>3</Value>
+		<SymbolicName>ZeroMinusTick</SymbolicName>
+		<Description>Zero-Minus Tick</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>276</Tag>
+		<Value>A</Value>
+		<SymbolicName>Open</SymbolicName>
+		<Description>Open / Active</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>276</Tag>
+		<Value>B</Value>
+		<SymbolicName>Closed</SymbolicName>
+		<Description>Closed / Inactive</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>276</Tag>
+		<Value>C</Value>
+		<SymbolicName>ExchangeBest</SymbolicName>
+		<Description>Exchange Best</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>276</Tag>
+		<Value>D</Value>
+		<SymbolicName>ConsolidatedBest</SymbolicName>
+		<Description>Consolidated Best</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>276</Tag>
+		<Value>E</Value>
+		<SymbolicName>Locked</SymbolicName>
+		<Description>Locked</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>276</Tag>
+		<Value>F</Value>
+		<SymbolicName>Crossed</SymbolicName>
+		<Description>Crossed</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>276</Tag>
+		<Value>G</Value>
+		<SymbolicName>Depth</SymbolicName>
+		<Description>Depth</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>276</Tag>
+		<Value>H</Value>
+		<SymbolicName>FastTrading</SymbolicName>
+		<Description>Fast Trading</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>276</Tag>
+		<Value>I</Value>
+		<SymbolicName>NonFirm</SymbolicName>
+		<Description>Non-Firm</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>277</Tag>
+		<Value>A</Value>
+		<SymbolicName>Cash</SymbolicName>
+		<Description>Cash (only) Market</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>277</Tag>
+		<Value>B</Value>
+		<SymbolicName>AveragePriceTrade</SymbolicName>
+		<Description>Average Price Trade</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>277</Tag>
+		<Value>C</Value>
+		<SymbolicName>CashTrade</SymbolicName>
+		<Description>Cash Trade (same day clearing)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>277</Tag>
+		<Value>D</Value>
+		<SymbolicName>NextDay</SymbolicName>
+		<Description>Next Day (only) Market</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>277</Tag>
+		<Value>E</Value>
+		<SymbolicName>Opening</SymbolicName>
+		<Description>Opening / Reopening Trade Detail</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>277</Tag>
+		<Value>F</Value>
+		<SymbolicName>IntradayTradeDetail</SymbolicName>
+		<Description>Intraday Trade Detail</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>277</Tag>
+		<Value>G</Value>
+		<SymbolicName>Rule127Trade</SymbolicName>
+		<Description>Rule 127 Trade (NYSE)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>277</Tag>
+		<Value>H</Value>
+		<SymbolicName>Rule155Trade</SymbolicName>
+		<Description>Rule 155 Trade (Amex)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>277</Tag>
+		<Value>I</Value>
+		<SymbolicName>SoldLast</SymbolicName>
+		<Description>Sold Last (late reporting)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>277</Tag>
+		<Value>J</Value>
+		<SymbolicName>NextDayTrade</SymbolicName>
+		<Description>Next Day Trade (next day clearing)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>277</Tag>
+		<Value>K</Value>
+		<SymbolicName>Opened</SymbolicName>
+		<Description>Opened (late report of opened trade)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>277</Tag>
+		<Value>L</Value>
+		<SymbolicName>Seller</SymbolicName>
+		<Description>Seller</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>277</Tag>
+		<Value>M</Value>
+		<SymbolicName>Sold</SymbolicName>
+		<Description>Sold (out of sequence)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>277</Tag>
+		<Value>N</Value>
+		<SymbolicName>StoppedStock</SymbolicName>
+		<Description>Stopped Stock (guarantee of price but does not execute the order)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>279</Tag>
+		<Value>0</Value>
+		<SymbolicName>New</SymbolicName>
+		<Description>New</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>279</Tag>
+		<Value>1</Value>
+		<SymbolicName>Change</SymbolicName>
+		<Description>Change</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>279</Tag>
+		<Value>2</Value>
+		<SymbolicName>Delete</SymbolicName>
+		<Description>Delete</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>281</Tag>
+		<Value>0</Value>
+		<SymbolicName>UnknownSymbol</SymbolicName>
+		<Description>Unknown symbol</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>281</Tag>
+		<Value>1</Value>
+		<SymbolicName>DuplicateMDReqID</SymbolicName>
+		<Description>Duplicate MDReqID</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>281</Tag>
+		<Value>2</Value>
+		<SymbolicName>InsufficientBandwidth</SymbolicName>
+		<Description>Insufficient Bandwidth</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>281</Tag>
+		<Value>3</Value>
+		<SymbolicName>InsufficientPermissions</SymbolicName>
+		<Description>Insufficient Permissions</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>281</Tag>
+		<Value>4</Value>
+		<SymbolicName>UnsupportedSubscriptionRequestType</SymbolicName>
+		<Description>Unsupported SubscriptionRequestType</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>281</Tag>
+		<Value>5</Value>
+		<SymbolicName>UnsupportedMarketDepth</SymbolicName>
+		<Description>Unsupported MarketDepth</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>281</Tag>
+		<Value>6</Value>
+		<SymbolicName>UnsupportedMDUpdateType</SymbolicName>
+		<Description>Unsupported MDUpdateType</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>281</Tag>
+		<Value>7</Value>
+		<SymbolicName>UnsupportedAggregatedBook</SymbolicName>
+		<Description>Unsupported AggregatedBook</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>281</Tag>
+		<Value>8</Value>
+		<SymbolicName>UnsupportedMDEntryType</SymbolicName>
+		<Description>Unsupported MDEntryType</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>285</Tag>
+		<Value>0</Value>
+		<SymbolicName>Cancellation</SymbolicName>
+		<Description>Cancelation / Trade Bust</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>285</Tag>
+		<Value>1</Value>
+		<SymbolicName>Error</SymbolicName>
+		<Description>Error</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>286</Tag>
+		<Value>0</Value>
+		<SymbolicName>DailyOpen</SymbolicName>
+		<Description>Daily Open / Close / Settlement price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>286</Tag>
+		<Value>1</Value>
+		<SymbolicName>SessionOpen</SymbolicName>
+		<Description>Session Open / Close / Settlement price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>286</Tag>
+		<Value>2</Value>
+		<SymbolicName>DeliverySettlementEntry</SymbolicName>
+		<Description>Delivery Settlement price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>291</Tag>
+		<Value>1</Value>
+		<SymbolicName>Bankrupt</SymbolicName>
+		<Description>Bankrupt</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>292</Tag>
+		<Value>A</Value>
+		<SymbolicName>ExDividend</SymbolicName>
+		<Description>Ex-Dividend</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>292</Tag>
+		<Value>B</Value>
+		<SymbolicName>ExDistribution</SymbolicName>
+		<Description>Ex-Distribution</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>292</Tag>
+		<Value>C</Value>
+		<SymbolicName>ExRights</SymbolicName>
+		<Description>Ex-Rights</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>292</Tag>
+		<Value>D</Value>
+		<SymbolicName>New</SymbolicName>
+		<Description>New</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>292</Tag>
+		<Value>E</Value>
+		<SymbolicName>ExInterest</SymbolicName>
+		<Description>Ex-Interest</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>297</Tag>
+		<Value>0</Value>
+		<SymbolicName>Accepted</SymbolicName>
+		<Description>Accepted</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>297</Tag>
+		<Value>1</Value>
+		<SymbolicName>CancelForSymbol</SymbolicName>
+		<Description>Canceled for Symbol(s)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>297</Tag>
+		<Value>2</Value>
+		<SymbolicName>CanceledForSecurityType</SymbolicName>
+		<Description>Canceled for Security Type(s)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>297</Tag>
+		<Value>3</Value>
+		<SymbolicName>CanceledForUnderlying</SymbolicName>
+		<Description>Canceled for Underlying</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>297</Tag>
+		<Value>4</Value>
+		<SymbolicName>CanceledAll</SymbolicName>
+		<Description>Canceled All</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>297</Tag>
+		<Value>5</Value>
+		<SymbolicName>Rejected</SymbolicName>
+		<Description>Rejected</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>298</Tag>
+		<Value>1</Value>
+		<SymbolicName>CancelForOneOrMoreSecurities</SymbolicName>
+		<Description>Cancel for Symbol(s)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>298</Tag>
+		<Value>2</Value>
+		<SymbolicName>CancelForSecurityType</SymbolicName>
+		<Description>Cancel for Security Type(s)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>298</Tag>
+		<Value>3</Value>
+		<SymbolicName>CancelForUnderlyingSecurity</SymbolicName>
+		<Description>Cancel for Underlying Symbol</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>298</Tag>
+		<Value>4</Value>
+		<SymbolicName>CancelAllQuotes</SymbolicName>
+		<Description>Cancel for All Quotes</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>300</Tag>
+		<Value>1</Value>
+		<SymbolicName>UnknownSymbol</SymbolicName>
+		<Description>Unknown symbol (Security)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>300</Tag>
+		<Value>2</Value>
+		<SymbolicName>Exchange</SymbolicName>
+		<Description>Exchange (Security) closed</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>300</Tag>
+		<Value>3</Value>
+		<SymbolicName>QuoteRequestExceedsLimit</SymbolicName>
+		<Description>Quote Request exceeds limit</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>300</Tag>
+		<Value>4</Value>
+		<SymbolicName>TooLateToEnter</SymbolicName>
+		<Description>Too late to enter</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>300</Tag>
+		<Value>5</Value>
+		<SymbolicName>UnknownQuote</SymbolicName>
+		<Description>Unknown Quote</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>300</Tag>
+		<Value>6</Value>
+		<SymbolicName>DuplicateQuote</SymbolicName>
+		<Description>Duplicate Quote</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>300</Tag>
+		<Value>7</Value>
+		<SymbolicName>InvalidBid</SymbolicName>
+		<Description>Invalid bid/ask spread</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>300</Tag>
+		<Value>8</Value>
+		<SymbolicName>InvalidPrice</SymbolicName>
+		<Description>Invalid price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>300</Tag>
+		<Value>9</Value>
+		<SymbolicName>NotAuthorizedToQuoteSecurity</SymbolicName>
+		<Description>Not authorized to quote security</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>301</Tag>
+		<Value>0</Value>
+		<SymbolicName>NoAcknowledgement</SymbolicName>
+		<Description>No Acknowledgement (Default)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>301</Tag>
+		<Value>1</Value>
+		<SymbolicName>AcknowledgeOnlyNegativeOrErroneousQuotes</SymbolicName>
+		<Description>Acknowledge only negative or erroneous quotes</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>301</Tag>
+		<Value>2</Value>
+		<SymbolicName>AcknowledgeEachQuoteMessage</SymbolicName>
+		<Description>Acknowledge each quote messages</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>303</Tag>
+		<Value>1</Value>
+		<SymbolicName>Manual</SymbolicName>
+		<Description>Manual</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>303</Tag>
+		<Value>2</Value>
+		<SymbolicName>Automatic</SymbolicName>
+		<Description>Automatic</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>321</Tag>
+		<Value>0</Value>
+		<SymbolicName>RequestSecurityIdentityAndSpecifications</SymbolicName>
+		<Description>Request Security identity and specifications</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>321</Tag>
+		<Value>1</Value>
+		<SymbolicName>RequestSecurityIdentityForSpecifications</SymbolicName>
+		<Description>Request Security identity for the specifications provided (Name of the security is not supplied)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>321</Tag>
+		<Value>2</Value>
+		<SymbolicName>RequestListSecurityTypes</SymbolicName>
+		<Description>Request List Security Types</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>321</Tag>
+		<Value>3</Value>
+		<SymbolicName>RequestListSecurities</SymbolicName>
+		<Description>Request List Securities (Can be qualified with Symbol, SecurityType, TradingSessionID, SecurityExchange is provided then only list Securities for the specific type)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>323</Tag>
+		<Value>1</Value>
+		<SymbolicName>AcceptAsIs</SymbolicName>
+		<Description>Accept security proposal as is</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>323</Tag>
+		<Value>2</Value>
+		<SymbolicName>AcceptWithRevisions</SymbolicName>
+		<Description>Accept security proposal with revisions as indicated in the message</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>323</Tag>
+		<Value>3</Value>
+		<SymbolicName>ListOfSecurityTypesReturnedPerRequest</SymbolicName>
+		<Description>List of security types returned per request</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>323</Tag>
+		<Value>4</Value>
+		<SymbolicName>ListOfSecuritiesReturnedPerRequest</SymbolicName>
+		<Description>List of securities returned per request</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>323</Tag>
+		<Value>5</Value>
+		<SymbolicName>RejectSecurityProposal</SymbolicName>
+		<Description>Reject security proposal</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>323</Tag>
+		<Value>6</Value>
+		<SymbolicName>CannotMatchSelectionCriteria</SymbolicName>
+		<Description>Can not match selection criteria</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>325</Tag>
+		<Value>N</Value>
+		<SymbolicName>MessageIsBeingSentAsAResultOfAPriorRequest</SymbolicName>
+		<Description>Message is being sent as a result of a prior request</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>325</Tag>
+		<Value>Y</Value>
+		<SymbolicName>MessageIsBeingSentUnsolicited</SymbolicName>
+		<Description>Message is being sent unsolicited</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>1</Value>
+		<SymbolicName>OpeningDelay</SymbolicName>
+		<Description>Opening Delay</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>10</Value>
+		<SymbolicName>MarketOnCloseImbalanceSell</SymbolicName>
+		<Description>Market On Close Imbalance Sell</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>12</Value>
+		<SymbolicName>NoMarketImbalance</SymbolicName>
+		<Description>No Market Imbalance</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>13</Value>
+		<SymbolicName>NoMarketOnCloseImbalance</SymbolicName>
+		<Description>No Market On Close Imbalance</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>14</Value>
+		<SymbolicName>ITSPreOpening</SymbolicName>
+		<Description>ITS Pre-Opening</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>15</Value>
+		<SymbolicName>NewPriceIndication</SymbolicName>
+		<Description>New Price Indication</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>16</Value>
+		<SymbolicName>TradeDisseminationTime</SymbolicName>
+		<Description>Trade Dissemination Time</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>17</Value>
+		<SymbolicName>ReadyToTrade</SymbolicName>
+		<Description>Ready to trade (start of session)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>18</Value>
+		<SymbolicName>NotAvailableForTrading</SymbolicName>
+		<Description>Not Available for trading (end of session)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>19</Value>
+		<SymbolicName>NotTradedOnThisMarket</SymbolicName>
+		<Description>Not Traded on this Market</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>2</Value>
+		<SymbolicName>TradingHalt</SymbolicName>
+		<Description>Trading Halt</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>20</Value>
+		<SymbolicName>UnknownOrInvalid</SymbolicName>
+		<Description>Unknown or Invalid</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>3</Value>
+		<SymbolicName>Resume</SymbolicName>
+		<Description>Resume</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>4</Value>
+		<SymbolicName>NoOpen</SymbolicName>
+		<Description>No Open/No Resume</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>5</Value>
+		<SymbolicName>PriceIndication</SymbolicName>
+		<Description>Price Indication</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>6</Value>
+		<SymbolicName>TradingRangeIndication</SymbolicName>
+		<Description>Trading Range Indication</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>7</Value>
+		<SymbolicName>MarketImbalanceBuy</SymbolicName>
+		<Description>Market Imbalance Buy</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>8</Value>
+		<SymbolicName>MarketImbalanceSell</SymbolicName>
+		<Description>Market Imbalance Sell</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>326</Tag>
+		<Value>9</Value>
+		<SymbolicName>MarketOnCloseImbalanceBuy</SymbolicName>
+		<Description>Market On Close Imbalance Buy</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>327</Tag>
+		<Value>D</Value>
+		<SymbolicName>NewsDissemination</SymbolicName>
+		<Description>News Dissemination</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>327</Tag>
+		<Value>E</Value>
+		<SymbolicName>OrderInflux</SymbolicName>
+		<Description>Order Influx</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>327</Tag>
+		<Value>I</Value>
+		<SymbolicName>OrderImbalance</SymbolicName>
+		<Description>Order Imbalance</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>327</Tag>
+		<Value>M</Value>
+		<SymbolicName>AdditionalInformation</SymbolicName>
+		<Description>Additional Information</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>327</Tag>
+		<Value>P</Value>
+		<SymbolicName>NewsPending</SymbolicName>
+		<Description>News Pending</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>327</Tag>
+		<Value>X</Value>
+		<SymbolicName>EquipmentChangeover</SymbolicName>
+		<Description>Equipment Changeover</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>328</Tag>
+		<Value>N</Value>
+		<SymbolicName>HaltWasNotRelatedToAHaltOfTheCommonStock</SymbolicName>
+		<Description>Halt was not related to a halt of the common stock</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>328</Tag>
+		<Value>Y</Value>
+		<SymbolicName>HaltWasDueToCommonStockBeingHalted</SymbolicName>
+		<Description>Halt was due to common stock being halted</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>329</Tag>
+		<Value>N</Value>
+		<SymbolicName>NotRelatedToSecurityHalt</SymbolicName>
+		<Description>Halt was not related to a halt of the related security</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>329</Tag>
+		<Value>Y</Value>
+		<SymbolicName>RelatedToSecurityHalt</SymbolicName>
+		<Description>Halt was due to related security being halted</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>334</Tag>
+		<Value>1</Value>
+		<SymbolicName>Cancel</SymbolicName>
+		<Description>Cancel</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>334</Tag>
+		<Value>2</Value>
+		<SymbolicName>Error</SymbolicName>
+		<Description>Error</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>334</Tag>
+		<Value>3</Value>
+		<SymbolicName>Correction</SymbolicName>
+		<Description>Correction</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>338</Tag>
+		<Value>1</Value>
+		<SymbolicName>Electronic</SymbolicName>
+		<Description>Electronic</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>338</Tag>
+		<Value>2</Value>
+		<SymbolicName>OpenOutcry</SymbolicName>
+		<Description>Open Outcry</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>338</Tag>
+		<Value>3</Value>
+		<SymbolicName>TwoParty</SymbolicName>
+		<Description>Two Party</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>339</Tag>
+		<Value>1</Value>
+		<SymbolicName>Testing</SymbolicName>
+		<Description>Testing</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>339</Tag>
+		<Value>2</Value>
+		<SymbolicName>Simulated</SymbolicName>
+		<Description>Simulated</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>339</Tag>
+		<Value>3</Value>
+		<SymbolicName>Production</SymbolicName>
+		<Description>Production</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>340</Tag>
+		<Value>1</Value>
+		<SymbolicName>Halted</SymbolicName>
+		<Description>Halted</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>340</Tag>
+		<Value>2</Value>
+		<SymbolicName>Open</SymbolicName>
+		<Description>Open</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>340</Tag>
+		<Value>3</Value>
+		<SymbolicName>Closed</SymbolicName>
+		<Description>Closed</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>340</Tag>
+		<Value>4</Value>
+		<SymbolicName>PreOpen</SymbolicName>
+		<Description>Pre-Open</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>340</Tag>
+		<Value>5</Value>
+		<SymbolicName>PreClose</SymbolicName>
+		<Description>Pre-Close</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>347</Tag>
+		<Value>EUC-JP</Value>
+		<SymbolicName>EUCJP</SymbolicName>
+		<Description>(for using EUC)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>347</Tag>
+		<Value>ISO-2022-JP</Value>
+		<SymbolicName>ISO2022JP</SymbolicName>
+		<Description>(for using JIS)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>347</Tag>
+		<Value>Shift_JIS</Value>
+		<SymbolicName>ShiftJIS</SymbolicName>
+		<Description>(for using SJIS)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>347</Tag>
+		<Value>UTF-8</Value>
+		<SymbolicName>UTF8</SymbolicName>
+		<Description>(for using Unicode)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>368</Tag>
+		<Value>1</Value>
+		<SymbolicName>UnknownSymbol</SymbolicName>
+		<Description>Unknown symbol (Security)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>368</Tag>
+		<Value>2</Value>
+		<SymbolicName>Exchange</SymbolicName>
+		<Description>Exchange (Security) closed</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>368</Tag>
+		<Value>3</Value>
+		<SymbolicName>QuoteExceedsLimit</SymbolicName>
+		<Description>Quote exceeds limit</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>368</Tag>
+		<Value>4</Value>
+		<SymbolicName>TooLateToEnter</SymbolicName>
+		<Description>Too late to enter</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>368</Tag>
+		<Value>5</Value>
+		<SymbolicName>UnknownQuote</SymbolicName>
+		<Description>Unknown Quote</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>368</Tag>
+		<Value>6</Value>
+		<SymbolicName>DuplicateQuote</SymbolicName>
+		<Description>Duplicate Quote</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>368</Tag>
+		<Value>7</Value>
+		<SymbolicName>InvalidBidAskSpread</SymbolicName>
+		<Description>Invalid bid/ask spread</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>368</Tag>
+		<Value>8</Value>
+		<SymbolicName>InvalidPrice</SymbolicName>
+		<Description>Invalid price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>368</Tag>
+		<Value>9</Value>
+		<SymbolicName>NotAuthorizedToQuoteSecurity</SymbolicName>
+		<Description>Not authorized to quote security</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>373</Tag>
+		<Value>0</Value>
+		<SymbolicName>InvalidTagNumber</SymbolicName>
+		<Description>Invalid tag number</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>373</Tag>
+		<Value>1</Value>
+		<SymbolicName>RequiredTagMissing</SymbolicName>
+		<Description>Required tag missing</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>373</Tag>
+		<Value>10</Value>
+		<SymbolicName>SendingTimeAccuracyProblem</SymbolicName>
+		<Description>SendingTime accuracy problem</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>373</Tag>
+		<Value>11</Value>
+		<SymbolicName>InvalidMsgType</SymbolicName>
+		<Description>Invalid MsgType</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>373</Tag>
+		<Value>2</Value>
+		<SymbolicName>TagNotDefinedForThisMessageType</SymbolicName>
+		<Description>Tag not defined for this message type</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>373</Tag>
+		<Value>3</Value>
+		<SymbolicName>UndefinedTag</SymbolicName>
+		<Description>Undefined Tag</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>373</Tag>
+		<Value>4</Value>
+		<SymbolicName>TagSpecifiedWithoutAValue</SymbolicName>
+		<Description>Tag specified without a value</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>373</Tag>
+		<Value>5</Value>
+		<SymbolicName>ValueIsIncorrect</SymbolicName>
+		<Description>Value is incorrect (out of range) for this tag</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>373</Tag>
+		<Value>6</Value>
+		<SymbolicName>IncorrectDataFormatForValue</SymbolicName>
+		<Description>Incorrect data format for value</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>373</Tag>
+		<Value>7</Value>
+		<SymbolicName>DecryptionProblem</SymbolicName>
+		<Description>Decryption problem</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>373</Tag>
+		<Value>8</Value>
+		<SymbolicName>SignatureProblem</SymbolicName>
+		<Description>Signature problem</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>373</Tag>
+		<Value>9</Value>
+		<SymbolicName>CompIDProblem</SymbolicName>
+		<Description>CompID problem</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>374</Tag>
+		<Value>C</Value>
+		<SymbolicName>Cancel</SymbolicName>
+		<Description>Cancel</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>374</Tag>
+		<Value>N</Value>
+		<SymbolicName>New</SymbolicName>
+		<Description>New</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>377</Tag>
+		<Value>N</Value>
+		<SymbolicName>WasNotSolicited</SymbolicName>
+		<Description>Was not solicited</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>377</Tag>
+		<Value>Y</Value>
+		<SymbolicName>WasSolicited</SymbolicName>
+		<Description>Was solcitied</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>378</Tag>
+		<Value>0</Value>
+		<SymbolicName>GTCorporateAction</SymbolicName>
+		<Description>GT Corporate action</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>378</Tag>
+		<Value>1</Value>
+		<SymbolicName>GTRenewal</SymbolicName>
+		<Description>GT renewal / restatement (no corporate action)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>378</Tag>
+		<Value>2</Value>
+		<SymbolicName>VerbalChange</SymbolicName>
+		<Description>Verbal change</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>378</Tag>
+		<Value>3</Value>
+		<SymbolicName>RepricingOfOrder</SymbolicName>
+		<Description>Repricing of order</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>378</Tag>
+		<Value>4</Value>
+		<SymbolicName>BrokerOption</SymbolicName>
+		<Description>Broker option</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>378</Tag>
+		<Value>5</Value>
+		<SymbolicName>PartialDeclineOfOrderQty</SymbolicName>
+		<Description>Partial decline of OrderQty (e.g. exchange-initiated partial cancel)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>380</Tag>
+		<Value>0</Value>
+		<SymbolicName>Other</SymbolicName>
+		<Description>Other</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>380</Tag>
+		<Value>1</Value>
+		<SymbolicName>UnknownID</SymbolicName>
+		<Description>Unkown ID</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>380</Tag>
+		<Value>2</Value>
+		<SymbolicName>UnknownSecurity</SymbolicName>
+		<Description>Unknown Security</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>380</Tag>
+		<Value>3</Value>
+		<SymbolicName>UnsupportedMessageType</SymbolicName>
+		<Description>Unsupported Message Type</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>380</Tag>
+		<Value>4</Value>
+		<SymbolicName>ApplicationNotAvailable</SymbolicName>
+		<Description>Application not available</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>380</Tag>
+		<Value>5</Value>
+		<SymbolicName>ConditionallyRequiredFieldMissing</SymbolicName>
+		<Description>Conditionally Required Field Missing</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>385</Tag>
+		<Value>R</Value>
+		<SymbolicName>Receive</SymbolicName>
+		<Description>Receive</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>385</Tag>
+		<Value>S</Value>
+		<SymbolicName>Send</SymbolicName>
+		<Description>Send</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>388</Tag>
+		<Value>0</Value>
+		<SymbolicName>RelatedToDisplayedPrice</SymbolicName>
+		<Description>Related to displayed price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>388</Tag>
+		<Value>1</Value>
+		<SymbolicName>RelatedToMarketPrice</SymbolicName>
+		<Description>Related to market price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>388</Tag>
+		<Value>2</Value>
+		<SymbolicName>RelatedToPrimaryPrice</SymbolicName>
+		<Description>Related to primary price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>388</Tag>
+		<Value>3</Value>
+		<SymbolicName>RelatedToLocalPrimaryPrice</SymbolicName>
+		<Description>Related to local primary price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>388</Tag>
+		<Value>4</Value>
+		<SymbolicName>RelatedToMidpointPrice</SymbolicName>
+		<Description>Related to midpoint price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>388</Tag>
+		<Value>5</Value>
+		<SymbolicName>RelatedToLastTradePrice</SymbolicName>
+		<Description>Related to last trade price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>409</Tag>
+		<Value>1</Value>
+		<SymbolicName>FiveDayMovingAverage</SymbolicName>
+		<Description>5 day moving average</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>409</Tag>
+		<Value>2</Value>
+		<SymbolicName>TwentyDayMovingAverage</SymbolicName>
+		<Description>20 day moving average</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>409</Tag>
+		<Value>3</Value>
+		<SymbolicName>NormalMarketSize</SymbolicName>
+		<Description>Normal Market Size</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>409</Tag>
+		<Value>4</Value>
+		<SymbolicName>Other</SymbolicName>
+		<Description>Other</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>411</Tag>
+		<Value>N</Value>
+		<SymbolicName>False</SymbolicName>
+		<Description>False</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>411</Tag>
+		<Value>Y</Value>
+		<SymbolicName>True</SymbolicName>
+		<Description>True</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>414</Tag>
+		<Value>1</Value>
+		<SymbolicName>BuySideRequests</SymbolicName>
+		<Description>BuySide explicitly requests status using StatusRequest (Default) The sell-side firm can however, send a DONE status List Status Response in an unsolicited fashion</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>414</Tag>
+		<Value>2</Value>
+		<SymbolicName>SellSideSends</SymbolicName>
+		<Description>SellSide periodically sends status using ListStatus. Period optionally specified in ProgressPeriod</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>414</Tag>
+		<Value>3</Value>
+		<SymbolicName>RealTimeExecutionReports</SymbolicName>
+		<Description>Real-time execution reports (to be discouraged)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>416</Tag>
+		<Value>1</Value>
+		<SymbolicName>Net</SymbolicName>
+		<Description>Net</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>416</Tag>
+		<Value>2</Value>
+		<SymbolicName>Gross</SymbolicName>
+		<Description>Gross</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>418</Tag>
+		<Value>A</Value>
+		<SymbolicName>Agency</SymbolicName>
+		<Description>Agency</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>418</Tag>
+		<Value>G</Value>
+		<SymbolicName>VWAPGuarantee</SymbolicName>
+		<Description>VWAP Guarantee</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>418</Tag>
+		<Value>J</Value>
+		<SymbolicName>GuaranteedClose</SymbolicName>
+		<Description>Guaranteed Close</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>418</Tag>
+		<Value>R</Value>
+		<SymbolicName>RiskTrade</SymbolicName>
+		<Description>Risk Trade</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>419</Tag>
+		<Value>2</Value>
+		<SymbolicName>ClosingPriceAtMorningSession</SymbolicName>
+		<Description>Closing Price at morning session</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>419</Tag>
+		<Value>3</Value>
+		<SymbolicName>ClosingPrice</SymbolicName>
+		<Description>Closing Price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>419</Tag>
+		<Value>4</Value>
+		<SymbolicName>CurrentPrice</SymbolicName>
+		<Description>Current price</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>419</Tag>
+		<Value>5</Value>
+		<SymbolicName>SQ</SymbolicName>
+		<Description>SQ</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>419</Tag>
+		<Value>6</Value>
+		<SymbolicName>VWAPThroughADay</SymbolicName>
+		<Description>VWAP through a day</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>419</Tag>
+		<Value>7</Value>
+		<SymbolicName>VWAPThroughAMorningSession</SymbolicName>
+		<Description>VWAP through a morning session</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>419</Tag>
+		<Value>8</Value>
+		<SymbolicName>VWAPThroughAnAfternoonSession</SymbolicName>
+		<Description>VWAP through an afternoon session</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>419</Tag>
+		<Value>9</Value>
+		<SymbolicName>VWAPThroughADayExcept</SymbolicName>
+		<Description>VWAP through a day except YORI</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>419</Tag>
+		<Value>A</Value>
+		<SymbolicName>VWAPThroughAMorningSessionExcept</SymbolicName>
+		<Description>VWAP through a morning session except YORI</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>419</Tag>
+		<Value>B</Value>
+		<SymbolicName>VWAPThroughAnAfternoonSessionExcept</SymbolicName>
+		<Description>VWAP through an afternoon session except YORI</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>419</Tag>
+		<Value>C</Value>
+		<SymbolicName>Strike</SymbolicName>
+		<Description>Strike</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>419</Tag>
+		<Value>D</Value>
+		<SymbolicName>Open</SymbolicName>
+		<Description>Open</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>419</Tag>
+		<Value>Z</Value>
+		<SymbolicName>Others</SymbolicName>
+		<Description>Others</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>423</Tag>
+		<Value>1</Value>
+		<SymbolicName>Percentage</SymbolicName>
+		<Description>Percentage</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>423</Tag>
+		<Value>2</Value>
+		<SymbolicName>PerUnit</SymbolicName>
+		<Description>per share (e.g. cents per share)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>423</Tag>
+		<Value>3</Value>
+		<SymbolicName>FixedAmount</SymbolicName>
+		<Description>Fixed Amount (absolute value)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>427</Tag>
+		<Value>0</Value>
+		<SymbolicName>BookOutAllTradesOnDayOfExecution</SymbolicName>
+		<Description>book out all trades on day of execution</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>427</Tag>
+		<Value>1</Value>
+		<SymbolicName>AccumulateUntilFilledOrExpired</SymbolicName>
+		<Description>accumulate executions until order is filled or expires</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>427</Tag>
+		<Value>2</Value>
+		<SymbolicName>AccumulateUntilVerballlyNotifiedOtherwise</SymbolicName>
+		<Description>accumulate until verbally notified otherwise</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>430</Tag>
+		<Value>1</Value>
+		<SymbolicName>Net</SymbolicName>
+		<Description>Net</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>430</Tag>
+		<Value>2</Value>
+		<SymbolicName>Gross</SymbolicName>
+		<Description>Gross</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>433</Tag>
+		<Value>1</Value>
+		<SymbolicName>Immediate</SymbolicName>
+		<Description>Immediate</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>433</Tag>
+		<Value>2</Value>
+		<SymbolicName>WaitForInstruction</SymbolicName>
+		<Description>Wait for Execute Instruction (e.g. a List Execute message or phone call before proceeding with execution of the list)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>434</Tag>
+		<Value>1</Value>
+		<SymbolicName>OrderCancelRequest</SymbolicName>
+		<Description>Order Cancel Request</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>434</Tag>
+		<Value>2</Value>
+		<SymbolicName>OrderCancel</SymbolicName>
+		<Description>Order Cancel/Replace Request</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>442</Tag>
+		<Value>1</Value>
+		<SymbolicName>SingleSecurity</SymbolicName>
+		<Description>Single Security (default if not specified)</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>442</Tag>
+		<Value>2</Value>
+		<SymbolicName>IndividualLegOfAMultiLegSecurity</SymbolicName>
+		<Description>Individual leg of a multi-leg security</Description>
+	</Enum>
+	<Enum added="FIX.4.2">
+		<Tag>442</Tag>
+		<Value>3</Value>
+		<SymbolicName>MultiLegSecurity</SymbolicName>
+		<Description>Multi-leg security</Description>
+	</Enum>
+</Enums>

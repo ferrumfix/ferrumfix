@@ -12,6 +12,8 @@ mod err;
 pub mod fast;
 /// FIX-related functionality.
 pub mod fix;
+/// Interface with the FIX repository.
+pub mod repo;
 mod settings;
 
 pub use crate::err::{Error, Result};

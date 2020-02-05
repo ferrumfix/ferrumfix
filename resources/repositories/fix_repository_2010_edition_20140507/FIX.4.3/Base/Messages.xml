@@ -1,0 +1,654 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+DISCLAIMER
+
+THE INFORMATION CONTAINED HEREIN AND THE FINANCIAL INFORMATION EXCHANGE PROTOCOL (COLLECTIVELY, THE "FIX PROTOCOL") ARE PROVIDED "AS IS" AND NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL MAKES ANY REPRESENTATION OR WARRANTY, EXPRESS OR IMPLIED, AS TO THE FIX PROTOCOL (OR THE RESULTS TO BE OBTAINED BY THE USE THEREOF) OR ANY OTHER MATTER AND EACH SUCH PERSON AND ENTITY SPECIFICALLY DISCLAIMS ANY WARRANTY OF ORIGINALITY, ACCURACY, COMPLETENESS, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SUCH PERSONS AND ENTITIES DO NOT WARRANT THAT THE FIX PROTOCOL WILL CONFORM TO ANY DESCRIPTION THEREOF OR BE FREE OF ERRORS. THE ENTIRE RISK OF ANY USE OF THE FIX PROTOCOL IS ASSUMED BY THE USER.
+
+NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL SHALL HAVE ANY LIABILITY FOR DAMAGES OF ANY KIND ARISING IN ANY MANNER OUT OF OR IN CONNECTION WITH ANY USER'S USE OF (OR ANY INABILITY TO USE) THE FIX PROTOCOL, WHETHER DIRECT, INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL (INCLUDING, WITHOUT LIMITATION, LOSS OF DATA, LOSS OF USE, CLAIMS OF THIRD PARTIES OR LOST PROFITS OR REVENUES OR OTHER ECONOMIC LOSS), WHETHER IN TORT (INCLUDING NEGLIGENCE AND STRICT LIABILITY), CONTRACT OR OTHERWISE, WHETHER OR NOT ANY SUCH PERSON OR ENTITY HAS BEEN ADVISED OF, OR OTHERWISE MIGHT HAVE ANTICIPATED THE POSSIBILITY OF, SUCH DAMAGES.
+
+No proprietary or ownership interest of any kind is granted with respect to the FIX Protocol (or any rights therein).
+
+Copyright 2003-2009 FIX Protocol Limited, all rights reserved
+
+REPRODUCTION
+
+FIX Protocol Limited grants permission to print in hard copy form or reproduce the FIX Protocol specification in its entirety provided that the duplicated pages retain the "Copyright FIX Protocol Limited" statement at the bottom of the page.
+
+Portions of the FIX Protocol specification may be extracted or cited in other documents (such as a document which describes one's implementation of the FIX Protocol) provided that one reference the origin of the FIX Protocol specification (HTUhttp://www.fixprotocol.orgUTH) and that the specification itself is "Copyright FIX Protocol Limited".
+FIX Protocol Limited claims no intellectual property over one's implementation (programming code) of an application which implements the behavior and details from the FIX Protocol specification. 	
+--><Messages xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" copyright="Copyright (c) FIX Protocol Ltd. All Rights Reserved." edition="2010" version="FIX.4.3" xsi:noNamespaceSchemaLocation="../../schema/Messages.xsd" generated="2010-03-13T14:54:02-05:00">
+	<Message added="FIX.2.7">
+		<ComponentID>1</ComponentID>
+		<MsgType>0</MsgType>
+		<Name>Heartbeat</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Heartbeat monitors the status of the communication link and identifies when the last of a string of messages was not received.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>2</ComponentID>
+		<MsgType>1</MsgType>
+		<Name>TestRequest</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The test request message forces a heartbeat from the opposing application.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>3</ComponentID>
+		<MsgType>2</MsgType>
+		<Name>ResendRequest</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The resend request is sent by the receiving application to initiate the retransmission of messages. This function is utilized if a sequence number gap is detected, if the receiving application lost a message, or as a function of the initialization process.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>4</ComponentID>
+		<MsgType>3</MsgType>
+		<Name>Reject</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The reject message should be issued when a message is received but cannot be properly processed due to a session-level rule violation.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>5</ComponentID>
+		<MsgType>4</MsgType>
+		<Name>SequenceReset</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The sequence reset message is used by the sending application to reset the incoming sequence number on the opposing side.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>6</ComponentID>
+		<MsgType>5</MsgType>
+		<Name>Logout</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The logout message initiates or confirms the termination of a FIX session.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<MsgType>6</MsgType>
+		<Name>IOI</Name>
+		<CategoryID>Indication</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>Indication of interest messages are used to market merchandise which the broker is buying or selling in either a proprietary or agency capacity.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<MsgType>7</MsgType>
+		<Name>Advertisement</Name>
+		<CategoryID>Indication</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>Advertisement messages are used to announce completed transactions.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<MsgType>8</MsgType>
+		<Name>ExecutionReport</Name>
+		<CategoryID>SingleGeneralOrderHandling</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The execution report message is used to:
+1. Confirm the receipt of an order
+2. Confirm changes to an existing order (i.e. accept cancel and replace requests)
+3. Relay order status information
+4. Relay fill information on working orders
+5. Relay fill information on tradeable or restricted tradeable quotes
+6. Reject orders
+7. Report post-trade fees calculations associated with a trade</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>10</ComponentID>
+		<MsgType>9</MsgType>
+		<Name>OrderCancelReject</Name>
+		<CategoryID>SingleGeneralOrderHandling</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The order cancel reject message is issued by the broker upon receipt of a cancel request or cancel/replace request message which cannot be honored.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>11</ComponentID>
+		<MsgType>A</MsgType>
+		<Name>Logon</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The logon message authenticates a user establishing a connection to a remote system.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>12</ComponentID>
+		<MsgType>B</MsgType>
+		<Name>News</Name>
+		<CategoryID>EventCommunication</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The news message is a general free format message between the broker and institution.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>13</ComponentID>
+		<MsgType>C</MsgType>
+		<Name>Email</Name>
+		<CategoryID>EventCommunication</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The email message is similar to the format and purpose of the News message, however, it is intended for private use between two parties.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<MsgType>D</MsgType>
+		<Name>NewOrderSingle</Name>
+		<CategoryID>SingleGeneralOrderHandling</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The new order message type is used by institutions wishing to electronically submit securities and forex orders to a broker for execution.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<MsgType>E</MsgType>
+		<Name>NewOrderList</Name>
+		<CategoryID>ProgramTrading</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The NewOrderList Message can be used in one of two ways depending on which market conventions are being followed.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<MsgType>F</MsgType>
+		<Name>OrderCancelRequest</Name>
+		<CategoryID>SingleGeneralOrderHandling</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The order cancel request message requests the cancellation of all of the remaining quantity of an existing order.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<MsgType>G</MsgType>
+		<Name>OrderCancelReplaceRequest</Name>
+		<CategoryID>SingleGeneralOrderHandling</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The order cancel/replace request is used to change the parameters of an existing order.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>18</ComponentID>
+		<MsgType>H</MsgType>
+		<Name>OrderStatusRequest</Name>
+		<CategoryID>SingleGeneralOrderHandling</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The order status request message is used by the institution to generate an order status message back from the broker.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<MsgType>J</MsgType>
+		<Name>Allocation</Name>
+		<CategoryID>Allocation</CategoryID>
+		<SectionID>PostTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Allocation message provides the ability to specify how an order or set of orders should be subdivided amongst one or more accounts.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>20</ComponentID>
+		<MsgType>K</MsgType>
+		<Name>ListCancelRequest</Name>
+		<CategoryID>ProgramTrading</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The list cancel request message type is used by institutions wishing to cancel previously submitted lists either before or during execution.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>21</ComponentID>
+		<MsgType>L</MsgType>
+		<Name>ListExecute</Name>
+		<CategoryID>ProgramTrading</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The list execute message type is used by institutions to instruct the broker to begin execution of a previously submitted list.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>22</ComponentID>
+		<MsgType>M</MsgType>
+		<Name>ListStatusRequest</Name>
+		<CategoryID>ProgramTrading</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The list status request message type is used by institutions to instruct the broker to generate status messages for a list.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>23</ComponentID>
+		<MsgType>N</MsgType>
+		<Name>ListStatus</Name>
+		<CategoryID>ProgramTrading</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The list status message is issued as the response to a List Status Request message sent in an unsolicited fashion by the sell-side.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>24</ComponentID>
+		<MsgType>P</MsgType>
+		<Name>AllocationAck</Name>
+		<CategoryID>Allocation</CategoryID>
+		<SectionID>PostTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Allocation ACK message is used to acknowledge the receipt and status of an Allocation message.</Description>
+	</Message>
+	<Message added="FIX.4.0">
+		<ComponentID>25</ComponentID>
+		<MsgType>Q</MsgType>
+		<Name>DontKnowTrade</Name>
+		<CategoryID>SingleGeneralOrderHandling</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Don’t Know Trade (DK) message notifies a trading partner that an electronically received execution has been rejected. This message can be thought of as an execution reject message.</Description>
+	</Message>
+	<Message added="FIX.4.0">
+		<ComponentID>26</ComponentID>
+		<MsgType>R</MsgType>
+		<Name>QuoteRequest</Name>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>In some markets it is the practice to request quotes from brokers prior to placement of an order. The quote request message is used for this purpose. This message is commonly referred to as an Request For Quote (RFQ)</Description>
+	</Message>
+	<Message added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<MsgType>S</MsgType>
+		<Name>Quote</Name>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The quote message is used as the response to a Quote Request message in both indicative, tradeable, and restricted tradeable quoting markets.</Description>
+	</Message>
+	<Message added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<MsgType>T</MsgType>
+		<Name>SettlementInstructions</Name>
+		<CategoryID>SettlementInstruction</CategoryID>
+		<SectionID>PostTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Settlement Instructions message provides the broker’s, the institution’s, or the intermediary’s instructions for trade settlement.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>29</ComponentID>
+		<MsgType>V</MsgType>
+		<Name>MarketDataRequest</Name>
+		<CategoryID>MarketData</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>Some systems allow the transmission of real-time quote, order, trade and/or other price information on a subscription basis. A Market Data Request is a general request for market data on specific securities or forex quotes.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>30</ComponentID>
+		<MsgType>W</MsgType>
+		<Name>MarketDataSnapshotFullRefresh</Name>
+		<CategoryID>MarketData</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Market Data messages are used as the response to a Market Data Request message.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>31</ComponentID>
+		<MsgType>X</MsgType>
+		<Name>MarketDataIncrementalRefresh</Name>
+		<CategoryID>MarketData</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The second Market Data message format is used for incremental updates.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>32</ComponentID>
+		<MsgType>Y</MsgType>
+		<Name>MarketDataRequestReject</Name>
+		<CategoryID>MarketData</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Market Data Request Reject is used when the broker cannot honor the Market Data Request, due to business or technical reasons.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>33</ComponentID>
+		<MsgType>Z</MsgType>
+		<Name>QuoteCancel</Name>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Quote Cancel message is used by an originator of quotes to cancel quotes.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>34</ComponentID>
+		<MsgType>a</MsgType>
+		<Name>QuoteStatusRequest</Name>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The quote status request message is used for the following purposes in markets that employ tradeable or restricted tradeable quotes:
+* For the issuer of a quote in a market to query the status of that quote (using the QuoteID to specify the target quote).
+* To subscribe and unsubscribe for Quote Status Report messages for one or more securities.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>35</ComponentID>
+		<MsgType>b</MsgType>
+		<Name>MassQuoteAcknowledgement</Name>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>Mass Quote Acknowledgement is used as the application level response to a Mass Quote message.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>36</ComponentID>
+		<MsgType>c</MsgType>
+		<Name>SecurityDefinitionRequest</Name>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Security Definition Request message is used for the following:
+1. Request a specific Security to be traded with the second party. The request security can be defined as a multileg security made up of one or more instrument legs.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>37</ComponentID>
+		<MsgType>d</MsgType>
+		<Name>SecurityDefinition</Name>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Security Definition message is used for the following:
+1. Accept the security defined in a Security Definition message.
+2. Accept the security defined in a Security Definition message with changes to the definition and/or identity of the security.
+3. Reject the security requested in a Security Definition message</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>38</ComponentID>
+		<MsgType>e</MsgType>
+		<Name>SecurityStatusRequest</Name>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Security Status Request message provides for the ability to request the status of a security.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>39</ComponentID>
+		<MsgType>f</MsgType>
+		<Name>SecurityStatus</Name>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Security Status message provides for the ability to report changes in status to a security.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>40</ComponentID>
+		<MsgType>g</MsgType>
+		<Name>TradingSessionStatusRequest</Name>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Trading Session Status Request is used to request information on the status of a market.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>41</ComponentID>
+		<MsgType>h</MsgType>
+		<Name>TradingSessionStatus</Name>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Trading Session Status provides information on the status of a market.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>42</ComponentID>
+		<MsgType>i</MsgType>
+		<Name>MassQuote</Name>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Mass Quote message can contain quotes for multiple securities to support applications that allow for the mass quoting of an option series.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>43</ComponentID>
+		<MsgType>j</MsgType>
+		<Name>BusinessMessageReject</Name>
+		<CategoryID>Common</CategoryID>
+		<SectionID>Other</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description/>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>44</ComponentID>
+		<MsgType>k</MsgType>
+		<Name>BidRequest</Name>
+		<CategoryID>ProgramTrading</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The BidRequest Message can be used in one of two ways depending on which market conventions are being followed.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>45</ComponentID>
+		<MsgType>l</MsgType>
+		<Name>BidResponse</Name>
+		<CategoryID>ProgramTrading</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Bid Response message can be used in one of two ways depending on which market conventions are being followed.
+      In the "Non disclosed" convention the Bid Response message can be used to supply a bid based on the sector, country, index and liquidity information contained within the corresponding bid request message. See "Program/Basket/List Trading"  for an example.
+      In the "Disclosed" convention the Bid Response message can be used to supply bids based on the List Order Detail messages sent in advance of the corresponding Bid Request message.</Description>
+	</Message>
+	<Message added="FIX.4.2">
+		<ComponentID>46</ComponentID>
+		<MsgType>m</MsgType>
+		<Name>ListStrikePrice</Name>
+		<CategoryID>ProgramTrading</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The strike price message is used to exchange strike price information for principal trades.</Description>
+	</Message>
+	<Message added="FIX.4.3" issue="SPEC-277">
+		<ComponentID>47</ComponentID>
+		<MsgType>n</MsgType>
+		<Name>XMLnonFIX</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description/>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>48</ComponentID>
+		<MsgType>o</MsgType>
+		<Name>RegistrationInstructions</Name>
+		<CategoryID>RegistrationInstruction</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Registration Instructions message type may be used by institutions or retail intermediaries wishing to electronically submit registration information to a broker or fund manager (for CIV) for an order or for an allocation.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>49</ComponentID>
+		<MsgType>p</MsgType>
+		<Name>RegistrationInstructionsResponse</Name>
+		<CategoryID>RegistrationInstruction</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Registration Instructions Response message type may be used by broker or fund manager (for CIV) in response to a Registration Instructions message submitted by an institution or retail intermediary for an order or for an allocation.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>50</ComponentID>
+		<MsgType>q</MsgType>
+		<Name>OrderMassCancelRequest</Name>
+		<CategoryID>SingleGeneralOrderHandling</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The order mass cancel request message requests the cancellation of all of the remaining quantity of a group of orders matching criteria specified within the request.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>51</ComponentID>
+		<MsgType>r</MsgType>
+		<Name>OrderMassCancelReport</Name>
+		<CategoryID>SingleGeneralOrderHandling</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Order Mass Cancel Report is used to acknowledge an Order Mass Cancel Request.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>52</ComponentID>
+		<MsgType>s</MsgType>
+		<Name>NewOrderCross</Name>
+		<CategoryID>CrossOrders</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>Used to submit a cross order into a market.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>54</ComponentID>
+		<MsgType>t</MsgType>
+		<Name>CrossOrderCancelReplaceRequest</Name>
+		<CategoryID>CrossOrders</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>Used to modify a cross order previously submitted using the New Order - Cross message.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>53</ComponentID>
+		<MsgType>u</MsgType>
+		<Name>CrossOrderCancelRequest</Name>
+		<CategoryID>CrossOrders</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>Used to fully cancel the remaining open quantity of a cross order.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>55</ComponentID>
+		<MsgType>v</MsgType>
+		<Name>SecurityTypeRequest</Name>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Security Type Request message is used to return a list of security types available from a counterparty or market.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>56</ComponentID>
+		<MsgType>w</MsgType>
+		<Name>SecurityTypes</Name>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Security Type message is used to return a list of security types available from a counterparty or market.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>57</ComponentID>
+		<MsgType>x</MsgType>
+		<Name>SecurityListRequest</Name>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Security List Request message is used to return a list of securities from the counterparty that match criteria provided on the request</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>58</ComponentID>
+		<MsgType>y</MsgType>
+		<Name>SecurityList</Name>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Security List message is used to return a list of securities that matches the criteria specified in a Security List Request.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>59</ComponentID>
+		<MsgType>z</MsgType>
+		<Name>DerivativeSecurityListRequest</Name>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Derivative Security List Request message is used to return a list of securities from the counterparty that match criteria provided on the request</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>60</ComponentID>
+		<MsgType>AA</MsgType>
+		<Name>DerivativeSecurityList</Name>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Derivative Security List message is used to return a list of securities that matches the criteria specified in a Derivative Security List Request.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>61</ComponentID>
+		<MsgType>AB</MsgType>
+		<Name>NewOrderMultileg</Name>
+		<CategoryID>MultilegOrders</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The New Order - Multileg is provided to submit orders for securities that are made up of multiple securities, known as legs.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>62</ComponentID>
+		<MsgType>AC</MsgType>
+		<Name>MultilegOrderCancelReplaceRequest</Name>
+		<CategoryID>MultilegOrders</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>Used to modify a multileg order previously submitted using the New Order - Multileg message.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>63</ComponentID>
+		<MsgType>AD</MsgType>
+		<Name>TradeCaptureReportRequest</Name>
+		<CategoryID>TradeCapture</CategoryID>
+		<SectionID>PostTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Trade Capture Report can be used to:
+• Request one or more trade capture reports based upon selection criteria provided on the trade capture report request
+• Subscribe for trade capture reports based upon selection criteria provided on the trade capture report request.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>64</ComponentID>
+		<MsgType>AE</MsgType>
+		<Name>TradeCaptureReport</Name>
+		<CategoryID>TradeCapture</CategoryID>
+		<SectionID>PostTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Trade Capture Report message can be:
+• Used to report trades between counterparties.
+• Can be sent unsolicited between counterparties.
+• Sent as a reply to a Trade Capture Report Request.
+• Can be used to report unmatched and matched trades.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>65</ComponentID>
+		<MsgType>AF</MsgType>
+		<Name>OrderMassStatusRequest</Name>
+		<CategoryID>SingleGeneralOrderHandling</CategoryID>
+		<SectionID>Trade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The order mass status request message requests the status for orders matching criteria specified within the request.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>66</ComponentID>
+		<MsgType>AG</MsgType>
+		<Name>QuoteRequestReject</Name>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The Quote Request Reject message is used to reject Quote Request messages for all quoting models.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>67</ComponentID>
+		<MsgType>AH</MsgType>
+		<Name>RFQRequest</Name>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>In tradeable and restricted tradeable quoting markets – Quote Requests are issued by counterparties interested in ascertaining the market for an instrument.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>68</ComponentID>
+		<MsgType>AI</MsgType>
+		<Name>QuoteStatusReport</Name>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<SectionID>PreTrade</SectionID>
+		<NotReqXML>1</NotReqXML>
+		<Description>The quote status report message is used:
+• As the response to a Quote Status Request message
+• As a response to a Quote Cancel message</Description>
+	</Message>
+</Messages>

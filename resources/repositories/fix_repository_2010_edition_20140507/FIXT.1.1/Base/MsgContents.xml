@@ -1,0 +1,770 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+DISCLAIMER
+
+THE INFORMATION CONTAINED HEREIN AND THE FINANCIAL INFORMATION EXCHANGE PROTOCOL (COLLECTIVELY, THE "FIX PROTOCOL") ARE PROVIDED "AS IS" AND NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL MAKES ANY REPRESENTATION OR WARRANTY, EXPRESS OR IMPLIED, AS TO THE FIX PROTOCOL (OR THE RESULTS TO BE OBTAINED BY THE USE THEREOF) OR ANY OTHER MATTER AND EACH SUCH PERSON AND ENTITY SPECIFICALLY DISCLAIMS ANY WARRANTY OF ORIGINALITY, ACCURACY, COMPLETENESS, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SUCH PERSONS AND ENTITIES DO NOT WARRANT THAT THE FIX PROTOCOL WILL CONFORM TO ANY DESCRIPTION THEREOF OR BE FREE OF ERRORS. THE ENTIRE RISK OF ANY USE OF THE FIX PROTOCOL IS ASSUMED BY THE USER.
+
+NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL SHALL HAVE ANY LIABILITY FOR DAMAGES OF ANY KIND ARISING IN ANY MANNER OUT OF OR IN CONNECTION WITH ANY USER'S USE OF (OR ANY INABILITY TO USE) THE FIX PROTOCOL, WHETHER DIRECT, INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL (INCLUDING, WITHOUT LIMITATION, LOSS OF DATA, LOSS OF USE, CLAIMS OF THIRD PARTIES OR LOST PROFITS OR REVENUES OR OTHER ECONOMIC LOSS), WHETHER IN TORT (INCLUDING NEGLIGENCE AND STRICT LIABILITY), CONTRACT OR OTHERWISE, WHETHER OR NOT ANY SUCH PERSON OR ENTITY HAS BEEN ADVISED OF, OR OTHERWISE MIGHT HAVE ANTICIPATED THE POSSIBILITY OF, SUCH DAMAGES.
+
+No proprietary or ownership interest of any kind is granted with respect to the FIX Protocol (or any rights therein).
+
+Copyright 2003-2009 FIX Protocol Limited, all rights reserved
+
+REPRODUCTION
+
+FIX Protocol Limited grants permission to print in hard copy form or reproduce the FIX Protocol specification in its entirety provided that the duplicated pages retain the "Copyright FIX Protocol Limited" statement at the bottom of the page.
+
+Portions of the FIX Protocol specification may be extracted or cited in other documents (such as a document which describes one's implementation of the FIX Protocol) provided that one reference the origin of the FIX Protocol specification (HTUhttp://www.fixprotocol.orgUTH) and that the specification itself is "Copyright FIX Protocol Limited".
+FIX Protocol Limited claims no intellectual property over one's implementation (programming code) of an application which implements the behavior and details from the FIX Protocol specification. 	
+--><MsgContents xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" copyright="Copyright (c) FIX Protocol Ltd. All Rights Reserved." edition="2010" version="FIXT.1.1" xsi:noNamespaceSchemaLocation="../../schema/MsgContents.xsd">
+	<MsgContent added="FIX.2.7">
+		<ComponentID>1</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 0</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1</ComponentID>
+		<TagText>112</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+		<Description>Required when the heartbeat is the result of a Test Request message.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>1</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>2</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 1</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>2</ComponentID>
+		<TagText>112</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>2</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>3</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 2</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>3</ComponentID>
+		<TagText>7</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>3</ComponentID>
+		<TagText>16</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>3</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>4</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 3</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>4</ComponentID>
+		<TagText>45</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgSeqNum of rejected message</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.2">
+		<ComponentID>4</ComponentID>
+		<TagText>371</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+		<Description>The tag number of the FIX field being referenced.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.2">
+		<ComponentID>4</ComponentID>
+		<TagText>372</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+		<Description>The MsgType of the FIX message being referenced.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>4</ComponentID>
+		<TagText>1130</TagText>
+		<Indent>0</Indent>
+		<Position>4.1</Position>
+		<Reqd>0</Reqd>
+		<Description>Recommended when rejecting an application message that does not explicitly provide ApplVerID ( 1128) on the message being rejected. In this case the value from the DefaultApplVerID(1137) or the default value specified in the NoMsgTypes repeating group on the logon message should be provided.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>4</ComponentID>
+		<TagText>1406</TagText>
+		<Indent>0</Indent>
+		<Position>4.2</Position>
+		<Reqd>0</Reqd>
+		<Description>Recommended when rejecting an application message that does not explicitly provide ApplExtID(1156) on the rejected message. In this case the value from the DefaultApplExtID(1407) or the default value specified in the NoMsgTypes repeating group on the logon message should be provided.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>4</ComponentID>
+		<TagText>1131</TagText>
+		<Indent>0</Indent>
+		<Position>4.3</Position>
+		<Reqd>0</Reqd>
+		<Description>Recommended when rejecting an application message that does not explicitly provide CstmApplVerID(1129) on the message being rejected. In this case the value from the DefaultCstmApplVerID(1408) or the default value specified in the NoMsgTypes repeating group on the logon message should be provided.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.2">
+		<ComponentID>4</ComponentID>
+		<TagText>373</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>0</Reqd>
+		<Description>Code to identify reason for a session-level Reject message.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>4</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+		<Description>Where possible, message to explain reason for rejection</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.2">
+		<ComponentID>4</ComponentID>
+		<TagText>354</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be set if EncodedText field is specified and must immediately precede it.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.2">
+		<ComponentID>4</ComponentID>
+		<TagText>355</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+		<Description>Encoded (non-ASCII characters) representation of the Text field in the encoded format specified via the MessageEncoding field.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>4</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>5</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 4</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>5</ComponentID>
+		<TagText>123</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>5</ComponentID>
+		<TagText>36</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>5</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>6</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 5</Description>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>6</ComponentID>
+		<TagText>1409</TagText>
+		<Indent>0</Indent>
+		<Position>1.01</Position>
+		<Reqd>0</Reqd>
+		<Description>Session status at time of logout.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>6</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.2">
+		<ComponentID>6</ComponentID>
+		<TagText>354</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be set if EncodedText field is specified and must immediately precede it.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.2">
+		<ComponentID>6</ComponentID>
+		<TagText>355</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+		<Description>Encoded (non-ASCII characters) representation of the Text field in the encoded format specified via the MessageEncoding field.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>6</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>11</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = A</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>11</ComponentID>
+		<TagText>98</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+		<Description>(Always unencrypted)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>11</ComponentID>
+		<TagText>108</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+		<Description>Note same value used by both sides</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>11</ComponentID>
+		<TagText>95</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for some authentication methods</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>11</ComponentID>
+		<TagText>96</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for some authentication methods</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>11</ComponentID>
+		<TagText>141</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+		<Description>Indicates both sides of a FIX session should reset sequence numbers</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.4">
+		<ComponentID>11</ComponentID>
+		<TagText>789</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+		<Description>Optional, alternative via counterparty bi-lateral agreement message gap detection and recovery approach (see "Logon Message NextExpectedMsgSeqNum Processing" section)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.2">
+		<ComponentID>11</ComponentID>
+		<TagText>383</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to specify the maximum number of bytes supported for messages received</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.4" addedEP="-1">
+		<ComponentID>11</ComponentID>
+		<TagText>MsgTypeGrp</TagText>
+		<Indent>0</Indent>
+		<Position>8.1</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.3">
+		<ComponentID>11</ComponentID>
+		<TagText>464</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to specify that this FIX session will be sending and receiving "test" vs. "production" messages.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.3">
+		<ComponentID>11</ComponentID>
+		<TagText>553</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.3">
+		<ComponentID>11</ComponentID>
+		<TagText>554</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+		<Description>Note: minimal security exists without transport-level encryption.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>11</ComponentID>
+		<TagText>925</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+		<Description>Specifies a new password for the FIX Logon. The new password is used for subsequent logons.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>11</ComponentID>
+		<TagText>1400</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>11</ComponentID>
+		<TagText>1401</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>11</ComponentID>
+		<TagText>1402</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>11</ComponentID>
+		<TagText>1403</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>11</ComponentID>
+		<TagText>1404</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+		<Description>Encrypted new password- encrypted via the method specified in the field EncryptedPasswordMethod(1400)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>11</ComponentID>
+		<TagText>1409</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>0</Reqd>
+		<Description>Session status at time of logon. Field is intended to be used when the logon is sent as an acknowledgement from acceptor of the FIX session.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.4" addedEP="-1">
+		<ComponentID>11</ComponentID>
+		<TagText>1137</TagText>
+		<Indent>0</Indent>
+		<Position>30</Position>
+		<Reqd>1</Reqd>
+		<Description>The default version of FIX messages used in this session.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>11</ComponentID>
+		<TagText>1407</TagText>
+		<Indent>0</Indent>
+		<Position>31</Position>
+		<Reqd>0</Reqd>
+		<Description>The default extension pack for FIX messages used in this session</Description>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>11</ComponentID>
+		<TagText>1408</TagText>
+		<Indent>0</Indent>
+		<Position>32</Position>
+		<Reqd>0</Reqd>
+		<Description>The default custom application version (dictionary) for FIX messages used in this session</Description>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>11</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>50</Position>
+		<Reqd>0</Reqd>
+		<Description>Available to provide a response to logon when used as a logon acknowledgement from acceptor back to the logon initiator.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>11</ComponentID>
+		<TagText>354</TagText>
+		<Indent>0</Indent>
+		<Position>51</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be set if EncodedText field is specified and must immediately precede it.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>11</ComponentID>
+		<TagText>355</TagText>
+		<Indent>0</Indent>
+		<Position>52</Position>
+		<Reqd>0</Reqd>
+		<Description>Encoded (non-ASCII characters) representation of the Text field in the encoded format specified via the MessageEncoding field.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>11</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>100</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>8</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>FIXT.1.1 (Always unencrypted, must be first field in message)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>9</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+		<Description>(Always unencrypted, must be second field in message)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>35</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+		<Description>(Always unencrypted, must be third field in message)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.4" addedEP="-1">
+		<ComponentID>1024</ComponentID>
+		<TagText>1128</TagText>
+		<Indent>0</Indent>
+		<Position>3.1</Position>
+		<Reqd>0</Reqd>
+		<Description>Indicates application version using a service pack identifier. The ApplVerID applies to a specific message occurrence.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.5.0" addedEP="-1">
+		<ComponentID>1024</ComponentID>
+		<TagText>1156</TagText>
+		<Indent>0</Indent>
+		<Position>3.11</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.4" addedEP="-1">
+		<ComponentID>1024</ComponentID>
+		<TagText>1129</TagText>
+		<Indent>0</Indent>
+		<Position>3.2</Position>
+		<Reqd>0</Reqd>
+		<Description>Used to support bilaterally agreed custom functionality</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>49</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+		<Description>(Always unencrypted)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>56</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+		<Description>(Always unencrypted)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>115</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner company ID used when sending messages via a third party (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>128</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner company ID used when sending messages via a third party (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>90</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+		<Description>Required to identify length of encrypted section of message. (Always unencrypted)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>91</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>Required when message body is encrypted. Always immediately follows SecureDataLen field.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>34</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>1</Reqd>
+		<Description>(Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>50</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+		<Description>(Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>1024</ComponentID>
+		<TagText>142</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>Sender's LocationID (i.e. geographic location and/or desk) (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>57</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+		<Description>"ADMIN" reserved for administrative messages not intended for a specific user. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>1024</ComponentID>
+		<TagText>143</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner LocationID (i.e. geographic location and/or desk) (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>116</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner SubID used when delivering messages via a third party. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>1024</ComponentID>
+		<TagText>144</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner LocationID (i.e. geographic location and/or desk) used when delivering messages via a third party. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>129</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner SubID used when delivering messages via a third party. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>1024</ComponentID>
+		<TagText>145</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner LocationID (i.e. geographic location and/or desk) used when delivering messages via a third party. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>43</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>0</Reqd>
+		<Description>Always required for retransmitted messages, whether prompted by the sending system or as the result of a resend request. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>97</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+		<Description>Required when message may be duplicate of another message sent under a different sequence number. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>52</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>1</Reqd>
+		<Description>(Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<TagText>122</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for message resent as a result of a ResendRequest. If data is not available set to same value as SendingTime (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.2">
+		<ComponentID>1024</ComponentID>
+		<TagText>212</TagText>
+		<Indent>0</Indent>
+		<Position>23</Position>
+		<Reqd>0</Reqd>
+		<Description>Required when specifying XmlData to identify the length of a XmlData message block. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.2">
+		<ComponentID>1024</ComponentID>
+		<TagText>213</TagText>
+		<Indent>0</Indent>
+		<Position>24</Position>
+		<Reqd>0</Reqd>
+		<Description>Can contain a XML formatted message block (e.g. FIXML). Always immediately follows XmlDataLen field. (Can be embedded within encrypted data section.)
+See Volume 1: FIXML Support</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.2">
+		<ComponentID>1024</ComponentID>
+		<TagText>347</TagText>
+		<Indent>0</Indent>
+		<Position>25</Position>
+		<Reqd>0</Reqd>
+		<Description>Type of message encoding (non-ASCII characters) used in a message’s "Encoded" fields. Required if any "Encoding" fields are used.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.2">
+		<ComponentID>1024</ComponentID>
+		<TagText>369</TagText>
+		<Indent>0</Indent>
+		<Position>26</Position>
+		<Reqd>0</Reqd>
+		<Description>The last MsgSeqNum value received by the FIX engine and processed by downstream application, such as trading system or order routing system. Can be specified on every message sent. Useful for detecting a backlog with a counterparty.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.4" addedEP="-1">
+		<ComponentID>1024</ComponentID>
+		<TagText>HopGrp</TagText>
+		<Indent>0</Indent>
+		<Position>27</Position>
+		<Reqd>0</Reqd>
+		<Description>Number of repeating groups of historical "hop" information. Only applicable if OnBehalfOfCompID is used, however, its use is optional. Note that some market regulations or counterparties may require tracking of message hops.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1025</ComponentID>
+		<TagText>93</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>0</Reqd>
+		<Description>Required when trailer contains signature. Note: Not to be included within SecureData field</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1025</ComponentID>
+		<TagText>89</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+		<Description>Note: Not to be included within SecureData field</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1025</ComponentID>
+		<TagText>10</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+		<Description>(Always unencrypted, always last field in message)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.4" addedEP="-1">
+		<ComponentID>2085</ComponentID>
+		<TagText>627</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.4" addedEP="-1">
+		<ComponentID>2085</ComponentID>
+		<TagText>628</TagText>
+		<Indent>1</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.4" addedEP="-1">
+		<ComponentID>2085</ComponentID>
+		<TagText>629</TagText>
+		<Indent>1</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.4" addedEP="-1">
+		<ComponentID>2085</ComponentID>
+		<TagText>630</TagText>
+		<Indent>1</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>47</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>47</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>	
+</MsgContents>
