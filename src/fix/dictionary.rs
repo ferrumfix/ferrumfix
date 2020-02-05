@@ -5,10 +5,17 @@ use serde::Deserialize;
 struct Field {
     name: String,
     number: usize,
+    #[serde(rename = "type")]
     field_type: String,
     // https://github.com/tafia/quick-xml#parsing-the-value-of-a-tag
     #[serde(rename = "$value")]
     values: Option<Vec<Value>>,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+struct FieldRef {
+    name: String,
+    required: char,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -18,16 +25,48 @@ struct Value {
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
+struct Message {
+    name: String,
+    msgtype: Option<String>,
+    msgcat: Option<String>,
+    #[serde(rename = "field", default)]
+    fields: Vec<FieldRef>,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+struct Header {
+    #[serde(rename = "field", default)]
+    fields: Vec<FieldRef>,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+struct Trailer {
+    #[serde(rename = "field", default)]
+    fields: Vec<FieldRef>,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+struct Component {
+    name: String,
+    #[serde(rename = "field", default)]
+    fields: Vec<Field>,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(rename = "fix")]
 pub struct Dictionary {
     // Meta.
     major: usize,
     minor: usize,
     servicepack: usize,
     // Tag definitions.
-    //header: Header,
-    //trailer: Trailer,
-    //messages: Vec<Message>,
-    //components: Vec<Component>,
+    header: Header,
+    trailer: Trailer,
+    #[serde(rename = "message", default)]
+    messages: Vec<Message>,
+    #[serde(rename = "component", default)]
+    components: Vec<Component>,
+    #[serde(rename = "field", default)]
     fields: Vec<Field>,
 }
 
