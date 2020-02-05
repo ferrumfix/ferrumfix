@@ -11,9 +11,9 @@ See the following feature roadmap:
 **FIX:**
 
 - [ ] FIXML parser.
-- [ ] Compact notation parser.
+- [ ] Classic tag-value pair format parser.
 - [ ] Code generation (Rust).
-- [ ] Standard (4.1 and following) tags.
+- [ ] Standard (4.0 and following) tags.
 - [ ] Custom fields.
 
 **FAST:**
@@ -25,8 +25,12 @@ As dictated by [SemVer 2.0](https://semver.org/), I will bump the major version 
 
 Fasters is intended to be an all-in-one tool for everything concerning FIX & FAST data. You can either use it for code generation at build-time or at runtime to help you (de)serialize schemaless FAST data streams. FIX is more static and you'll generally want to use code generation.
 
-- [Official documentation.](https://www.fixtrading.org/standards/fast/)
-- [FAST on Wikipedia.](https://en.wikipedia.org/wiki/FAST_protocol)
+- [FIXwiki](http://fixwiki.org/fixwiki/FIXwiki)
+- [FIX @ Wikipedia](https://it.wikipedia.org/wiki/Financial_Information_eXchange_Protocol)
+- [FAST @ Wikipedia](https://en.wikipedia.org/wiki/FAST_protocol)
+- [FIX Protocol, Ltd's official website](https://www.fixtrading.org)
+- [ValidFIX: FIX parser online](http://www.validfix.com/fix-analyzer.html)
+- [OnixS FIX dictionary browser](https://www.onixs.biz/fix-dictionary.html)
 
 ---
 
