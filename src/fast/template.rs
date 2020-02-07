@@ -1,8 +1,6 @@
-use crate::err::{Error, Result};
+use crate::err::Result;
 use crate::settings::Settings;
 use codegen::Scope;
-use quick_xml::events::Event;
-use quick_xml::Reader;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
@@ -69,18 +67,18 @@ impl Template {
         self
     }
 
-    pub fn from_xml<S: AsRef<str>>(xml: S) -> Result<Self> {
+    pub fn from_xml<S: AsRef<str>>(_xml: S) -> Result<Self> {
         //fixml::State::new(xml.as_ref()).consume()
         unimplemented!()
     }
 
     /// Parses a template definition using the traditional FIX `tag=value` syntax.
     pub fn from_compact<S: AsRef<str>>(formula: S) -> Result<Self> {
-        let formula = formula.as_ref();
+        let _formula = formula.as_ref();
         unimplemented!()
     }
 
-    pub fn codegen(&self, settings: Settings) -> String {
+    pub fn codegen(&self, _settings: Settings) -> String {
         unimplemented!()
     }
 }
@@ -127,7 +125,7 @@ impl Description {
             .new_struct(self.template_name.as_str())
             .derive("Debug")
             .derive("Clone");
-        for element in self.elements {
+        for _element in self.elements {
             struct_definition = struct_definition.field("one", "usize");
         }
         scope.to_string()

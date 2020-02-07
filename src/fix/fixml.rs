@@ -26,7 +26,7 @@ impl<'s> State<'s> {
             match self.reader.read_event(&mut buf) {
                 Ok(Event::Start(ref e)) => self.transition_open_tag(e.name(), e.attributes())?,
                 Ok(Event::End(ref e)) => self.transition_close_tag(e.name())?,
-                Ok(Event::Empty(ref e)) => unimplemented!(),
+                Ok(Event::Empty(ref _e)) => unimplemented!(),
                 Ok(Event::Eof) => return Ok(()),
                 Ok(_) => (),
                 Err(e) => return Err(e.into()),
@@ -50,7 +50,7 @@ impl<'s> State<'s> {
         Ok(())
     }
 
-    fn transition_close_tag(&mut self, name: &[u8]) -> Result<()> {
+    fn transition_close_tag(&mut self, _name: &[u8]) -> Result<()> {
         Ok(())
     }
 }

@@ -1,30 +1,30 @@
+/// This module offers pre-bundled tag dictionaries for several revisions of the
+/// FIX protocol. All data comes from the official FIX Repository.
 use rust_embed::RustEmbed;
 use serde::Deserialize;
+use std::collections::HashMap;
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 struct Field {
     name: String,
     number: usize,
-    #[serde(rename = "type")]
     field_type: String,
-    // https://github.com/tafia/quick-xml#parsing-the-value-of-a-tag
-    #[serde(rename = "$value")]
     values: Option<Vec<Value>>,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 struct FieldRef {
     name: String,
     required: char,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 struct Value {
     value_enum: String,
     description: Option<String>,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 struct Message {
     name: String,
     msgtype: Option<String>,
@@ -33,41 +33,36 @@ struct Message {
     fields: Vec<FieldRef>,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 struct Header {
     #[serde(rename = "field", default)]
     fields: Vec<FieldRef>,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 struct Trailer {
-    #[serde(rename = "field", default)]
     fields: Vec<FieldRef>,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 struct Component {
     name: String,
-    #[serde(rename = "field", default)]
     fields: Vec<Field>,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
-#[serde(rename = "fix")]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+pub struct Abbreviation {
+    term: String,
+    usage_description: String,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct Dictionary {
-    // Meta.
-    major: usize,
-    minor: usize,
-    servicepack: usize,
-    // Tag definitions.
     header: Header,
     trailer: Trailer,
-    #[serde(rename = "message", default)]
     messages: Vec<Message>,
-    #[serde(rename = "component", default)]
     components: Vec<Component>,
-    #[serde(rename = "field", default)]
-    fields: Vec<Field>,
+    fields: HashMap<usize, Field>,
 }
 
 impl Dictionary {
@@ -100,11 +95,11 @@ impl Dictionary {
         Dictionary::by_filename("FIX-5.0.xml")
     }
 
-    pub fn v50SP1() -> Self {
+    pub fn v50_sp1() -> Self {
         Dictionary::by_filename("FIX-5.0-SP1.xml")
     }
 
-    pub fn v50SP2() -> Self {
+    pub fn v50_sp2() -> Self {
         Dictionary::by_filename("FIX-5.0-SP2.xml")
     }
 }
