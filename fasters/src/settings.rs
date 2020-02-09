@@ -17,6 +17,7 @@ impl Default for Settings {
     }
 }
 
+/// Programming languages supported by Fasters' for code generation.
 pub enum ProgrammingLanguage {
     Rust,
 }

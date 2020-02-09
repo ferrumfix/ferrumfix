@@ -1,5 +1,6 @@
 //! Provides programmatic access to the FIX Repository.
 
+use crate::Version;
 use quick_xml::de::from_str;
 use rust_embed::RustEmbed;
 use serde::de::DeserializeOwned;
@@ -31,7 +32,7 @@ pub struct RepoV50SP2EP254;
 /// # Examples
 ///
 /// ```
-/// let schema = RepoV2010::get("schema/Fields.xsd").unwrap();
+/// let schema = RepoV2010::fields(Version::Fix42);
 /// println!("{}", schema);
 /// ```
 #[cfg(feature = "repo_v2010")]
@@ -39,9 +40,14 @@ pub struct RepoV50SP2EP254;
 #[folder = "resources/repositories/fix_repository_2010_edition_20140507"]
 pub struct RepoV2010;
 
+#[cfg(not(feature = "repo_v2010"))]
+#[derive(RustEmbed)]
+#[folder = "resources/empty"]
+pub struct RepoV2010;
+
 impl RepoV2010 {
-    fn get_by_version<T: DeserializeOwned>(version: types::FixVersion, filename: &str) -> T {
-        let mut path = version.to_str().to_string();
+    fn get_by_version<T: DeserializeOwned>(version: Version, filename: &str) -> T {
+        let mut path = version.as_str().to_string();
         path.push_str("/Base/");
         path.push_str(filename);
         let bytes = RepoV2010::get(path.as_str()).unwrap();
@@ -49,53 +55,52 @@ impl RepoV2010 {
         from_str(xml).unwrap()
     }
 
-    pub fn components(version: types::FixVersion) -> types::Components {
+    pub fn components(version: Version) -> types::Components {
         Self::get_by_version(version, "Components.xml")
     }
 
-    pub fn data_types(version: types::FixVersion) -> types::Datatypes {
+    pub fn data_types(version: Version) -> types::Datatypes {
         Self::get_by_version(version, "Datatypes.xml")
     }
 
-    pub fn enums(version: types::FixVersion) -> types::Enums {
+    pub fn enums(version: Version) -> types::Enums {
         Self::get_by_version(version, "Enums.xml")
     }
 
-    pub fn fields(version: types::FixVersion) -> types::Fields {
+    pub fn fields(version: Version) -> types::Fields {
         Self::get_by_version(version, "Fields.xml")
     }
 
-    pub fn messages(version: types::FixVersion) -> types::Messages {
+    pub fn messages(version: Version) -> types::Messages {
         Self::get_by_version(version, "Messages.xml")
     }
 
     // ONLY FIX 4.4 AND UP
     // -------------------
 
-    pub fn abbreviations(version: types::FixVersion) -> types::Abbreviations {
+    pub fn abbreviations(version: Version) -> types::Abbreviations {
         Self::get_by_version(version, "Abbreviations.xml")
     }
 
-    pub fn categories(version: types::FixVersion) -> types::Categories {
+    pub fn categories(version: Version) -> types::Categories {
         Self::get_by_version(version, "Categories.xml")
     }
 
-    pub fn sections(version: types::FixVersion) -> types::Sections {
+    pub fn sections(version: Version) -> types::Sections {
         Self::get_by_version(version, "Sections.xml")
     }
 }
 
-#[cfg(not(feature = "repo_v2010"))]
-#[derive(RustEmbed)]
-#[folder = "resources/empty"]
-pub struct RepoV2010;
-
 /// Basic data structures that can interface with the FIX repository via Serde.
 /// They are mostly one-to-one mappings from `repositorystructures.xsd` and
 /// `repositorytypes.xsd`.
-mod types {
-    pub use crate::Version as FixVersion;
+pub mod types {
+    pub use crate::Version;
     use serde::Deserialize;
+
+    /// Available versions of the FIX standard.
+    #[derive(Clone, Debug, Deserialize, PartialEq)]
+    pub struct FixVersion(Version);
 
     /// A field is identified by a unique tag number and a name. Each field in a
     /// message is associated with a value.
@@ -103,29 +108,29 @@ mod types {
     #[serde(rename_all = "PascalCase")]
     pub struct Field {
         /// A human readable string representing the name of the field.
-        name: String,
+        pub name: String,
         /// A positive integer representing the unique identifier for this field
         /// type.
-        tag: usize,
+        pub tag: usize,
         /// The datatype of the field.
         #[serde(rename = "Type")]
-        data_type: String,
+        pub data_type: String,
         /// The associated data field. If given, this field represents the length of
         /// the referenced data field
-        associated_data_tag: Option<usize>,
+        pub associated_data_tag: Option<usize>,
         /// Abbreviated form of the Name, typically to specify the element name when
         /// the field is used in an XML message. Can be overridden by BaseCategory /
         /// BaseCategoryAbbrName.
-        abbr_name: Option<String>,
+        pub abbr_name: Option<String>,
         /// Specifies the base message category when field is used in an XML message.
-        base_category_id: Option<usize>,
+        pub base_category_id: Option<usize>,
         /// If BaseCategory is specified, this is the XML element identifier to use
         /// for this field, overriding AbbrName.
-        base_category_abbr_name: Option<String>,
+        pub base_category_abbr_name: Option<String>,
         /// Indicates whether the field is required in an XML message.
         #[serde(rename = "NotReqXML")]
-        required: bool,
-        description: Option<String>,
+        pub required: bool,
+        pub description: Option<String>,
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
@@ -155,25 +160,13 @@ mod types {
     pub struct Message {
         /// A human readable string representing the name of the field.
         #[serde(rename = "CategoryID")]
-        category_id: String,
+        pub category_id: String,
         #[serde(rename = "SectionID")]
-        section_id: String,
+        pub section_id: String,
         #[serde(rename = "NotReqXML")]
-        required: String,
-        description: String,
-        elaboration: String,
-    }
-
-    #[derive(Clone, Debug, Deserialize, PartialEq)]
-    pub struct Fields {
-        #[serde(rename = "Field", default)]
-        fields: Vec<Field>,
-    }
-
-    #[derive(Clone, Debug, Deserialize, PartialEq)]
-    pub struct Enums {
-        #[serde(rename = "Enum", default)]
-        enums: Vec<Enums>,
+        pub required: String,
+        pub description: String,
+        pub elaboration: Option<String>,
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
@@ -197,6 +190,18 @@ mod types {
 
     // CONTAINERS (plural format)
     // --------------------------
+
+    #[derive(Clone, Debug, Deserialize, PartialEq)]
+    pub struct Fields {
+        #[serde(rename = "Field", default)]
+        pub fields: Vec<Field>,
+    }
+
+    #[derive(Clone, Debug, Deserialize, PartialEq)]
+    pub struct Enums {
+        #[serde(rename = "Enum", default)]
+        pub enums: Vec<Enums>,
+    }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
     pub struct Abbreviations {
@@ -227,40 +232,20 @@ mod types {
     #[derive(Clone, Debug, Deserialize, PartialEq)]
     pub struct Messages {
         #[serde(rename = "Message", default)]
-        data: Vec<Message>,
+        pub data: Vec<Message>,
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
     pub struct Sections {
         #[serde(rename = "Section", default)]
-        data: Vec<Section>,
+        pub data: Vec<Section>,
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::types::*;
     use super::*;
-    use quick_xml::de::from_str;
-    use serde::de::DeserializeOwned;
-    use std::borrow::Borrow;
-
-    fn deserialize_v2010<T: DeserializeOwned>(filename: &'static str) {
-        for version in FixVersion::all() {
-            let mut path = (*version).to_string();
-            path.push_str("/Base/");
-            path.push_str(filename);
-            let bytes = RepoV2010::get(path.as_str()).unwrap();
-            let xml = std::str::from_utf8(bytes.borrow()).unwrap();
-            from_str::<T>(xml).unwrap();
-        }
-    }
-
-    #[test]
-    fn repo_v2010_schema_enums() {
-        let schema = RepoV2010::get("schema/Enums.xsd");
-        assert!(schema.is_some());
-    }
+    use crate::Version;
 
     #[test]
     fn repo_v50sp2ep254_readme() {
@@ -271,16 +256,22 @@ mod test {
 
     #[test]
     fn repo_v2010_deserialize_fields() {
-        deserialize_v2010::<Fields>("Fields.xml");
+        for v in Version::iter_supported() {
+            RepoV2010::fields(v);
+        }
     }
 
     #[test]
     fn repo_v2010_deserialize_enums() {
-        deserialize_v2010::<Enums>("Enums.xml");
+        for v in Version::iter_supported() {
+            RepoV2010::enums(v);
+        }
     }
 
     #[test]
     fn repo_v2010_deserialize_messages() {
-        deserialize_v2010::<Messages>("Messages.xml");
+        for v in Version::iter_supported() {
+            RepoV2010::messages(v);
+        }
     }
 }

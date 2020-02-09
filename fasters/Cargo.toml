@@ -1,0 +1,40 @@
+[package]
+name = "fasters"
+version = "0.2.0"
+edition = "2018"
+authors = ["Filippo Costa @neysofu"]
+homepage = "https://github.com/neysofu/fasters"
+repository = "https://github.com/neysofu/fasters"
+description = "FIX & FAST (FIX Adapted for STreaming) in pure Rust."
+publish = true
+readme = "README.md"
+keywords = ["fix", "fast", "protocol", "finance", "streaming"]
+categories = ["network-programming", "parser-implementations", "encoding"]
+license = "MIT"
+
+[features]
+repo_v50sp2ep254 = [ ]
+repo_v2010 = [ ]
+default = [ "repo_v50sp2ep254" ]
+
+[dependencies]
+bitvec = "0.14"
+failure = "0.1.5"
+codegen = "0.1.1"
+serde = { version = "1.0", features = [ "derive" ] }
+quick-xml = { version = "0.17.2", features = [ "serialize" ] }
+nom = "5"
+rust-embed = "5"
+strum = "0.17.1"
+strum_macros = "0.17.1"
+
+#quote = "1"
+#proc-macro2 = "1"
+#syn = "1"
+#
+#[lib]
+#proc-macro = true
+
+[dev-dependencies]
+quickcheck = "0.8"
+quickcheck_macros = "0.8"
