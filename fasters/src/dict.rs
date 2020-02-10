@@ -1,8 +1,20 @@
 use crate::repo::types;
 use crate::repo::RepoV2010;
 use crate::Version;
+use codegen::Scope;
 use serde::Deserialize;
 use std::collections::HashMap;
+
+pub fn codegen(dict: Dictionary) -> String {
+    let mut scope = Scope::new();
+    for (_, field) in dict.fields {
+        let structure = scope.new_struct(field.name.as_str()).vis("pub");
+        if let Some(description) = field.description {
+            structure.doc(description.as_str());
+        }
+    }
+    scope.to_string()
+}
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct Dictionary {
@@ -34,5 +46,12 @@ mod test {
         use super::*;
         let dict = Dictionary::new(Version::Fix40);
         assert!(dict.fields.len() >= 100);
+    }
+
+    #[test]
+    fn print_dict() {
+        use super::*;
+        let dict = Dictionary::new(Version::Fix40);
+        println!("{}", codegen(dict));
     }
 }

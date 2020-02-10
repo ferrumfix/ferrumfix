@@ -1,0 +1,1426 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?altova_sps ..\..\tools\EP\EP.sps?>
+<fixRepository xmlns="http://www.fixprotocol.org/extensionpack" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="FIX.5.0SP2" xsi:schemaLocation="http://www.fixprotocol.org/extensionpack ..\..\schema\extensionpack.xsd">
+	<extensionPack approved="2019-11-15T12:00:00" desc="EU Securities Financing Transactions (SFTR) Regulations" id="254" tempIntermediatePath="../EP253/">
+		<Abbreviations>
+			<Updates>
+				<Abbreviation Term="Other">
+					<AbbrTerm>Other</AbbrTerm>
+					<Usage>PaymentStreamOtherDayCount(43106)</Usage>
+				</Abbreviation>
+			</Updates>
+			<Inserts>
+				<Abbreviation Term="Funding">
+					<AbbrTerm>Fndng</AbbrTerm>
+					<Usage>FundingSource component</Usage>
+				</Abbreviation>
+			</Inserts>
+		</Abbreviations>
+		<Fields>
+			<Updates>
+				<Field Tag="762">
+					<Description>Sub-type qualification/identification of the SecurityType. As an example for SecurityType(167)=&quot;REPO&quot;, the SecuritySubType=&quot;General Collateral&quot; can be used to further specify the type of REPO.
+If SecuritySubType is used, then SecurityType is required.
+For SecurityType=&quot;MLEG&quot; a name of the option or futures strategy name can be specified, such as &quot;Calendar&quot;, &quot;Vertical&quot;, &quot;Butterfly&quot;.
+For SecurityType(167)=&quot;OPT&quot; the subclassification can be specified, such as &quot;Asian&quot;.
+For SecurityType(167)=&quot;SWAPTION&quot; a value of &quot;Straddle&quot; is used to identify a straddle swaption.
+In the context of EU SFTR reporting use the appropriate 4-character code noted in the regulations - &quot;GENE&quot; for general collateral or &quot;SPEC&quot; for specific collateral (without quote marks).</Description>
+				</Field>
+				<Field Tag="913">
+					<Elaboration>For EU SFTR reporting use the appropriate 4-character code noted in the regulations. See SFTR ITS &quot;Commission Implementing Regulation (EU) 2019/363&quot; Annexes 1 to 2 for values. For other agreement type use OTHR and the name of the agreement concatenated with a hyphen, e.g. OTHR-&lt;IndexName&gt;.</Elaboration>
+				</Field>
+				<Field Tag="1936">
+					<Elaboration>In the context of Dodd-Frank, all values shown except for 4 (Net exposure) apply.
+In the context of ESMA EU SFTR reporting only the values 1 (Uncollateralized), 3 (Fully collateralized) and 4 (Net exposure) apply.</Elaboration>
+				</Field>
+			</Updates>
+			<Inserts>
+				<Field Tag="2840">
+					<Name>CollateralReinvestmentRate</Name>
+					<Type>Percentage</Type>
+					<AbbrName>RnvstmntRt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Interest rate received for collateral reinvestment.</Description>
+					<Elaboration>In the context of EU SFTR this is the reinvestment interest rate received from cash collateral made by the lender.  If there are multiple reinvestment types, this is an average rate.</Elaboration>
+				</Field>
+				<Field Tag="2841">
+					<Name>UnderlyingRefID</Name>
+					<Type>String</Type>
+					<AbbrName>UndlyRefID</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Identifies the underlying instrument the entity applies to by referencing the underlying instrument&apos;s UnderlyingID(2874).</Description>
+				</Field>
+				<Field Tag="2842">
+					<Name>CollateralReinvestmentAmount</Name>
+					<Type>Amt</Type>
+					<AbbrName>Amt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The cash amount of the specified re-investment type.</Description>
+				</Field>
+				<Field Tag="2843">
+					<Name>CollateralReinvestmentCurrency</Name>
+					<Type>Currency</Type>
+					<AbbrName>Ccy</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The currency denomination of the re-invested cash amount. Uses ISO 4217 currency codes.</Description>
+				</Field>
+				<Field Tag="2844">
+					<Name>CollateralReinvestmentType</Name>
+					<Type>int</Type>
+					<AbbrName>Typ</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<UnionDataType>Reserved100Plus</UnionDataType>
+					<Description>Indicates the type of investment the cash collateral is re-invested in.</Description>
+				</Field>
+				<Field Tag="2845">
+					<Name>NoCollateralReinvestments</Name>
+					<Type>NumInGroup</Type>
+					<NotReqXML>1</NotReqXML>
+					<Description>Number of instances of CollateralReinvestmentType(2844) in the repeating group.</Description>
+				</Field>
+				<Field Tag="2846">
+					<Name>FundingSource</Name>
+					<Type>int</Type>
+					<AbbrName>Src</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<UnionDataType>Reserved100Plus</UnionDataType>
+					<Description>Specifies the funding source used to finance margin or collateralized loan.</Description>
+				</Field>
+				<Field Tag="2847">
+					<Name>FundingSourceCurrency</Name>
+					<Type>Currency</Type>
+					<AbbrName>Ccy</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Currency denomination of the market value of the funding source. Uses ISO 4217 currency codes.</Description>
+				</Field>
+				<Field Tag="2848">
+					<Name>FundingSourceMarketValue</Name>
+					<Type>Amt</Type>
+					<AbbrName>MktValu</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Market value of the funding source.</Description>
+				</Field>
+				<Field Tag="2849">
+					<Name>NoFundingSources</Name>
+					<Type>NumInGroup</Type>
+					<NotReqXML>1</NotReqXML>
+					<Description>Number of instances of FundingSource(2846) in the repeating group.</Description>
+				</Field>
+				<Field Tag="43108">
+					<Name>LegPaymentStreamOtherDayCount</Name>
+					<Type>String</Type>
+					<AbbrName>OtherDayCnt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The industry name of the day count convention not listed in LegPaymentStreamDayCount(40283).</Description>
+				</Field>
+				<Field Tag="2851">
+					<Name>MarginDirection</Name>
+					<Type>int</Type>
+					<AbbrName>Dirctn</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Indicates whether the margin described is posted or received.</Description>
+				</Field>
+				<Field Tag="43097">
+					<Name>PaymentFixedRate</Name>
+					<Type>Percentage</Type>
+					<AbbrName>Rt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The rate applicable to the fixed rate payment.</Description>
+				</Field>
+				<Field Tag="43098">
+					<Name>PaymentFloatingRateIndex</Name>
+					<Type>String</Type>
+					<AbbrName>Ndx</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The payment floating rate index. See SpreadOrBenchmarkCurveData(221) for suggested values.</Description>
+				</Field>
+				<Field Tag="43099">
+					<Name>PaymentFloatingRateIndexCurvePeriod</Name>
+					<Type>int</Type>
+					<AbbrName>NdxPeriod</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Time unit multiplier for the floating rate index.</Description>
+				</Field>
+				<Field Tag="43100">
+					<Name>PaymentFloatingRateIndexCurveUnit</Name>
+					<Type>String</Type>
+					<AbbrName>NdxUnit</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<EnumDatatype>40791</EnumDatatype>
+					<Description>Time unit associated with the floating rate index.</Description>
+				</Field>
+				<Field Tag="43101">
+					<Name>PaymentFloatingRateSpread</Name>
+					<Type>PriceOffset</Type>
+					<AbbrName>Spread</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Spread from floating rate index.</Description>
+				</Field>
+				<Field Tag="43102">
+					<Name>PaymentFrequencyPeriod</Name>
+					<Type>int</Type>
+					<AbbrName>FreqPeriod</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Time unit multiplier for the payment frequency.</Description>
+				</Field>
+				<Field Tag="43103">
+					<Name>PaymentFrequencyUnit</Name>
+					<Type>String</Type>
+					<AbbrName>FreqUnit</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<EnumDatatype>40791</EnumDatatype>
+					<Description>Time unit associated with the payment frequency.</Description>
+				</Field>
+				<Field Tag="43104">
+					<Name>PaymentRateResetFrequencyPeriod</Name>
+					<Type>int</Type>
+					<AbbrName>ResetFreqPeriod</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Time unit multiplier for the floating rate reset frequency.</Description>
+				</Field>
+				<Field Tag="43105">
+					<Name>PaymentRateResetFrequencyUnit</Name>
+					<Type>String</Type>
+					<AbbrName>ResetFreqUnit</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<EnumDatatype>40791</EnumDatatype>
+					<Description>Time unit associated with the floating rate reset frequency.</Description>
+				</Field>
+				<Field Tag="43106">
+					<Name>PaymentStreamOtherDayCount</Name>
+					<Type>String</Type>
+					<AbbrName>OtherDayCnt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The industry name of the day count convention not listed in PaymentStreamDayCount(40742).</Description>
+				</Field>
+				<Field Tag="2862">
+					<Name>SideCollateralReinvestmentRate</Name>
+					<Type>Percentage</Type>
+					<AbbrName>RnvstmntRt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Interest rate received for collateral reinvestment.</Description>
+					<Elaboration>In the context of EU SFTR this is the reinvestment interest rate received from cash collateral made by the lender.  If there are multiple reinvestment types, this is an average rate.</Elaboration>
+				</Field>
+				<Field Tag="2863">
+					<Name>SideUnderlyingRefID</Name>
+					<Type>String</Type>
+					<AbbrName>UndlyRefID</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Identifies the underlying instrument the entity applies to by referencing the underlying instrument&apos;s UnderlyingID(2874).</Description>
+				</Field>
+				<Field Tag="2864">
+					<Name>NoSideCollateralReinvestments</Name>
+					<Type>NumInGroup</Type>
+					<NotReqXML>1</NotReqXML>
+					<Description>Number of instances of SideCollateralReinvestmentType(2867) in the repeating group.</Description>
+				</Field>
+				<Field Tag="2865">
+					<Name>SideCollateralReinvestmentAmount</Name>
+					<Type>Amt</Type>
+					<AbbrName>Amt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The cash amount of the specified re-investment type.</Description>
+				</Field>
+				<Field Tag="2866">
+					<Name>SideCollateralReinvestmentCurrency</Name>
+					<Type>Currency</Type>
+					<AbbrName>Ccy</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The currency denomination of the re-invested cash amount. Uses ISO 4217 currency codes.</Description>
+				</Field>
+				<Field Tag="2867">
+					<Name>SideCollateralReinvestmentType</Name>
+					<Type>int</Type>
+					<AbbrName>Typ</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<EnumDatatype>2844</EnumDatatype>
+					<UnionDataType>Reserved100Plus</UnionDataType>
+					<Description>Indicates the type of investment the cash collateral is re-invested in.</Description>
+				</Field>
+				<Field Tag="2868">
+					<Name>CollateralizationValueDate</Name>
+					<Type>LocalMktDate</Type>
+					<AbbrName>CollztnValuDt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Date when the collateral is to be assessed or assigned.</Description>
+				</Field>
+				<Field Tag="2869">
+					<Name>RegulatoryReportTypeBusinessDate</Name>
+					<Type>LocalMktDate</Type>
+					<AbbrName>RegRptTypBizDt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The business date on which the event identified in RegulatoryReportType(1934) took place.</Description>
+					<Elaboration>In the context of EU SFTR reports with a RegulatoryReportType(1934) value 7 (Post-trade valuation), 31 (Collateral update) or 32 (Margin update), the business date on which the business event took place, which results in the information contained in the report.</Elaboration>
+				</Field>
+				<Field Tag="2870">
+					<Name>ClearingPortfolioID</Name>
+					<Type>String</Type>
+					<AbbrName>ClrPrtflioID</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>When the transaction is cleared and included in a portfolio of transactions this identifies the portfolio by its unique identifier.</Description>
+					<Elaboration>In the context of EU SFTR reporting this applies to cleared transactions grouped in a portfolio for which margins are exchanged.</Elaboration>
+				</Field>
+				<Field Tag="2871">
+					<Name>NoTransactionAttributes</Name>
+					<Type>NumInGroup</Type>
+					<NotReqXML>1</NotReqXML>
+					<Description>Number of instances of TransactionAttributeType(2872) in the repeating group.</Description>
+				</Field>
+				<Field Tag="2872">
+					<Name>TransactionAttributeType</Name>
+					<Type>int</Type>
+					<AbbrName>Typ</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Type of attribute(s) or characteristic(s) associated with the transaction.</Description>
+				</Field>
+				<Field Tag="2873">
+					<Name>TransactionAttributeValue</Name>
+					<Type>String</Type>
+					<AbbrName>Valu</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Value associated with the specificed TransactionAttributeType(2872).</Description>
+				</Field>
+				<Field Tag="2874">
+					<Name>UnderlyingID</Name>
+					<Type>String</Type>
+					<AbbrName>UdlyID</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>Unique identifier for the underlying instrument within the context of a message.</Description>
+					<Elaboration>The UnderlyingID(2874) can be referenced by other fields, for example UnderlyingRefID(tbd2841) and SideUnderlyingRefID(2863), from other components . The scope of uniqueness is agreed upon between counterparties.</Elaboration>
+				</Field>
+				<Field Tag="43107">
+					<Name>UnderlyingPaymentStreamOtherDayCount</Name>
+					<Type>String</Type>
+					<AbbrName>OtherDayCnt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The industry name of the day count convention not listed in UnderlyingPaymentStreamDayCount(40572).</Description>
+				</Field>
+				<Field Tag="2876">
+					<Name>PosAmtPrice</Name>
+					<Type>Price</Type>
+					<AbbrName>Px</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The price used to calculate the PosAmt(708).</Description>
+					<Elaboration>This may be used for certain PosAmtType(707) values where the PosAmt(708) is based on the current price of the position&apos;s security.  In the context of EU SFTR reporting, this is the price used to calculate the loan value for securities loan and borrowing, and buy-sell back. The price may be expressed in units or percentage of the underlying security, yield or an absolute amount that ignores netting. For Buy/Sellback it expresses the initial spot price.</Elaboration>
+				</Field>
+				<Field Tag="2877">
+					<Name>PosAmtPriceType</Name>
+					<Type>int</Type>
+					<AbbrName>PxTyp</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<EnumDatatype>423</EnumDatatype>
+					<Description>Specifies the type of price for PosAmtPrice(2876).</Description>
+				</Field>
+				<Field Tag="2878">
+					<Name>TerminationDate</Name>
+					<Type>LocalMktDate</Type>
+					<AbbrName>TmntnDt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The date of a contract&apos;s early termination or other post-trade event when the event is prior to the contract natural end or maturity not defined as part of the security&apos;s reference data or contractual terms/agreement.</Description>
+				</Field>
+				<Field Tag="2879">
+					<Name>CouponOtherDayCount</Name>
+					<Type>String</Type>
+					<AbbrName>CpnOtherDayCnt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The industry name of the day count convention not listed in CouponDayCount(1950).</Description>
+				</Field>
+				<Field Tag="2880">
+					<Name>LegCouponOtherDayCount</Name>
+					<Type>String</Type>
+					<AbbrName>CpnOtherDayCnt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The industry name of the day count convention not listed in LegCouponDayCount(2165).</Description>
+				</Field>
+				<Field Tag="2881">
+					<Name>UnderlyingCouponOtherDayCount</Name>
+					<Type>String</Type>
+					<AbbrName>CpnOtherDayCnt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The industry name of the day count convention not listed in UnderlyingCouponDayCount(1993).</Description>
+				</Field>
+			</Inserts>
+		</Fields>
+		<Enums>
+			<Updates>
+				<Enum Tag="54" Value="1">
+					<Elaboration>For Securities Financing indicates the receipt of securities or collateral.</Elaboration>
+				</Enum>
+				<Enum Tag="54" Value="2">
+					<Elaboration>For Securities Financing indicates the delivery of securities or collateral.</Elaboration>
+				</Enum>
+				<Enum Tag="803" Value="64">
+					<Elaboration>For regulatory reporting. ID values include: A = Assurance undertaking authorized in accordance with Directive 2002/83/EC C=Credit institution authorized in accordance with Directive 2006/48/EC F=Investment firm in accordance with Directive 2004/39/EC I=Insurance undertaking authorized in accordance with Directive 73/239/EC L=Alternative investment fund managed by AIFMs authorized or registered in accordance with Directive 2011/61/EC O=Institution for occupational retirement provision within the meaning of Article 6(a0 of Directive 2003/41/EC R=Reinsurance undertaking authorized in accordance with Directive 2005/68/EC U=UCITS and its management company, authorized in accordance with Directive 2009/65/EC or blank in case of coverage by LEI or in case of non-financial counterparties.
+In the context of EU SFTR reporting use the appropriate 4- or 1-character code noted in the regulations. See SFTR ITS &quot;Commission Implementing Regulation (EU) 2019/363&quot; Annexes 1 and 2 for values.</Elaboration>
+				</Enum>
+				<Enum Tag="996" Value="kW-a">
+					<Description>Kilowatt year (electrical capacity)</Description>
+				</Enum>
+				<Enum Tag="996" Value="kW-d">
+					<Description>Kilowatt day (electrical capacity)</Description>
+				</Enum>
+				<Enum Tag="996" Value="kW-h">
+					<Description>Kilowatt hour (electrical capacity)</Description>
+				</Enum>
+				<Enum Tag="996" Value="kW-M">
+					<Description>Kilowatt month (electrical capacity)</Description>
+				</Enum>
+				<Enum Tag="996" Value="MW-a">
+					<Description>Megawatt year (electrical capacity)</Description>
+				</Enum>
+				<Enum Tag="996" Value="MW-d">
+					<Description>Megawatt day (electrical capacity)</Description>
+				</Enum>
+				<Enum Tag="996" Value="MW-h">
+					<Description>Megawatt hour (electrical capacity)</Description>
+				</Enum>
+				<Enum Tag="996" Value="MW-M">
+					<Description>Megawatt month (electrical capacity)</Description>
+				</Enum>
+				<Enum Tag="996" Value="MW-min">
+					<Description>Megawatt minute (electrical capacity)</Description>
+				</Enum>
+				<Enum Tag="1950" Value="1">
+					<Elaboration>See also ISO 15022 MICO code &apos;A001&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="1950" Value="4">
+					<Elaboration>See also ISO 15022 MICO code &apos;A007&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="1950" Value="6">
+					<Elaboration>See also ISO 15022 MICO code &apos;A004&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="1950" Value="7">
+					<Elaboration>See also ISO 15022 MICO code &apos;A005&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="1950" Value="8">
+					<Elaboration>See also ISO 15022 MICO code &apos;A010&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="1950" Value="9">
+					<Elaboration>See also ISO 15022 MICO code &apos;A006&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="1950" Value="10">
+					<Description>Act/Act (ICMA Ultimo)</Description>
+				</Enum>
+				<Enum Tag="1950" Value="11">
+					<Elaboration>See also ISO 15022  MICO code &apos;A008&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="1950" Value="14">
+					<Elaboration>See also ISO 15022 MICO code &apos;A009&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="1950" Value="15">
+					<Elaboration>See also ISO 15022 MICO code &apos;A014&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="40091" Value="3">
+					<Description>Extendable</Description>
+					<Elaboration>The contract can be extended by either party usually with a specific time notice prior to the expiry date. In the context of EU SFTR reporting this corresponds to &quot;termination optionality&quot; code &quot;ETSB&quot;.</Elaboration>
+				</Enum>
+			</Updates>
+			<Inserts>
+				<Enum Tag="2844" Value="0">
+					<SymbolicName>MoneyMarketFund</SymbolicName>
+					<Sort>0</Sort>
+					<Description>Money market fund</Description>
+					<Elaboration>Registered money market fund. In the context of EU SFTR reporting this corresponds to code &quot;MMFT&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="2844" Value="1">
+					<SymbolicName>OtherComingledPool</SymbolicName>
+					<Sort>1</Sort>
+					<Description>Other comingled pool</Description>
+					<Elaboration>Any commingled pool other than money market fund. In the context of EU SFTR reporting this corresponds to code &quot;OCMP&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="2844" Value="2">
+					<SymbolicName>RepoMarket</SymbolicName>
+					<Sort>2</Sort>
+					<Description>Repo market</Description>
+					<Elaboration>The repurchase agreement market. In the context of EU SFTR reporting this corresponds to code &quot;REPM&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="2844" Value="3">
+					<SymbolicName>DirectPurchaseOfSecurities</SymbolicName>
+					<Sort>3</Sort>
+					<Description>Direct purchase of securities</Description>
+					<Elaboration>In the context of EU SFTR reporting this corresponds to code &quot;SDPU&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="2844" Value="4">
+					<SymbolicName>OtherInvestments</SymbolicName>
+					<Sort>4</Sort>
+					<Description>Other investments</Description>
+					<Elaboration>In the context of EU SFTR reporting this corresponds to code &quot;OTHR&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="2846" Value="0">
+					<SymbolicName>Repo</SymbolicName>
+					<Sort>0</Sort>
+					<Description>Repurchase agreement</Description>
+					<Elaboration>Repurchase agreements or Buy Sellbacks. In the context of EU SFTR reporting this corresponds to code &quot;REPO&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="2846" Value="1">
+					<SymbolicName>Cash</SymbolicName>
+					<Sort>1</Sort>
+					<Description>Cash</Description>
+					<Elaboration>Cash collateral from securities lending. In the context of EU SFTR reporting this corresponds to code &quot;SECL&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="2846" Value="2">
+					<SymbolicName>FreeCedits</SymbolicName>
+					<Sort>2</Sort>
+					<Description>Free credits</Description>
+					<Elaboration>In the context of EU SFTR reporting this corresponds to code &quot;FREE&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="2846" Value="3">
+					<SymbolicName>CustomerShortSales</SymbolicName>
+					<Sort>3</Sort>
+					<Description>Customer short sales</Description>
+					<Elaboration>Proceeds from customer short sales. In the context of EU SFTR reporting this corresponds to code &quot;CSHS&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="2846" Value="4">
+					<SymbolicName>BrokerShortSales</SymbolicName>
+					<Sort>4</Sort>
+					<Description>Broker short sales</Description>
+					<Elaboration>Proceeds from broker short sales. In the context of EU SFTR reporting this corresponds to code &quot;BSHS&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="2846" Value="5">
+					<SymbolicName>UnsecuredBorrowing</SymbolicName>
+					<Sort>5</Sort>
+					<Description>Unsecured borrowing</Description>
+					<Elaboration>In the context of EU SFTR reporting this corresponds to code &quot;UBOR&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="2846" Value="99">
+					<SymbolicName>Other</SymbolicName>
+					<Sort>99</Sort>
+					<Description>Other</Description>
+					<Elaboration>In the context of EU SFTR reporting this corresponds to code &quot;OTHR&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="2851" Value="0">
+					<SymbolicName>Posted</SymbolicName>
+					<Sort>0</Sort>
+					<Description>Posted</Description>
+					<Elaboration>The party or account that is the object of the report posted margin.</Elaboration>
+				</Enum>
+				<Enum Tag="2851" Value="1">
+					<SymbolicName>Received</SymbolicName>
+					<Sort>1</Sort>
+					<Description>Received</Description>
+					<Elaboration>The party or account that is the object of the report received margin.</Elaboration>
+				</Enum>
+				<Enum Tag="2872" Value="0">
+					<SymbolicName>ExclusiveArrangement</SymbolicName>
+					<Sort>0</Sort>
+					<Description>Exclusive arrangement</Description>
+					<Elaboration>In the context of securities borrowing and lending transaction, an indication of whether the borrower has exclusive access to borrow from the lender&apos;s securities portfolio. Not applicable to commodities. TransactionAttributeValue(2873) takes Y or N value.</Elaboration>
+				</Enum>
+				<Enum Tag="2872" Value="1">
+					<SymbolicName>CollateralReuse</SymbolicName>
+					<Sort>1</Sort>
+					<Description>Collateral reuse</Description>
+					<Elaboration>Indication of whether the collateral taker can reuse the securities provided as collateral for the transaction. TransactionAttributeValue(tbd2873) takes Y or N value.</Elaboration>
+				</Enum>
+				<Enum Tag="2872" Value="2">
+					<SymbolicName>CollateralArrangmentType</SymbolicName>
+					<Sort>2</Sort>
+					<Description>Collateral arrangement type</Description>
+					<Elaboration>In the context of securities financing transactions, indicates the type of collateral arrangement.  For EU SFTR reporting, TransactionAttributeValue(2873) may take ESMA assigned values &quot;TTCA&quot; (title transfer), &quot;SICA&quot; (securities financial interest), or &quot;SIUR&quot; (securities financial interest with right of use).</Elaboration>
+				</Enum>
+				<Enum Tag="167" Value="MRGNLOAN">
+					<SymbolicName>MarginLoan</SymbolicName>
+					<Group>Financing</Group>
+					<Sort>9</Sort>
+					<Description>Margin loan</Description>
+				</Enum>
+				<Enum Tag="221" Value="AUBSW">
+					<SymbolicName>AUBSW</SymbolicName>
+					<Sort>16</Sort>
+					<Description>Australian Bank Bill Swap Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="BUBOR">
+					<SymbolicName>BUBOR</SymbolicName>
+					<Sort>17</Sort>
+					<Description>Budapest Bank Offered Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="CDOR">
+					<SymbolicName>CDOR</SymbolicName>
+					<Sort>18</Sort>
+					<Description>Canadian Dollar Offered Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="CIBOR">
+					<SymbolicName>CIBOR</SymbolicName>
+					<Sort>19</Sort>
+					<Description>Copenhagen Interbank Offered Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="EONIASWAP">
+					<SymbolicName>EONIASWAP</SymbolicName>
+					<Sort>20</Sort>
+					<Description>Euro Overnight Index Average Swap Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="ESTR">
+					<SymbolicName>ESTR</SymbolicName>
+					<Sort>21</Sort>
+					<Description>Euro Short Term Rate</Description>
+					<Elaboration>Replaces EONIA.</Elaboration>
+				</Enum>
+				<Enum Tag="221" Value="EURODOLLAR">
+					<SymbolicName>EURODOLLAR</SymbolicName>
+					<Sort>22</Sort>
+					<Description>Euro Dollar Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="EUROSWISS">
+					<SymbolicName>EUROSWISS</SymbolicName>
+					<Sort>23</Sort>
+					<Description>Euro Swiss Franc Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="GCFREPO">
+					<SymbolicName>GCFREPO</SymbolicName>
+					<Sort>24</Sort>
+					<Description>DTCC General Collateral Finance Repo Index</Description>
+				</Enum>
+				<Enum Tag="221" Value="ISDAFIX">
+					<SymbolicName>ISDAFIX</SymbolicName>
+					<Sort>25</Sort>
+					<Description>ICE Swap Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="JIBAR">
+					<SymbolicName>JIBAR</SymbolicName>
+					<Sort>26</Sort>
+					<Description>Johannesburg Interbank Agreed Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="MOSPRIM">
+					<SymbolicName>MOSPRIM</SymbolicName>
+					<Sort>27</Sort>
+					<Description>Moscow Prime Offered Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="NIBOR">
+					<SymbolicName>NIBOR</SymbolicName>
+					<Sort>28</Sort>
+					<Description>Nigeria Three Month Interbank Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="PRIBOR">
+					<SymbolicName>PRIBOR</SymbolicName>
+					<Sort>29</Sort>
+					<Description>Czech Republic Interbank Offered Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="SOFR">
+					<SymbolicName>SOFR</SymbolicName>
+					<Sort>30</Sort>
+					<Description>Secured Overnight Financing Rate</Description>
+					<Elaboration>Replaces LIBOR.</Elaboration>
+				</Enum>
+				<Enum Tag="221" Value="STIBOR">
+					<SymbolicName>STIBOR</SymbolicName>
+					<Sort>31</Sort>
+					<Description>Stockholm Interbank Offered Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="TELBOR">
+					<SymbolicName>TELBOR</SymbolicName>
+					<Sort>32</Sort>
+					<Description>Bank of Israel Interbank Offered Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="TIBOR">
+					<SymbolicName>TIBOR</SymbolicName>
+					<Sort>33</Sort>
+					<Description>Tokyo Interbank Offered Rate</Description>
+				</Enum>
+				<Enum Tag="221" Value="WIBOR">
+					<SymbolicName>WIBOR</SymbolicName>
+					<Sort>34</Sort>
+					<Description>Warsaw Interbank Offered Rate</Description>
+				</Enum>
+				<Enum Tag="452" Value="124">
+					<SymbolicName>CSDParticipant</SymbolicName>
+					<Sort>124</Sort>
+					<Description>Central Securities Depository (CSD) Participant</Description>
+					<Elaboration>In the context of EU SFTR reporting the identifier of the CSD participant or indirect participant of the reporting counterparty. Where both the CSD participant and indirect participant are involved in the transaction this should identify the indirect participant.</Elaboration>
+				</Enum>
+				<Enum Tag="452" Value="125">
+					<SymbolicName>Issuer</SymbolicName>
+					<Sort>125</Sort>
+					<Description>Issuer</Description>
+					<Elaboration>The issuer of the security.</Elaboration>
+				</Enum>
+				<Enum Tag="703" Value="SECLN">
+					<SymbolicName>LoanOrBorrowedQuantity</SymbolicName>
+					<Sort>36</Sort>
+					<Description>Loan or borrowed quantity</Description>
+					<Elaboration>The number of shares, par value of bonds or commodity contracts on loan or borrowed.</Elaboration>
+				</Enum>
+				<Enum Tag="707" Value="ENDV">
+					<SymbolicName>EndVale</SymbolicName>
+					<Sort>32</Sort>
+					<Description>End value</Description>
+					<Elaboration>Principal amount of a securities financing transaction on matuity date.</Elaboration>
+				</Enum>
+				<Enum Tag="707" Value="MGNLN">
+					<SymbolicName>OutstandingMarginLoan</SymbolicName>
+					<Sort>33</Sort>
+					<Description>Outstanding margin loan</Description>
+					<Elaboration>The amount of the outstanding margin loan. In the event that the loan has a short market value, PosAmt(708) would be a negative value.</Elaboration>
+				</Enum>
+				<Enum Tag="707" Value="LNVL">
+					<SymbolicName>LoanValue</SymbolicName>
+					<Sort>34</Sort>
+					<Description>Loan value</Description>
+					<Elaboration>The amount of the loan.</Elaboration>
+				</Enum>
+				<Enum Tag="803" Value="85">
+					<SymbolicName>SubSectorClassification</SymbolicName>
+					<Sort>85</Sort>
+					<Description>Sub-sector classification</Description>
+					<Elaboration>Supplemental to party sub-ID type &quot;64&quot; (Company activities) for regulatory reporting. For EU SFTR reporting use the appropriate 4-character code noted in the regulations applying the conditional association rules. See SFTR ITS &quot;Commission Implementing Regulation (EU) 2019/363&quot; Annexes 1 and 2 for values.</Elaboration>
+				</Enum>
+				<Enum Tag="803" Value="86">
+					<SymbolicName>PartySide</SymbolicName>
+					<Sort>86</Sort>
+					<Description>Party side</Description>
+					<Elaboration>May be used, when appropriate, to explicitly indicate the transaction side of the party, e.g. Buyer, Seller, Lender, Borrower, Maker, Taker, etc. in the ID. In the context of EU SFTR reporting, use values as required by SFTR, &quot;GIVE&quot; and &quot;TAKE&quot; in the ID, to identify collateral giver and taker.</Elaboration>
+				</Enum>
+				<Enum Tag="803" Value="87">
+					<SymbolicName>LegalRegistrationCountry</SymbolicName>
+					<Sort>87</Sort>
+					<Description>Legal registration country</Description>
+					<Elaboration>ISO Country Code where the registered office of the party is located as specified in the LEI reference data.</Elaboration>
+				</Enum>
+				<Enum Tag="910" Value="5">
+					<SymbolicName>Reused</SymbolicName>
+					<Sort>6</Sort>
+					<Description>Reused</Description>
+					<Elaboration>A modification of the details of the collateral re-use. In the context of EU SFTR reporting, to be used with RegulatoryReportType(1934)=31 (Collateral update).</Elaboration>
+				</Enum>
+				<Enum Tag="919" Value="4">
+					<SymbolicName>DeliverByValue</SymbolicName>
+					<Sort>5</Sort>
+					<Description>Deliver-by-Value</Description>
+					<Elaboration>In the context of EU SFTR reporting, indicates that the transaction is to be or was settled using the DBV mechanism.</Elaboration>
+				</Enum>
+				<Enum Tag="996" Value="tnCO2">
+					<SymbolicName>TonsOfCarbonDioxide</SymbolicName>
+					<Group>Fixed Magnitude UOM</Group>
+					<Sort>10</Sort>
+					<Description>Tons of carbon dioxide</Description>
+				</Enum>
+				<Enum Tag="996" Value="a">
+					<SymbolicName>Are</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>39</Sort>
+					<Description>Are</Description>
+				</Enum>
+				<Enum Tag="996" Value="ac">
+					<SymbolicName>Acre</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>40</Sort>
+					<Description>Acre</Description>
+				</Enum>
+				<Enum Tag="996" Value="cL">
+					<SymbolicName>Centiliter</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>41</Sort>
+					<Description>Centiliter</Description>
+				</Enum>
+				<Enum Tag="996" Value="cM">
+					<SymbolicName>Centimeter</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>42</Sort>
+					<Description>Centimeter</Description>
+				</Enum>
+				<Enum Tag="996" Value="DGE">
+					<SymbolicName>DieselGallonEquivalent</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>43</Sort>
+					<Description>Diesel gallon equivalent</Description>
+				</Enum>
+				<Enum Tag="996" Value="ft">
+					<SymbolicName>Foot</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>44</Sort>
+					<Description>Foot</Description>
+				</Enum>
+				<Enum Tag="996" Value="Gal_gb">
+					<SymbolicName>GBGallon</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>45</Sort>
+					<Description>GB Gallon</Description>
+				</Enum>
+				<Enum Tag="996" Value="GGE">
+					<SymbolicName>GasolineGallonEquivalent</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>46</Sort>
+					<Description>Gasonline gallon equivalent</Description>
+				</Enum>
+				<Enum Tag="996" Value="ha">
+					<SymbolicName>Hectare</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>47</Sort>
+					<Description>Hectare</Description>
+				</Enum>
+				<Enum Tag="996" Value="in">
+					<SymbolicName>Inch</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>48</Sort>
+					<Description>Inch</Description>
+				</Enum>
+				<Enum Tag="996" Value="kM">
+					<SymbolicName>Kilometer</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>49</Sort>
+					<Description>Kilometer</Description>
+				</Enum>
+				<Enum Tag="996" Value="M">
+					<SymbolicName>Meter</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>50</Sort>
+					<Description>Meter</Description>
+				</Enum>
+				<Enum Tag="996" Value="mi">
+					<SymbolicName>Mile</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>51</Sort>
+					<Description>Mile</Description>
+				</Enum>
+				<Enum Tag="996" Value="mL">
+					<SymbolicName>Milliliter</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>52</Sort>
+					<Description>Milliliter</Description>
+				</Enum>
+				<Enum Tag="996" Value="mM">
+					<SymbolicName>Millimeter</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>53</Sort>
+					<Description>Millimeter</Description>
+				</Enum>
+				<Enum Tag="996" Value="oz">
+					<SymbolicName>USOunce</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>54</Sort>
+					<Description>US ounce</Description>
+				</Enum>
+				<Enum Tag="996" Value="pc">
+					<SymbolicName>Piece</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>55</Sort>
+					<Description>Piece</Description>
+				</Enum>
+				<Enum Tag="996" Value="pt">
+					<SymbolicName>USPint</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>56</Sort>
+					<Description>US Pint</Description>
+				</Enum>
+				<Enum Tag="996" Value="pt_gb">
+					<SymbolicName>GBPint</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>57</Sort>
+					<Description>GB pint</Description>
+				</Enum>
+				<Enum Tag="996" Value="qt">
+					<SymbolicName>USQuart</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>58</Sort>
+					<Description>US Quart</Description>
+				</Enum>
+				<Enum Tag="996" Value="qt_gb">
+					<SymbolicName>GBQuart</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>59</Sort>
+					<Description>GB Quart</Description>
+				</Enum>
+				<Enum Tag="996" Value="SqcM">
+					<SymbolicName>SquareCentimeter</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>60</Sort>
+					<Description>Square centimeter</Description>
+				</Enum>
+				<Enum Tag="996" Value="Sqft">
+					<SymbolicName>SquareFoot</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>61</Sort>
+					<Description>Square foot</Description>
+				</Enum>
+				<Enum Tag="996" Value="Sqin">
+					<SymbolicName>SquareInch</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>62</Sort>
+					<Description>Square inch</Description>
+				</Enum>
+				<Enum Tag="996" Value="SqkM">
+					<SymbolicName>SquareKilometer</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>63</Sort>
+					<Description>Square kilometer</Description>
+				</Enum>
+				<Enum Tag="996" Value="SqM">
+					<SymbolicName>SquareMeter</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>64</Sort>
+					<Description>Square meter</Description>
+				</Enum>
+				<Enum Tag="996" Value="Sqmi">
+					<SymbolicName>SquareMile</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>65</Sort>
+					<Description>Square mile</Description>
+				</Enum>
+				<Enum Tag="996" Value="SqmM">
+					<SymbolicName>SquareMillimeter</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>66</Sort>
+					<Description>Square millimeter</Description>
+				</Enum>
+				<Enum Tag="996" Value="Sqyd">
+					<SymbolicName>SquareYard</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>67</Sort>
+					<Description>Square yard</Description>
+				</Enum>
+				<Enum Tag="996" Value="yd">
+					<SymbolicName>Yard</SymbolicName>
+					<Group>Variable Quantity UOM</Group>
+					<Sort>68</Sort>
+					<Description>Yard</Description>
+				</Enum>
+				<Enum Tag="1934" Value="28">
+					<SymbolicName>NewTransaction</SymbolicName>
+					<Sort>28</Sort>
+					<Description>New transaction</Description>
+					<Elaboration>In the context of EU SFTR reporting this corresponds to &quot;action type&quot; &quot;NEWT&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="1934" Value="29">
+					<SymbolicName>TransactionCorrection</SymbolicName>
+					<Sort>29</Sort>
+					<Description>Transaction correction</Description>
+					<Elaboration>In the context of EU SFTR reporting this corresponds to &quot;action type&quot; &quot;CORR&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="1934" Value="30">
+					<SymbolicName>TransactionModification</SymbolicName>
+					<Sort>30</Sort>
+					<Description>Transaction modification</Description>
+					<Elaboration>In the context of EU SFTR reporting this corresponds to &quot;action type&quot; &quot;MODI&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="1934" Value="31">
+					<SymbolicName>CollateralUpdate</SymbolicName>
+					<Sort>31</Sort>
+					<Description>Collateral update</Description>
+					<Elaboration>In the context of EU SFTR reporting this corresponds to &quot;action type&quot; &quot;COLU&quot; if CollStatus(910)=3 (Assigned (Accepted)), or &quot;REUU&quot; if CollStatus(910)=5 (Reused).</Elaboration>
+				</Enum>
+				<Enum Tag="1934" Value="32">
+					<SymbolicName>MarginUpdate</SymbolicName>
+					<Sort>32</Sort>
+					<Description>Margin update</Description>
+					<Elaboration>In the context of EU SFTR reporting this corresponds to &quot;action type&quot; &quot;MARU&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="1934" Value="33">
+					<SymbolicName>TransactionReportedInError</SymbolicName>
+					<Sort>33</Sort>
+					<Description>Transaction reported in error</Description>
+					<Elaboration>In the context of EU SFTR reporting this corresponds to &quot;action type&quot; &quot;EROR&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="1934" Value="34">
+					<SymbolicName>TerminationEarlyTermination</SymbolicName>
+					<Sort>34</Sort>
+					<Description>Termination / Early termination</Description>
+					<Elaboration>In the context of EU SFTR reporting this corresponds to &quot;action type&quot; &quot;ETRM&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="1936" Value="4">
+					<SymbolicName>NetExposure</SymbolicName>
+					<Sort>4</Sort>
+					<Description>Net exposure</Description>
+					<Elaboration>Indication of whether the collateral has been provided for a net exposure, rather than for a single transaction.</Elaboration>
+				</Enum>
+				<Enum Tag="1937" Value="31">
+					<SymbolicName>EarlyTermination</SymbolicName>
+					<Sort>31</Sort>
+					<Description>Early termination</Description>
+					<Elaboration>The transaction/contract has closed before its natural end (maturity date or end date).</Elaboration>
+				</Enum>
+				<Enum Tag="1938" Value="11">
+					<SymbolicName>Index</SymbolicName>
+					<Sort>11</Sort>
+					<Description>Index</Description>
+					<Elaboration>A main index identified as a security type, for example under EU SFTR reporting.</Elaboration>
+				</Enum>
+				<Enum Tag="1950" Value="18">
+					<SymbolicName>ThirtyThreeSixtyFive</SymbolicName>
+					<Sort>18</Sort>
+					<Description>30/365 </Description>
+					<Elaboration>Interest is calculated based on a 30-day month in a way similar to the 30/360 (basic rule) and a 365-day year. Accrued interest to a value date on the last day of a month shall be the same as to the 30th calendar day of the same month, except for February. This means that a 31 is assumed to be a 30 and the 28 February (or 29 February for a leap year) is assumed to be a 28 (or 29). See also ISO 15022 MICO code &apos;A002&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="1950" Value="19">
+					<SymbolicName>ThirtyActual</SymbolicName>
+					<Sort>19</Sort>
+					<Description>30/Actual</Description>
+					<Elaboration>Interest is calculated based on a 30-day month in a way similar to the 30/360 (basic rule) and the assumed number of days in a year in a way similar to the Actual/Actual (ICMA). Accrued interest to a value date on the last day of a month shall be the same as to the 30th calendar day of the same month, except for February. This means that a 31 is assumed to be a 30 and the 28 February (or 29 February for a leap year) is assumed to be a 28 (or 29). The assumed number of days in a year is computed as the actual number of days in the coupon period multiplied by the number of interest payments in the year. See also ISO 15022 MICO code &apos;A003&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="1950" Value="20">
+					<SymbolicName>ThirtyThreeSixtyICMA</SymbolicName>
+					<Sort>20</Sort>
+					<Description>30/360 (ICMA or basis rule)</Description>
+					<Elaboration>Interest is calculated based on a 30-day month and a 360-day year. Accrued interest to a value date on the last day of a month shall be the same as to the 30 calendar day of the same month, except for February. This means that a 31 is assumed to be a 30 and the 28 February (or 29 February for a leap year) is assumed to be a 28 (or 29). It is the most commonly used 30/360 method for non-US straight and convertible bonds issued before 1 January 1999. See also ISO 15022 MICO code &apos;A011&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="1950" Value="21">
+					<SymbolicName>ThirtyETwoThreeSixty</SymbolicName>
+					<Sort>21</Sort>
+					<Description>30E2/360 (Eurobond basis model two)</Description>
+					<Elaboration>Interest is calculated based on a 30-day month and a 360-day year. Accrued interest to a value date on the last day of a month shall be the same as to the 30th calendar day of the same month, except for the last day of February whose day of the month value shall be adapted to the value of the first day of the interest period if the latter is higher and if the period is one of a regular schedule. This means that a 31 is assumed to be a 30 and the 28 February of a non-leap year is assumed to be equivalent to a 29 February when the first day of the interest period is a 29, or to a 30 February when the first day of the interest period is a 30 or a 31. The 29 February of a leap year is assumed to be equivalent to a 30 February when the first day of the interest period is a 30 or a 31. Similarly, if the coupon period starts on the last day of February, it is assumed to produce only one day of interest in February as if it was starting on a 30 February when the end of the period is a 30 or a 31, or two days of interest in February when the end of the period is a 29, or three days of interest in February when it is the 28 February of a non-leap year and the end of the period is before the 29. See also ISO 15022 MICO code &apos;A012&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="1950" Value="22">
+					<SymbolicName>ThirtyEThreeThreeSixty</SymbolicName>
+					<Sort>22</Sort>
+					<Description>30E3/360 (Eurobond basis model three)</Description>
+					<Elaboration>Interest is calculated based on a 30-day month and a 360-day year. Accrued interest to a value date on the last day of a month shall be the same as to the 30th calendar day of the same month. This means that a 31 is assumed to be a 30 and the 28 February (or 29 February for a leap year) is assumed to be equivalent to a 30 February. It is a variation of the 30E/360 (or Eurobond basis) method where the last day of February is always assumed to be a 30, even if it is the last day of the maturity coupon period. See also ISO 15022 MICO code &apos;A013&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="1950" Value="99">
+					<SymbolicName>Other</SymbolicName>
+					<Sort>99</Sort>
+					<Description>Other</Description>
+					<Elaboration>For other day count method. See also ISO 15022 MICO code &apos;OTHR&apos;.</Elaboration>
+				</Enum>
+				<Enum Tag="1674" Value="28">
+					<SymbolicName>TriParty</SymbolicName>
+					<Group>For party role 30 (Agent)</Group>
+					<Sort>28</Sort>
+					<Description>Tri-party</Description>
+					<Elaboration>In the context of EU SFTR reporting, identifies the third party, not necessarily the custodian, to which the reporting counterparty has outsourced the post-trade processing of an SFT (if applicable).</Elaboration>
+				</Enum>
+				<Enum Tag="1674" Value="29">
+					<SymbolicName>Lender</SymbolicName>
+					<Group>For party role 30 (Agent)</Group>
+					<Sort>29</Sort>
+					<Description>Lender</Description>
+					<Elaboration>In the context of EU SFTR reporting, identifies the agent lender involved in the securities lending transaction.</Elaboration>
+				</Enum>
+				<Enum Tag="2632" Value="5">
+					<SymbolicName>EstimatedMarketValuation</SymbolicName>
+					<Sort>5</Sort>
+					<Description>Estimated market valuation</Description>
+					<Elaboration>Estimated market valuation of collateral.  In the context of EU SFTR this may be used for value of re-use of collateral.</Elaboration>
+				</Enum>
+				<Enum Tag="40091" Value="5">
+					<SymbolicName>Evergreen</SymbolicName>
+					<Sort>5</Sort>
+					<Description>Evergreen</Description>
+					<Elaboration>The contract automatically renews after the expiry date until one party gives the other notice to terminate. In the context of EU SFTR reporting this corresponds to &quot;termination optionality&quot; code &quot;EGRN&quot;.</Elaboration>
+				</Enum>
+				<Enum Tag="40091" Value="6">
+					<SymbolicName>Callable</SymbolicName>
+					<Sort>6</Sort>
+					<Description>Callable</Description>
+					<Elaboration>Contract is callable.</Elaboration>
+				</Enum>
+				<Enum Tag="40091" Value="7">
+					<SymbolicName>Puttable</SymbolicName>
+					<Sort>7</Sort>
+					<Description>Puttable</Description>
+					<Elaboration>Contract is puttable.</Elaboration>
+				</Enum>
+				<Enum Tag="40213" Value="13">
+					<SymbolicName>SecurityLending</SymbolicName>
+					<Sort>13</Sort>
+					<Description>Security lending</Description>
+					<Elaboration>Fee that the borrower of the security or commodity pays to the lender. The basis rate is specified in PaymentFixedRate(43097). A security lending fee payment may be periodic, in which case specify PaymentFrequencyPeriod(43102) and PaymentFrequencyUnit(43103).</Elaboration>
+				</Enum>
+				<Enum Tag="40213" Value="14">
+					<SymbolicName>Rebate</SymbolicName>
+					<Sort>14</Sort>
+					<Description>Rebate</Description>
+					<Elaboration>For contracts calling for rebate payment(s), e.g. Securities Lending, normally specified as a fixed or floating rate rather than a fixed amount. A rebate payment may be periodic, in which case specify PaymentFrequencyPeriod(43102) and PaymentFrequencyUnit(43103).</Elaboration>
+				</Enum>
+				<Enum Tag="40993" Value="9">
+					<SymbolicName>FixedRate</SymbolicName>
+					<Sort>9</Sort>
+					<Description>Fixed rate</Description>
+					<Elaboration>Applicable to PaymentType(40213)=14 (Rebate) for which PaymentFixedRate(43097) and its qualifiers supersede PaymentAmount(40217).</Elaboration>
+				</Enum>
+				<Enum Tag="40993" Value="10">
+					<SymbolicName>FloatingRate</SymbolicName>
+					<Sort>10</Sort>
+					<Description>Floating rate</Description>
+					<Elaboration>Applicable to PaymentType(40213)=14 (Rebate) for which PaymentFloatingRateIndex(43098) and its qualifiers supersede PaymentAmount(40217).</Elaboration>
+				</Enum>
+			</Inserts>
+		</Enums>
+		<Components>
+			<Updates>
+				<Component ComponentID="2035">
+					<Elaboration>MiscFeesGrp should be used to convey fees related to the transaction (e.g. taxes, transaction based fees, etc.) and should not be used to specify payments based on the price or terms of the contract (e.g. upfront fee, premium amount, security lending fee, contract-based rebates, related fee resets, payment frequency, etc.). For contractual payments use the PaymentGrp component instead.</Elaboration>
+				</Component>
+				<Component ComponentID="4027">
+					<Elaboration>This component is positioned outside the Instrument component as it is used to specify payments based on the price and terms of the contract, e.g. upfront fee, premium amount, security lending fee and contract-based rebates.
+When PaymentFrequencyUnit(43103) and PaymentFrequencyPeriod(43102) are specified the payments are deemed to be periodic for the specified PaymentType(40213).</Elaboration>
+				</Component>
+			</Updates>
+			<Inserts>
+				<Component ComponentID="2266">
+					<ComponentType>XMLDataBlock</ComponentType>
+					<CategoryID>Common</CategoryID>
+					<Name>CollateralReinvestmentGrp</Name>
+					<AbbrName>CollRnvstmnt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The CollateralReinvestmentGrp component block is a repeating group that may be used to provide a breakdown of the cash collateral&apos;s reinvestment types and amounts (e.g. CollateralType(1704)=&quot;CASH&quot;).</Description>
+				</Component>
+				<Component ComponentID="2267">
+					<ComponentType>BlockRepeating</ComponentType>
+					<CategoryID>Common</CategoryID>
+					<Name>FundingSourceGrp</Name>
+					<AbbrName>FndngSrc</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>This component is used to specify the funding source(s) used to finance a margin loan or collateralized loan.</Description>
+				</Component>
+				<Component ComponentID="2268">
+					<ComponentType>BlockRepeating</ComponentType>
+					<CategoryID>Common</CategoryID>
+					<Name>TransactionAttributeGrp</Name>
+					<AbbrName>TxnAttrb</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The TransactionAttributeGrp component block is a repeating group that may be used to provide additional transaction attributes for the trade and other post-trade events.</Description>
+				</Component>
+				<Component ComponentID="2269">
+					<ComponentType>BlockRepeating</ComponentType>
+					<CategoryID>Common</CategoryID>
+					<Name>SideCollateralReinvestmentGrp</Name>
+					<AbbrName>CollRnvstmnt</AbbrName>
+					<NotReqXML>0</NotReqXML>
+					<Description>The SideCollateralReinvestmentGrp component block is a repeating group that may be used to provide a breakdown of the cash collateral&apos;s reinvestment types and amounts (e.g. SideCollateralType(2701)=&quot;CASH&quot;).</Description>
+				</Component>
+			</Inserts>
+		</Components>
+		<MsgContents>
+			<Updates>
+				<MsgContent ComponentID="4027" TagText="40217">
+					<Description>Either PaymentAmount(40217), PaymentFixedRate(43097) or PaymentRFloatingRateIndex(43098) must be specified.</Description>
+				</MsgContent>
+			</Updates>
+			<Inserts>
+				<MsgContent ComponentID="86" TagText="2868">
+					<Indent>0</Indent>
+					<Position>31.4</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="86" TagText="1936">
+					<Indent>0</Indent>
+					<Position>31.5</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="86" TagText="1934">
+					<Indent>0</Indent>
+					<Position>51.3</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="86" TagText="2869">
+					<Indent>0</Indent>
+					<Position>51.7</Position>
+					<Reqd>0</Reqd>
+					<Description>May be used when the business event date differs from when the regulatory report is actually being submitted (typically specified in TrdRegTimestamps component).</Description>
+				</MsgContent>
+				<MsgContent ComponentID="86" TagText="FundingSourceGrp">
+					<Indent>0</Indent>
+					<Position>52.86</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="86" TagText="TransactionAttributeGrp">
+					<Indent>0</Indent>
+					<Position>52.94</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="121" TagText="1934">
+					<Indent>0</Indent>
+					<Position>9.2</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="121" TagText="2869">
+					<Indent>0</Indent>
+					<Position>9.5</Position>
+					<Reqd>0</Reqd>
+					<Description>May be used when the business event date differs from when the regulatory report is actually being submitted (typically specified in TrdRegTimestamps component).</Description>
+				</MsgContent>
+				<MsgContent ComponentID="121" TagText="TrdRegTimestamps">
+					<Indent>0</Indent>
+					<Position>9.8</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="121" TagText="2870">
+					<Indent>0</Indent>
+					<Position>10.5</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="75" TagText="1934">
+					<Indent>0</Indent>
+					<Position>7.4</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="75" TagText="2869">
+					<Indent>0</Indent>
+					<Position>7.7</Position>
+					<Reqd>0</Reqd>
+					<Description>May be used when the business event date differs from when the regulatory report is actually being submitted (typically specified in TrdRegTimestamps component).</Description>
+				</MsgContent>
+				<MsgContent ComponentID="75" TagText="TransactionAttributeGrp">
+					<Indent>0</Indent>
+					<Position>8.4</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="75" TagText="TrdRegTimestamps">
+					<Indent>0</Indent>
+					<Position>8.7</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="75" TagText="2870">
+					<Indent>0</Indent>
+					<Position>9.6</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="75" TagText="2878">
+					<Indent>0</Indent>
+					<Position>11.72</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="75" TagText="2868">
+					<Indent>0</Indent>
+					<Position>22.5</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="64" TagText="2868">
+					<Indent>0</Indent>
+					<Position>32.25</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="64" TagText="TransactionAttributeGrp">
+					<Indent>0</Indent>
+					<Position>32.75</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="64" TagText="2870">
+					<Indent>0</Indent>
+					<Position>42.5</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="64" TagText="2878">
+					<Indent>0</Indent>
+					<Position>65.05</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="64" TagText="2869">
+					<Indent>0</Indent>
+					<Position>156.5</Position>
+					<Reqd>0</Reqd>
+					<Description>May be used when the business event date differs from when the regulatory report is actually being submitted (typically specified in TrdRegTimestamps component).</Description>
+				</MsgContent>
+				<MsgContent ComponentID="2191" TagText="2840">
+					<Indent>1</Indent>
+					<Position>9</Position>
+					<Reqd>0</Reqd>
+					<Description>May be used to specify the average reinvestment rate when there are multiple instances of the CollateralReinvestmentGrp.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="2191" TagText="CollateralReinvestmentGrp">
+					<Indent>1</Indent>
+					<Position>10</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="2191" TagText="2841">
+					<Indent>1</Indent>
+					<Position>11</Position>
+					<Reqd>0</Reqd>
+					<Description>May be used to indicate that this entry applies to the underlying collateral instrument being referenced by the value in UnderlyingID(2874).</Description>
+				</MsgContent>
+				<MsgContent ComponentID="2266" TagText="2845">
+					<Indent>0</Indent>
+					<Position>1</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="2266" TagText="2844">
+					<Indent>1</Indent>
+					<Position>2</Position>
+					<Reqd>0</Reqd>
+					<Description>Required if NoCollateralReinvestments(2845) &gt; 0.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="2266" TagText="2842">
+					<Indent>1</Indent>
+					<Position>3</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="2266" TagText="2843">
+					<Indent>1</Indent>
+					<Position>4</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="2267" TagText="2849">
+					<Indent>0</Indent>
+					<Position>1</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="2267" TagText="2846">
+					<Indent>1</Indent>
+					<Position>2</Position>
+					<Reqd>0</Reqd>
+					<Description>Required if NoFundingSources(2849) &gt; 0.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="2267" TagText="2848">
+					<Indent>1</Indent>
+					<Position>3</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="2267" TagText="2847">
+					<Indent>1</Indent>
+					<Position>4</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="4035" TagText="43108">
+					<Indent>0</Indent>
+					<Position>5.5</Position>
+					<Reqd>0</Reqd>
+					<Description>May be used to specify a count method not listed in LegPaymentStreamDayCount(40283).</Description>
+				</MsgContent>
+				<MsgContent ComponentID="2177" TagText="2851">
+					<Indent>1</Indent>
+					<Position>7</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="4027" TagText="43097">
+					<Indent>1</Indent>
+					<Position>5.91</Position>
+					<Reqd>0</Reqd>
+					<Description>Either PaymentAmount(40217), PaymentFixedRate(43097) or PaymentFloatingRateIndex(43098) must be specified.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="4027" TagText="43098">
+					<Indent>1</Indent>
+					<Position>5.92</Position>
+					<Reqd>0</Reqd>
+					<Description>Either PaymentAmount(40217), PaymentFixedRate(43097) or PaymentFloatingRateIndex(43098) must be specified.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="4027" TagText="43100">
+					<Indent>1</Indent>
+					<Position>5.93</Position>
+					<Reqd>0</Reqd>
+					<Description>Conditionally required when PaymentFloatingRateIndexCurvePeriod(43099) is specified.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="4027" TagText="43099">
+					<Indent>1</Indent>
+					<Position>5.94</Position>
+					<Reqd>0</Reqd>
+					<Description>Conditionally required when PaymentFloatingRateIndexCurveUnit(43100) is specified.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="4027" TagText="43101">
+					<Indent>1</Indent>
+					<Position>5.95</Position>
+					<Reqd>0</Reqd>
+					<Description>Conditionally required when PaymentFloatingRateIndex(43098) is specified and the spread to the index is not &quot;zero&quot;.  When the spread to the index is &quot;zero&quot; this may be omitted.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="4027" TagText="43105">
+					<Indent>1</Indent>
+					<Position>5.96</Position>
+					<Reqd>0</Reqd>
+					<Description>Conditionally required when PaymentRateResetFrequencyPeriod(43104) is specified.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="4027" TagText="43104">
+					<Indent>1</Indent>
+					<Position>5.97</Position>
+					<Reqd>0</Reqd>
+					<Description>Conditionally required when PaymentRateResetFrequencyUnit(43105) is specified.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="4027" TagText="43103">
+					<Indent>1</Indent>
+					<Position>5.98</Position>
+					<Reqd>0</Reqd>
+					<Description>Conditionally required when PaymentFrequencyPeriod(43102) is specified.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="4027" TagText="43102">
+					<Indent>1</Indent>
+					<Position>5.99</Position>
+					<Reqd>0</Reqd>
+					<Description>Conditionally required when PaymentFrequencyUnitPeriod(43103) is specified.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="4070" TagText="43106">
+					<Indent>0</Indent>
+					<Position>5.5</Position>
+					<Reqd>0</Reqd>
+					<Description>May be used to specify a count method not listed in PaymentStreamDayCount(40742).</Description>
+				</MsgContent>
+				<MsgContent ComponentID="2268" TagText="2871">
+					<Indent>0</Indent>
+					<Position>1</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="2268" TagText="2872">
+					<Indent>1</Indent>
+					<Position>2</Position>
+					<Reqd>0</Reqd>
+					<Description>Required if NoTransactionAttributes(2871) &gt; 0.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="2268" TagText="2873">
+					<Indent>1</Indent>
+					<Position>3</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="2260" TagText="2862">
+					<Indent>1</Indent>
+					<Position>14</Position>
+					<Reqd>0</Reqd>
+					<Description>When multiple instances of the SideCollateralReinvestmentGrp component are present this field specifies the average reinvestment rate.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="2260" TagText="SideCollateralReinvestmentGrp">
+					<Indent>1</Indent>
+					<Position>15</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="2260" TagText="2863">
+					<Indent>1</Indent>
+					<Position>16</Position>
+					<Reqd>0</Reqd>
+					<Description>May be used to indicate that this entry applies to the underlying collateral instrument being referenced by the value in UnderlyingID(2874).</Description>
+				</MsgContent>
+				<MsgContent ComponentID="2269" TagText="2864">
+					<Indent>0</Indent>
+					<Position>1</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="2269" TagText="2867">
+					<Indent>1</Indent>
+					<Position>2</Position>
+					<Reqd>0</Reqd>
+					<Description>Required if NoSideCollateralReinvestments(2864) &gt; 0.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="2269" TagText="2865">
+					<Indent>1</Indent>
+					<Position>3</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="2269" TagText="2866">
+					<Indent>1</Indent>
+					<Position>4</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="1021" TagText="2874">
+					<Indent>0</Indent>
+					<Position>6</Position>
+					<Reqd>0</Reqd>
+					<Description>Used for unique identification of the underlying instance that can subsequently be used to serve as input value for fields such as UnderlyingRefID(2841), for example, whenever a simple underlying reference is allowed or needed.</Description>
+				</MsgContent>
+				<MsgContent ComponentID="4059" TagText="43107">
+					<Indent>0</Indent>
+					<Position>5.5</Position>
+					<Reqd>0</Reqd>
+					<Description>May be used to specify a count method not listed in UnderlyingPaymentStreamDayCount(40572).</Description>
+				</MsgContent>
+				<MsgContent ComponentID="1014" TagText="2876">
+					<Indent>1</Indent>
+					<Position>5</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="1014" TagText="2877">
+					<Indent>1</Indent>
+					<Position>6</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="1003" TagText="2879">
+					<Indent>0</Indent>
+					<Position>14.866</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="1005" TagText="2880">
+					<Indent>0</Indent>
+					<Position>14.937</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+				<MsgContent ComponentID="1021" TagText="2881">
+					<Indent>0</Indent>
+					<Position>57.1</Position>
+					<Reqd>0</Reqd>
+				</MsgContent>
+			</Inserts>
+		</MsgContents>
+	</extensionPack>
+</fixRepository>

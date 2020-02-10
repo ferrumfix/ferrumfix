@@ -23,16 +23,27 @@ mod settings;
 pub use crate::err::{Error, Result};
 use crate::repo::types::Message;
 use serde::Deserialize;
-use std::io;
 
-pub trait Codec<R, W> {
-    type Message;
+#[derive(Default)]
+pub struct Tagvalue {
+    data: String,
+    checksum: Checksum,
+}
 
-    fn new_stdio() -> Self;
+impl Tagvalue {
+    const SEPARATOR: char = 1u8 as char;
 
-    fn write_message(&mut self, msg: Self::Message) -> io::Result<()>;
+    fn write_tag(&mut self, name: &str, _value: impl data_types::DataType) {
+        self.data.push_str(name);
+        self.data.push('=');
+        // TODO: value.
+        self.data.push_str("value");
+        self.data.push(Self::SEPARATOR);
+    }
 
-    fn read_message(&self) -> Result<Option<Self::Message>>;
+    fn write_tag_header(&mut self) {
+        unimplemented!()
+    }
 }
 
 pub trait Fix {
@@ -58,6 +69,12 @@ impl Checksum {
 
     fn final_value(self) -> u8 {
         self.value
+    }
+}
+
+impl Default for Checksum {
+    fn default() -> Self {
+        Checksum { value: 0 }
     }
 }
 
