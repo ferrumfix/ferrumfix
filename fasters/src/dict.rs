@@ -1,10 +1,9 @@
 use crate::repo::types;
-use crate::repo::types::HasPk;
+use crate::repo::HasPk;
 use crate::repo::RepoV2010;
 use crate::Version;
 use codegen::Scope;
 use std::collections::HashMap;
-use std::iter::FromIterator;
 
 #[derive(Clone, Debug, PartialEq)]
 struct Message {
@@ -23,56 +22,56 @@ pub fn codegen(dict: Dictionary) -> String {
             structure.doc(description.as_str());
         }
     }
-    for (name, message) in dict.messages {
-        let structure = scope
-            .get_or_new_module("messages")
-            .new_struct(name.as_str())
-            .vis("pub");
-        structure.doc(message.description.as_str());
-    }
+    //for (name, message) in dict.messages {
+    //    let structure = scope
+    //        .get_or_new_module("messages")
+    //        .new_struct(name.as_str())
+    //        .vis("pub");
+    //    for content in dict.contents[&message.pk()] {}
+    //    structure.doc(message.description.as_str());
+    //}
     scope.to_string()
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct MessageDefinition {
+    def: types::Message,
+    fields: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dictionary {
     fields: HashMap<<types::Field as HasPk>::Pk, types::Field>,
-    messages: HashMap<<types::Message as HasPk>::Pk, types::Message>,
-    components: HashMap<<types::Component as HasPk>::Pk, types::Component>,
-    contents: HashMap<<types::Message as HasPk>::Pk, Vec<types::MsgContent>>,
+    messages: HashMap<<types::Message as HasPk>::Pk, MessageDefinition>,
 }
 
 impl Dictionary {
     fn new(version: Version) -> Self {
-        let fields = HashMap::from_iter(
-            RepoV2010::fields(version)
-                .data
-                .into_iter()
-                .map(|f| (f.pk(), f)),
-        );
-        let messages = HashMap::from_iter(
-            RepoV2010::messages(version)
-                .data
-                .into_iter()
-                .map(|m| (m.pk(), m)),
-        );
-        let components = HashMap::from_iter(
-            RepoV2010::components(version)
-                .data
-                .into_iter()
-                .map(|m| (m.pk(), m)),
-        );
-        let mut contents = HashMap::new();
-        for mc in RepoV2010::msg_contents(version).data.into_iter() {
-            contents
-                .entry(mc.component_id.clone())
-                .or_insert_with(|| vec![])
-                .push(mc);
+        let fields = RepoV2010::fields(version).map(|f| (f.pk(), f)).collect();
+        let mut message_definitions: HashMap<_, _> = RepoV2010::messages(version)
+            .map(|m| {
+                (
+                    m.pk(),
+                    MessageDefinition {
+                        def: m,
+                        fields: vec![],
+                    },
+                )
+            })
+            .collect();
+        let msg_contents: HashMap<_, _> = RepoV2010::msg_contents(version)
+            .map(|mc| (mc.component_id.clone(), mc))
+            .collect();
+        for (component_id, mc) in msg_contents.into_iter() {
+            // TODO: also unpack components.
+            // Not all components belong to a message.
+            if let Some(def) = message_definitions.get_mut(&component_id) {
+                def.fields.push(mc.tag_text);
+            }
         }
         Self {
-            messages,
             fields,
-            components,
-            contents,
+            messages: message_definitions,
         }
     }
 }
