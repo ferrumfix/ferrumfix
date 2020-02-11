@@ -1,4 +1,7 @@
 //! Provides programmatic access to the FIX Repository.
+//!
+//! You likely don't need raw access to the FIX Repository unless dealing with
+//! extension packs and advanced features.
 
 use crate::Version;
 use quick_xml::de::from_str;
@@ -104,7 +107,7 @@ pub mod types {
     use serde::Deserialize;
 
     /// Signals the presence of non-schema attribute `ep:PK="1"`.
-    pub trait HasPrimaryKey {
+    pub trait HasPk {
         type Pk;
 
         /// Get a copy of the primary key.
@@ -146,7 +149,7 @@ pub mod types {
         pub description: Option<String>,
     }
 
-    impl HasPrimaryKey for Field {
+    impl HasPk for Field {
         type Pk = usize;
 
         fn pk(&self) -> Self::Pk {
@@ -173,7 +176,7 @@ pub mod types {
         pub fixml_filename: String,
     }
 
-    impl HasPrimaryKey for Category {
+    impl HasPk for Category {
         type Pk = String;
 
         fn pk(&self) -> Self::Pk {
@@ -200,11 +203,11 @@ pub mod types {
         /// **Primary key**. The unique character identifier of this message
         /// type; used literally in FIX messages.
         pub msg_type: String,
-        /// The name of this message type
+        /// The name of this message type.
         pub name: String,
         /// Identifier of the category to which this message belongs.
         #[serde(rename = "CategoryID")]
-        pub category_id: <Category as HasPrimaryKey>::Pk,
+        pub category_id: <Category as HasPk>::Pk,
         /// Identifier of the section to which this message belongs.
         #[serde(rename = "SectionID")]
         pub section_id: String,
@@ -218,7 +221,7 @@ pub mod types {
         pub elaboration: Option<String>,
     }
 
-    impl HasPrimaryKey for Message {
+    impl HasPk for Message {
         type Pk = String;
 
         fn pk(&self) -> Self::Pk {
@@ -235,34 +238,37 @@ pub mod types {
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
+    #[serde(rename_all = "PascalCase")]
     pub struct FieldRef {
-        name: String,
-        required: char,
+        pub name: String,
+        pub required: char,
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
+    #[serde(rename_all = "PascalCase")]
     pub struct Value {
-        value_enum: String,
-        description: Option<String>,
+        pub value_enum: String,
+        pub description: Option<String>,
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
+    #[serde(rename_all = "PascalCase")]
     pub struct Component {
         /// **Primary key.** The unique integer identifier of this component
         /// type.
         #[serde(rename = "ComponentID")]
-        id: usize,
+        pub id: usize,
         /// **Primary key.** The unique integer identifier of this component
         /// type.
         #[serde(rename = "CategoryID")]
-        category_id: usize,
+        pub category_id: <Category as HasPk>::Pk,
         /// The human readable name of the component.
-        name: String,
-        #[serde(rename = "field", default)]
-        fields: Vec<Field>,
+        pub name: String,
+        /// The name for this component when used in an XML context.
+        pub abbr_name: Option<String>,
     }
 
-    impl HasPrimaryKey for Component {
+    impl HasPk for Component {
         type Pk = usize;
 
         fn pk(&self) -> Self::Pk {
@@ -274,41 +280,39 @@ pub mod types {
     // --------------------------
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
-    pub struct Fields {
-        #[serde(rename = "Field", default)]
-        pub fields: Vec<Field>,
-    }
-
-    #[derive(Clone, Debug, Deserialize, PartialEq)]
-    pub struct Enums {
-        #[serde(rename = "Enum", default)]
-        pub enums: Vec<Enums>,
-    }
-
-    #[derive(Clone, Debug, Deserialize, PartialEq)]
     pub struct Abbreviations {
         #[serde(rename = "Abbreviation", default)]
-        data: Vec<Abbreviation>,
+        pub data: Vec<Abbreviation>,
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
     pub struct Categories {
         #[serde(rename = "Category", default)]
-        data: Vec<Category>,
+        pub data: Vec<Category>,
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
     pub struct Components {
-        name: String,
+        #[serde(rename = "Component", default)]
+        pub data: Vec<Component>,
+    }
+
+    #[derive(Clone, Debug, Deserialize, PartialEq)]
+    pub struct Datatypes {
         #[serde(rename = "Component", default)]
         data: Vec<Component>,
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
-    pub struct Datatypes {
-        name: String,
-        #[serde(rename = "Component", default)]
-        data: Vec<Component>,
+    pub struct Enums {
+        #[serde(rename = "Enum", default)]
+        pub data: Vec<Enums>,
+    }
+
+    #[derive(Clone, Debug, Deserialize, PartialEq)]
+    pub struct Fields {
+        #[serde(rename = "Field", default)]
+        pub data: Vec<Field>,
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
@@ -360,6 +364,13 @@ mod test {
     fn repo_v2010_deserialize_messages() {
         for v in Version::iter_supported() {
             RepoV2010::messages(v);
+        }
+    }
+
+    #[test]
+    fn repo_v2010_deserialize_components() {
+        for v in Version::iter_supported() {
+            RepoV2010::components(v);
         }
     }
 }

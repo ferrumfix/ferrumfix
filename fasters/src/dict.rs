@@ -1,5 +1,5 @@
 use crate::repo::types;
-use crate::repo::types::HasPrimaryKey;
+use crate::repo::types::HasPk;
 use crate::repo::RepoV2010;
 use crate::Version;
 use codegen::Scope;
@@ -29,16 +29,16 @@ pub fn codegen(dict: Dictionary) -> String {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dictionary {
-    fields: HashMap<<types::Field as HasPrimaryKey>::Pk, types::Field>,
-    messages: HashMap<<types::Message as HasPrimaryKey>::Pk, types::Message>,
-    //message_contents: HashMap<usize, Vec<types::MsgContent>>,
+    fields: HashMap<<types::Field as HasPk>::Pk, types::Field>,
+    messages: HashMap<<types::Message as HasPk>::Pk, types::Message>,
+    components: HashMap<<types::Component as HasPk>::Pk, types::Component>,
 }
 
 impl Dictionary {
     fn new(version: Version) -> Self {
         let fields = HashMap::from_iter(
             RepoV2010::fields(version)
-                .fields
+                .data
                 .into_iter()
                 .map(|f| (f.pk(), f)),
         );
@@ -48,10 +48,17 @@ impl Dictionary {
                 .into_iter()
                 .map(|m| (m.pk(), m)),
         );
-        //for mc in raw_msg_contents.data.into_iter() {
-        //    messages.get_mut(mc.component_id).contents.push(mc);
-        //}
-        Self { messages, fields }
+        let components = HashMap::from_iter(
+            RepoV2010::components(version)
+                .data
+                .into_iter()
+                .map(|m| (m.pk(), m)),
+        );
+        Self {
+            messages,
+            fields,
+            components,
+        }
     }
 }
 
