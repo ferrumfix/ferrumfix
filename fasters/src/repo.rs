@@ -232,7 +232,7 @@ pub mod types {
     #[derive(Clone, Debug, Deserialize, PartialEq)]
     #[serde(rename_all = "PascalCase")]
     pub struct MsgContent {
-        #[serde(rename = "ComponentId")]
+        #[serde(rename = "ComponentID")]
         pub component_id: String,
         pub tag_text: String,
     }
