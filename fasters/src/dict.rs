@@ -1,9 +1,16 @@
 use crate::repo::types;
+use crate::repo::types::HasPrimaryKey;
 use crate::repo::RepoV2010;
 use crate::Version;
 use codegen::Scope;
-use serde::Deserialize;
 use std::collections::HashMap;
+use std::iter::FromIterator;
+
+#[derive(Clone, Debug, PartialEq)]
+struct Message {
+    def: types::Message,
+    contents: Vec<String>,
+}
 
 pub fn codegen(dict: Dictionary) -> String {
     let mut scope = Scope::new();
@@ -13,27 +20,37 @@ pub fn codegen(dict: Dictionary) -> String {
             structure.doc(description.as_str());
         }
     }
+    for (name, message) in dict.messages {
+        let structure = scope.new_struct(name.as_str()).vis("pub");
+        structure.doc(message.description.as_str());
+    }
     scope.to_string()
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Dictionary {
-    messages: HashMap<String, types::Message>,
-    fields: HashMap<usize, types::Field>,
+    fields: HashMap<<types::Field as HasPrimaryKey>::Pk, types::Field>,
+    messages: HashMap<<types::Message as HasPrimaryKey>::Pk, types::Message>,
+    //message_contents: HashMap<usize, Vec<types::MsgContent>>,
 }
 
 impl Dictionary {
     fn new(version: Version) -> Self {
-        let raw_fields = RepoV2010::fields(version);
-        let raw_messages = RepoV2010::messages(version);
-        let mut fields = HashMap::new();
-        let mut messages = HashMap::new();
-        for f in raw_fields.fields.into_iter() {
-            fields.insert(f.tag, f);
-        }
-        for m in raw_messages.data.into_iter() {
-            messages.insert(m.category_id.clone(), m);
-        }
+        let fields = HashMap::from_iter(
+            RepoV2010::fields(version)
+                .fields
+                .into_iter()
+                .map(|f| (f.pk(), f)),
+        );
+        let messages = HashMap::from_iter(
+            RepoV2010::messages(version)
+                .data
+                .into_iter()
+                .map(|m| (m.pk(), m)),
+        );
+        //for mc in raw_msg_contents.data.into_iter() {
+        //    messages.get_mut(mc.component_id).contents.push(mc);
+        //}
         Self { messages, fields }
     }
 }

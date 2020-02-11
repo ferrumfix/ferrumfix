@@ -15,13 +15,12 @@ use std::borrow::Borrow;
 /// use fasters::repo::RepoV50SP2EP254;
 ///
 /// let readme = RepoV50SP2EP254::get("Readme.html").unwrap();
-/// println!("{}", readme);
+/// println!("{:?}", readme);
 /// ```
 #[cfg(feature = "repo_v50sp2ep254")]
 #[derive(RustEmbed)]
 #[folder = "resources/repositories/FIXRepository_FIX.5.0SP2_EP254"]
 pub struct RepoV50SP2EP254;
-
 #[cfg(not(feature = "repo_v50sp2ep254"))]
 #[derive(RustEmbed)]
 #[folder = "resources/empty"]
@@ -32,14 +31,16 @@ pub struct RepoV50SP2EP254;
 /// # Examples
 ///
 /// ```
+/// use fasters::repo::RepoV2010;
+/// use fasters::Version;
+///
 /// let schema = RepoV2010::fields(Version::Fix42);
-/// println!("{}", schema);
+/// println!("{:?}", schema);
 /// ```
 #[cfg(feature = "repo_v2010")]
 #[derive(RustEmbed)]
 #[folder = "resources/repositories/fix_repository_2010_edition_20140507"]
 pub struct RepoV2010;
-
 #[cfg(not(feature = "repo_v2010"))]
 #[derive(RustEmbed)]
 #[folder = "resources/empty"]
@@ -75,6 +76,10 @@ impl RepoV2010 {
         Self::get_by_version(version, "Messages.xml")
     }
 
+    pub fn msg_contents(version: Version) -> types::MsgContents {
+        Self::get_by_version(version, "MsgContents.xml")
+    }
+
     // ONLY FIX 4.4 AND UP
     // -------------------
 
@@ -91,12 +96,20 @@ impl RepoV2010 {
     }
 }
 
-/// Basic data structures that can interface with the FIX repository via Serde.
-/// They are mostly one-to-one mappings from `repositorystructures.xsd` and
-/// `repositorytypes.xsd`.
+/// Fundamental data structures that map to resources within the FIX Repository via
+/// Serde. They are intended to be exact, lossless representations of data
+/// described by `repositorystructures.xsd` and `repositorytypes.xsd`.
 pub mod types {
     pub use crate::Version;
     use serde::Deserialize;
+
+    /// Signals the presence of non-schema attribute `ep:PK="1"`.
+    pub trait HasPrimaryKey {
+        type Pk;
+
+        /// Get a copy of the primary key.
+        fn pk(&self) -> Self::Pk;
+    }
 
     /// Available versions of the FIX standard.
     #[derive(Clone, Debug, Deserialize, PartialEq)]
@@ -109,8 +122,8 @@ pub mod types {
     pub struct Field {
         /// A human readable string representing the name of the field.
         pub name: String,
-        /// A positive integer representing the unique identifier for this field
-        /// type.
+        /// **Primary key.** A positive integer representing the unique
+        /// identifier for this field type.
         pub tag: usize,
         /// The datatype of the field.
         #[serde(rename = "Type")]
@@ -133,6 +146,14 @@ pub mod types {
         pub description: Option<String>,
     }
 
+    impl HasPrimaryKey for Field {
+        type Pk = usize;
+
+        fn pk(&self) -> Self::Pk {
+            self.tag
+        }
+    }
+
     #[derive(Clone, Debug, Deserialize, PartialEq)]
     #[serde(rename_all = "PascalCase")]
     pub struct Abbreviation {}
@@ -143,7 +164,22 @@ pub mod types {
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
     #[serde(rename_all = "PascalCase")]
-    pub struct Category {}
+    pub struct Category {
+        /// **Primary key**. A string uniquely identifying this category.
+        #[serde(rename = "CategoryID")]
+        pub id: String,
+        /// The FIXML file name for a Category.
+        #[serde(rename = "FIXMLFileName")]
+        pub fixml_filename: String,
+    }
+
+    impl HasPrimaryKey for Category {
+        type Pk = String;
+
+        fn pk(&self) -> Self::Pk {
+            self.id.clone()
+        }
+    }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
     #[serde(rename_all = "PascalCase")]
@@ -158,15 +194,44 @@ pub mod types {
     #[derive(Clone, Debug, Deserialize, PartialEq)]
     #[serde(rename_all = "PascalCase")]
     pub struct Message {
-        /// A human readable string representing the name of the field.
+        /// The unique integer identifier of this message type.
+        #[serde(rename = "ComponentID")]
+        pub component_id: usize,
+        /// **Primary key**. The unique character identifier of this message
+        /// type; used literally in FIX messages.
+        pub msg_type: String,
+        /// The name of this message type
+        pub name: String,
+        /// Identifier of the category to which this message belongs.
         #[serde(rename = "CategoryID")]
-        pub category_id: String,
+        pub category_id: <Category as HasPrimaryKey>::Pk,
+        /// Identifier of the section to which this message belongs.
         #[serde(rename = "SectionID")]
         pub section_id: String,
+        /// The abbreviated name of this message, when used in an XML context.
+        pub abbr_name: Option<String>,
+        /// A boolean used to indicate if the message is to be generated as part
+        /// of FIXML.
         #[serde(rename = "NotReqXML")]
         pub required: String,
         pub description: String,
         pub elaboration: Option<String>,
+    }
+
+    impl HasPrimaryKey for Message {
+        type Pk = String;
+
+        fn pk(&self) -> Self::Pk {
+            self.msg_type.clone()
+        }
+    }
+
+    #[derive(Clone, Debug, Deserialize, PartialEq)]
+    #[serde(rename_all = "PascalCase")]
+    pub struct MsgContent {
+        #[serde(rename = "ComponentId")]
+        pub component_id: String,
+        pub tag_text: String,
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
@@ -183,9 +248,26 @@ pub mod types {
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
     pub struct Component {
+        /// **Primary key.** The unique integer identifier of this component
+        /// type.
+        #[serde(rename = "ComponentID")]
+        id: usize,
+        /// **Primary key.** The unique integer identifier of this component
+        /// type.
+        #[serde(rename = "CategoryID")]
+        category_id: usize,
+        /// The human readable name of the component.
         name: String,
         #[serde(rename = "field", default)]
         fields: Vec<Field>,
+    }
+
+    impl HasPrimaryKey for Component {
+        type Pk = usize;
+
+        fn pk(&self) -> Self::Pk {
+            self.id
+        }
     }
 
     // CONTAINERS (plural format)
@@ -233,6 +315,12 @@ pub mod types {
     pub struct Messages {
         #[serde(rename = "Message", default)]
         pub data: Vec<Message>,
+    }
+
+    #[derive(Clone, Debug, Deserialize, PartialEq)]
+    pub struct MsgContents {
+        #[serde(rename = "MsgContent", default)]
+        pub data: Vec<MsgContent>,
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
