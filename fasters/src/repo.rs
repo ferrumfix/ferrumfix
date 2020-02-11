@@ -130,6 +130,8 @@ impl RepoV2010 {
 pub mod types {
     use super::HasPk;
     use crate::Version;
+    use serde::de;
+    use serde::de::Deserializer;
     use serde::Deserialize;
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
@@ -163,12 +165,19 @@ pub mod types {
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
+    pub struct Categories {
+        #[serde(rename = "Category", default)]
+        pub data: Vec<Category>,
+    }
+
+    #[derive(Clone, Debug, Deserialize, PartialEq)]
     #[serde(rename_all = "PascalCase")]
     pub struct Component {
         /// **Primary key.** The unique integer identifier of this component
         /// type.
         #[serde(rename = "ComponentID")]
         pub id: usize,
+        pub component_type: ComponentType,
         /// **Primary key.** The unique integer identifier of this component
         /// type.
         #[serde(rename = "CategoryID")]
@@ -188,15 +197,46 @@ pub mod types {
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
-    pub struct Categories {
-        #[serde(rename = "Category", default)]
-        pub data: Vec<Category>,
-    }
-
-    #[derive(Clone, Debug, Deserialize, PartialEq)]
     pub struct Components {
         #[serde(rename = "Component", default)]
         pub data: Vec<Component>,
+    }
+
+    #[derive(Clone, Debug, PartialEq)]
+    pub enum ComponentType {
+        BlockRepeating,
+        Block,
+        ImplicitBlockRepeating,
+        ImplicitBlock,
+        OptimisedBlockRepeating,
+        OptimisedImplicitBlockRepeating,
+        XMLDataBlock,
+        Message,
+    }
+
+    impl<'de> Deserialize<'de> for ComponentType {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            Ok(match s.as_str() {
+                "BlockRepeating" => Self::BlockRepeating,
+                "Block" => Self::Block,
+                "ImplicitBlockRepeating" => Self::ImplicitBlockRepeating,
+                "ImplicitBlock" => Self::ImplicitBlock,
+                "OptimisedBlockRepeating" => Self::OptimisedImplicitBlockRepeating,
+                "OptimisedImplicitBlockRepeating" => Self::OptimisedImplicitBlockRepeating,
+                "XMLDataBlock" => Self::XMLDataBlock,
+                "Message" => Self::Message,
+                s => {
+                    return Err(de::Error::custom(format!(
+                        "Unexpected enum variant: `{}`",
+                        s
+                    )))
+                }
+            })
+        }
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]

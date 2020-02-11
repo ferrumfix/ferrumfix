@@ -22,14 +22,16 @@ pub fn codegen(dict: Dictionary) -> String {
             structure.doc(description.as_str());
         }
     }
-    //for (name, message) in dict.messages {
-    //    let structure = scope
-    //        .get_or_new_module("messages")
-    //        .new_struct(name.as_str())
-    //        .vis("pub");
-    //    for content in dict.contents[&message.pk()] {}
-    //    structure.doc(message.description.as_str());
-    //}
+    for (name, definition) in dict.messages {
+        let structure = scope
+            .get_or_new_module("messages")
+            .new_struct(name.as_str())
+            .vis("pub");
+        for tag in definition.fields {
+            structure.field(tag.as_str(), "foobar");
+        }
+        structure.doc(definition.def.description.as_str());
+    }
     scope.to_string()
 }
 
