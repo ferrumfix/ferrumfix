@@ -113,7 +113,7 @@ dependencies = [
 
 [[package]]
 name = "fasters"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "bitvec 0.14.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "codegen 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
