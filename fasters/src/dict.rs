@@ -1,15 +1,8 @@
-use crate::repo::types;
-use crate::repo::HasPk;
-use crate::repo::RepoV2010;
+use crate::repo::{types as t, HasPk, HashMapPk, RepoV2010};
 use crate::Version;
 use codegen::Scope;
 use std::collections::HashMap;
-
-#[derive(Clone, Debug, PartialEq)]
-struct Message {
-    def: types::Message,
-    contents: Vec<String>,
-}
+use std::rc::Rc;
 
 pub fn codegen(dict: Dictionary) -> String {
     let mut scope = Scope::new();
@@ -18,63 +11,72 @@ pub fn codegen(dict: Dictionary) -> String {
             .get_or_new_module("fields")
             .new_struct(field.name.as_str())
             .vis("pub");
-        if let Some(description) = field.description {
-            structure.doc(description.as_str());
-        }
+        //if let Some(description) = field.description {
+        //    structure.doc(description.as_str());
+        //}
     }
-    for (name, definition) in dict.messages {
-        let structure = scope
-            .get_or_new_module("messages")
-            .new_struct(name.as_str())
-            .vis("pub");
-        for tag in definition.fields {
-            structure.field(tag.as_str(), "foobar");
-        }
-        structure.doc(definition.def.description.as_str());
-    }
+    //for (name, definition) in dict.messages {
+    //    let structure = scope
+    //        .get_or_new_module("messages")
+    //        .new_struct(name.as_str())
+    //        .vis("pub");
+    //    for tag in definition.fields {
+    //        // TODO
+    //        //structure.field(tag.as_str(), "foobar");
+    //    }
+    //    structure.doc(definition.def.description.as_str());
+    //}
     scope.to_string()
 }
 
 #[derive(Clone, Debug, PartialEq)]
 struct MessageDefinition {
-    def: types::Message,
-    fields: Vec<String>,
+    def: t::Message,
+    fields: Vec<t::Component>,
 }
 
+/// Allows lookup of FIX definitions based on `RepoV2010`.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dictionary {
-    fields: HashMap<<types::Field as HasPk>::Pk, types::Field>,
-    messages: HashMap<<types::Message as HasPk>::Pk, MessageDefinition>,
+    data_types: HashMapPk<t::Datatype, Rc<t::Datatype>>,
+    fields: HashMapPk<t::Field, Rc<t::Field>>,
+    components: HashMapPk<t::Component, Rc<t::Component>>,
+    msg_contents: HashMapPk<t::Component, Rc<t::MsgContent>>,
 }
 
 impl Dictionary {
-    fn new(version: Version) -> Self {
-        let fields = RepoV2010::fields(version).map(|f| (f.pk(), f)).collect();
-        let mut message_definitions: HashMap<_, _> = RepoV2010::messages(version)
-            .map(|m| {
-                (
-                    m.pk(),
-                    MessageDefinition {
-                        def: m,
-                        fields: vec![],
-                    },
-                )
-            })
+    /// Assembles a FIX dictionary by linking FIX definitions against each other.
+    pub fn new(version: Version) -> Self {
+        let data_types = RepoV2010::data_types(version)
+            .map(|f| (f.pk(), Rc::new(f)))
             .collect();
-        let msg_contents: HashMap<_, _> = RepoV2010::msg_contents(version)
-            .map(|mc| (mc.component_id.clone(), mc))
+        let fields = RepoV2010::fields(version)
+            .map(|f| (f.pk(), Rc::new(f)))
             .collect();
-        for (component_id, mc) in msg_contents.into_iter() {
-            // TODO: also unpack components.
-            // Not all components belong to a message.
-            if let Some(def) = message_definitions.get_mut(&component_id) {
-                def.fields.push(mc.tag_text);
-            }
-        }
+        let components = RepoV2010::components(version)
+            .map(|c| (c.pk(), Rc::new(c)))
+            .collect();
+        let msg_contents = RepoV2010::msg_contents(version)
+            .map(|mc| (mc.component_id, Rc::new(mc)))
+            .collect();
         Self {
+            data_types,
             fields,
-            messages: message_definitions,
+            msg_contents,
+            components,
         }
+    }
+
+    pub fn get_field(&self, pk: <t::Field as HasPk>::Pk) -> Option<Rc<t::Field>> {
+        self.fields.get(&pk).cloned()
+    }
+
+    pub fn get_data_type(&self, pk: <t::Datatype as HasPk>::Pk) -> Option<Rc<t::Datatype>> {
+        self.data_types.get(&pk).cloned()
+    }
+
+    pub fn get_component(&self, pk: <t::Component as HasPk>::Pk) -> Option<Rc<t::Component>> {
+        self.components.get(&pk).cloned()
     }
 }
 

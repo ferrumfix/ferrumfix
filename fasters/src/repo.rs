@@ -8,6 +8,9 @@ use quick_xml::de::from_str;
 use rust_embed::RustEmbed;
 use serde::de::DeserializeOwned;
 use std::borrow::Borrow;
+use std::collections::HashMap;
+
+pub type HashMapPk<K, T> = HashMap<<K as HasPk>::Pk, T>;
 
 /// Signals the presence of non-schema attribute `ep:PK="1"`.
 pub trait HasPk {
@@ -242,11 +245,23 @@ pub mod types {
     #[derive(Clone, Debug, Deserialize, PartialEq)]
     #[serde(rename_all = "PascalCase")]
     pub struct Datatype {
-        /// A human readable string representing the name of the field.
+        /// **Primary key.** Identifier of the datatype.
         pub name: String,
+        /// Base type from which this type is derived.
         pub base_type: Option<String>,
+        /// Human readable description of this Datatype.
         pub description: String,
+        /// A string that contains examples values for a datatype
         pub examples: Vec<String>,
+        // TODO: 'XML'.
+    }
+
+    impl HasPk for Datatype {
+        type Pk = String;
+
+        fn pk(&self) -> Self::Pk {
+            self.name.clone()
+        }
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
@@ -366,7 +381,7 @@ pub mod types {
     #[serde(rename_all = "PascalCase")]
     pub struct MsgContent {
         #[serde(rename = "ComponentID")]
-        pub component_id: String,
+        pub component_id: usize,
         pub tag_text: String,
     }
 
