@@ -311,6 +311,17 @@ pub mod types {
         pub description: Option<String>,
     }
 
+    impl Field {
+        pub fn doc_url_onixs(&self, version: Version) -> String {
+            let mut url = "https://www.onixs.biz/fix-dictionary/".to_string();
+            url.push_str(version.onixs_str());
+            url.push_str("/tagNum_");
+            url.push_str(self.tag.to_string().as_str());
+            url.push_str(".html");
+            url
+        }
+    }
+
     impl HasPk for Field {
         type Pk = usize;
 

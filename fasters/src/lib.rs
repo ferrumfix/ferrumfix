@@ -158,6 +158,22 @@ impl Version {
         }
     }
 
+    pub fn onixs_str(self) -> &'static str {
+        match self {
+            Self::Fix27 => unimplemented!(),
+            Self::Fix30 => "3.0",
+            Self::Fix40 => "4.0",
+            Self::Fix41 => "4.1",
+            Self::Fix42 => "4.2",
+            Self::Fix43 => "4.3",
+            Self::Fix44 => "4.4",
+            Self::Fix50 => "5.0",
+            Self::Fix50SP1 => "5.0SP1",
+            Self::Fix50SP2 => "5.0SP2",
+            Self::Fixt11 => "FIXT1.1",
+        }
+    }
+
     pub fn header(self) -> Message {
         unimplemented!()
     }
