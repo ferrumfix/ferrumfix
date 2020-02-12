@@ -69,7 +69,7 @@ impl Dictionary {
         }
     }
 
-    pub fn get_component(&self, name: &String) -> Option<&t::Component> {
+    pub fn get_component(&self, name: &str) -> Option<&t::Component> {
         self.components.get(name)
     }
 
@@ -104,31 +104,26 @@ impl Dictionary {
             .as_str(),
         );
         for content in msg_contents.iter() {
-            if let Ok(tag_number) = content.tag_text.parse::<usize>() {
-                let field = self.get_field(&tag_number).unwrap();
-                (&mut structure).field(
-                    format!("tag_{}", &field.name.to_snake_case()).as_str(),
-                    "foobar",
-                );
-            } else {
-                let component = self.get_component(&content.tag_text).unwrap();
-                let msg_contents = self.get_msg_contents(&component.id).unwrap();
-                for content in msg_contents.iter() {
-                    if let Ok(tag_number) = content.tag_text.parse::<usize>() {
-                        let field = self.get_field(&tag_number).unwrap();
-                        (&mut structure).field(
-                            format!("tag_{}", &field.name.to_snake_case()).as_str(),
-                            "foobar",
-                        );
-                    }
-                }
-                //(&mut structure).field(
-                //    format!("comp_{}", &content.tag_text.to_snake_case()).as_str(),
-                //    "foobar",
-                //);
-            }
+            let (field_name, field_type) = self.translate_msg_content_to_struct_field(content);
+            (&mut structure).field(field_name.as_str(), field_type);
         }
         structure
+    }
+
+    fn translate_msg_content_to_struct_field(&self, content: &t::MsgContent) -> (String, String) {
+        let tag_number_res = content.tag_text.parse::<usize>();
+        if let Ok(tag_number) = tag_number_res {
+            let field = self.get_field(&tag_number).unwrap();
+            (
+                format!("tag_{}", &field.name.to_snake_case()),
+                "foobar".to_string(),
+            )
+        } else {
+            (
+                format!("comp_{}", content.tag_text.to_snake_case()),
+                "foobar".to_string(),
+            )
+        }
     }
 }
 
