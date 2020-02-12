@@ -22,22 +22,8 @@ pub fn codegen(dict: Dictionary) -> String {
             structure.doc(docstring.as_str());
         }
     }
-    for (msg_type, msg) in &dict.messages {
-        let mut structure = scope
-            .get_or_new_module("messages")
-            .new_struct(msg.name.as_str())
-            .vis("pub")
-            .doc(format!("# Message information:\n\nMessage type: {}", msg_type).as_str());
-        if let Some(msg_contents) = dict.msg_contents.get(&msg.component_id) {
-            let mut i = 1;
-            for content in msg_contents {
-                structure = structure.field(
-                    format!("tag_{}_{}", i, &content.tag_text.to_snake_case()).as_str(),
-                    "foobar",
-                );
-                i += 1;
-            }
-        }
+    for pk in &mut dict.messages.keys() {
+        scope.push_struct(dict.build_message_struct(pk));
     }
     scope.to_string()
 }
@@ -48,7 +34,7 @@ pub struct Dictionary {
     version: Version,
     data_types: HashMapPk<t::Datatype, t::Datatype>,
     fields: HashMapPk<t::Field, t::Field>,
-    components: HashMapPk<t::Component, t::Component>,
+    components: HashMap<String, t::Component>,
     messages: HashMapPk<t::Message, t::Message>,
     msg_contents: HashMapPk<t::Component, Vec<t::MsgContent>>,
 }
@@ -61,7 +47,7 @@ impl Dictionary {
             .collect();
         let fields = RepoV2010::fields(version).map(|f| (f.pk(), f)).collect();
         let components = RepoV2010::components(version)
-            .map(|c| (c.pk(), c))
+            .map(|c| (c.name.clone(), c))
             .collect();
         let messages = RepoV2010::messages(version).map(|m| (m.pk(), m)).collect();
         let mut msg_contents: HashMapPk<t::Component, Vec<t::MsgContent>> = HashMap::new();
@@ -83,16 +69,66 @@ impl Dictionary {
         }
     }
 
-    pub fn get_field(&self, pk: <t::Field as HasPk>::Pk) -> Option<&t::Field> {
-        self.fields.get(&pk)
+    pub fn get_component(&self, name: &String) -> Option<&t::Component> {
+        self.components.get(name)
     }
 
-    pub fn get_data_type(&self, pk: <t::Datatype as HasPk>::Pk) -> Option<&t::Datatype> {
-        self.data_types.get(&pk)
+    pub fn get_data_type(&self, pk: &<t::Datatype as HasPk>::Pk) -> Option<&t::Datatype> {
+        self.data_types.get(pk)
     }
 
-    pub fn get_component(&self, pk: <t::Component as HasPk>::Pk) -> Option<&t::Component> {
-        self.components.get(&pk)
+    pub fn get_field(&self, pk: &<t::Field as HasPk>::Pk) -> Option<&t::Field> {
+        self.fields.get(pk)
+    }
+
+    pub fn get_message(&self, pk: &<t::Message as HasPk>::Pk) -> Option<&t::Message> {
+        self.messages.get(pk)
+    }
+
+    pub fn get_msg_contents(
+        &self,
+        pk: &<t::Component as HasPk>::Pk,
+    ) -> Option<&Vec<t::MsgContent>> {
+        self.msg_contents.get(pk)
+    }
+
+    fn build_message_struct(&self, pk: &<t::Message as HasPk>::Pk) -> codegen::Struct {
+        let message = self.get_message(pk).unwrap();
+        let msg_contents = self.get_msg_contents(&message.component_id).unwrap();
+        let mut structure = codegen::Struct::new(message.name.as_str());
+        structure.vis("pub").doc(
+            format!(
+                "# Message information:\n\nMessage type: {}",
+                message.msg_type
+            )
+            .as_str(),
+        );
+        for content in msg_contents.iter() {
+            if let Ok(tag_number) = content.tag_text.parse::<usize>() {
+                let field = self.get_field(&tag_number).unwrap();
+                (&mut structure).field(
+                    format!("tag_{}", &field.name.to_snake_case()).as_str(),
+                    "foobar",
+                );
+            } else {
+                let component = self.get_component(&content.tag_text).unwrap();
+                let msg_contents = self.get_msg_contents(&component.id).unwrap();
+                for content in msg_contents.iter() {
+                    if let Ok(tag_number) = content.tag_text.parse::<usize>() {
+                        let field = self.get_field(&tag_number).unwrap();
+                        (&mut structure).field(
+                            format!("tag_{}", &field.name.to_snake_case()).as_str(),
+                            "foobar",
+                        );
+                    }
+                }
+                //(&mut structure).field(
+                //    format!("comp_{}", &content.tag_text.to_snake_case()).as_str(),
+                //    "foobar",
+                //);
+            }
+        }
+        structure
     }
 }
 
@@ -111,6 +147,7 @@ mod test {
     #[test]
     fn codegen_44_doesnt_panic() {
         let dict = Dictionary::new(Version::Fix44);
-        codegen(dict);
+        let _code = codegen(dict);
+        println!("{}", _code);
     }
 }
