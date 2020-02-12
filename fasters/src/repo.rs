@@ -394,6 +394,7 @@ pub mod types {
         #[serde(rename = "ComponentID")]
         pub component_id: usize,
         pub tag_text: String,
+        pub reqd: char,
     }
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]

@@ -28,6 +28,14 @@ pub fn codegen(dict: Dictionary) -> String {
     scope.to_string()
 }
 
+fn optionify_type<S: AsRef<str>>(required: bool, t: S) -> String {
+    if required {
+        t.as_ref().to_string()
+    } else {
+        format!("Option<{}>", t.as_ref())
+    }
+}
+
 /// Allows lookup of FIX definitions based on `RepoV2010`.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dictionary {
@@ -105,7 +113,10 @@ impl Dictionary {
         );
         for content in msg_contents.iter() {
             let (field_name, field_type) = self.translate_msg_content_to_struct_field(content);
-            (&mut structure).field(field_name.as_str(), field_type);
+            (&mut structure).field(
+                field_name.as_str(),
+                optionify_type(content.reqd == '1', field_type.as_str()),
+            );
         }
         structure
     }
