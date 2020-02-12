@@ -1,0 +1,3 @@
+[submodule "fasters/resources/fix-repository"]
+	path = fasters/resources/fix-repository
+	url = https://github.com/FIXTradingCommunity/fix-repository

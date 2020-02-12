@@ -1,6 +1,8 @@
 use crate::repo::{types as t, HasPk, HashMapPk, RepoV2010};
 use crate::Version;
 use codegen::Scope;
+use inflector::Inflector;
+use std::collections::HashMap;
 
 pub fn codegen(dict: Dictionary) -> String {
     let mut scope = Scope::new();
@@ -20,15 +22,21 @@ pub fn codegen(dict: Dictionary) -> String {
             structure.doc(docstring.as_str());
         }
     }
-    for (name, msg) in &dict.messages {
-        let structure = scope
+    for (msg_type, msg) in &dict.messages {
+        let mut structure = scope
             .get_or_new_module("messages")
-            .new_struct(name.as_str())
-            .vis("pub");
-        if let Some(component) = dict.get_component(msg.component_id) {
-            //
-        } else {
-            println!("BAD COMPONENT IN MSG {}", name);
+            .new_struct(msg.name.as_str())
+            .vis("pub")
+            .doc(format!("# Message information:\n\nMessage type: {}", msg_type).as_str());
+        if let Some(msg_contents) = dict.msg_contents.get(&msg.component_id) {
+            let mut i = 1;
+            for content in msg_contents {
+                structure = structure.field(
+                    format!("tag_{}_{}", i, &content.tag_text.to_snake_case()).as_str(),
+                    "foobar",
+                );
+                i += 1;
+            }
         }
     }
     scope.to_string()
@@ -42,7 +50,7 @@ pub struct Dictionary {
     fields: HashMapPk<t::Field, t::Field>,
     components: HashMapPk<t::Component, t::Component>,
     messages: HashMapPk<t::Message, t::Message>,
-    msg_contents: HashMapPk<t::Component, t::MsgContent>,
+    msg_contents: HashMapPk<t::Component, Vec<t::MsgContent>>,
 }
 
 impl Dictionary {
@@ -56,9 +64,15 @@ impl Dictionary {
             .map(|c| (c.pk(), c))
             .collect();
         let messages = RepoV2010::messages(version).map(|m| (m.pk(), m)).collect();
-        let msg_contents = RepoV2010::msg_contents(version)
-            .map(|mc| (mc.component_id, mc))
-            .collect();
+        let mut msg_contents: HashMapPk<t::Component, Vec<t::MsgContent>> = HashMap::new();
+        for msg_content in RepoV2010::msg_contents(version) {
+            let key = msg_content.component_id;
+            if let Some(components) = msg_contents.get_mut(&key) {
+                components.push(msg_content)
+            } else {
+                msg_contents.insert(key, vec![msg_content]);
+            }
+        }
         Self {
             version,
             data_types,
@@ -84,6 +98,8 @@ impl Dictionary {
 
 #[cfg(test)]
 mod test {
+    use super::*;
+
     #[cfg(feature = "repo_v2010")]
     #[test]
     fn fix40_fields_has_at_least_100_fields() {
@@ -93,9 +109,8 @@ mod test {
     }
 
     #[test]
-    fn print_dict() {
-        use super::*;
-        let dict = Dictionary::new(Version::Fix40);
-        println!("{}", codegen(dict));
+    fn codegen_44_doesnt_panic() {
+        let dict = Dictionary::new(Version::Fix44);
+        codegen(dict);
     }
 }
