@@ -6,7 +6,7 @@ This is the planned feature roadmap:
 
 **Core features:**
 
-- [ ] Code generation (Rust, possibly others).
+- [X] Code generation (Rust, possibly others).
 - [ ] FIX 4.2.
 - [ ] FIX 4.4.
 - [ ] FIX 5.0 Service Pack 2.
