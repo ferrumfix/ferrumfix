@@ -4,34 +4,33 @@ use codegen::Scope;
 
 pub fn codegen(dict: Dictionary) -> String {
     let mut scope = Scope::new();
-    for (_, field) in dict.fields {
+    for (_, field) in &dict.fields {
         let structure = scope
             .get_or_new_module("fields")
             .new_struct(field.name.as_str())
             .vis("pub");
         if let Some(description) = &field.description {
             let onixs_link = field.doc_url_onixs(dict.version);
-            let mut docstring = description.clone();
-            docstring.push_str("\n\n# Field information\n");
-            docstring.push_str("\nTag number: ");
-            docstring.push_str(field.tag.to_string().as_str());
-            docstring.push_str(".\nOnixS [reference](");
-            docstring.push_str(onixs_link.as_str());
-            docstring.push_str(").");
+            let docstring = format!(
+                "{}\n\n# Field information\n\nTag Number: {}\nOnixS [reference]({}).",
+                description,
+                field.tag.to_string().as_str(),
+                onixs_link.as_str()
+            );
             structure.doc(docstring.as_str());
         }
     }
-    //for (name, definition) in dict.messages {
-    //    let structure = scope
-    //        .get_or_new_module("messages")
-    //        .new_struct(name.as_str())
-    //        .vis("pub");
-    //    for tag in definition.fields {
-    //        // TODO
-    //        //structure.field(tag.as_str(), "foobar");
-    //    }
-    //    structure.doc(definition.def.description.as_str());
-    //}
+    for (name, msg) in &dict.messages {
+        let structure = scope
+            .get_or_new_module("messages")
+            .new_struct(name.as_str())
+            .vis("pub");
+        if let Some(component) = dict.get_component(msg.component_id) {
+            //
+        } else {
+            println!("BAD COMPONENT IN MSG {}", name);
+        }
+    }
     scope.to_string()
 }
 
@@ -42,6 +41,7 @@ pub struct Dictionary {
     data_types: HashMapPk<t::Datatype, t::Datatype>,
     fields: HashMapPk<t::Field, t::Field>,
     components: HashMapPk<t::Component, t::Component>,
+    messages: HashMapPk<t::Message, t::Message>,
     msg_contents: HashMapPk<t::Component, t::MsgContent>,
 }
 
@@ -55,6 +55,7 @@ impl Dictionary {
         let components = RepoV2010::components(version)
             .map(|c| (c.pk(), c))
             .collect();
+        let messages = RepoV2010::messages(version).map(|m| (m.pk(), m)).collect();
         let msg_contents = RepoV2010::msg_contents(version)
             .map(|mc| (mc.component_id, mc))
             .collect();
@@ -62,6 +63,7 @@ impl Dictionary {
             version,
             data_types,
             fields,
+            messages,
             msg_contents,
             components,
         }
