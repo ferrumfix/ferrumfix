@@ -22,6 +22,7 @@ mod settings;
 
 pub use crate::err::{Error, Result};
 use crate::repo::types::Message;
+pub use fasters_derive::derive;
 use serde::Deserialize;
 
 #[derive(Default)]
