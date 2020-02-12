@@ -10,7 +10,7 @@ publish = true
 readme = "README.md"
 keywords = ["fix", "fast", "protocol", "finance", "streaming"]
 categories = ["network-programming", "parser-implementations", "encoding"]
-license = "MIT"
+license = "MIT OR APACHE"
 
 [features]
 repo_v50sp2ep254 = [ ]
