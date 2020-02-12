@@ -1,0 +1,699 @@
+<?xml version="1.0" encoding="UTF-8"?><xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:od="urn:schemas-microsoft-com:officedata" xmlns="http://www.fixprotocol.org/extensionpack"><xs:annotation xmlns:local="http://dummy.org"><xs:documentation>
+DISCLAIMER
+
+THE INFORMATION CONTAINED HEREIN AND THE FINANCIAL INFORMATION EXCHANGE PROTOCOL (COLLECTIVELY, THE "FIX PROTOCOL") ARE PROVIDED "AS IS" AND NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL MAKES ANY REPRESENTATION OR WARRANTY, EXPRESS OR IMPLIED, AS TO THE FIX PROTOCOL (OR THE RESULTS TO BE OBTAINED BY THE USE THEREOF) OR ANY OTHER MATTER AND EACH SUCH PERSON AND ENTITY SPECIFICALLY DISCLAIMS ANY WARRANTY OF ORIGINALITY, ACCURACY, COMPLETENESS, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SUCH PERSONS AND ENTITIES DO NOT WARRANT THAT THE FIX PROTOCOL WILL CONFORM TO ANY DESCRIPTION THEREOF OR BE FREE OF ERRORS. THE ENTIRE RISK OF ANY USE OF THE FIX PROTOCOL IS ASSUMED BY THE USER.
+
+NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL SHALL HAVE ANY LIABILITY FOR DAMAGES OF ANY KIND ARISING IN ANY MANNER OUT OF OR IN CONNECTION WITH ANY USER'S USE OF (OR ANY INABILITY TO USE) THE FIX PROTOCOL, WHETHER DIRECT, INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL (INCLUDING, WITHOUT LIMITATION, LOSS OF DATA, LOSS OF USE, CLAIMS OF THIRD PARTIES OR LOST PROFITS OR REVENUES OR OTHER ECONOMIC LOSS), WHETHER IN TORT (INCLUDING NEGLIGENCE AND STRICT LIABILITY), CONTRACT OR OTHERWISE, WHETHER OR NOT ANY SUCH PERSON OR ENTITY HAS BEEN ADVISED OF, OR OTHERWISE MIGHT HAVE ANTICIPATED THE POSSIBILITY OF, SUCH DAMAGES.
+
+No proprietary or ownership interest of any kind is granted with respect to the FIX Protocol (or any rights therein).
+
+Copyright 2003-2009 FIX Protocol Limited, all rights reserved
+
+REPRODUCTION
+
+FIX Protocol Limited grants permission to print in hard copy form or reproduce the FIX Protocol specification in its entirety provided that the duplicated pages retain the "Copyright FIX Protocol Limited" statement at the bottom of the page.
+
+Portions of the FIX Protocol specification may be extracted or cited in other documents (such as a document which describes one's implementation of the FIX Protocol) provided that one reference the origin of the FIX Protocol specification (HTUhttp://www.fixprotocol.orgUTH) and that the specification itself is "Copyright FIX Protocol Limited".
+FIX Protocol Limited claims no intellectual property over one's implementation (programming code) of an application which implements the behavior and details from the FIX Protocol specification. 	
+</xs:documentation></xs:annotation>
+	<xs:include schemaLocation="repositorytypes.xsd"/>
+	<!-- added nullable datatypes to permit empty elements to be used to remove elements during updates -->
+	<!-- http://stackoverflow.com/questions/4315258/xsd-options-for-allowing-null-values-when-declaring-xsinteger-data-types -->
+	<xs:simpleType name="Empty_t">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="0"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="nullableTag_t">
+		<xs:union memberTypes="Tag_t Empty_t"/>
+	</xs:simpleType>
+	<xs:simpleType name="nullableDescription_t">
+		<xs:union memberTypes="Description_t Empty_t"/>
+	</xs:simpleType>
+	<xs:simpleType name="nullableElaboration_t">
+		<xs:union memberTypes="Elaboration_t Empty_t"/>
+	</xs:simpleType>
+	<xs:simpleType name="nullableUnionDataType_t">
+		<xs:union memberTypes="UnionDataType_t Empty_t"/>
+	</xs:simpleType>
+	<xs:simpleType name="nullableName_t">
+		<xs:union memberTypes="Name_t Empty_t"/>
+	</xs:simpleType>
+	<xs:simpleType name="nullableCategoryID_t">
+		<xs:union memberTypes="CategoryID_t Empty_t"/>
+	</xs:simpleType>
+	<xs:simpleType name="nullableSymbolicName_t">
+		<xs:union memberTypes="SymbolicName_t Empty_t"/>
+	</xs:simpleType>
+	<xs:simpleType name="nullableGroup_t">
+		<xs:union memberTypes="Group_t Empty_t"/>
+	</xs:simpleType>
+	<xs:simpleType name="nullableSort_t">
+		<xs:union memberTypes="Sort_t Empty_t"/>
+	</xs:simpleType>
+	<!-- Extension Pack datatypes -->
+	<xs:attributeGroup name="UpdateAttributeGroup">
+			<xs:attribute name="Deprecated" type="xs:boolean" use="optional"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="SectionAttributeGroup">
+		<xs:attribute name="SectionID" type="SectionID_t" use="required"/>
+	</xs:attributeGroup>
+	<xs:complexType name="SectionUpdate_t">
+		<xs:sequence>
+			<xs:element name="Name" type="Name_t" minOccurs="0"/>
+			<xs:element name="DisplayOrder" type="xs:int" minOccurs="0"/>
+			<xs:element name="Volume" type="Volume_t" minOccurs="0"/>
+			<xs:element name="NotReqXML" type="BOOL_t" minOccurs="0"/>
+			<xs:element name="FIXMLFileName" type="Name_t" minOccurs="0"/>
+			<xs:element name="Description" type="nullableDescription_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="SectionAttributeGroup"/>
+		<xs:attributeGroup ref="UpdateAttributeGroup"/>
+	</xs:complexType>
+	<xs:complexType name="SectionInsert_t">
+		<xs:sequence>
+			<xs:element name="Name" type="Name_t"/>
+			<xs:element name="DisplayOrder" type="xs:int"/>
+			<xs:element name="Volume" type="Volume_t"/>
+			<xs:element name="NotReqXML" type="BOOL_t"/>
+			<xs:element name="FIXMLFileName" type="Name_t" minOccurs="0"/>
+			<xs:element name="Description" type="Description_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="SectionAttributeGroup"/>
+	</xs:complexType>
+	<xs:attributeGroup name="CategoryAttributeGroup">
+		<xs:attribute name="CategoryID" type="CategoryID_t" use="required"/>
+	</xs:attributeGroup>
+	<xs:complexType name="CategoryUpdate_t">
+		<xs:sequence>
+			<xs:element name="FIXMLFileName" type="Name_t" minOccurs="0"/>
+			<xs:element name="NotReqXML" type="BOOL_t" minOccurs="0"/>
+			<xs:element name="GenerateImplFile" type="BOOL_t" minOccurs="0"/>
+			<xs:element name="ComponentType" type="CatComponentType_t" minOccurs="0"/>
+			<xs:element name="SectionID" type="SectionID_t" minOccurs="0"/>
+			<xs:element name="Volume" type="Volume_t" minOccurs="0"/>
+			<xs:element name="IncludeFile" type="CatIncludeFile_t" minOccurs="0"/>
+			<xs:element name="Description" type="nullableDescription_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="CategoryAttributeGroup"/>
+		<xs:attributeGroup ref="UpdateAttributeGroup"/>
+	</xs:complexType>
+	<xs:complexType name="CategoryInsert_t">
+		<xs:sequence>
+			<xs:element name="FIXMLFileName" type="Name_t"/>
+			<xs:element name="NotReqXML" type="BOOL_t"/>
+			<xs:element name="GenerateImplFile" type="BOOL_t"/>
+			<xs:element name="ComponentType" type="CatComponentType_t"/>
+			<xs:element name="SectionID" type="SectionID_t" minOccurs="0"/>
+			<xs:element name="Volume" type="Volume_t" minOccurs="0"/>
+			<xs:element name="IncludeFile" type="CatIncludeFile_t" minOccurs="0"/>
+			<xs:element name="Description" type="Description_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="CategoryAttributeGroup"/>
+	</xs:complexType>
+	<xs:attributeGroup name="AbbreviationAttributeGroup">
+		<xs:attribute name="Term" type="Term_t" use="required"/>
+	</xs:attributeGroup>
+	<xs:complexType name="AbbreviationUpdate_t">
+		<xs:sequence>
+			<xs:element name="AbbrTerm" type="Abbreviation_t" minOccurs="0"/>
+			<xs:element name="Usage" type="Usage_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="AbbreviationAttributeGroup"/>
+		<xs:attributeGroup ref="UpdateAttributeGroup"/>
+	</xs:complexType>
+	<xs:complexType name="AbbreviationInsert_t">
+		<xs:sequence>
+			<xs:element name="AbbrTerm" type="Abbreviation_t"/>
+			<xs:element name="Usage" type="Usage_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="AbbreviationAttributeGroup"/>
+	</xs:complexType>
+	<xs:attributeGroup name="DatatypeAttributeGroup">
+		<xs:attribute name="Name" type="xs:string" use="required"/>
+	</xs:attributeGroup>
+	<xs:complexType name="DatatypeUpdate_t">
+		<xs:sequence>
+			<xs:element name="BaseType" type="xs:string" minOccurs="0"/>
+			<xs:element name="Description" type="xs:string" minOccurs="0"/>
+			<xs:element name="Example" type="xs:string" minOccurs="0"/>
+			<xs:element name="XML" type="DatatypeXML_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="DatatypeAttributeGroup"/>
+		<xs:attributeGroup ref="UpdateAttributeGroup"/>
+	</xs:complexType>
+	<xs:complexType name="DatatypeInsert_t">
+		<xs:sequence>
+			<xs:element name="BaseType" type="xs:string" minOccurs="0"/>
+			<xs:element name="Description" type="xs:string"/>
+			<xs:element name="Example" type="xs:string" minOccurs="0"/>
+			<xs:element name="XML" type="DatatypeXML_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="DatatypeAttributeGroup"/>
+	</xs:complexType>
+	<xs:attributeGroup name="FieldAttributeGroup">
+		<xs:attribute name="Tag" type="Tag_t" use="required"/>
+	</xs:attributeGroup>
+	<xs:complexType name="FieldUpdate_t">
+		<xs:sequence>
+			<xs:element name="Name" type="SymbolicName_t" minOccurs="0"/>
+			<xs:element name="Type" type="Datatype_t" minOccurs="0"/>
+			<xs:element name="AssociatedDataTag" type="nullableTag_t" minOccurs="0"/>
+			<xs:element name="AbbrName" type="nullableSymbolicName_t" minOccurs="0"/>
+			<xs:element name="BaseCategory" type="nullableCategoryID_t" minOccurs="0"/>
+			<xs:element name="BaseCategoryAbbrName" type="nullableName_t" minOccurs="0"/>
+			<xs:element name="NotReqXML" type="BOOL_t" minOccurs="0"/>
+			<xs:element name="EnumDatatype" type="nullableTag_t" minOccurs="0"/>
+			<xs:element name="UnionDataType" type="nullableUnionDataType_t" minOccurs="0"/>
+			<xs:element name="Description" type="nullableDescription_t" minOccurs="0"/>
+			<xs:element name="Elaboration" type="nullableElaboration_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="FieldAttributeGroup"/>
+		<xs:attributeGroup ref="UpdateAttributeGroup"/>
+	</xs:complexType>
+	<xs:complexType name="FieldInsert_t">
+		<xs:sequence>
+			<xs:element name="Name" type="SymbolicName_t"/>
+			<xs:element name="Type" type="Datatype_t"/>
+			<xs:element name="AssociatedDataTag" type="xs:int" minOccurs="0"/>
+			<xs:element name="AbbrName" type="SymbolicName_t" minOccurs="0"/>
+			<xs:element name="BaseCategory" type="CategoryID_t" minOccurs="0"/>
+			<xs:element name="BaseCategoryAbbrName" type="Name_t" minOccurs="0"/>
+			<xs:element name="NotReqXML" type="BOOL_t"/>
+			<xs:element name="EnumDatatype" type="nullableTag_t" minOccurs="0"/>
+			<xs:element name="UnionDataType" type="UnionDataType_t" minOccurs="0"/>
+			<xs:element name="Description" type="Description_t"/>
+			<xs:element name="Elaboration" type="Elaboration_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="FieldAttributeGroup"/>
+	</xs:complexType>
+	<xs:attributeGroup name="EnumAttributeGroup">
+		<xs:attribute name="Tag" type="Tag_t" use="required"/>
+		<xs:attribute name="Value" type="Enumeration_t" use="required"/>
+	</xs:attributeGroup>
+	<xs:complexType name="EnumUpdate_t">
+		<xs:sequence>
+			<xs:element name="SymbolicName" type="SymbolicName_t" minOccurs="0"/>
+			<xs:element name="Group" type="nullableGroup_t" minOccurs="0"/>
+			<xs:element name="Sort" type="nullableSort_t" minOccurs="0"/>
+			<xs:element name="Description" type="Description_t" minOccurs="0"/>
+			<xs:element name="Elaboration" type="nullableElaboration_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="EnumAttributeGroup"/>
+		<xs:attributeGroup ref="UpdateAttributeGroup"/>
+	</xs:complexType>
+	<xs:complexType name="EnumInsert_t">
+		<xs:sequence>
+			<xs:element name="SymbolicName" type="SymbolicName_t" minOccurs="0"/>
+			<xs:element name="Group" type="Group_t" minOccurs="0"/>
+			<xs:element name="Sort" type="xs:int" minOccurs="0"/>
+			<xs:element name="Description" type="Description_t" minOccurs="0"/>
+			<xs:element name="Elaboration" type="Elaboration_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="EnumAttributeGroup"/>
+	</xs:complexType>
+	<xs:attributeGroup name="MessageAttributeGroup">
+		<xs:attribute name="MsgType" type="MsgType_t" use="required"/>
+	</xs:attributeGroup>
+	<xs:complexType name="MessageUpdate_t">
+		<xs:sequence>
+			<xs:element name="ComponentID" type="MsgID_t" minOccurs="0"/>
+			<xs:element name="Name" type="Name_t" minOccurs="0"/>
+			<xs:element name="CategoryID" type="CategoryID_t" minOccurs="0"/>
+			<xs:element name="SectionID" type="SectionID_t" minOccurs="0"/>
+			<xs:element name="AbbrName" type="nullableName_t" minOccurs="0"/>
+			<xs:element name="NotReqXML" type="BOOL_t" minOccurs="0"/>
+			<xs:element name="Description" type="nullableDescription_t" minOccurs="0"/>
+			<xs:element name="Elaboration" type="nullableElaboration_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="MessageAttributeGroup"/>
+		<xs:attributeGroup ref="UpdateAttributeGroup"/>
+	</xs:complexType>
+	<xs:complexType name="MessageInsert_t">
+		<xs:sequence>
+			<xs:element name="ComponentID" type="MsgID_t"/>
+			<xs:element name="Name" type="Name_t"/>
+			<xs:element name="CategoryID" type="CategoryID_t"/>
+			<xs:element name="SectionID" type="SectionID_t"/>
+			<xs:element name="AbbrName" type="Name_t" minOccurs="0"/>
+			<xs:element name="NotReqXML" type="BOOL_t"/>
+			<xs:element name="Description" type="Description_t"/>
+			<xs:element name="Elaboration" type="Elaboration_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="MessageAttributeGroup"/>
+	</xs:complexType>
+	<xs:attributeGroup name="ComponentAttributeGroup">
+		<xs:attribute name="ComponentID" type="CompID_t" use="required"/>
+	</xs:attributeGroup>
+	<xs:complexType name="ComponentUpdate_t">
+		<xs:sequence>
+			<xs:element name="ComponentType" type="ComponentType_t" minOccurs="0"/>
+			<xs:element name="CategoryID" type="CategoryID_t" minOccurs="0"/>
+			<xs:element name="Name" type="ComponentName_t" minOccurs="0"/>
+			<xs:element name="AbbrName" type="Name_t" minOccurs="0"/>
+			<xs:element name="NotReqXML" type="BOOL_t" minOccurs="0"/>
+			<xs:element name="Description" type="Description_t" minOccurs="0"/>
+			<xs:element name="Elaboration" type="nullableElaboration_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="ComponentAttributeGroup"/>
+		<xs:attributeGroup ref="UpdateAttributeGroup"/>
+	</xs:complexType>
+	<xs:complexType name="ComponentInsert_t">
+		<xs:sequence>
+			<xs:element name="ComponentType" type="ComponentType_t"/>
+			<xs:element name="CategoryID" type="CategoryID_t"/>
+			<xs:element name="Name" type="ComponentName_t"/>
+			<xs:element name="AbbrName" type="Name_t" minOccurs="0"/>
+			<xs:element name="NotReqXML" type="BOOL_t"/>
+			<xs:element name="Description" type="Description_t" minOccurs="0"/>
+			<xs:element name="Elaboration" type="Elaboration_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="ComponentAttributeGroup"/>
+	</xs:complexType>
+	<xs:attributeGroup name="MsgContentAttributeGroup">
+		<xs:attribute name="ComponentID" type="MsgOrCompID_t" use="required"/>
+		<xs:attribute name="TagText" type="TagText_t" use="required"/>
+	</xs:attributeGroup>
+	<xs:complexType name="MsgContentUpdate_t">
+		<xs:sequence>
+			<xs:element name="Indent" type="xs:nonNegativeInteger" minOccurs="0"/>
+			<xs:element name="Position" type="xs:decimal" minOccurs="0"/>
+			<xs:element name="Reqd" type="BOOL_t" minOccurs="0"/>
+			<xs:element name="Inlined" type="BOOL_t" minOccurs="0"/>
+			<xs:element name="Description" type="nullableDescription_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="MsgContentAttributeGroup"/>
+		<xs:attributeGroup ref="UpdateAttributeGroup"/>
+	</xs:complexType>
+	<xs:complexType name="MsgContentInsert_t">
+		<xs:sequence>
+			<xs:element name="Indent" type="xs:nonNegativeInteger"/>
+			<xs:element name="Position" type="xs:decimal"/>
+			<xs:element name="Reqd" type="BOOL_t"/>
+			<xs:element name="Inlined" type="BOOL_t" minOccurs="0"/>
+			<xs:element name="Description" type="Description_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="MsgContentAttributeGroup"/>
+	</xs:complexType>
+	<xs:element name="fixRepository">
+		<xs:annotation>
+			<xs:documentation>Root tag for the research repository</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="extensionPack">
+					<xs:annotation>
+						<xs:documentation>Extension pack format</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Sections" minOccurs="0">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Updates" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Section" type="SectionUpdate_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deprecations" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Section" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="SectionAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deletes" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Section" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="SectionAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Inserts" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Section" type="SectionInsert_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="Categories" minOccurs="0">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Updates" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Category" type="CategoryUpdate_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deprecations" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Category" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="CategoryAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deletes" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Category" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="CategoryAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Inserts" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Category" type="CategoryInsert_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="Abbreviations" minOccurs="0">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Updates" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Abbreviation" type="AbbreviationUpdate_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deprecations" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Abbreviation" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="AbbreviationAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deletes" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Abbreviation" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="AbbreviationAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Inserts" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Abbreviation" type="AbbreviationInsert_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="Datatypes" minOccurs="0">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Updates" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Datatype" type="DatatypeUpdate_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deprecations" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Datatype" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="DatatypeAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deletes" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Datatype" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="DatatypeAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Inserts" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Datatype" type="DatatypeInsert_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="Fields" minOccurs="0">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Updates" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Field" type="FieldUpdate_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deprecations" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Field" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="FieldAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deletes" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Field" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="FieldAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Inserts" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Field" type="FieldInsert_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="Enums" minOccurs="0">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Updates" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Enum" type="EnumUpdate_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deprecations" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Enum" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="EnumAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deletes" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Enum" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="EnumAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Inserts" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Enum" type="EnumInsert_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="Messages" minOccurs="0">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Updates" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Message" type="MessageUpdate_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deprecations" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Message" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="MessageAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deletes" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Message" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="MessageAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Inserts" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Message" type="MessageInsert_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="Components" minOccurs="0">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Updates" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Component" type="ComponentUpdate_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deprecations" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Component" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="ComponentAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deletes" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Component" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="ComponentAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Inserts" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="Component" type="ComponentInsert_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="MsgContents" minOccurs="0">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Updates" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="MsgContent" type="MsgContentUpdate_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deprecations" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="MsgContent" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="MsgContentAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Deletes" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="MsgContent" maxOccurs="unbounded">
+														<xs:complexType>
+															<xs:attributeGroup ref="MsgContentAttributeGroup"/>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Inserts" minOccurs="0">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="MsgContent" type="MsgContentInsert_t" maxOccurs="unbounded"/>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+						<xs:attribute name="id" type="xs:positiveInteger" use="required"/>
+						<xs:attribute name="desc" type="xs:string" use="required"/>
+						<xs:attribute name="approved" type="xs:dateTime" use="required"/>
+						<xs:attribute name="tempIntermediatePath" use="required"/>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="version" use="required"/>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

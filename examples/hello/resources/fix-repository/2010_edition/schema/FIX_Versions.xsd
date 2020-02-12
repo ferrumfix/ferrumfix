@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:simpleType name="AbstractVersion_t">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="(FIX.2.7)|(FIX.3.0)|(FIX\.4\.[0-4])|(FIX\.5\.0(SP\d{1,2})?)|(FIXT.1.1)"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Versions_t">
+		<xs:restriction base="AbstractVersion_t">
+			<xs:enumeration value="FIX.2.7"/>
+			<xs:enumeration value="FIX.3.0"/>
+			<xs:enumeration value="FIX.4.0"/>
+			<xs:enumeration value="FIX.4.1"/>
+			<xs:enumeration value="FIX.4.2"/>
+			<xs:enumeration value="FIX.4.3"/>
+			<xs:enumeration value="FIX.4.4"/>
+			<xs:enumeration value="FIX.5.0"/>
+			<xs:enumeration value="FIX.5.0SP1"/>
+			<xs:enumeration value="FIX.5.0SP2"/>
+			<xs:enumeration value="FIXT.1.1"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

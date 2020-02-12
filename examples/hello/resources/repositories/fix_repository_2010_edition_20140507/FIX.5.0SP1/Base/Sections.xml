@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+DISCLAIMER
+
+THE INFORMATION CONTAINED HEREIN AND THE FINANCIAL INFORMATION EXCHANGE PROTOCOL (COLLECTIVELY, THE "FIX PROTOCOL") ARE PROVIDED "AS IS" AND NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL MAKES ANY REPRESENTATION OR WARRANTY, EXPRESS OR IMPLIED, AS TO THE FIX PROTOCOL (OR THE RESULTS TO BE OBTAINED BY THE USE THEREOF) OR ANY OTHER MATTER AND EACH SUCH PERSON AND ENTITY SPECIFICALLY DISCLAIMS ANY WARRANTY OF ORIGINALITY, ACCURACY, COMPLETENESS, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SUCH PERSONS AND ENTITIES DO NOT WARRANT THAT THE FIX PROTOCOL WILL CONFORM TO ANY DESCRIPTION THEREOF OR BE FREE OF ERRORS. THE ENTIRE RISK OF ANY USE OF THE FIX PROTOCOL IS ASSUMED BY THE USER.
+
+NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL SHALL HAVE ANY LIABILITY FOR DAMAGES OF ANY KIND ARISING IN ANY MANNER OUT OF OR IN CONNECTION WITH ANY USER'S USE OF (OR ANY INABILITY TO USE) THE FIX PROTOCOL, WHETHER DIRECT, INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL (INCLUDING, WITHOUT LIMITATION, LOSS OF DATA, LOSS OF USE, CLAIMS OF THIRD PARTIES OR LOST PROFITS OR REVENUES OR OTHER ECONOMIC LOSS), WHETHER IN TORT (INCLUDING NEGLIGENCE AND STRICT LIABILITY), CONTRACT OR OTHERWISE, WHETHER OR NOT ANY SUCH PERSON OR ENTITY HAS BEEN ADVISED OF, OR OTHERWISE MIGHT HAVE ANTICIPATED THE POSSIBILITY OF, SUCH DAMAGES.
+
+No proprietary or ownership interest of any kind is granted with respect to the FIX Protocol (or any rights therein).
+
+Copyright 2003-2009 FIX Protocol Limited, all rights reserved
+
+REPRODUCTION
+
+FIX Protocol Limited grants permission to print in hard copy form or reproduce the FIX Protocol specification in its entirety provided that the duplicated pages retain the "Copyright FIX Protocol Limited" statement at the bottom of the page.
+
+Portions of the FIX Protocol specification may be extracted or cited in other documents (such as a document which describes one's implementation of the FIX Protocol) provided that one reference the origin of the FIX Protocol specification (HTUhttp://www.fixprotocol.orgUTH) and that the specification itself is "Copyright FIX Protocol Limited".
+FIX Protocol Limited claims no intellectual property over one's implementation (programming code) of an application which implements the behavior and details from the FIX Protocol specification. 	
+--><Sections xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" copyright="Copyright (c) FIX Protocol Ltd. All Rights Reserved." edition="2010" version="FIX.5.0SP1" xsi:noNamespaceSchemaLocation="../../schema/Sections.xsd">
+	<Section>
+		<SectionID>Session</SectionID>
+		<Name>Session</Name>
+		<DisplayOrder>0</DisplayOrder>
+		<Volume>FIXT.1.1</Volume>
+		<NotReqXML>1</NotReqXML>
+		<FIXMLFileName>session</FIXMLFileName>
+		<Description>Session level messages to establish and control a FIX session</Description>
+	</Section>
+	<Section>
+		<SectionID>PreTrade</SectionID>
+		<Name>PreTrade</Name>
+		<DisplayOrder>1</DisplayOrder>
+		<Volume>3</Volume>
+		<NotReqXML>0</NotReqXML>
+		<FIXMLFileName>pretrade</FIXMLFileName>
+		<Description>Pre trade messages including reference data, market data, quoting, news and email, indication of interest</Description>
+	</Section>
+	<Section>
+		<SectionID>Trade</SectionID>
+		<Name>Trade</Name>
+		<DisplayOrder>2</DisplayOrder>
+		<Volume>4</Volume>
+		<NotReqXML>0</NotReqXML>
+		<FIXMLFileName>trade</FIXMLFileName>
+		<Description>Order handling and execution messages</Description>
+	</Section>
+	<Section>
+		<SectionID>PostTrade</SectionID>
+		<Name>PostTrade</Name>
+		<DisplayOrder>3</DisplayOrder>
+		<Volume>5</Volume>
+		<NotReqXML>0</NotReqXML>
+		<FIXMLFileName>posttrade</FIXMLFileName>
+		<Description>Post trade messages including trade reporting, allocation, collateral, confirmation, position mantemenance, registration instruction, and settlement instructions</Description>
+	</Section>
+	<Section>
+		<SectionID>Infrastructure</SectionID>
+		<Name>Infrastructure</Name>
+		<DisplayOrder>4</DisplayOrder>
+		<Volume>1</Volume>
+		<NotReqXML>0</NotReqXML>
+		<FIXMLFileName>infrastructure</FIXMLFileName>
+		<Description>Infrastructure messages for application sequencing, business reject, network and user management</Description>
+	</Section>
+</Sections>

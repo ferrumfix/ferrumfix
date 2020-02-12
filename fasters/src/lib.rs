@@ -22,8 +22,10 @@ mod settings;
 
 pub use crate::err::{Error, Result};
 use crate::repo::types::Message;
+pub use dict::{codegen, Dictionary};
 pub use fasters_derive::derive;
 use serde::Deserialize;
+pub use settings::Settings;
 
 #[derive(Default)]
 pub struct Tagvalue {

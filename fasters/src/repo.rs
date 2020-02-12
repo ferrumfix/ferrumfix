@@ -148,6 +148,37 @@ pub mod types {
         pub data: Vec<Abbreviation>,
     }
 
+    #[derive(Clone, Debug, PartialEq)]
+    pub enum BaseType {
+        Int,
+        Float,
+        Char,
+        String,
+        Data,
+    }
+
+    impl<'de> Deserialize<'de> for BaseType {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            Ok(match s.as_str() {
+                "int" => Self::Int,
+                "float" => Self::Float,
+                "char" => Self::Char,
+                "String" => Self::String,
+                "data" => Self::Data,
+                s => {
+                    return Err(de::Error::custom(format!(
+                        "Unexpected enum variant: `{}`",
+                        s
+                    )))
+                }
+            })
+        }
+    }
+
     #[derive(Clone, Debug, Deserialize, PartialEq)]
     #[serde(rename_all = "PascalCase")]
     pub struct Category {
@@ -252,6 +283,7 @@ pub mod types {
         /// Human readable description of this Datatype.
         pub description: String,
         /// A string that contains examples values for a datatype
+        #[serde(rename = "Example", default)]
         pub examples: Vec<String>,
         // TODO: 'XML'.
     }
@@ -266,7 +298,7 @@ pub mod types {
 
     #[derive(Clone, Debug, Deserialize, PartialEq)]
     pub struct Datatypes {
-        #[serde(rename = "Component", default)]
+        #[serde(rename = "Datatype", default)]
         pub data: Vec<Datatype>,
     }
 

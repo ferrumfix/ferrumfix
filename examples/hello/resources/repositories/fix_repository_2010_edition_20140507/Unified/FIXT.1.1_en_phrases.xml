@@ -1,0 +1,2440 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phrases version="FIXT.1.1" langId="en">
+   <phrase textId="AT_Acct">
+      <text>
+         <para>Account</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Acrl">
+      <text>
+         <para>Accrual</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Acrd">
+      <text>
+         <para>Accrued</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Ack">
+      <text>
+         <para>Acknowledgement</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Actn">
+      <text>
+         <para>Action</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Adj">
+      <text>
+         <para>Adjust</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Adjmt">
+      <text>
+         <para>Adjustment</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Adv">
+      <text>
+         <para>Advertisement</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Afctd">
+      <text>
+         <para>Affected</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Algo">
+      <text>
+         <para>Algorithm</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Alloc">
+      <text>
+         <para>Allocation</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_AOS">
+      <text>
+         <para>AllowableOneSidedness</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Amt">
+      <text>
+         <para>Amount</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Appl">
+      <text>
+         <para>Application</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Asgn">
+      <text>
+         <para>Assignment</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Attrb">
+      <text>
+         <para>Attribute</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Avg">
+      <text>
+         <para>Average</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Base">
+      <text>
+         <para>Base</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Bhf">
+      <text>
+         <para>Behalf</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Bnchmk">
+      <text>
+         <para>Benchmark</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Bkng">
+      <text>
+         <para>Booking</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Brkr">
+      <text>
+         <para>BrokerCredit</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Brkrs">
+      <text>
+         <para>Brokers</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Biz">
+      <text>
+         <para>Business</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Calc">
+      <text>
+         <para>Calculation</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Cxl">
+      <text>
+         <para>Cancel</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Cpcty">
+      <text>
+         <para>Capacity</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Capt">
+      <text>
+         <para>Capture</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Csh">
+      <text>
+         <para>Cash</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Cl">
+      <text>
+         <para>Client</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Cls">
+      <text>
+         <para>Close</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Coll">
+      <text>
+         <para>Collateral</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Comm">
+      <text>
+         <para>Commission</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Cmn">
+      <text>
+         <para>Common</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Comp">
+      <text>
+         <para>Company</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Cnfm">
+      <text>
+         <para>Confirmation</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Confirm">
+      <text>
+         <para>Confirmation</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Cntra">
+      <text>
+         <para>Contra</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Ctrl">
+      <text>
+         <para>Control</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Corp">
+      <text>
+         <para>Corporate</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Ctry">
+      <text>
+         <para>Country</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Cpn">
+      <text>
+         <para>Coupon</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Crss">
+      <text>
+         <para>Cross</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Cum">
+      <text>
+         <para>Cumulative</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Ccy">
+      <text>
+         <para>Currency</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Crv">
+      <text>
+         <para>Curve</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Data">
+      <text>
+         <para>Data</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Db">
+      <text>
+         <para>Database</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Dt">
+      <text>
+         <para>Date</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Def">
+      <text>
+         <para>Definition</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Del">
+      <text>
+         <para>Delete</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Dlvr">
+      <text>
+         <para>Deliver</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Deriv">
+      <text>
+         <para>Derivative</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Desc">
+      <text>
+         <para>Description</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Dest">
+      <text>
+         <para>Destination</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Dev">
+      <text>
+         <para>Device</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Disc">
+      <text>
+         <para>Discount</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Dsctn">
+      <text>
+         <para>Discretion</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Dsctnry">
+      <text>
+         <para>Discretionary</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_DK">
+      <text>
+         <para>Don't Know</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Dup">
+      <text>
+         <para>Duplicate</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Efctv">
+      <text>
+         <para>Effective</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Enc">
+      <text>
+         <para>Encoded</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Err">
+      <text>
+         <para>Error</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Exch">
+      <text>
+         <para>Exchange</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_EFP">
+      <text>
+         <para>ExchangeForPhysical</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Exct">
+      <text>
+         <para>Execute</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Exctn">
+      <text>
+         <para>Execution</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Exr">
+      <text>
+         <para>Exercise</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Fctr">
+      <text>
+         <para>Factor</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Feed">
+      <text>
+         <para>Feed</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_FX">
+      <text>
+         <para>Foreign Currency</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Fwd">
+      <text>
+         <para>Forward</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Force">
+      <text>
+         <para>Force</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Fut">
+      <text>
+         <para>Future</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_GTD">
+      <text>
+         <para>Good Till Date</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Grp">
+      <text>
+         <para>Group</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Hndl">
+      <text>
+         <para>Handling</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_ID">
+      <text>
+         <para>Identifier</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Implct">
+      <text>
+         <para>Implicit</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Incr">
+      <text>
+         <para>Increment</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Ndx">
+      <text>
+         <para>Index</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_IOI">
+      <text>
+         <para>Indication of Interest</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Ind">
+      <text>
+         <para>Indicator</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Info">
+      <text>
+         <para>Information</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Inpt">
+      <text>
+         <para>Input</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Inq">
+      <text>
+         <para>Inquiry</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Instn">
+      <text>
+         <para>Institution</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Inst">
+      <text>
+         <para>Instruction</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Instrmt">
+      <text>
+         <para>Instrument</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Int">
+      <text>
+         <para>Interest</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Iss">
+      <text>
+         <para>Issue</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Issr">
+      <text>
+         <para>Issuer</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Lqdty">
+      <text>
+         <para>Liquidity</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Lmt">
+      <text>
+         <para>Limit</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_List">
+      <text>
+         <para>List</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Loc">
+      <text>
+         <para>Locate</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Lctn">
+      <text>
+         <para>Location</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Lot">
+      <text>
+         <para>Lot</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Mnt">
+      <text>
+         <para>Maintenance</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Mgn">
+      <text>
+         <para>Margin</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Mkt">
+      <text>
+         <para>Market</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Mass">
+      <text>
+         <para>Mass`</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Mtch">
+      <text>
+         <para>Match</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Mat">
+      <text>
+         <para>Maturity</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Max">
+      <text>
+         <para>Maximum</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Msg">
+      <text>
+         <para>Message</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Meth">
+      <text>
+         <para>Method</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Min">
+      <text>
+         <para>Minimum</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Misc">
+      <text>
+         <para>Miscellaneous</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Model">
+      <text>
+         <para>Model</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Mod">
+      <text>
+         <para>Modification</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Mny">
+      <text>
+         <para>Money</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Mo">
+      <text>
+         <para>Month</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Mleg">
+      <text>
+         <para>Multileg</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Nst">
+      <text>
+         <para>Nested</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Ntwk">
+      <text>
+         <para>Network</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Notifctn">
+      <text>
+         <para>Notification</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Num">
+      <text>
+         <para>Number - multiple reports, counts</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_No">
+      <text>
+         <para>Number - NumInGroup fields</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Oblig">
+      <text>
+         <para>Obligation</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Ofr">
+      <text>
+         <para>Offer</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Opt">
+      <text>
+         <para>Option</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Ord">
+      <text>
+         <para>Order</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Orig">
+      <text>
+         <para>Original</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Oth">
+      <text>
+         <para>Other</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Pty">
+      <text>
+         <para>Party</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Pmt">
+      <text>
+         <para>Payment</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Pct">
+      <text>
+         <para>Percent</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Pctg">
+      <text>
+         <para>Percentage</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Pos">
+      <text>
+         <para>Position</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Psbl">
+      <text>
+         <para>Possible</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Prlm">
+      <text>
+         <para>Preliminary</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Prev">
+      <text>
+         <para>Previous</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Px">
+      <text>
+         <para>Price</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Pri">
+      <text>
+         <para>Priority</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Prtztn">
+      <text>
+         <para>Priotization</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Prod">
+      <text>
+         <para>Product</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Pub">
+      <text>
+         <para>Publish</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Qual">
+      <text>
+         <para>Qualifier</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Qlty">
+      <text>
+         <para>Quality</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Qty">
+      <text>
+         <para>Quantity</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Quot">
+      <text>
+         <para>Quote</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rng">
+      <text>
+         <para>Range</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rt">
+      <text>
+         <para>Rate</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rtng">
+      <text>
+         <para>Rating</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rsn">
+      <text>
+         <para>Reason</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Red">
+      <text>
+         <para>Redemption</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Ref">
+      <text>
+         <para>Reference</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rgst">
+      <text>
+         <para>Registration</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rgstry">
+      <text>
+         <para>Registry</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rej">
+      <text>
+         <para>Reject</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Reltd">
+      <text>
+         <para>Related</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rpt">
+      <text>
+         <para>Report</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rpts">
+      <text>
+         <para>Reports</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Repo">
+      <text>
+         <para>Repurchase</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Req">
+      <text>
+         <para>Request</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Reset">
+      <text>
+         <para>Reset</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rsp">
+      <text>
+         <para>Response</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rstmt">
+      <text>
+         <para>Restatement</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rstct">
+      <text>
+         <para>Restrict</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rstctn">
+      <text>
+         <para>Restriction</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rstctns">
+      <text>
+         <para>Restrictions</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rslt">
+      <text>
+         <para>Result</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_R">
+      <text>
+         <para>Roles</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rnd">
+      <text>
+         <para>Round</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Rules">
+      <text>
+         <para>Rules</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Scnd">
+      <text>
+         <para>Secondary</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Sec">
+      <text>
+         <para>Security</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Seg">
+      <text>
+         <para>Segment</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Snd">
+      <text>
+         <para>Sender</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Sndg">
+      <text>
+         <para>Sending</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Seq">
+      <text>
+         <para>Sequence</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Svc">
+      <text>
+         <para>Service</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Ses">
+      <text>
+         <para>Session</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Settl">
+      <text>
+         <para>Settlement</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Shrt">
+      <text>
+         <para>Short</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Sz">
+      <text>
+         <para>Size</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Src">
+      <text>
+         <para>Source</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Stand">
+      <text>
+         <para>Standing</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Start">
+      <text>
+         <para>Start</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_St">
+      <text>
+         <para>State</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Stat">
+      <text>
+         <para>Status</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Stip">
+      <text>
+         <para>Stipulation</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Strk">
+      <text>
+         <para>Strike</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Sub">
+      <text>
+         <para>Subscription</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Subsid">
+      <text>
+         <para>Subsidiary</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Sfx">
+      <text>
+         <para>Suffix</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Sym">
+      <text>
+         <para>Symbol</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Sys">
+      <text>
+         <para>System</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Tgt">
+      <text>
+         <para>Target</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Trm">
+      <text>
+         <para>Term</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Tick">
+      <text>
+         <para>Tick</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Tkt">
+      <text>
+         <para>Ticket</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Tm">
+      <text>
+         <para>Time</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_TS">
+      <text>
+         <para>Timestamp</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Tot">
+      <text>
+         <para>Total</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Trkng">
+      <text>
+         <para>Tracking</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Trd">
+      <text>
+         <para>Trade</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Trdg">
+      <text>
+         <para>Trading</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_TrdgSes">
+      <text>
+         <para>TradingSession</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Txn">
+      <text>
+         <para>Transaction</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Typ">
+      <text>
+         <para>Type</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Und">
+      <text>
+         <para>Underlying</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Upd">
+      <text>
+         <para>Update</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Valu">
+      <text>
+         <para>Value</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Val">
+      <text>
+         <para>Valuation</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Vol">
+      <text>
+         <para>Volume</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Yr">
+      <text>
+         <para>Year</para>
+      </text>
+   </phrase>
+   <phrase textId="AT_Yld">
+      <text>
+         <para>Yield</para>
+      </text>
+   </phrase>
+-
+				<phrase textId="SCT_Session">
+      <text purpose="SYNOPSIS">
+         <para>Session level messages to establish and control a FIX session</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_int">
+      <text purpose="SYNOPSIS">
+         <para>Sequence of digits without commas or decimals and optional sign character (ASCII characters "-" and "0" - "9" ). The sign character utilizes one byte (i.e. positive int is "99999" while negative int is "-99999"). Note that int values may contain leading zeros (e.g. "00023" = "23").</para>
+         <para>Examples:</para>
+         <para>723 in field 21 would be mapped int as |21=723|.</para>
+         <para>-723 in field 12 would be mapped int as |12=-723|</para>
+         <para>The following data types are based on int.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_Length">
+      <text purpose="SYNOPSIS">
+         <para>int field representing the length in bytes. Value must be positive.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_TagNum">
+      <text purpose="SYNOPSIS">
+         <para>int field representing a field's tag number when using FIX "Tag=Value" syntax. Value must be positive and may not contain leading zeros.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_SeqNum">
+      <text purpose="SYNOPSIS">
+         <para>int field representing a message sequence number. Value must be positive.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_NumInGroup">
+      <text purpose="SYNOPSIS">
+         <para>int field representing the number of entries in a repeating group. Value must be positive.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_DayOfMonth">
+      <text purpose="SYNOPSIS">
+         <para>int field representing a day during a particular monthy (values 1 to 31).</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_float">
+      <text purpose="SYNOPSIS">
+         <para>Sequence of digits with optional decimal point and sign character (ASCII characters "-", "0" - "9" and "."); the absence of the decimal point within the string will be interpreted as the float representation of an integer value. All float fields must accommodate up to fifteen significant digits. The number of decimal places used should be a factor of business/market needs and mutual agreement between counterparties. Note that float values may contain leading zeros (e.g. "00023.23" = "23.23") and may contain or omit trailing zeros after the decimal point (e.g. "23.0" = "23.0000" = "23" = "23.").</para>
+         <para>Note that fields which are derived from float may contain negative values unless explicitly specified otherwise. The following data types are based on float.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_Qty">
+      <text purpose="SYNOPSIS">
+         <para>float field capable of storing either a whole number (no decimal places) of "shares" (securities denominated in whole units) or a decimal value containing decimal places for non-share quantity asset classes (securities denominated in fractional units).</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_Price">
+      <text purpose="SYNOPSIS">
+         <para>float field representing a price. Note the number of decimal places may vary. For certain asset classes prices may be negative values. For example, prices for options strategies can be negative under certain market conditions. Refer to Volume 7: FIX Usage by Product for asset classes that support negative price values.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_PriceOffset">
+      <text purpose="SYNOPSIS">
+         <para>float field representing a price offset, which can be mathematically added to a "Price". Note the number of decimal places may vary and some fields such as LastForwardPoints may be negative.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_Amt">
+      <text purpose="SYNOPSIS">
+         <para>float field typically representing a Price times a Qty</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_Percentage">
+      <text purpose="SYNOPSIS">
+         <para>float field representing a percentage (e.g. 0.05 represents 5% and 0.9525 represents 95.25%). Note the number of decimal places may vary.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_char">
+      <text purpose="SYNOPSIS">
+         <para>Single character value, can include any alphanumeric character or punctuation except the delimiter. All char fields are case sensitive (i.e. m != M).</para>
+         <para>The following fields are based on char.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_Boolean">
+      <text purpose="SYNOPSIS">
+         <para>char field containing one of two values:</para>
+         <para>'Y' = True/Yes</para>
+         <para>'N' = False/No</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_String">
+      <text purpose="SYNOPSIS">
+         <para>Alpha-numeric free format strings, can include any character or punctuation except the delimiter. All String fields are case sensitive (i.e. morstatt != Morstatt).</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_MultipleCharValue">
+      <text purpose="SYNOPSIS">
+         <para>string field containing one or more space delimited single character values (e.g. |18=2 A F| ).</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_MultipleStringValue">
+      <text purpose="SYNOPSIS">
+         <para>string field containing one or more space delimited multiple character values (e.g. |277=AV AN A| ).</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_Country">
+      <text purpose="SYNOPSIS">
+         <para>string field representing a country using ISO 3166 Country code (2 character) values (see Appendix 6-B).</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_Currency">
+      <text purpose="SYNOPSIS">
+         <para>string field representing a currency type using ISO 4217 Currency code (3 character) values (see Appendix 6-A).</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_Exchange">
+      <text purpose="SYNOPSIS">
+         <para>string field representing a market or exchange using ISO 10383 Market Identifier Code (MIC) values (see"Appendix 6-C).</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_MonthYear">
+      <text purpose="SYNOPSIS">
+         <para>string field representing month of a year. An optional day of the month can be appended or an optional week code.</para>
+         <para>Valid formats:</para>
+         <para>YYYYMM</para>
+         <para>YYYYMMDD</para>
+         <para>YYYYMMWW</para>
+         <para>Valid values:</para>
+         <para>YYYY = 0000-9999; MM = 01-12; DD = 01-31; WW = w1, w2, w3, w4, w5.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_UTCTimestamp">
+      <text purpose="SYNOPSIS">
+         <para>string field representing Time/date combination represented in UTC (Universal Time Coordinated, also known as "GMT") in either YYYYMMDD-HH:MM:SS (whole seconds) or YYYYMMDD-HH:MM:SS.sss (milliseconds) format, colons, dash, and period required.</para>
+         <para>Valid values:</para>
+         <para>* YYYY = 0000-9999, MM = 01-12, DD = 01-31, HH = 00-23, MM = 00-59, SS = 00-60 (60 only if UTC leap second) (without milliseconds).</para>
+         <para>* YYYY = 0000-9999, MM = 01-12, DD = 01-31, HH = 00-23, MM = 00-59, SS = 00-60 (60 only if UTC leap second), sss=000-999 (indicating milliseconds).</para>
+         <para>Leap Seconds: Note that UTC includes corrections for leap seconds, which are inserted to account for slowing of the rotation of the earth. Leap second insertion is declared by the International Earth Rotation Service (IERS) and has, since 1972, only occurred on the night of Dec. 31 or Jun 30. The IERS considers March 31 and September 30 as secondary dates for leap second insertion, but has never utilized these dates. During a leap second insertion, a UTCTimestamp field may read "19981231-23:59:59", "19981231-23:59:60", "19990101-00:00:00". (see http://tycho.usno.navy.mil/leapsec.html)</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_UTCTimeOnly">
+      <text purpose="SYNOPSIS">
+         <para>string field representing Time-only represented in UTC (Universal Time Coordinated, also known as "GMT") in either HH:MM:SS (whole seconds) or HH:MM:SS.sss (milliseconds) format, colons, and period required. This special-purpose field is paired with UTCDateOnly to form a proper UTCTimestamp for bandwidth-sensitive messages.</para>
+         <para>Valid values:</para>
+         <para>HH = 00-23, MM = 00-60 (60 only if UTC leap second), SS = 00-59. (without milliseconds)</para>
+         <para>HH = 00-23, MM = 00-59, SS = 00-60 (60 only if UTC leap second), sss=000-999 (indicating milliseconds).</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_UTCDateOnly">
+      <text purpose="SYNOPSIS">
+         <para>string field representing Date represented in UTC (Universal Time Coordinated, also known as "GMT") in YYYYMMDD format. This special-purpose field is paired with UTCTimeOnly to form a proper UTCTimestamp for bandwidth-sensitive messages.</para>
+         <para>Valid values:</para>
+         <para>YYYY = 0000-9999, MM = 01-12, DD = 01-31.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_LocalMktDate">
+      <text purpose="SYNOPSIS">
+         <para>string field represening a Date of Local Market (as oppose to UTC) in YYYYMMDD format. This is the "normal" date field used by the FIX Protocol.</para>
+         <para>Valid values:</para>
+         <para>YYYY = 0000-9999, MM = 01-12, DD = 01-31.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_TZTimeOnly">
+      <text purpose="SYNOPSIS">
+         <para>string field representing the time represented based on ISO 8601. This is the time with a UTC offset to allow identification of local time and timezone of that time.</para>
+         <para>Format is HH:MM[:SS][Z | [ + | - hh[:mm]]] where HH = 00-23 hours, MM = 00-59 minutes, SS = 00-59 seconds, hh = 01-12 offset hours, mm = 00-59 offset minutes.</para>
+         <para>Example: 07:39Z is 07:39 UTC</para>
+         <para>Example: 02:39-05 is five hours behind UTC, thus Eastern Time</para>
+         <para>Example: 15:39+08 is eight hours ahead of UTC, Hong Kong/Singapore time</para>
+         <para>Example: 13:09+05:30 is 5.5 hours ahead of UTC, India time</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_TZTimestamp">
+      <text purpose="SYNOPSIS">
+         <para>string field representing a time/date combination representing local time with an offset to UTC to allow identification of local time and timezone offset of that time. The representation is based on ISO 8601.</para>
+         <para>Format is YYYYMMDD-HH:MM:SS[Z | [ + | - hh[:mm]]] where YYYY = 0000 to 9999, MM = 01-12, DD = 01-31 HH = 00-23 hours, MM = 00-59 minutes, SS = 00-59 seconds, hh = 01-12 offset hours, mm = 00-59 offset minutes</para>
+         <para>Example: 20060901-07:39Z is 07:39 UTC on 1st of September 2006</para>
+         <para>Example: 20060901-02:39-05 is five hours behind UTC, thus Eastern Time on 1st of September 2006</para>
+         <para>Example: 20060901-15:39+08 is eight hours ahead of UTC, Hong Kong/Singapore time on 1st of September 2006</para>
+         <para>Example: 20060901-13:09+05:30 is 5.5 hours ahead of UTC, India time on 1st of September 2006</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_data">
+      <text purpose="SYNOPSIS">
+         <para>string field containing raw data with no format or content restrictions. Data fields are always immediately preceded by a length field. The length field should specify the number of bytes of the value of the data field (up to but not including the terminating SOH).</para>
+         <para>Caution: the value of one of these fields may contain the delimiter (SOH) character. Note that the value specified for this field should be followed by the delimiter (SOH) character as all fields are terminated with an "SOH".</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_Pattern">
+      <text purpose="SYNOPSIS">
+         <para>Used to build on and provide some restrictions on what is allowed as valid values in fields that uses a base FIX data type and a pattern data type. The universe of allowable valid values for the field would then be the union of the base set of valid values and what is defined by the pattern data type. The pattern data type used by the field will retain its base FIX data type (e.g. String, int, char).</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_Tenor">
+      <text purpose="SYNOPSIS">
+         <para>used to allow the expression of FX standard tenors in addition to the base valid enumerations defined for the field that uses this pattern data type. This pattern data type is defined as follows:</para>
+         <para>Dx = tenor expression for "days", e.g. "D5", where "x" is any integer &gt; 0</para>
+         <para>Mx = tenor expression for "months", e.g. "M3", where "x" is any integer &gt; 0</para>
+         <para>Wx = tenor expression for "weeks", e.g. "W13", where "x" is any integer &gt; 0</para>
+         <para>Yx = tenor expression for "years", e.g. "Y1", where "x" is any integer &gt; 0</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_Reserved100Plus">
+      <text purpose="SYNOPSIS">
+         <para>Values "100" and above are reserved for bilaterally agreed upon user defined enumerations.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_Reserved1000Plus">
+      <text purpose="SYNOPSIS">
+         <para>Values "1000" and above are reserved for bilaterally agreed upon user defined enumerations.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_Reserved4000Plus">
+      <text purpose="SYNOPSIS">
+         <para>Values "4000" and above are reserved for bilaterally agreed upon user defined enumerations.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_XMLData">
+      <text purpose="SYNOPSIS">
+         <para>Contains an XML document raw data with no format or content restrictions. XMLData fields are always immediately preceded by a length field. The length field should specify the number of bytes of the value of the data field (up to but not including the terminating SOH).</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_7">
+      <text purpose="SYNOPSIS">
+         <para>Message sequence number of first message in range to be resent</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_8">
+      <text purpose="SYNOPSIS">
+         <para>Identifies beginning of new message and protocol version. ALWAYS FIRST FIELD IN MESSAGE. (Always unencrypted)</para>
+         <para>Valid values:</para>
+         <para>FIXT.1.1</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_9">
+      <text purpose="SYNOPSIS">
+         <para>Message length, in bytes, forward to the CheckSum field. ALWAYS SECOND FIELD IN MESSAGE. (Always unencrypted)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_10">
+      <text purpose="SYNOPSIS">
+         <para>Three byte, simple checksum (see Volume 2: "Checksum Calculation" for description). ALWAYS LAST FIELD IN MESSAGE; i.e. serves, with the trailing &lt;SOH&gt;, as the end-of-message delimiter. Always defined as three characters. (Always unencrypted)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_16">
+      <text purpose="SYNOPSIS">
+         <para>Message sequence number of last message in range to be resent. If request is for a single message BeginSeqNo (7) = EndSeqNo. If request is for all messages subsequent to a particular message, EndSeqNo = "0" (representing infinity).</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_34">
+      <text purpose="SYNOPSIS">
+         <para>Integer message sequence number.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_35">
+      <text purpose="SYNOPSIS">
+         <para>Defines message type ALWAYS THIRD FIELD IN MESSAGE. (Always unencrypted)</para>
+         <para>Note: A "U" as the first character in the MsgType field (i.e. U, U2, etc) indicates that the message format is privately defined between the sender and receiver.</para>
+         <para>*** Note the use of lower case letters ***</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_36">
+      <text purpose="SYNOPSIS">
+         <para>New sequence number</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_43">
+      <text purpose="SYNOPSIS">
+         <para>Indicates possible retransmission of message with this sequence number</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_43_N">
+      <text purpose="SYNOPSIS">
+         <para>Original transmission</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_43_Y">
+      <text purpose="SYNOPSIS">
+         <para>Possible duplicate</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_45">
+      <text purpose="SYNOPSIS">
+         <para>Reference message sequence number</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_49">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify firm sending message.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_50">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify specific message originator (desk, trader, etc.)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_52">
+      <text purpose="SYNOPSIS">
+         <para>Time of message transmission (always expressed in UTC (Universal Time Coordinated, also known as "GMT")</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_56">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify receiving firm.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_57">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify specific individual or unit intended to receive message. "ADMIN" reserved for administrative messages not intended for a specific user.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_58">
+      <text purpose="SYNOPSIS">
+         <para>Free format text string</para>
+         <para>(Note: this field does not have a specified maximum length)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_89">
+      <text purpose="SYNOPSIS">
+         <para>Electronic signature</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_90">
+      <text purpose="SYNOPSIS">
+         <para>Length of encrypted message</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_91">
+      <text purpose="SYNOPSIS">
+         <para>Actual encrypted data stream</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_93">
+      <text purpose="SYNOPSIS">
+         <para>Number of bytes in signature field</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_95">
+      <text purpose="SYNOPSIS">
+         <para>Number of bytes in raw data field.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_96">
+      <text purpose="SYNOPSIS">
+         <para>Unformatted raw data, can include bitmaps, word processor documents, etc.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_97">
+      <text purpose="SYNOPSIS">
+         <para>Indicates that message may contain information that has been sent under another sequence number.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_97_N">
+      <text purpose="SYNOPSIS">
+         <para>Original Transmission</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_97_Y">
+      <text purpose="SYNOPSIS">
+         <para>Possible Resend</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_98">
+      <text purpose="SYNOPSIS">
+         <para>Method of encryption.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_98_0">
+      <text purpose="SYNOPSIS">
+         <para>None / Other</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_98_1">
+      <text purpose="SYNOPSIS">
+         <para>PKCS (Proprietary)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_98_2">
+      <text purpose="SYNOPSIS">
+         <para>DES (ECB Mode)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_98_3">
+      <text purpose="SYNOPSIS">
+         <para>PKCS / DES (Proprietary)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_98_4">
+      <text purpose="SYNOPSIS">
+         <para>PGP / DES (Defunct)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_98_5">
+      <text purpose="SYNOPSIS">
+         <para>PGP / DES-MD5 (See app note on FIX web site)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_98_6">
+      <text purpose="SYNOPSIS">
+         <para>PEM / DES-MD5 (see app note on FIX web site)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_108">
+      <text purpose="SYNOPSIS">
+         <para>Heartbeat interval (seconds)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_112">
+      <text purpose="SYNOPSIS">
+         <para>Identifier included in Test Request message to be returned in resulting Heartbeat</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_115">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify firm originating message if the message was delivered by a third party i.e. the third party firm identifier would be delivered in the SenderCompID field and the firm originating the message in this field.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_116">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify specific message originator (i.e. trader) if the message was delivered by a third party</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_122">
+      <text purpose="SYNOPSIS">
+         <para>Original time of message transmission (always expressed in UTC (Universal Time Coordinated, also known as "GMT") when transmitting orders as the result of a resend request.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_123">
+      <text purpose="SYNOPSIS">
+         <para>Indicates that the Sequence Reset message is replacing administrative or application messages which will not be resent.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_123_N">
+      <text purpose="SYNOPSIS">
+         <para>Sequence Reset, Ignore Msg Seq Num (N/A For FIXML - Not Used)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_123_Y">
+      <text purpose="SYNOPSIS">
+         <para>Gap Fill Message, Msg Seq Num Field Valid</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_128">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify the firm targeted to receive the message if the message is delivered by a third party i.e. the third party firm identifier would be delivered in the TargetCompID (56) field and the ultimate receiver firm ID in this field.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_129">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify specific message recipient (i.e. trader) if the message is delivered by a third party</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_141">
+      <text purpose="SYNOPSIS">
+         <para>Indicates that the both sides of the FIX session should reset sequence numbers.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_141_N">
+      <text purpose="SYNOPSIS">
+         <para>No</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_141_Y">
+      <text purpose="SYNOPSIS">
+         <para>Yes, reset sequence numbers</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_142">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify specific message originator’s location (i.e. geographic location and/or desk, trader)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_143">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify specific message destination’s location (i.e. geographic location and/or desk, trader)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_144">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify specific message originator’s location (i.e. geographic location and/or desk, trader) if the message was delivered by a third party</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_145">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify specific message recipient’s location (i.e. geographic location and/or desk, trader) if the message was delivered by a third party</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_212">
+      <text purpose="SYNOPSIS">
+         <para>Length of the XmlData data block.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_213">
+      <text purpose="SYNOPSIS">
+         <para>Actual XML data stream (e.g. FIXML). See approriate XML reference (e.g. FIXML). Note: may contain embedded SOH characters.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_347">
+      <text purpose="SYNOPSIS">
+         <para>Type of message encoding (non-ASCII (non-English) characters) used in a message’s "Encoded" fields.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_354">
+      <text purpose="SYNOPSIS">
+         <para>Byte length of encoded (non-ASCII characters) EncodedText (355) field.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_355">
+      <text purpose="SYNOPSIS">
+         <para>Encoded (non-ASCII characters) representation of the Text (58) field in the encoded format specified via the MessageEncoding (347) field. If used, the ASCII (English) representation should also be specified in the Text field.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_369">
+      <text purpose="SYNOPSIS">
+         <para>The last MsgSeqNum (34) value received by the FIX engine and processed by downstream application, such as trading engine or order routing system. Can be specified on every message sent. Useful for detecting a backlog with a counterparty.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_371">
+      <text purpose="SYNOPSIS">
+         <para>The tag number of the FIX field being referenced.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_372">
+      <text purpose="SYNOPSIS">
+         <para>The MsgType (35) of the FIX message being referenced.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_373">
+      <text purpose="SYNOPSIS">
+         <para>Code to identify reason for a session-level Reject message.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_0">
+      <text purpose="SYNOPSIS">
+         <para>Invalid Tag Number</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_1">
+      <text purpose="SYNOPSIS">
+         <para>Required Tag Missing</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_2">
+      <text purpose="SYNOPSIS">
+         <para>Tag not defined for this message type</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_3">
+      <text purpose="SYNOPSIS">
+         <para>Undefined tag</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_4">
+      <text purpose="SYNOPSIS">
+         <para>Tag specified without a value</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_5">
+      <text purpose="SYNOPSIS">
+         <para>Value is incorrect (out of range) for this tag</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_6">
+      <text purpose="SYNOPSIS">
+         <para>Incorrect data format for value</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_7">
+      <text purpose="SYNOPSIS">
+         <para>Decryption problem</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_8">
+      <text purpose="SYNOPSIS">
+         <para>Signature problem</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_9">
+      <text purpose="SYNOPSIS">
+         <para>CompID problem</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_10">
+      <text purpose="SYNOPSIS">
+         <para>SendingTime Accuracy Problem</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_11">
+      <text purpose="SYNOPSIS">
+         <para>Invalid MsgType</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_12">
+      <text purpose="SYNOPSIS">
+         <para>XML Validation Error</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_13">
+      <text purpose="SYNOPSIS">
+         <para>Tag appears more than once</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_14">
+      <text purpose="SYNOPSIS">
+         <para>Tag specified out of required order</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_15">
+      <text purpose="SYNOPSIS">
+         <para>Repeating group fields out of order</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_16">
+      <text purpose="SYNOPSIS">
+         <para>Incorrect NumInGroup count for repeating group</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_17">
+      <text purpose="SYNOPSIS">
+         <para>Non "Data" value includes field delimiter (&lt;SOH&gt; character)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_18">
+      <text purpose="SYNOPSIS">
+         <para>Invalid/Unsupported Application Version</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_373_99">
+      <text purpose="SYNOPSIS">
+         <para>Other</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_383">
+      <text purpose="SYNOPSIS">
+         <para>Maximum number of bytes supported for a single message.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_464">
+      <text purpose="SYNOPSIS">
+         <para>Indicates whether or not this FIX Session is a "test" vs. "production" connection. Useful for preventing "accidents".</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_464_N">
+      <text purpose="SYNOPSIS">
+         <para>Fales (Production)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_464_Y">
+      <text purpose="SYNOPSIS">
+         <para>True (Test)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_553">
+      <text purpose="SYNOPSIS">
+         <para>Userid or username.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_554">
+      <text purpose="SYNOPSIS">
+         <para>Password or passphrase.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_627">
+      <text purpose="SYNOPSIS">
+         <para>Number of HopCompID entries in repeating group.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_628">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify the third party firm which delivered a specific message either from the firm which originated the message or from another third party (if multiple "hops" are performed). It is recommended that this value be the SenderCompID (49) of the third party.</para>
+         <para>Applicable when messages are communicated/re-distributed via third parties which function as service bureaus or "hubs". Only applicable if OnBehalfOfCompID (115) is being used.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_629">
+      <text purpose="SYNOPSIS">
+         <para>Time that HopCompID (628) sent the message. It is recommended that this value be the SendingTime (52) of the message sent by the third party.</para>
+         <para>Applicable when messages are communicated/re-distributed via third parties which function as service bureaus or "hubs". Only applicable if OnBehalfOfCompID (115) is being used.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_630">
+      <text purpose="SYNOPSIS">
+         <para>Reference identifier assigned by HopCompID (628) associated with the message sent. It is recommended that this value be the MsgSeqNum (34) of the message sent by the third party.</para>
+         <para>Applicable when messages are communicated/re-distributed via third parties which function as service bureaus or "hubs". Only applicable if OnBehalfOfCompID (115) is being used.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_789">
+      <text purpose="SYNOPSIS">
+         <para>Next expected MsgSeqNum value to be received.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_925">
+      <text purpose="SYNOPSIS">
+         <para>New Password or passphrase</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1128">
+      <text purpose="SYNOPSIS">
+         <para>Specifies the service pack release being applied at message level. Enumerated field with values assigned at time of service pack release</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1128_0">
+      <text purpose="SYNOPSIS">
+         <para>FIX27</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1128_1">
+      <text purpose="SYNOPSIS">
+         <para>FIX30</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1128_2">
+      <text purpose="SYNOPSIS">
+         <para>FIX40</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1128_3">
+      <text purpose="SYNOPSIS">
+         <para>FIX41</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1128_4">
+      <text purpose="SYNOPSIS">
+         <para>FIX42</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1128_5">
+      <text purpose="SYNOPSIS">
+         <para>FIX43</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1128_6">
+      <text purpose="SYNOPSIS">
+         <para>FIX44</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1128_7">
+      <text purpose="SYNOPSIS">
+         <para>FIX50</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1128_8">
+      <text purpose="SYNOPSIS">
+         <para>FIX50SP1</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1129">
+      <text purpose="SYNOPSIS">
+         <para>Specifies a custom extension to a message being applied at the message level. Enumerated field</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1130">
+      <text purpose="SYNOPSIS">
+         <para>Specifies the service pack release being applied to a message at the session level. Enumerated field with values assigned at time of service pack release. Uses same values as ApplVerID</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1131">
+      <text purpose="SYNOPSIS">
+         <para>Specifies a custom extension to a message being applied at the session level.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1137">
+      <text purpose="SYNOPSIS">
+         <para>Specifies the service pack release being applied, by default, to message at the session level. Enumerated field with values assigned at time of service pack release. Uses same values as ApplVerID</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1156">
+      <text purpose="SYNOPSIS">
+         <para>The extension pack number associated with an application message.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1400">
+      <text purpose="SYNOPSIS">
+         <para>Enumeration defining the encryption method used to encrypt password fields.</para>
+         <para>At this time there are no encryption methods defined by FPL.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1401">
+      <text purpose="SYNOPSIS">
+         <para>Length of the EncryptedPassword(1402) field</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1402">
+      <text purpose="SYNOPSIS">
+         <para>Encrypted password - encrypted via the method specified in the field EncryptedPasswordMethod(1400)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1403">
+      <text purpose="SYNOPSIS">
+         <para>Length of the EncryptedNewPassword(1404) field</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1404">
+      <text purpose="SYNOPSIS">
+         <para>Encrypted new password - encrypted via the method specified in the field EncryptedPasswordMethod(1400)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1406">
+      <text purpose="SYNOPSIS">
+         <para>The extension pack number associated with an application message.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1407">
+      <text purpose="SYNOPSIS">
+         <para>The extension pack number that is the default for a FIX session.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1408">
+      <text purpose="SYNOPSIS">
+         <para>The default custom application version ID that is the default for a session.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1409">
+      <text purpose="SYNOPSIS">
+         <para>Status of a FIX session</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1409_0">
+      <text purpose="SYNOPSIS">
+         <para>Session active</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1409_1">
+      <text purpose="SYNOPSIS">
+         <para>Session password changed</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1409_2">
+      <text purpose="SYNOPSIS">
+         <para>Session password due to expire</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1409_3">
+      <text purpose="SYNOPSIS">
+         <para>New session password does not comply with policy</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1409_4">
+      <text purpose="SYNOPSIS">
+         <para>Session logout complete</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1409_5">
+      <text purpose="SYNOPSIS">
+         <para>Invalid username or password</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1409_6">
+      <text purpose="SYNOPSIS">
+         <para>Account locked</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1409_7">
+      <text purpose="SYNOPSIS">
+         <para>Logons are not allowed at this time</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_1409_8">
+      <text purpose="SYNOPSIS">
+         <para>Password expired</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_1_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The Heartbeat monitors the status of the communication link and identifies when the last of a string of messages was not received.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_1_REF_StandardHeader">
+      <text>
+         <para>MsgType = 0</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_1_REF_112">
+      <text>
+         <para>Required when the heartbeat is the result of a Test Request message.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_1_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_2_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The test request message forces a heartbeat from the opposing application. The test request message checks sequence numbers or verifies communication line status. The opposite application responds to the Test Request with a Heartbeat containing the TestReqID.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_2_REF_StandardHeader">
+      <text>
+         <para>MsgType = 1</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_2_REF_112">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_2_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_3_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The resend request is sent by the receiving application to initiate the retransmission of messages. This function is utilized if a sequence number gap is detected, if the receiving application lost a message, or as a function of the initialization process.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_3_REF_StandardHeader">
+      <text>
+         <para>MsgType = 2</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_3_REF_7">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_3_REF_16">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_3_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_4_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The reject message should be issued when a message is received but cannot be properly processed due to a session-level rule violation. An example of when a reject may be appropriate would be the receipt of a message with invalid basic data which successfully passes de-encryption, CheckSum and BodyLength checks.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_4_REF_StandardHeader">
+      <text>
+         <para>MsgType = 3</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_4_REF_45">
+      <text>
+         <para>MsgSeqNum of rejected message</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_4_REF_371">
+      <text>
+         <para>The tag number of the FIX field being referenced.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_4_REF_372">
+      <text>
+         <para>The MsgType of the FIX message being referenced.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_4_REF_1130">
+      <text>
+         <para>Recommended when rejecting an application message that does not explicitly provide ApplVerID ( 1128) on the message being rejected. In this case the value from the DefaultApplVerID(1137) or the default value specified in the NoMsgTypes repeating group on the logon message should be provided.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_4_REF_1406">
+      <text>
+         <para>Recommended when rejecting an application message that does not explicitly provide ApplExtID(1156) on the rejected message. In this case the value from the DefaultApplExtID(1407) or the default value specified in the NoMsgTypes repeating group on the logon message should be provided.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_4_REF_1131">
+      <text>
+         <para>Recommended when rejecting an application message that does not explicitly provide CstmApplVerID(1129) on the message being rejected. In this case the value from the DefaultCstmApplVerID(1408) or the default value specified in the NoMsgTypes repeating group on the logon message should be provided.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_4_REF_373">
+      <text>
+         <para>Code to identify reason for a session-level Reject message.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_4_REF_58">
+      <text>
+         <para>Where possible, message to explain reason for rejection</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_4_REF_354">
+      <text>
+         <para>Must be set if EncodedText field is specified and must immediately precede it.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_4_REF_355">
+      <text>
+         <para>Encoded (non-ASCII characters) representation of the Text field in the encoded format specified via the MessageEncoding field.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_4_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_5_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The sequence reset message is used by the sending application to reset the incoming sequence number on the opposing side.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_5_REF_StandardHeader">
+      <text>
+         <para>MsgType = 4</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_5_REF_123">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_5_REF_36">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_5_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_6_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The logout message initiates or confirms the termination of a FIX session. Disconnection without the exchange of logout messages should be interpreted as an abnormal condition.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_6_REF_StandardHeader">
+      <text>
+         <para>MsgType = 5</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_6_REF_1409">
+      <text>
+         <para>Session status at time of logout.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_6_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_6_REF_354">
+      <text>
+         <para>Must be set if EncodedText field is specified and must immediately precede it.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_6_REF_355">
+      <text>
+         <para>Encoded (non-ASCII characters) representation of the Text field in the encoded format specified via the MessageEncoding field.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_6_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_11_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The logon message authenticates a user establishing a connection to a remote system. The logon message must be the first message sent by the application requesting to initiate a FIX session.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_11_REF_StandardHeader">
+      <text>
+         <para>MsgType = A</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_98">
+      <text>
+         <para>(Always unencrypted)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_108">
+      <text>
+         <para>Note same value used by both sides</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_95">
+      <text>
+         <para>Required for some authentication methods</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_96">
+      <text>
+         <para>Required for some authentication methods</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_141">
+      <text>
+         <para>Indicates both sides of a FIX session should reset sequence numbers</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_789">
+      <text>
+         <para>Optional, alternative via counterparty bi-lateral agreement message gap detection and recovery approach (see "Logon Message NextExpectedMsgSeqNum Processing" section)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_383">
+      <text>
+         <para>Can be used to specify the maximum number of bytes supported for messages received</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_MsgTypeGrp">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_11_REF_464">
+      <text>
+         <para>Can be used to specify that this FIX session will be sending and receiving "test" vs. "production" messages.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_553">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_11_REF_554">
+      <text>
+         <para>Note: minimal security exists without transport-level encryption.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_925">
+      <text>
+         <para>Specifies a new password for the FIX Logon. The new password is used for subsequent logons.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_1400">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_11_REF_1401">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_11_REF_1402">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_11_REF_1403">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_11_REF_1404">
+      <text>
+         <para>Encrypted new password- encrypted via the method specified in the field EncryptedPasswordMethod(1400)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_1409">
+      <text>
+         <para>Session status at time of logon. Field is intended to be used when the logon is sent as an acknowledgement from acceptor of the FIX session.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_1137">
+      <text>
+         <para>The default version of FIX messages used in this session.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_1407">
+      <text>
+         <para>The default extension pack for FIX messages used in this session</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_1408">
+      <text>
+         <para>The default custom application version (dictionary) for FIX messages used in this session</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_58">
+      <text>
+         <para>Available to provide a response to logon when used as a logon acknowledgement from acceptor back to the logon initiator.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_354">
+      <text>
+         <para>Must be set if EncodedText field is specified and must immediately precede it.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_355">
+      <text>
+         <para>Encoded (non-ASCII characters) representation of the Text field in the encoded format specified via the MessageEncoding field.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_47_TITLE">
+      <text purpose="SYNOPSIS"/>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_47_REF_StandardHeader">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_47_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="COMP_StandardHeader_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The standard FIX message header</para>
+      </text>
+      <text purpose="ELABORATION"/>
+   </phrase>
+   <phrase textId="CMP_1024_REF_8">
+      <text>
+         <para>FIXT.1.1 (Always unencrypted, must be first field in message)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_9">
+      <text>
+         <para>(Always unencrypted, must be second field in message)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_35">
+      <text>
+         <para>(Always unencrypted, must be third field in message)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_1128">
+      <text>
+         <para>Indicates application version using a service pack identifier. The ApplVerID applies to a specific message occurrence.</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_1156">
+      <text/>
+   </phrase>
+   <phrase textId="CMP_1024_REF_1129">
+      <text>
+         <para>Used to support bilaterally agreed custom functionality</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_49">
+      <text>
+         <para>(Always unencrypted)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_56">
+      <text>
+         <para>(Always unencrypted)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_115">
+      <text>
+         <para>Trading partner company ID used when sending messages via a third party (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_128">
+      <text>
+         <para>Trading partner company ID used when sending messages via a third party (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_90">
+      <text>
+         <para>Required to identify length of encrypted section of message. (Always unencrypted)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_91">
+      <text>
+         <para>Required when message body is encrypted. Always immediately follows SecureDataLen field.</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_34">
+      <text>
+         <para>(Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_50">
+      <text>
+         <para>(Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_142">
+      <text>
+         <para>Sender's LocationID (i.e. geographic location and/or desk) (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_57">
+      <text>
+         <para>"ADMIN" reserved for administrative messages not intended for a specific user. (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_143">
+      <text>
+         <para>Trading partner LocationID (i.e. geographic location and/or desk) (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_116">
+      <text>
+         <para>Trading partner SubID used when delivering messages via a third party. (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_144">
+      <text>
+         <para>Trading partner LocationID (i.e. geographic location and/or desk) used when delivering messages via a third party. (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_129">
+      <text>
+         <para>Trading partner SubID used when delivering messages via a third party. (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_145">
+      <text>
+         <para>Trading partner LocationID (i.e. geographic location and/or desk) used when delivering messages via a third party. (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_43">
+      <text>
+         <para>Always required for retransmitted messages, whether prompted by the sending system or as the result of a resend request. (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_97">
+      <text>
+         <para>Required when message may be duplicate of another message sent under a different sequence number. (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_52">
+      <text>
+         <para>(Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_122">
+      <text>
+         <para>Required for message resent as a result of a ResendRequest. If data is not available set to same value as SendingTime (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_212">
+      <text>
+         <para>Required when specifying XmlData to identify the length of a XmlData message block. (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_213">
+      <text>
+         <para>Can contain a XML formatted message block (e.g. FIXML). Always immediately follows XmlDataLen field. (Can be embedded within encrypted data section.)</para>
+         <para>See Volume 1: FIXML Support</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_347">
+      <text>
+         <para>Type of message encoding (non-ASCII characters) used in a message’s "Encoded" fields. Required if any "Encoding" fields are used.</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_369">
+      <text>
+         <para>The last MsgSeqNum value received by the FIX engine and processed by downstream application, such as trading system or order routing system. Can be specified on every message sent. Useful for detecting a backlog with a counterparty.</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1024_REF_HopGrp">
+      <text>
+         <para>Number of repeating groups of historical "hop" information. Only applicable if OnBehalfOfCompID is used, however, its use is optional. Note that some market regulations or counterparties may require tracking of message hops.</para>
+      </text>
+   </phrase>
+   <phrase textId="COMP_StandardTrailer_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The standard FIX message trailer</para>
+      </text>
+      <text purpose="ELABORATION"/>
+   </phrase>
+   <phrase textId="CMP_1025_REF_93">
+      <text>
+         <para>Required when trailer contains signature. Note: Not to be included within SecureData field</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1025_REF_89">
+      <text>
+         <para>Note: Not to be included within SecureData field</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1025_REF_10">
+      <text>
+         <para>(Always unencrypted, always last field in message)</para>
+      </text>
+   </phrase>
+   <phrase textId="COMP_HopGrp_TITLE">
+      <text purpose="SYNOPSIS"/>
+      <text purpose="ELABORATION"/>
+   </phrase>
+   <phrase textId="CMP_2085_REF_627">
+      <text/>
+   </phrase>
+   <phrase textId="CMP_2085_REF_628">
+      <text/>
+   </phrase>
+   <phrase textId="CMP_2085_REF_629">
+      <text/>
+   </phrase>
+   <phrase textId="CMP_2085_REF_630">
+      <text/>
+   </phrase>
+   <phrase textId="COMP_MsgTypeGrp_TITLE">
+      <text purpose="SYNOPSIS"/>
+      <text purpose="ELABORATION"/>
+   </phrase>
+</phrases>

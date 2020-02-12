@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- xsi:noNamespaceSchemaLocation="FixRepositoryMeta.xsd" --> 
+<FIX_REPOSITORY_METADATA  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<ELEMENTS>	
+		<ELEMENT name="fix" pk_name="version"/>
+		<ELEMENT name="datatype" pk_name="typeName"/>		
+		<ELEMENT name="field" pk_name="id"/>	
+		<ELEMENT name="value" pk_name="enum"/>	
+		<ELEMENT name="component" pk_name="id"/>	
+		<ELEMENT name="message" pk_name="id"/>													
+	</ELEMENTS>
+</FIX_REPOSITORY_METADATA>

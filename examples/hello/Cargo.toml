@@ -1,0 +1,11 @@
+[package]
+name = "fasters_example_hello"
+version = "0.1.0"
+edition = "2018"
+authors = ["Filippo Costa @neysofu"]
+
+[dependencies]
+fasters = { path = "../../fasters", features = ["repo_v2010"] }
+
+[build-dependencies]
+fasters = { path = "../../fasters", features = ["repo_v2010"] }

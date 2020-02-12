@@ -1,30 +1,48 @@
 use crate::repo::{types as t, HasPk, HashMapPk, RepoV2010};
-use crate::Version;
+use crate::{Settings, Version};
 use codegen::Scope;
 use inflector::Inflector;
 use std::collections::HashMap;
 
 pub fn codegen(dict: Dictionary) -> String {
+    codegen_with_settings(dict, Settings::default())
+}
+
+pub fn field_docstring(version: Version, field: &t::Field) -> String {
+    let onixs_link = field.doc_url_onixs(version);
+    format!(
+        "{}\n\n# Field information\n\nTag Number: {}\nOnixS [reference]({}).",
+        field.description.as_ref().unwrap_or(&String::new()),
+        field.tag.to_string().as_str(),
+        onixs_link.as_str()
+    )
+}
+
+pub fn codegen_with_settings(dict: Dictionary, settings: Settings) -> String {
     let mut scope = Scope::new();
-    for field in dict.fields.values() {
-        let structure = scope
-            .get_or_new_module("fields")
-            .new_struct(field.name.as_str())
-            .vis("pub");
-        if let Some(description) = &field.description {
-            let onixs_link = field.doc_url_onixs(dict.version);
-            let docstring = format!(
-                "{}\n\n# Field information\n\nTag Number: {}\nOnixS [reference]({}).",
-                description,
-                field.tag.to_string().as_str(),
-                onixs_link.as_str()
-            );
-            structure.doc(docstring.as_str());
-        }
-    }
-    for pk in &mut dict.messages.keys() {
-        scope.push_struct(dict.build_message_struct(pk));
-    }
+    scope.raw("#![allow(dead_code)]");
+    scope.new_module("components").import("super", "*");
+    scope.new_module("messages").import("super", "*");
+    //dict.fields.values().for_each(|field| {
+    //    let structure = scope
+    //        .get_or_new_module("fields")
+    //        .new_struct(field.name.as_str())
+    //        .vis("pub");
+    //    let data_type = dict.get_data_type(&field.data_type).unwrap().clone();
+    //    let docstring = field_docstring(dict.version, &field);
+    //    structure.doc(docstring.as_str());
+    //    structure.field("data", (settings.typer)(data_type));
+    //});
+    dict.components.values().for_each(|component| {
+        scope
+            .get_or_new_module("components")
+            .push_struct(dict.build_component_struct(component, &settings));
+    });
+    dict.messages.keys().for_each(|pk| {
+        scope
+            .get_or_new_module("messages")
+            .push_struct(dict.build_message_struct(pk, &settings));
+    });
     scope.to_string()
 }
 
@@ -50,9 +68,28 @@ pub struct Dictionary {
 impl Dictionary {
     /// Assembles a FIX dictionary by linking FIX definitions against each other.
     pub fn new(version: Version) -> Self {
-        let data_types = RepoV2010::data_types(version)
+        let mut data_types: HashMap<_, _> = RepoV2010::data_types(version)
             .map(|dt| (dt.pk(), dt))
             .collect();
+        data_types.insert(
+            "MultipleValueString".to_string(),
+            t::Datatype {
+                name: "MultipleValueString".to_string(),
+                base_type: Some("String".to_string()),
+                description: String::new(),
+                examples: vec![],
+            },
+        );
+        data_types.insert(
+            "SeqNum".to_string(),
+            t::Datatype {
+                name: "SeqNum".to_string(),
+                base_type: Some("int".to_string()),
+                description: String::new(),
+                examples: vec![],
+            },
+        );
+        println!("ALL DATATYPES ARE {:?}", data_types);
         let fields = RepoV2010::fields(version).map(|f| (f.pk(), f)).collect();
         let components = RepoV2010::components(version)
             .map(|c| (c.name.clone(), c))
@@ -100,7 +137,11 @@ impl Dictionary {
         self.msg_contents.get(pk)
     }
 
-    fn build_message_struct(&self, pk: &<t::Message as HasPk>::Pk) -> codegen::Struct {
+    fn build_message_struct(
+        &self,
+        pk: &<t::Message as HasPk>::Pk,
+        settings: &Settings,
+    ) -> codegen::Struct {
         let message = self.get_message(pk).unwrap();
         let msg_contents = self.get_msg_contents(&message.component_id).unwrap();
         let mut structure = codegen::Struct::new(message.name.as_str());
@@ -112,7 +153,8 @@ impl Dictionary {
             .as_str(),
         );
         for content in msg_contents.iter() {
-            let (field_name, field_type) = self.translate_msg_content_to_struct_field(content);
+            let (field_name, field_type) =
+                self.translate_msg_content_to_struct_field(content, settings);
             (&mut structure).field(
                 field_name.as_str(),
                 optionify_type(content.reqd == '1', field_type.as_str()),
@@ -121,18 +163,42 @@ impl Dictionary {
         structure
     }
 
-    fn translate_msg_content_to_struct_field(&self, content: &t::MsgContent) -> (String, String) {
+    fn build_component_struct(
+        &self,
+        component: &t::Component,
+        settings: &Settings,
+    ) -> codegen::Struct {
+        let msg_contents = self.get_msg_contents(&component.id).unwrap();
+        let mut structure = codegen::Struct::new(component.name.as_str());
+        structure.vis("pub");
+        for content in msg_contents.iter() {
+            let (field_name, field_type) =
+                self.translate_msg_content_to_struct_field(content, settings);
+            (&mut structure).field(
+                field_name.as_str(),
+                optionify_type(content.reqd == '1', field_type.as_str()),
+            );
+        }
+        structure
+    }
+
+    fn translate_msg_content_to_struct_field(
+        &self,
+        content: &t::MsgContent,
+        settings: &Settings,
+    ) -> (String, String) {
         let tag_number_res = content.tag_text.parse::<usize>();
         if let Ok(tag_number) = tag_number_res {
             let field = self.get_field(&tag_number).unwrap();
+            let data_type = self.get_data_type(&field.data_type).unwrap().clone();
             (
-                format!("tag_{}", &field.name.to_snake_case()),
-                format!("data_types::{}", field.data_type),
+                format!("t_{}", &field.name.to_snake_case()),
+                (settings.typer)(data_type).to_string(),
             )
         } else {
             let component = self.get_component(content.tag_text.as_str()).unwrap();
             (
-                format!("comp_{}", content.tag_text.to_snake_case()),
+                format!("c_{}", content.tag_text.to_snake_case()),
                 format!("components::{}", component.name),
             )
         }

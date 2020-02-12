@@ -1,0 +1,105 @@
+<templates>
+  <template name="unittest" id="3">
+    <typeRef name="unittestdata"/>"
+    <int32 name="int32_nop" id="1">
+    </int32>
+    <uInt32 name="uint32_nop" id="2">
+    </uInt32>
+    <int64 name="int64_nop" id="3">
+    </int64>
+    <uInt64 name="uint64_nop" id="4">
+    </uInt64>
+    <decimal name="decimal_nop" id="5">
+    </decimal>
+    <string name="asciistring_nop" charset="ascii" id="6">
+    </string>
+    <string name="utf8string_nop" charset="unicode" id="7">
+    </string>
+    <byteVector name="bytevector_nop" id="8">
+    </byteVector>
+    <int32 name="int32_const" id="9"><constant value="2147483647"/>
+    </int32>
+    <uInt32 name="uint32_const" id="10"><constant value="4294967295"/>
+    </uInt32>
+    <int64 name="int64_const" id="11"><constant value="9223372036854775807"/>
+    </int64>
+    <!-- Disable this test due to a bug in boost::lexical_cast: https://svn.boost.org/trac/boost/ticket/2295
+    <uInt64 name="uint64_const" id="12">
+      <constant value="18446744073709551615"/>
+    </uInt64>
+    -->
+    <decimal name="decimal_const" id="13"><constant value="9223372036854775807000000000000000000000000000000000000000000000000000000000000000"/>
+    </decimal>
+    <string name="asciistring_const" charset="ascii" id="14"><constant value="$buffer"/>
+    </string>
+    <string name="utf8string_const" charset="unicode" id="15"><constant value="$buffer"/>
+    </string>
+    <byteVector name="bytevector_const" id="16"><constant value="$buffer"/>
+    </byteVector>
+    <int32 name="int32_default" id="17"><default value="2147483647"/>
+    </int32>
+    <uInt32 name="uint32_default" id="18"><default value="4294967295"/>
+    </uInt32>
+    <int64 name="int64_default" id="19"><default value="9223372036854775807"/>
+    </int64>
+    <!-- Disable this test due to a bug in boost::lexical_cast: https://svn.boost.org/trac/boost/ticket/2295
+       uInt64 name="uint64_default" id="20">
+        <default value="18446744073709551615"/>
+    </uInt64>
+    -->
+    <decimal name="decimal_default" id="21"><default value="9223372036854775807000000000000000000000000000000000000000000000000000000000000000"/>
+    </decimal>
+    <string name="asciistring_default" charset="ascii" id="22">
+    </string>
+    <string name="utf8string_default" charset="unicode" id="23">
+    </string>
+    <byteVector name="bytevector_default" id="24">
+    </byteVector>
+    <int32 name="int32_copy" id="25"><copy/>
+    </int32>
+    <uInt32 name="uint32_copy" id="26"><copy/>
+    </uInt32>
+    <int64 name="int64_copy" id="27"><copy/>
+    </int64>
+    <uInt64 name="uint64_copy" id="28"><copy/>
+    </uInt64>
+    <decimal name="decimal_copy" id="29"><copy value="9223372036854775807000000000000000000000000000000000000000000000000000000000000000"/>
+    </decimal>
+    <string name="asciistring_copy" charset="ascii" id="30"><copy/>
+    </string>
+    <string name="utf8string_copy" charset="unicode" id="31"><copy/>
+    </string>
+    <byteVector name="bytevector_copy" id="32"><copy/>
+    </byteVector>
+    <int32 name="int32_delta" id="33"><copy/>
+    </int32>
+    <uInt32 name="uint32_delta" id="34"><delta/>
+    </uInt32>
+    <int64 name="int64_delta" id="35"><delta/>
+    </int64>
+    <uInt64 name="uint64_delta" id="36"><delta/>
+    </uInt64>
+    <decimal name="decimal_delta" id="37"><delta/>
+    </decimal>
+    <string name="asciistring_delta" charset="ascii" id="38"><delta/>
+    </string>
+    <string name="utf8string_delta" charset="unicode" id="39"><delta/>
+    </string>
+    <byteVector name="bytevector_delta" id="40"><delta/>
+    </byteVector>
+    <int32 name="int32_incre" id="41"><increment value="1"/>
+    </int32>
+    <uInt32 name="uint32_incre" id="42"><increment value="1"/>
+    </uInt32>
+    <int64 name="int64_incre" id="43"><increment value="1"/>
+    </int64>
+    <uInt64 name="uint64_incre" id="44"><increment value="1"/>
+    </uInt64>
+    <string name="asciistring_tail" charset="ascii" id="45"><tail/>
+    </string>
+    <string name="utf8string_tail" charset="unicode" id="46"><tail/>
+    </string>
+    <byteVector name="bytevector_tail" id="47"><tail/>
+    </byteVector>
+    </template>
+</templates>
