@@ -4,7 +4,7 @@ use codegen::Scope;
 
 pub fn codegen(dict: Dictionary) -> String {
     let mut scope = Scope::new();
-    for (_, field) in &dict.fields {
+    for field in dict.fields.values() {
         let structure = scope
             .get_or_new_module("fields")
             .new_struct(field.name.as_str())
