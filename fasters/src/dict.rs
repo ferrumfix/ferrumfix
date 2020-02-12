@@ -116,12 +116,13 @@ impl Dictionary {
             let field = self.get_field(&tag_number).unwrap();
             (
                 format!("tag_{}", &field.name.to_snake_case()),
-                "foobar".to_string(),
+                format!("data_types::{}", field.data_type),
             )
         } else {
+            let component = self.get_component(content.tag_text.as_str()).unwrap();
             (
                 format!("comp_{}", content.tag_text.to_snake_case()),
-                "foobar".to_string(),
+                format!("components::{}", component.name),
             )
         }
     }
