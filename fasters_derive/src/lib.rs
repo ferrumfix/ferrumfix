@@ -6,21 +6,23 @@
 //! respectively.
 
 extern crate proc_macro;
-use proc_macro::TokenStream;
-use quote::quote;
+use proc_macro2::TokenStream;
+use quote::{quote, quote_spanned};
 
 #[proc_macro_derive(Fix)]
-pub fn derive(input: TokenStream) -> TokenStream {
+pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let ast = syn::parse(input).unwrap();
-    impl_fix(&ast)
+    let output = impl_fix(&ast);
+    proc_macro::TokenStream::from(output)
 }
 
 fn impl_fix(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
+    let des = generate_des(&ast.data);
     let gen = quote! {
         impl Fix for #name {
             fn des(bytes: &[u8]) -> Result<Self> {
-                unimplemented!()
+                #des
             }
 
             fn ser(w: impl Write) -> Result<usize> {
@@ -36,5 +38,21 @@ fn impl_fix(ast: &syn::DeriveInput) -> TokenStream {
             }
         }
     };
-    gen.into()
+    TokenStream::from(gen)
+}
+
+fn generate_des(data: &syn::Data) -> TokenStream {
+    (match *data {
+        syn::Data::Struct(ref data) => match data.fields {
+            syn::Fields::Named(ref fields) => {
+                let quoted = fields.named.iter().map(|f| "");
+                quote! {
+                    unimplemented()
+                }
+            }
+            syn::Fields::Unit | syn::Fields::Unnamed(_) => panic!("struct must be named"),
+        },
+        syn::Data::Enum(_) | syn::Data::Union(_) => panic!("Fix messages must be structs"),
+    })
+    .into()
 }
