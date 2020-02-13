@@ -25,16 +25,11 @@ Inflector = "0.11.4"
 serde = { version = "1.0", features = [ "derive" ] }
 quick-xml = { version = "0.17.2", features = [ "serialize" ] }
 fasters_derive = { path = "../fasters_derive" }
+fasters_internals = { path = "../fasters_internals" }
 nom = "5"
 rust-embed = "5"
 strum = "0.17.1"
 strum_macros = "0.17.1"
-
-#quote = "1"
-#proc-macro2 = "1"
-#
-#[lib]
-#proc-macro = true
 
 [dev-dependencies]
 quickcheck = "0.8"

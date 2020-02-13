@@ -129,6 +129,7 @@ dependencies = [
  "codegen 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "fasters_derive 0.2.0",
+ "fasters_internals 0.1.0",
  "nom 5.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "quick-xml 0.17.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "quickcheck 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -154,6 +155,26 @@ name = "fasters_example_hello"
 version = "0.1.0"
 dependencies = [
  "fasters 0.5.0",
+]
+
+[[package]]
+name = "fasters_internals"
+version = "0.1.0"
+dependencies = [
+ "Inflector 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bitvec 0.14.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "codegen 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "fasters_derive 0.2.0",
+ "nom 5.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quick-xml 0.17.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quickcheck 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quickcheck_macros 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rust-embed 5.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
+ "strum 0.17.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "strum_macros 0.17.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
