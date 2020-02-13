@@ -1,2 +1,4 @@
+generated/*.rs
+!generaed/mod.rs
 target/
 **/*.rs.bk

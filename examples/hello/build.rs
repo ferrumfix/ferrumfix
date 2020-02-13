@@ -2,7 +2,7 @@ extern crate fasters;
 use fasters::{codegen, Dictionary, Version};
 use std::fs;
 
-const PATH: &str = "src/generated.rs";
+const PATH: &str = "src/generated/fix44.rs";
 
 fn main() {
     fs::File::create(PATH).unwrap();
