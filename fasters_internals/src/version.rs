@@ -61,7 +61,7 @@ impl Version {
             Self::Fix50 => false,
             Self::Fix50SP1 => false,
             Self::Fix50SP2 => true,
-            Self::Fixt11 => true,
+            Self::Fixt11 => false,
         }
     }
 

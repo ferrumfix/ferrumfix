@@ -4,9 +4,9 @@ use fasters_internals::{codegen, Dictionary, Version};
 use std::fs;
 
 fn main() {
-    //for version in Version::iter_supported() {
-    generate_dictionary(Version::Fix44);
-    //}
+    for version in Version::iter_supported() {
+        generate_dictionary(version);
+    }
 }
 
 fn generate_dictionary(version: Version) {

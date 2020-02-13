@@ -89,6 +89,15 @@ impl Dictionary {
                 examples: vec![],
             },
         );
+        data_types.insert(
+            "Length".to_string(),
+            t::Datatype {
+                name: "Length".to_string(),
+                base_type: Some("int".to_string()),
+                description: String::new(),
+                examples: vec![],
+            },
+        );
         println!("ALL DATATYPES ARE {:?}", data_types);
         let fields = RepoV2010::fields(version).map(|f| (f.pk(), f)).collect();
         let components = RepoV2010::components(version)
@@ -168,6 +177,7 @@ impl Dictionary {
         component: &t::Component,
         settings: &Settings,
     ) -> codegen::Struct {
+        println!("FETCHING MSG CONTENTS OF C. WITH ID {}", component.id);
         let msg_contents = self.get_msg_contents(&component.id).unwrap();
         let mut structure = codegen::Struct::new(component.name.as_str());
         structure.vis("pub");
@@ -190,6 +200,7 @@ impl Dictionary {
         let tag_number_res = content.tag_text.parse::<usize>();
         if let Ok(tag_number) = tag_number_res {
             let field = self.get_field(&tag_number).unwrap();
+            println!("TRYING DATATYPE {}", field.data_type);
             let data_type = self.get_data_type(&field.data_type).unwrap().clone();
             (
                 format!("t_{}", &field.name.to_snake_case()),
