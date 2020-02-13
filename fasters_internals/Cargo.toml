@@ -3,16 +3,21 @@ name = "fasters_internals"
 version = "0.1.0"
 edition = "2018"
 
+[features]
+repo_v50sp2ep254 = [ ]
+repo_v2010 = [ ]
+default = [ "repo_v2010", "repo_v50sp2ep254" ]
+
 [dependencies]
 bitvec = "0.14"
 failure = "0.1.5"
 codegen = "0.1.1"
 Inflector = "0.11.4"
+include_dir = "0.5.0"
 serde = { version = "1.0", features = [ "derive" ] }
 quick-xml = { version = "0.17.2", features = [ "serialize" ] }
 fasters_derive = { path = "../fasters_derive" }
 nom = "5"
-rust-embed = "5"
 strum = "0.17.1"
 strum_macros = "0.17.1"
 

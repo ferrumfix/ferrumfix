@@ -4,10 +4,9 @@
 //! extension packs and advanced features.
 
 use crate::Version;
+use include_dir::include_dir;
 use quick_xml::de::from_str;
-use rust_embed::RustEmbed;
 use serde::de::DeserializeOwned;
-use std::borrow::Borrow;
 use std::collections::HashMap;
 
 pub type HashMapPk<K, T> = HashMap<<K as HasPk>::Pk, T>;
@@ -32,13 +31,10 @@ pub trait HasPk {
 /// println!("{:?}", readme);
 /// ```
 #[cfg(feature = "repo_v50sp2ep254")]
-#[derive(RustEmbed)]
-#[folder = "resources/repositories/FIXRepository_FIX.5.0SP2_EP254"]
-pub struct RepoV50SP2EP254;
+const REPO_V50_SP2_EP254: include_dir::Dir =
+    include_dir!("resources/repositories/FIXRepository_FIX.5.0SP2_EP254");
 #[cfg(not(feature = "repo_v50sp2ep254"))]
-#[derive(RustEmbed)]
-#[folder = "resources/empty"]
-pub struct RepoV50SP2EP254;
+const REPO_V50_SP2_EP254: include_dir::Dir = include_dir!("resources/empty");
 
 /// FIX Repository 2010 Edition.
 ///
@@ -53,12 +49,11 @@ pub struct RepoV50SP2EP254;
 /// println!("{:?}", Vec::from_iter(fields));
 /// ```
 #[cfg(feature = "repo_v2010")]
-#[derive(RustEmbed)]
-#[folder = "resources/repositories/fix_repository_2010_edition_20140507"]
-pub struct RepoV2010;
+const REPO_V2010: include_dir::Dir =
+    include_dir!("resources/repositories/fix_repository_2010_edition_20140507");
 #[cfg(not(feature = "repo_v2010"))]
-#[derive(RustEmbed)]
-#[folder = "resources/empty"]
+const REPO_V2010: include_dir::Dir = include_dir!("resources/empty");
+
 pub struct RepoV2010;
 
 impl RepoV2010 {
@@ -66,8 +61,12 @@ impl RepoV2010 {
         let mut path = version.as_str().to_string();
         path.push_str("/Base/");
         path.push_str(filename);
-        let bytes = RepoV2010::get(path.as_str()).unwrap();
-        let xml = std::str::from_utf8(bytes.borrow()).unwrap();
+        println!("path is {}", path);
+        let xml = REPO_V2010
+            .get_file(path.as_str())
+            .unwrap()
+            .contents_utf8()
+            .unwrap();
         from_str(xml).unwrap()
     }
 
@@ -457,13 +456,6 @@ pub mod types {
 mod test {
     use super::*;
     use crate::Version;
-
-    #[test]
-    fn repo_v50sp2ep254_readme() {
-        let readme = RepoV50SP2EP254::get("Readme.html");
-        assert!(readme.is_some());
-        assert!(readme.unwrap().len() > 42);
-    }
 
     #[test]
     fn repo_v2010_deserialize_fields() {
