@@ -1,3 +1,3 @@
-pub mod fix42;
-pub mod fix44;
-pub mod fix50sp2;
+pub mod generated_fix42;
+pub mod generated_fix44;
+pub mod generated_fix50sp2;
