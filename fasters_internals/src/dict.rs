@@ -20,9 +20,18 @@ pub fn field_docstring(version: Version, field: &t::Field) -> String {
 
 pub fn codegen_with_settings(dict: Dictionary, settings: Settings) -> String {
     let mut scope = Scope::new();
-    scope.raw("#![allow(dead_code)]");
-    scope.new_module("components").import("super", "*");
-    scope.new_module("messages").import("super", "*");
+    //scope.raw("#![allow(dead_code)]");
+    scope.import("fasters_internals", "Fix");
+    scope
+        .new_module("components")
+        .import("super", "*")
+        .import("fasters_internals", "*")
+        .import("std::io", "Write");
+    scope
+        .new_module("messages")
+        .import("super", "*")
+        .import("fasters_internals", "*")
+        .import("std::io", "Write");
     //dict.fields.values().for_each(|field| {
     //    let structure = scope
     //        .get_or_new_module("fields")
@@ -161,6 +170,7 @@ impl Dictionary {
             )
             .as_str(),
         );
+        structure.derive("Fix");
         for content in msg_contents.iter() {
             let (field_name, field_type) =
                 self.translate_msg_content_to_struct_field(content, settings);
@@ -181,6 +191,7 @@ impl Dictionary {
         let msg_contents = self.get_msg_contents(&component.id).unwrap();
         let mut structure = codegen::Struct::new(component.name.as_str());
         structure.vis("pub");
+        structure.derive("Fix");
         for content in msg_contents.iter() {
             let (field_name, field_type) =
                 self.translate_msg_content_to_struct_field(content, settings);

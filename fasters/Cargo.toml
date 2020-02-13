@@ -12,6 +12,10 @@ keywords = ["fix", "fast", "protocol", "finance", "streaming"]
 categories = ["network-programming", "parser-implementations", "encoding"]
 license = "MIT OR APACHE"
 
+[[bin]]
+name = "fasters"
+path = "src/bin.rs"
+
 [features]
 repo_v50sp2ep254 = [ ]
 repo_v2010 = [ ]

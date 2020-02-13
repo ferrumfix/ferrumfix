@@ -9,7 +9,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::quote;
 
-#[proc_macro]
+#[proc_macro_derive(Fix)]
 pub fn derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
     impl_fix(&ast)
@@ -19,8 +19,20 @@ fn impl_fix(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let gen = quote! {
         impl Fix for #name {
-            fn hello_world() {
-                println!("Hello, world!");
+            fn des(bytes: &[u8]) -> Result<Self> {
+                unimplemented!()
+            }
+
+            fn ser(w: impl Write) -> Result<usize> {
+                unimplemented!()
+            }
+
+            fn des_fixml(bytes: &[u8]) -> Result<Self> {
+                unimplemented!()
+            }
+
+            fn ser_fixml(w: impl Write) -> Result<usize> {
+                unimplemented!()
             }
         }
     };

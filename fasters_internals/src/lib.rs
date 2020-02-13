@@ -24,6 +24,7 @@ mod version;
 
 pub use crate::err::{Error, Result};
 pub use dict::{codegen, Dictionary};
-pub use fasters_derive::derive;
+pub use fasters_derive::*;
+pub use fix::Fix;
 pub use settings::Settings;
 pub use version::Version;
