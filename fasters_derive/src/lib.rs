@@ -47,7 +47,7 @@ fn generate_des(data: &syn::Data) -> TokenStream {
             syn::Fields::Named(ref fields) => {
                 let quoted = fields.named.iter().map(|f| "");
                 quote! {
-                    unimplemented()
+                    unimplemented!()
                 }
             }
             syn::Fields::Unit | syn::Fields::Unnamed(_) => panic!("struct must be named"),
