@@ -5,7 +5,8 @@
 //! [`fasters::fix`](fasters::fix) and [`fasters::fast`](fasters::fast) modules,
 //! respectively.
 
-mod generated;
-
 pub use fasters_internals::*;
-pub use generated::*;
+
+pub mod generated_fix42;
+pub mod generated_fix44;
+pub mod generated_fix50sp2;
