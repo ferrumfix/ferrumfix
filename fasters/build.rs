@@ -12,7 +12,7 @@ fn main() {
 fn generate_dictionary(version: Version) {
     let dictionary = Dictionary::new(version);
     let code = codegen(dictionary);
-    let filename = format!("src/generated/{}.rs", version.as_str());
+    let filename = format!("src/generated/{}.rs", version.module_name());
     println!("writing to {}, code is {}", filename, code);
     fs::write(filename, code).unwrap();
 }

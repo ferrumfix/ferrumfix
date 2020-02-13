@@ -81,6 +81,22 @@ impl Version {
         }
     }
 
+    pub fn module_name(self) -> &'static str {
+        match self {
+            Self::Fix27 => "fix27",
+            Self::Fix30 => "fix30",
+            Self::Fix40 => "fix40",
+            Self::Fix41 => "fix41",
+            Self::Fix42 => "fix42",
+            Self::Fix43 => "fix43",
+            Self::Fix44 => "fix44",
+            Self::Fix50 => "fix50",
+            Self::Fix50SP1 => "fix50sp1",
+            Self::Fix50SP2 => "fix50sp2",
+            Self::Fixt11 => "fixt11",
+        }
+    }
+
     pub fn onixs_str(self) -> &'static str {
         match self {
             Self::Fix27 => unimplemented!(),

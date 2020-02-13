@@ -1,4 +1,2 @@
-generated.rs
-generated/
 target/
 **/*.rs.bk
