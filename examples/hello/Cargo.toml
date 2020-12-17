@@ -6,6 +6,7 @@ authors = ["Filippo Costa @neysofu"]
 
 [dependencies]
 fasters = { path = "../../fasters", features = ["repo_v2010"] }
+fasters_internals = { path = "../../fasters_internals" }
 
 [build-dependencies]
 fasters = { path = "../../fasters", features = ["repo_v2010"] }

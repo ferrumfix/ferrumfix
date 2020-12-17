@@ -170,7 +170,6 @@ impl Dictionary {
             )
             .as_str(),
         );
-        structure.derive("Fix");
         for content in msg_contents.iter() {
             let (field_name, field_type) =
                 self.translate_msg_content_to_struct_field(content, settings);
@@ -191,7 +190,6 @@ impl Dictionary {
         let msg_contents = self.get_msg_contents(&component.id).unwrap();
         let mut structure = codegen::Struct::new(component.name.as_str());
         structure.vis("pub");
-        structure.derive("Fix");
         for content in msg_contents.iter() {
             let (field_name, field_type) =
                 self.translate_msg_content_to_struct_field(content, settings);
