@@ -2,6 +2,8 @@
 
 Fasters is a suite of tools to work with FIX standards. It is **not**, at the time of writing, production ready. I currently can't afford to put in the hours and make it robust and fully standard-compliant. Rigor is nevertheless a core goal of the project and it might serve as a useful foundation for others' work.
 
+![FIX Technical Standard stack](docs/FIX-Technical-Standard-Stack.png)
+
 This is the planned feature roadmap:
 
 **Core features:**
