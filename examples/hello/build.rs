@@ -1,5 +1,5 @@
 extern crate fasters;
-use fasters::{codegen, Dictionary, Version};
+use fasters::internals::{codegen, Dictionary, Version};
 use std::fs;
 
 const PATH: &str = "src/generated_fix44.rs";

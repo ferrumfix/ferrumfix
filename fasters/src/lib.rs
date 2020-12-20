@@ -5,8 +5,7 @@
 //! [`fasters::fix`](fasters::fix) and [`fasters::fast`](fasters::fast) modules,
 //! respectively.
 
-pub use fasters_internals::*;
-
-pub mod generated_fix42;
-pub mod generated_fix44;
-pub mod generated_fix50sp2;
+pub mod encodings;
+pub mod internals;
+pub mod ir;
+pub mod spec;

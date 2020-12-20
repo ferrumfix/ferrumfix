@@ -21,7 +21,6 @@ pub fn field_docstring(version: Version, field: &t::Field) -> String {
 pub fn codegen_with_settings(dict: Dictionary, settings: Settings) -> String {
     let mut scope = Scope::new();
     //scope.raw("#![allow(dead_code)]");
-    scope.import("fasters_internals", "Fix");
     scope
         .new_module("components")
         .import("super", "*")
