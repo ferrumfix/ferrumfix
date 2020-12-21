@@ -1,0 +1,8 @@
+[package]
+name = "fast_simple_template"
+version = "0.1.0"
+authors = ["Filippo Costa @neysofu"]
+edition = "2018"
+
+[dependencies]
+fasters = { path = "../../fasters" }

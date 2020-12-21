@@ -274,14 +274,7 @@ mod test {
     use super::*;
 
     fn simple_dict() -> Dictionary {
-        Dictionary {
-            version: "version-foobar".to_string(),
-            data_types: HashMap::default(),
-            fields: HashMap::default(),
-            components: HashMap::default(),
-            messages: HashMap::default(),
-            msg_contents: HashMap::default(),
-        }
+        Dictionary::empty()
     }
 
     #[test]

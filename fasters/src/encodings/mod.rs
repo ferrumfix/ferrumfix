@@ -2,8 +2,10 @@
 use crate::ir;
 use std::io;
 
+mod fast;
 mod tagvalue;
 
+pub use fast::Fast;
 pub use tagvalue::TagValue;
 
 /// Capabilities to decode and encode FIX messages according to a FIX dictionary.
