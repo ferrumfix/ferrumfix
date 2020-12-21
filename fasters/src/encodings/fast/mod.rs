@@ -28,6 +28,11 @@ impl Fast {
             templates: HashMap::new(),
         }
     }
+
+    pub fn with_template(mut self, template: Template) -> Self {
+        self.templates.insert(template.id, template);
+        self
+    }
 }
 
 impl Encoding for Fast {

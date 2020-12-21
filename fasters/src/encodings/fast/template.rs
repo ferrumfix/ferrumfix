@@ -63,7 +63,7 @@ pub struct Template {
     /// describe the format of an encoded message. A Template ID will be carried
     /// in every encoded message which will provide a link to the correct
     /// template for decoding.
-    id: i64,
+    pub id: i64,
     pub elements: Vec<Element>,
     dictionary: Dictionary,
 }
