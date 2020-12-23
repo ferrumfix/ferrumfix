@@ -1,4 +1,4 @@
-use bitvec::vec::BitVec;
+use bitvec::prelude::*;
 use std::io;
 
 const STOP_BYTE: u8 = 0x80;
@@ -6,7 +6,7 @@ const SIGNIFICANT_BYTE: u8 = !STOP_BYTE;
 const NEGATIVE_SIGN_MASK: u8 = 0x40;
 
 /// A trait to (de)serialize on-the-wire representations of entities.
-pub trait Codec: Sized {
+pub trait Codec {
     fn deserialize(&mut self, input: &mut impl io::Read) -> io::Result<usize>;
     fn serialize(&self, output: &mut impl io::Write) -> io::Result<usize>;
 }
@@ -157,6 +157,23 @@ impl Codec for String {
     }
 }
 
+fn serialize_bitvec(bits: &BitSlice<Msb0, u8>, output: &mut impl io::Write) -> io::Result<usize> {
+    let significant_data_bits_per_byte = bits.chunks_exact(7);
+    let mut i = 0;
+    let remaineder = significant_data_bits_per_byte.remainder().load::<u8>();
+    for significant_data_bits in significant_data_bits_per_byte {
+        let byte = significant_data_bits.load::<u8>();
+        if byte != 0 {
+            output.write_all(&[byte])?;
+            i += 1;
+        }
+    }
+    if remaineder != 0 {
+        output.write_all(&[ STOP_BYTE | remaineder])?;
+    }
+    Ok(i)
+} 
+
 pub struct PresenceMap {
     bits: BitVec,
 }
@@ -195,6 +212,13 @@ impl Codec for PresenceMap {
         Ok(self.bits.len())
     }
 }
+
+//pub fn encode_stop_bit_entity(target: &mut impl io::Write, buffer: &[u8]) -> io::Result<usize> {
+//    let bits = BitVec::from(buffer);
+//    for bit in bits {
+//        target:w
+//    }
+//}
 
 pub fn decode_stop_bit_entity(input: &mut impl io::Read) -> io::Result<Vec<u8>> {
     let mut bytes = Vec::new();
@@ -253,6 +277,7 @@ mod test {
     fn encode_then_decode_i32(expected_value: i32) -> bool {
         let mut bytes: Vec<u8> = Vec::new();
         expected_value.serialize(&mut bytes).unwrap();
+        println!("{}: {:?}", expected_value, bytes);
         let value = &mut 0i32;
         value.deserialize(&mut &bytes[..]).unwrap();
         *value == expected_value

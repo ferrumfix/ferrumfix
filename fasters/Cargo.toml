@@ -21,7 +21,7 @@ repo_v2010 = [ ]
 default = [ "repo_v2010", "repo_v50sp2ep254" ]
 
 [dependencies]
-bitvec = "0.19.4"
+bitvec = "0.18.3"
 roxmltree = "0.13.0"
 fasters_derive = { path = "../fasters_derive" }
 fasters_internals = { path = "../fasters_internals" }

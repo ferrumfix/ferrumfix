@@ -1,5 +1,6 @@
-use crate::spec::Dictionary;
+use super::errors::StaticError;
 use super::field_operators::FieldOperatorInstruction;
+use crate::spec::Dictionary;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
@@ -31,7 +32,7 @@ pub enum FieldValue {
     Decimal(f32), // FIXME
     AsciiString(Vec<u8>),
     UnicodeString(String),
-    ByteVector(Vec<u8>)
+    ByteVector(Vec<u8>),
 }
 
 #[derive(Clone, Debug)]
@@ -43,7 +44,7 @@ pub enum FieldType {
     Decimal,
     AsciiString,
     UnicodeString,
-    ByteVector
+    ByteVector,
 }
 
 /// Templates are used to represent the structure of the data that is to be
@@ -69,9 +70,10 @@ pub struct Template {
 }
 
 impl Template {
-    fn new(xml_document: &str) -> Self {
+    fn new(xml_document: &str) -> Result<Template, StaticError> {
         let document = roxmltree::Document::parse(xml_document).unwrap();
-        let root = document.root();
+        let container = document.root().first_element_child().unwrap();
+        let root = container.first_element_child().unwrap();
         let mut template = Template {
             name: String::new(),
             id: 0,
@@ -79,21 +81,25 @@ impl Template {
             dictionary: Dictionary::empty(),
         };
         template.name = root.attribute("name").unwrap().to_string();
-        for node in root.descendants() {
-            let instruction = node.tag_name().name();
-            let field = Field {
-                id: 0,
-                kind: Template::xml_tag_to_instruction(instruction),
-                presence: Template::xml_presence_attribute_to_bool(node.attribute("presence").unwrap()),
-                operator: FieldOperatorInstruction::None,
-            };
-            let element = Element {
-                name: instruction.to_string(),
-                content: ElementContent::Field(field),
-            };
-            template.elements.push(element);
+        for node in root.children() {
+            if node.is_element() {
+                let instruction = node.tag_name().name();
+                let field = Field {
+                    id: 0,
+                    kind: Template::xml_tag_to_instruction(instruction),
+                    presence: Template::xml_presence_attribute_to_bool(
+                        node.attribute("presence").unwrap_or("true"),
+                    ),
+                    operator: FieldOperatorInstruction::None,
+                };
+                let element = Element {
+                    name: instruction.to_string(),
+                    content: ElementContent::Field(field),
+                };
+                template.elements.push(element);
+            }
         }
-        unimplemented!();
+        Ok(template)
     }
 
     fn xml_tag_to_instruction(tag: &str) -> FieldType {
@@ -105,7 +111,7 @@ impl Template {
             "int64" => FieldType::SInt64,
             "decimal" => FieldType::Decimal,
             "byteVector" => FieldType::ByteVector,
-            _ => unimplemented!(),
+            _ => FieldType::SInt32,
         }
     }
 
@@ -118,3 +124,16 @@ impl Template {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    const SIMPLE_TEMPLATE: &str = std::include_str!("templates/example.xml");
+
+    #[test]
+    fn test() {
+        let template = Template::new(SIMPLE_TEMPLATE).unwrap();
+        let first_element = template.elements.get(1).unwrap();
+        assert_eq!(first_element.name, "BeginString");
+    }
+}
