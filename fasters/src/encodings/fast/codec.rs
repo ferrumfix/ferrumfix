@@ -277,7 +277,6 @@ mod test {
     fn encode_then_decode_i32(expected_value: i32) -> bool {
         let mut bytes: Vec<u8> = Vec::new();
         expected_value.serialize(&mut bytes).unwrap();
-        println!("{}: {:?}", expected_value, bytes);
         let value = &mut 0i32;
         value.deserialize(&mut &bytes[..]).unwrap();
         *value == expected_value

@@ -6,6 +6,8 @@
 //! respectively.
 
 pub mod encodings;
+pub mod fixp;
 pub mod internals;
 pub mod ir;
+pub mod sofh;
 pub mod spec;
