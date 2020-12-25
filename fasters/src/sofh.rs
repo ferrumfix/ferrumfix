@@ -148,12 +148,12 @@ mod test {
     }
 
     #[quickcheck]
-    fn test_encode_than_decode_random_header(header: Header) -> bool {
+    fn encode_than_decode_random_header(header: Header) -> bool {
         header == (&(<[u8; 6]>::from(header))).into()
     }
 
     #[test]
-    fn test_private_encodings() {
+    fn private_encodings() {
         for val in &[0x1, 0x82, 0xff] {
             match EncodingType::from(*val) {
                 EncodingType::Private(_) => (),
@@ -168,7 +168,7 @@ mod test {
     }
 
     #[test]
-    fn test_frame_too_short() {
+    fn frame_too_short() {
         let bytes = vec![0u8, 0, 0, 4, 13, 37, 42];
         match OpenFrameIter::new(&bytes[..]).next() {
             Some(Err(Error::InvalidMessageLength)) => (),
@@ -177,7 +177,7 @@ mod test {
     }
 
     #[test]
-    fn test_frame_with_only_header() {
+    fn frame_with_only_header_is_valid() {
         let bytes = vec![0u8, 0, 0, 6, 13, 37];
         match OpenFrameIter::new(&bytes[..]).next() {
             Some(Ok(_)) => (),
