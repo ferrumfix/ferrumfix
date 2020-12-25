@@ -8,8 +8,16 @@ use std::str;
 /// MUST be followed by this control character.
 const SOH_SEPARATOR: char = 1u8 as char;
 
-/// The FIX TagValue Encoding is the original and most widely used encoding. It's
-/// simple ASCII string format.
+/// A (de)serializer for the classic FIX tag-value encoding.
+/// 
+/// The FIX tag-value encoding is designed to be both human-readable and easy for
+/// machines to parse.
+///
+/// Please reach out to the FIX official documentation[^1][^2] for more information.
+/// 
+/// [^1]: [FIX TagValue Encoding: Online reference.](https://www.fixtrading.org/standards/tagvalue-online)
+/// 
+/// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
 pub struct TagValue {
     dict: Dictionary,
 }

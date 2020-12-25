@@ -1,4 +1,4 @@
-//! Ways to encode and decode FIX data in accordance to various standards.
+//! Decoders and encoders for several encodings.
 use crate::ir;
 use std::io;
 

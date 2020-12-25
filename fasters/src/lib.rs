@@ -7,6 +7,7 @@
 
 pub mod presentation;
 pub mod fixp;
+#[deprecated]
 pub mod internals;
 pub mod ir;
 pub mod sofh;
