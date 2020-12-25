@@ -23,6 +23,7 @@ default = [ "repo_v2010", "repo_v50sp2ep254" ]
 [dependencies]
 bitvec = "0.18.3"
 roxmltree = "0.13.0"
+uuid = "0.8.1"
 fasters_derive = { path = "../fasters_derive" }
 fasters_internals = { path = "../fasters_internals" }
 
