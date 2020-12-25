@@ -1,6 +1,6 @@
-use fasters::encodings;
+use fasters::presentation;
 
 fn main() {
-    let device = encodings::Fast::new();
+    let device = presentation::Fast::new();
     println!("Hello, world!");
 }

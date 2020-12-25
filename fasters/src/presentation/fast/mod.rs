@@ -1,4 +1,4 @@
-use crate::encodings::Encoding;
+use crate::presentation::Encoding;
 use crate::ir;
 use crate::spec::{BaseType, Dictionary};
 use errors::Error;

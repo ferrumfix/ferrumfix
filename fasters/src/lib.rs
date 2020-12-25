@@ -5,7 +5,7 @@
 //! [`fasters::fix`](fasters::fix) and [`fasters::fast`](fasters::fast) modules,
 //! respectively.
 
-pub mod encodings;
+pub mod presentation;
 pub mod fixp;
 pub mod internals;
 pub mod ir;
