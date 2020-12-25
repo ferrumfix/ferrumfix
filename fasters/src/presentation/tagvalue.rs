@@ -1,5 +1,5 @@
-use crate::presentation::Encoding;
 use crate::ir;
+use crate::presentation::Encoding;
 use crate::spec::{BaseType, Dictionary};
 use std::io;
 use std::str;
@@ -12,7 +12,6 @@ const SOH_SEPARATOR: char = 1u8 as char;
 /// simple ASCII string format.
 pub struct TagValue {
     dict: Dictionary,
-    separator: char,
 }
 
 type DecodeResult<T> = Result<T, <TagValue as Encoding>::DecodeErr>;
@@ -21,60 +20,85 @@ type EncodeResult<T> = Result<T, <TagValue as Encoding>::EncodeErr>;
 impl TagValue {
     /// Builds a new `TagValue` encoding device with an empty FIX dictionary.
     pub fn new() -> Self {
-        TagValue {
-            dict: Dictionary::empty(),
-            separator: SOH_SEPARATOR,
-        }
+        Self::default()
     }
 
-    fn decode_checksum(
-        &self,
-        source: &mut impl io::BufRead,
-        message: &mut ir::Message,
-    ) -> DecodeResult<u8> {
-        let field = parse_field(source, self.separator, &|_: i64| BaseType::Int)?;
-        if let ir::FixFieldValue::Int(checksum) = field.value {
-            message.fields.insert(field.tag, field.value);
-            Ok(checksum as u8)
-        } else {
-            Err(Error::Syntax)
-        }
-    }
+    //fn decode_checksum(
+    //    &self,
+    //    source: &mut impl io::BufRead,
+    //    message: &mut ir::Message,
+    //) -> DecodeResult<u8> {
+    //    let field = parse_field(source, self.separator, &|_: i64| BaseType::Int)?;
+    //    if let ir::FixFieldValue::Int(checksum) = field.value {
+    //        message.fields.insert(field.tag, field.value);
+    //        Ok(checksum as u8)
+    //    } else {
+    //        Err(Error::Syntax)
+    //    }
+    //}
 
     fn decode_ws(
         &self,
         source: &mut impl io::BufRead,
         separator: char,
     ) -> Result<ir::Message, <TagValue as Encoding>::DecodeErr> {
-        let tag_datatype = |t| self.dict.fields.get(&t).unwrap();
-        let typer = &|t| str_to_basetype(tag_datatype(t as usize).data_type.as_str());
-        let (mut checksum, f0, f1, f2) = parse_standard_header(source, separator)?;
-        let mut fields = vec![f0, f1, f2];
+        let tag_lookup = StandardTagLookup::new(&self.dict);
+        let mut checksum = Checksum::new();
+        let mut field_iter = FieldIter {
+            handle: source,
+            separator: separator as u8,
+            checksum,
+            designator: tag_lookup,
+            length: std::u32::MAX,
+            is_last: false,
+            data_length: 0,
+        };
         let mut message = ir::Message::new();
-        let body_length = 11; //f1.value;
-        let mut body_length_remaining = body_length;
-        let mut expect_data_field = false;
-        while body_length_remaining > 0 {
-            let field = parse_field(source, separator, typer)?;
-            checksum.roll(&[field.checksum]);
-            body_length_remaining -= field.len;
-            fields.push(field);
-            expect_data_field = false;
-        }
-        // `CheckSum(10)` doesn't count towards `BodyLength(9)` quota, so we
-        // must read it outside of the main loop.
-        let actual_checksum = self.decode_checksum(source, &mut message)?;
-        if checksum.0 != actual_checksum {
-            Err(Error::InvalidChecksum(InvalidChecksum {
-                expected: checksum.0.into(),
-                actual: actual_checksum,
-            }))
-        } else {
-            let mut message = ir::Message::new();
-            for f in fields {
+        {
+            // `BeginString(8)`.
+            let f = field_iter.next().ok_or(Error::Eof)??;
+            if f.tag == 8 {
                 message.fields.insert(f.tag, f.value);
+            } else {
+                return Err(Error::InvalidStandardHeader);
             }
+        };
+        {
+            // `BodyLength(9)`.
+            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+            if f.tag == 9 {
+                message.fields.insert(f.tag, f.value);
+            } else {
+                return Err(Error::InvalidStandardHeader);
+            }
+        };
+        {
+            // `MsgType(35)`.
+            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+            if f.tag == 35 {
+                message.fields.insert(f.tag, f.value);
+            } else {
+                return Err(Error::InvalidStandardHeader);
+            }
+        };
+        let mut last_tag = 35;
+        for f_result in field_iter {
+            let f = f_result?;
+            message.fields.insert(f.tag, f.value);
+            last_tag = f.tag;
+        }
+        if last_tag == 10 {
             Ok(message)
+        } else {
+            Err(Error::InvalidStandardTrailer)
+        }
+    }
+}
+
+impl Default for TagValue {
+    fn default() -> Self {
+        TagValue {
+            dict: Dictionary::empty(),
         }
     }
 }
@@ -89,9 +113,9 @@ impl Encoding for TagValue {
 
     fn encode(&self, message: ir::Message) -> Result<Vec<u8>, Self::EncodeErr> {
         let mut target = Vec::new();
-        for (key, value) in message.fields {
+        for (tag, value) in message.fields {
             let field = ir::Field {
-                tag: key,
+                tag,
                 value,
                 checksum: 0,
                 len: 0,
@@ -108,22 +132,6 @@ impl From<io::Error> for Error {
     }
 }
 
-impl ir::Field {
-    fn encode(&self, write: &mut impl io::Write) -> EncodeResult<()> {
-        write.write(self.tag.to_string().as_bytes())?;
-        write.write(&['=' as u8])?;
-        match &self.value {
-            ir::FixFieldValue::Char(c) => write.write(&[*c as u8])?,
-            ir::FixFieldValue::String(s) => write.write(s.as_bytes())?,
-            ir::FixFieldValue::Int(int) => write.write(int.to_string().as_bytes())?,
-            ir::FixFieldValue::Float(float) => write.write(float.to_string().as_bytes())?,
-            ir::FixFieldValue::Data(raw_data) => write.write(&raw_data)?,
-        };
-        write.write(&[1u8])?;
-        Ok(())
-    }
-}
-
 fn str_to_basetype(s: &str) -> BaseType {
     match s {
         "string" => BaseType::String,
@@ -137,6 +145,7 @@ fn str_to_basetype(s: &str) -> BaseType {
 
 /// A rolling checksum over a byte array. Sums over each byte wrapping around at
 /// 256.
+#[derive(Copy, Clone, Debug)]
 struct Checksum(u8, usize);
 
 impl Checksum {
@@ -145,87 +154,118 @@ impl Checksum {
     }
 
     fn roll(&mut self, window: &[u8]) {
-        self.0 = self.0.wrapping_add(window.iter().sum());
-        self.1 += window.len();
+        for byte in window {
+            self.roll_byte(*byte);
+        }
+    }
+
+    fn roll_byte(&mut self, byte: u8) {
+        self.0 = self.0.wrapping_add(byte);
+        self.1 += 1;
     }
 
     fn window_length(&self) -> usize {
         self.1
     }
-}
 
-impl From<&Checksum> for u8 {
-    fn from(val: &Checksum) -> Self {
-        val.0
+    fn result(self) -> u8 {
+        self.0
     }
 }
 
-fn parse_standard_header(
-    mut source: &mut impl io::BufRead,
-    separator: char,
-) -> Result<(Checksum, ir::Field, ir::Field, ir::Field), <TagValue as Encoding>::DecodeErr> {
-    let field_0 = parse_field(source, separator, &|t| BaseType::String)?;
-    let field_1 = parse_field(source, separator, &|t| BaseType::Int)?;
-    let field_2 = parse_field(source, separator, &|t| BaseType::Int)?;
-    let mut checksum = Checksum::new();
-    checksum.roll(&[field_0.checksum, field_1.checksum, field_2.checksum]);
-    Ok((checksum, field_0, field_1, field_2))
+trait TagLookup {
+    fn lookup(&mut self, tag: u32) -> BaseType;
 }
 
-fn parse_data_field(
-    source: &mut impl io::BufRead,
-    separator: char,
-    length: usize,
-) -> Result<ir::Field, <TagValue as Encoding>::DecodeErr> {
-    let mut buffer = Vec::new();
-    let mut checksum = Checksum::new();
-    source
-        .read_until('=' as u8, &mut buffer)
-        .map_err(|_| Error::Syntax)?;
-    checksum.roll(&buffer[..]);
-    let tag = std::str::from_utf8(&buffer[..])
-        .unwrap()
-        .parse::<i64>()
-        .unwrap();
-    buffer = Vec::with_capacity(length);
-    checksum.roll(&buffer[..]);
-    checksum.roll(&[separator as u8]);
-    source
-        .read_exact(&mut buffer[..])
-        .map_err(|_| Error::Syntax)?;
-    Ok(ir::Field {
-        tag,
-        value: ir::FixFieldValue::Data(buffer),
-        checksum: checksum.0,
-        len: checksum.window_length(),
-    })
+struct StandardTagLookup<'d> {
+    dictionary: &'d Dictionary,
+    data_length: usize,
 }
 
-fn parse_field(
-    source: &mut impl io::BufRead,
-    separator: char,
-    typer: &dyn Fn(i64) -> BaseType,
-) -> Result<ir::Field, <TagValue as Encoding>::DecodeErr> {
-    let mut buffer = Vec::new();
-    let mut checksum = Checksum::new();
-    source
-        .read_until('=' as u8, &mut buffer)
-        .map_err(|_| Error::Syntax)?;
-    checksum.roll(&buffer[..]);
-    let tag = str::from_utf8(&buffer[..])
-        .map_err(|_| Error::Syntax)?
-        .parse::<i64>()
-        .map_err(|_| Error::Syntax)?;
-    let datatype = typer(tag);
-    source.read_until(separator as u8, &mut buffer);
-    checksum.roll(&buffer[..]);
-    let field_value = field_value(datatype, &buffer[..])?;
-    Ok(ir::Field {
-        tag,
-        value: field_value,
-        checksum: checksum.0,
-        len: checksum.window_length(),
-    })
+impl<'d> StandardTagLookup<'d> {
+    fn new(dict: &'d Dictionary) -> Self {
+        StandardTagLookup {
+            dictionary: dict,
+            data_length: 0,
+        }
+    }
+}
+
+impl<'d> TagLookup for StandardTagLookup<'d> {
+    fn lookup(&mut self, tag: u32) -> BaseType {
+        self.dictionary
+            .fields
+            .get(&(tag as usize))
+            .map(|f| str_to_basetype(f.data_type.as_str()))
+            .unwrap_or(BaseType::String)
+    }
+}
+
+pub enum TypeInfo {
+    Int,
+    Float,
+    Char,
+    String,
+    Data(usize),
+}
+
+struct FieldIter<'d, R: io::Read, D: TagLookup> {
+    handle: &'d mut R,
+    separator: u8,
+    checksum: Checksum,
+    designator: D,
+    length: u32,
+    is_last: bool,
+    data_length: u32,
+}
+
+impl<'d, R: io::BufRead, D: TagLookup> Iterator for FieldIter<'d, R, D> {
+    type Item = DecodeResult<ir::Field>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.is_last {
+            return None;
+        }
+        let mut buffer: Vec<u8> = Vec::new();
+        self.handle.read_until(b'=', &mut buffer).unwrap();
+        if let None = buffer.pop() {
+            return None;
+        }
+        //println!("{:?}", std::str::from_utf8(&buffer[..]).unwrap());
+        let tag = std::str::from_utf8(&buffer[..])
+            .unwrap()
+            .parse::<i64>()
+            .unwrap();
+        if tag == 10 {
+            self.is_last = true;
+        }
+        let datatype = self.designator.lookup(tag as u32);
+        if let BaseType::Data = datatype {
+            buffer = vec![0u8; self.data_length as usize];
+            self.handle.read_exact(&mut buffer).unwrap();
+            self.checksum.roll(&buffer[..]);
+            self.checksum.roll_byte(self.separator);
+            self.handle.read_exact(&mut buffer[0..1]).unwrap();
+        } else {
+            buffer = vec![];
+            self.handle.read_until(self.separator, &mut buffer).unwrap();
+            match buffer.last() {
+                Some(b) if *b == self.separator => buffer.pop(),
+                _ => return Some(Err(Error::Eof)),
+            };
+            self.checksum.roll(&buffer[..]);
+        }
+        let field_value = field_value(datatype, &buffer[..]).unwrap();
+        if let ir::FixFieldValue::Int(l) = field_value {
+            self.data_length = l as u32;
+        }
+        Some(Ok(ir::Field {
+            tag,
+            value: field_value,
+            checksum: self.checksum.0,
+            len: self.checksum.window_length(),
+        }))
+    }
 }
 
 fn field_value(datatype: BaseType, buf: &[u8]) -> Result<ir::FixFieldValue, Error> {
@@ -250,15 +290,13 @@ fn field_value(datatype: BaseType, buf: &[u8]) -> Result<ir::FixFieldValue, Erro
     })
 }
 
-fn compute_checksum(buf: &[u8]) -> u8 {
-    buf.iter().sum()
-}
-
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct InvalidChecksum {
     pub expected: u8,
     pub actual: u8,
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum Error {
     FieldWithoutValue(u32),
     RepeatedTag(u32),
@@ -278,14 +316,36 @@ mod test {
     }
 
     #[test]
-    fn test_simple_message() {
-        let msg = "8=FIX.4.2^9=251^35=D^49=AFUNDMGR^56=ABROKERt^15=USD^59=0^10=127";
-        let result = TagValue::new().decode(&mut msg.as_bytes());
+    fn can_parse_simple_message() {
+        let msg = "8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127|";
+        let result = TagValue::new().decode_ws(&mut msg.as_bytes(), '|');
+        assert!(result.is_ok());
     }
 
     #[test]
-    fn test_detect_incorrect_checksum() {
-        let msg = "8=FIX.4.2^9=251^35=D^49=AFUNDMGR^56=ABROKERt^15=USD^59=0^10=126";
-        let result = TagValue::new().decode(&mut msg.as_bytes());
+    fn message_must_end_with_separator() {
+        let msg = "8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127";
+        let result = TagValue::new().decode_ws(&mut msg.as_bytes(), '|');
+        assert_eq!(result, Err(Error::Eof));
+    }
+
+    #[test]
+    fn message_without_checksum() {
+        let msg = "8=FIX.4.4|9=251|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|";
+        let result = TagValue::new().decode_ws(&mut msg.as_bytes(), '|');
+        assert_eq!(result, Err(Error::InvalidStandardTrailer));
+    }
+
+    #[test]
+    fn message_without_standard_header() {
+        let msg = "35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=000|";
+        let result = TagValue::new().decode_ws(&mut msg.as_bytes(), '|');
+        assert_eq!(result, Err(Error::InvalidStandardHeader));
+    }
+
+    #[test]
+    fn detect_incorrect_checksum() {
+        let msg = "8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=126|";
+        let result = TagValue::new().decode_ws(&mut msg.as_bytes(), '|');
     }
 }
