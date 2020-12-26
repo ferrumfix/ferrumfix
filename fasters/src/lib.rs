@@ -6,9 +6,9 @@
 //! respectively.
 
 pub mod presentation;
-pub mod fixp;
 #[deprecated]
 pub mod internals;
 pub mod ir;
+pub mod session;
 pub mod sofh;
 pub mod spec;

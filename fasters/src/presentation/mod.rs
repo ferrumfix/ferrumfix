@@ -1,4 +1,4 @@
-//! Decoders and encoders for several encodings.
+//! Support for FIX-related encoding types (at OSI Layer 6).
 use crate::ir;
 use std::io;
 
