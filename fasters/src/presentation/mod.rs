@@ -1,4 +1,4 @@
-//! Support for FIX-related encoding types (at OSI Layer 6).
+//! Support for FIX-related encoding types (OSI Layer 6).
 use crate::ir;
 use std::io;
 
