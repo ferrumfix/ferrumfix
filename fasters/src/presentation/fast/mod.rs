@@ -1,6 +1,6 @@
 use crate::presentation::Encoding;
 use crate::ir;
-use crate::spec::{BaseType, Dictionary};
+use crate::dictionary::{BaseType, Dictionary};
 use errors::Error;
 use codec::decode_stop_bit_bitvec;
 use codec::Codec;

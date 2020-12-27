@@ -1,6 +1,6 @@
 use crate::ir;
 use crate::presentation::Encoding;
-use crate::spec::{BaseType, Dictionary};
+use crate::dictionary::{BaseType, Dictionary};
 use std::io;
 use std::str;
 
@@ -140,17 +140,6 @@ impl From<io::Error> for Error {
     }
 }
 
-fn str_to_basetype(s: &str) -> BaseType {
-    match s {
-        "string" => BaseType::String,
-        "char" => BaseType::Char,
-        "int" => BaseType::Int,
-        "float" => BaseType::Float,
-        "data" => BaseType::Data,
-        _ => BaseType::Char, // FIXME
-    }
-}
-
 /// A rolling checksum over a byte array. Sums over each byte wrapping around at
 /// 256.
 #[derive(Copy, Clone, Debug)]
@@ -202,9 +191,8 @@ impl<'d> StandardTagLookup<'d> {
 impl<'d> TagLookup for StandardTagLookup<'d> {
     fn lookup(&mut self, tag: u32) -> BaseType {
         self.dictionary
-            .fields
-            .get(&(tag as usize))
-            .map(|f| str_to_basetype(f.data_type.as_str()))
+            .get_field(tag)
+            .map(|f| f.basetype())
             .unwrap_or(BaseType::String)
     }
 }

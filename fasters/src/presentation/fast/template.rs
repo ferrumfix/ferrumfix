@@ -1,6 +1,6 @@
 use super::errors::StaticError;
 use super::field_operators::FieldOperatorInstruction;
-use crate::spec::Dictionary;
+use crate::dictionary::Dictionary;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug)]

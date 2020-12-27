@@ -9,7 +9,7 @@ extern crate proc_macro;
 use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
 
-#[proc_macro_derive(Fix)]
+#[proc_macro_derive(FixMessage)]
 pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let ast = syn::parse(input).unwrap();
     let output = impl_fix(&ast);
@@ -20,25 +20,22 @@ fn impl_fix(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let des = generate_des(&ast.data);
     let gen = quote! {
-        impl Fix for #name {
-            fn des(bytes: &[u8]) -> Result<Self> {
-                #des
-            }
+        impl ::std::convert::TryFrom<::fasters::ir::Message> for #name {
+            type Error = ();
 
-            fn ser(w: impl Write) -> Result<usize> {
-                unimplemented!()
+            fn try_from(msg: ::fasters::ir::Message) -> Result<Self, Self::Error> {
+                todo!();
             }
+        }
 
-            fn des_fixml(bytes: &[u8]) -> Result<Self> {
-                unimplemented!()
-            }
-
-            fn ser_fixml(w: impl Write) -> Result<usize> {
-                unimplemented!()
+        impl ::std::convert::From<#name> for ::fasters::ir::Message {
+            fn from(msg: #name) -> Self {
+                let message = ::fasters::ir::Message::new();
+                message.fields.
             }
         }
     };
-    TokenStream::from(gen)
+    gen
 }
 
 fn generate_des(data: &syn::Data) -> TokenStream {

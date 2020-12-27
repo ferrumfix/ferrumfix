@@ -5,10 +5,13 @@
 //! [`fasters::fix`](fasters::fix) and [`fasters::fast`](fasters::fast) modules,
 //! respectively.
 
+pub mod codegen;
+mod dictionary;
 pub mod presentation;
 #[deprecated]
 pub mod internals;
 pub mod ir;
 pub mod session;
 pub mod sofh;
-pub mod spec;
+
+pub use dictionary::Dictionary;
