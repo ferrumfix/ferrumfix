@@ -12,7 +12,6 @@ Fasters is a suite of tools to work with FIX standards. It is **not**, at the ti
 
 - [About](#about)
 - [Sponsors](#sponsors)
-- [Current state of the project](#current-state-of-the-project)
 - [Contributing](#contributing)
 - [Legal](#legal)
 
@@ -57,10 +56,6 @@ You don't have to understand the whole tech stack to use a single layer; in fact
 ![Bitwyre logo](docs/bitwyre-logo.png)
 
 Please reach out to `Filippo Costa <filippo.costa@protonmail.com>` for business inquiries.
-
-## Current state of the project
-
-Fasters is intended to be an all-in-one solution for everything concerning FIX & FAST data handling. You can use it as a build-time dependency to generate message codecs or run it live for reflection capabilities.
 
 ## Contributing
 
