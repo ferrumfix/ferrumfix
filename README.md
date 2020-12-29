@@ -6,9 +6,7 @@
 [![Open issues](https://img.shields.io/github/issues-raw/neysofu/fasters)](https://img.shields.io/github/issues-raw/neysofu/fasters)
 [![matrix.org](https://img.shields.io/badge/matrix.org-%23fasters-blue)](https://matrix.to/#/#fasters:matrix.org)
 
-Free and open source FIX protocol implementation in Rust.
- Please note that any release prior to `1.0.0` is potentially unstable and not suited for production.
-Fasters is a suite of tools to work with FIX standards. It is **not**, at the time of writing, production ready. I currently can't afford to put in the hours and make it robust and fully standard-compliant. Rigor is nevertheless a core goal of the project and it might serve as a useful foundation for others' work.
+Fasters is free and open source FIX engine implementation in Rust. Please note that it's currently under heavy development and wildly unstable, so all interested parties should refrain from using it in production prior to `1.0.0` release. Performance and full adherence to the FIX protocol are core goals of the project which, if anything, might serve as a useful foundation for others' work.
 
 - [About](#about)
 - [Sponsors](#sponsors)
