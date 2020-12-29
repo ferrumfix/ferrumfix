@@ -1,10 +1,36 @@
+<!-- omit in TOC -->
 # Fasters
 
+[![Crates.io](https://img.shields.io/crates/v/fasters)](https://crates.io/crates/fasters)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat)](https://github.com/clap-rs/clap/blob/master/LICENSE-MIT)
+[![Open issues](https://img.shields.io/github/issues-raw/neysofu/fasters)](https://img.shields.io/github/issues-raw/neysofu/fasters)
+
+Free and open source FIX protocol implementation in Rust.
+ Please note that any release prior to `1.0.0` is potentially unstable and not suited for production.
 Fasters is a suite of tools to work with FIX standards. It is **not**, at the time of writing, production ready. I currently can't afford to put in the hours and make it robust and fully standard-compliant. Rigor is nevertheless a core goal of the project and it might serve as a useful foundation for others' work.
+
+- [About](#about)
+- [Sponsors](#sponsors)
+- [Current state of the project](#current-state-of-the-project)
+- [Contributing](#contributing)
+- [Legal](#legal)
+
+## About
+
+Fasters provides parsing, validation, error recovery, and (de)serialization for the FIX Protocol.
 
 ![FIX Technical Standard stack](docs/FIX-Technical-Standard-Stack.png)
 
-This is the planned feature roadmap:
+The above illustration succintly describes the full scope of FIX and it serves as a reference point for all modern FIX implementations. Fasters aims with total compliance... *eventually*. Engineering efforts are initially focused on core features e.g. tag-value encoding and FIX 4.4.
+
+Fasters enforces strict separation of concerns according to the OSI model, as reasonably allowed by the FIX specification.
+
+- Layer 4 (Transport Layer): `fasters::transport`.
+- Layer 5 (Session Layer): `fastesr::session`.
+- Layer 6 (Presentation Layer): `fasters::presentation`.
+- Layer 7 (Application Layer): `fasters::app`.
+
+You don't have to understand the whole tech stack to use a single layer; in fact, Fasters makes sure that you only ever need to worry about layers above your chosen abstraction level. For most users, that would be Layer 7 (i.e. semantics of FIX messages and business logic). On the other hand, you will need to delve deep into lower layers in case you plan on building a fully-fledged FIX engine.
 
 **Core features:**
 
@@ -23,17 +49,39 @@ This is the planned feature roadmap:
 - [ ] Abstract Syntax Notation (ASN.1).
 - [ ] FIX Adapted for STreaming (FAST).
 
-**Session protocols:**
+## Sponsors
 
-- [ ] FIX4.
-- [ ] FIXT.
-- [ ] FIXP.
-- [ ] SOFH.
-- [ ] FIXS.
+*Fasters is kindly sponsored by **Bitwyre**. Bitwyre is a next gen, HFT-friendly Cryptocurrency Derivatives Exchange.*
 
-As dictated by [SemVer 2.0](https://semver.org/), I will bump the major version to `1` once I've settled on sensible APIs.
+![Bitwyre logo](docs/bitwyre-logo.png)
+
+Please reach out to `Filippo Costa <filippo.costa@protonmail.com>` for business inquiries.
+
+## Current state of the project
 
 Fasters is intended to be an all-in-one solution for everything concerning FIX & FAST data handling. You can use it as a build-time dependency to generate message codecs or run it live for reflection capabilities.
+
+## Contributing
+
+All development happens on GitHub at [`neysofu/fasters`](https://github.com/neysofu/fasters). Contributions both from volunteers and companies are welcome. Depending on the size and scope of your intented contributions, it's likely a good idea to open beforehand a pull request to discuss any details. Please note that our branching strategy is inspired by the (in)famous [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/), which is a good fit for software that requires complex versioning such as FIX implementations. Versioning adheres to [SemVer 2.0](https://semver.org/).
+
+Please reach out to Filippo Costa `filippo.costa@protonmail.com` if you want to provide more structured and long-term contribution efforts.
+
+## Legal
+
+Fasters is available under the terms of the MIT license. See the `LICENSE.txt` file in this repository for more information.
+
+All FIX Protocol-related intellectual property, including but not limited to the original documentation that ships with Fasters, is licensed by FIX Protocol Ltd. under *Creative Commons Attribution - No Derivatives 4.0 International* (CC BY-ND 4.0). By contributing to this project you agree to comply with all license requirements.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Links to third-party documentation and resources.
 
 - [FIXwiki](http://fixwiki.org/fixwiki/FIXwiki)
 - [FIX @ Wikipedia](https://it.wikipedia.org/wiki/Financial_Information_eXchange_Protocol)
@@ -41,9 +89,3 @@ Fasters is intended to be an all-in-one solution for everything concerning FIX &
 - [FIX Protocol, Ltd's official website](https://www.fixtrading.org)
 - [ValidFIX: FIX parser online](http://www.validfix.com/fix-analyzer.html)
 - [OnixS FIX dictionary browser](https://www.onixs.biz/fix-dictionary.html)
-
----
-
-#### License
-
-Licensed under <a href="LICENSE.txt">MIT license</a>.
