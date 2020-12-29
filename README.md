@@ -26,7 +26,7 @@ The above illustration succintly describes the full scope of FIX and it serves a
 Fasters enforces strict separation of concerns according to the OSI model, as reasonably allowed by the FIX specification.
 
 - Layer 4 (Transport Layer): `fasters::transport`.
-- Layer 5 (Session Layer): `fastesr::session`.
+- Layer 5 (Session Layer): `fasters::session`.
 - Layer 6 (Presentation Layer): `fasters::presentation`.
 - Layer 7 (Application Layer): `fasters::app`.
 
