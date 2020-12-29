@@ -4,6 +4,7 @@
 [![Crates.io](https://img.shields.io/crates/v/fasters)](https://crates.io/crates/fasters)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat)](https://github.com/clap-rs/clap/blob/master/LICENSE-MIT)
 [![Open issues](https://img.shields.io/github/issues-raw/neysofu/fasters)](https://img.shields.io/github/issues-raw/neysofu/fasters)
+[![matrix.org](https://img.shields.io/badge/matrix.org-%23fasters-blue)](https://matrix.to/#/#fasters:matrix.org)
 
 Free and open source FIX protocol implementation in Rust.
  Please note that any release prior to `1.0.0` is potentially unstable and not suited for production.
