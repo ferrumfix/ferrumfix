@@ -1,13 +1,13 @@
-use crate::presentation::Encoding;
-use crate::ir;
 use crate::dictionary::{BaseType, Dictionary};
-use errors::Error;
+use crate::ir;
+use crate::presentation::Encoding;
+use bitvec::vec::BitVec;
 use codec::decode_stop_bit_bitvec;
 use codec::Codec;
-use bitvec::vec::BitVec;
-use template::Template;
-use std::io;
+use errors::Error;
 use std::collections::HashMap;
+use std::io;
+use template::Template;
 
 mod codec;
 mod errors;
@@ -59,32 +59,32 @@ impl Encoding for Fast {
                         let mut val = 0i32;
                         val.deserialize(source)?;
                         template::FieldValue::SInt32(val)
-                    },
+                    }
                     template::FieldType::UInt32 => {
                         let mut val = 0u32;
                         val.deserialize(source)?;
                         template::FieldValue::UInt32(val)
-                    },
+                    }
                     template::FieldType::SInt64 => {
                         let mut val = 0i64;
                         val.deserialize(source)?;
                         template::FieldValue::SInt64(val)
-                    },
+                    }
                     template::FieldType::UInt64 => {
                         let mut val = 0u64;
                         val.deserialize(source)?;
                         template::FieldValue::UInt64(val)
-                    },
+                    }
                     template::FieldType::ByteVector => {
                         let mut val: Vec<u8> = Vec::new();
                         val.deserialize(source)?;
                         template::FieldValue::ByteVector(val)
-                    },
+                    }
                     template::FieldType::AsciiString => {
                         let mut val = String::new();
                         val.deserialize(source)?;
                         template::FieldValue::AsciiString(val.into_bytes())
-                    },
+                    }
                     _ => {
                         todo!();
                     }

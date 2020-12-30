@@ -289,7 +289,9 @@ impl<R: io::Read, W: io::Write> Processor<R, W> {
 
     fn send(&mut self, message: ir::Message) -> Result<()> {
         self.next_outbound += 1;
-        self.notify_sender.send(Event::MessageReceived(message)).unwrap();
+        self.notify_sender
+            .send(Event::MessageReceived(message))
+            .unwrap();
         Ok(())
     }
 

@@ -169,10 +169,10 @@ fn serialize_bitvec(bits: &BitSlice<Msb0, u8>, output: &mut impl io::Write) -> i
         }
     }
     if remaineder != 0 {
-        output.write_all(&[ STOP_BYTE | remaineder])?;
+        output.write_all(&[STOP_BYTE | remaineder])?;
     }
     Ok(i)
-} 
+}
 
 pub struct PresenceMap {
     bits: BitVec,

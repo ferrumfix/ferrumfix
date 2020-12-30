@@ -1,6 +1,6 @@
-use crate::Dictionary;
-use crate::dictionary::{Component, Field, MsgContent};
 use crate::dictionary::Datatype;
+use crate::dictionary::{Component, Field, MsgContent};
+use crate::Dictionary;
 use codegen::Scope;
 use inflector::Inflector;
 
@@ -60,23 +60,15 @@ fn optionify_type<S: AsRef<str>>(required: bool, t: S) -> String {
 }
 
 impl Dictionary {
-    fn build_message_struct(
-        &self,
-        msg_type: &str,
-    ) -> codegen::Struct {
+    fn build_message_struct(&self, msg_type: &str) -> codegen::Struct {
         let message = self.get_message_by_msg_type(msg_type).unwrap();
         let msg_contents = self.get_msg_content(message.msg_type()).unwrap();
         let mut structure = codegen::Struct::new(message.name());
-        structure.vis("pub").doc(
-            format!(
-                "# Message information:\n\nMessage type: {}",
-                message.name()
-            )
-            .as_str(),
-        );
+        structure
+            .vis("pub")
+            .doc(format!("# Message information:\n\nMessage type: {}", message.name()).as_str());
         for content in msg_contents.iter() {
-            let (field_name, field_type) =
-                self.translate_msg_content_to_struct_field(content);
+            let (field_name, field_type) = self.translate_msg_content_to_struct_field(content);
             (&mut structure).field(
                 field_name.as_str(),
                 optionify_type(content.reqd == '1', field_type.as_str()),
@@ -85,18 +77,13 @@ impl Dictionary {
         structure
     }
 
-    fn build_component_struct(
-        &self,
-        component: &Component,
-        msg_type: &str,
-    ) -> codegen::Struct {
+    fn build_component_struct(&self, component: &Component, msg_type: &str) -> codegen::Struct {
         println!("FETCHING MSG CONTENTS OF C. WITH ID {}", component.id());
         let msg_contents = self.get_msg_content(msg_type).unwrap();
         let mut structure = codegen::Struct::new(component.name());
         structure.vis("pub");
         for content in msg_contents.iter() {
-            let (field_name, field_type) =
-                self.translate_msg_content_to_struct_field(content);
+            let (field_name, field_type) = self.translate_msg_content_to_struct_field(content);
             (&mut structure).field(
                 field_name.as_str(),
                 optionify_type(content.reqd == '1', field_type.as_str()),
@@ -105,10 +92,7 @@ impl Dictionary {
         structure
     }
 
-    fn translate_msg_content_to_struct_field(
-        &self,
-        content: &MsgContent,
-    ) -> (String, String) {
+    fn translate_msg_content_to_struct_field(&self, content: &MsgContent) -> (String, String) {
         let tag_number_res = content.tag_text.parse::<usize>();
         if let Ok(tag_number) = tag_number_res {
             let field = self.get_field(tag_number as u32).unwrap();

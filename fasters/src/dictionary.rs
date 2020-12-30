@@ -440,7 +440,8 @@ impl FromQuickFixNode for LayoutItem {
                 let items = node
                     .children()
                     .filter(|n| n.is_element())
-                    .map(|child| LayoutItem::from_quickfix_node(dict, child)).collect();
+                    .map(|child| LayoutItem::from_quickfix_node(dict, child))
+                    .collect();
                 LayoutItem::Group(items, required)
             }
             _ => {

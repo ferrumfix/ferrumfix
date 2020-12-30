@@ -7,10 +7,10 @@
 
 pub mod codegen;
 mod dictionary;
-pub mod presentation;
 #[deprecated]
 pub mod internals;
 pub mod ir;
+pub mod presentation;
 pub mod session;
 pub mod sofh;
 

@@ -1,6 +1,6 @@
+use crate::dictionary::{BaseType, Dictionary};
 use crate::ir;
 use crate::presentation::Encoding;
-use crate::dictionary::{BaseType, Dictionary};
 use std::io;
 use std::str;
 
@@ -9,14 +9,14 @@ use std::str;
 const SOH_SEPARATOR: char = 1u8 as char;
 
 /// A (de)serializer for the classic FIX tag-value encoding.
-/// 
+///
 /// The FIX tag-value encoding is designed to be both human-readable and easy for
 /// machines to parse.
 ///
 /// Please reach out to the FIX official documentation[^1][^2] for more information.
-/// 
+///
 /// [^1]: [FIX TagValue Encoding: Online reference.](https://www.fixtrading.org/standards/tagvalue-online)
-/// 
+///
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
 pub struct TagValue {
     dict: Dictionary,
