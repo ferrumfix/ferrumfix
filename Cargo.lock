@@ -86,6 +86,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "boolinator"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfa8873f51c92e232f9bac4065cddef41b714152812bfc5f7672ba16d6ef8cd9"
+
+[[package]]
 name = "cc"
 version = "1.0.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -160,6 +166,7 @@ version = "0.5.0"
 dependencies = [
  "Inflector",
  "bitvec 0.18.4",
+ "boolinator",
  "codegen",
  "fasters_derive",
  "fasters_internals",

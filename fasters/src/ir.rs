@@ -1,5 +1,6 @@
 //! A schema-less, dynamic internal representation for FIX data.
 
+use crate::ir;
 use std::collections::HashMap;
 use std::io;
 
@@ -46,5 +47,9 @@ impl Message {
         Message {
             fields: HashMap::new(),
         }
+    }
+
+    pub fn add_field<K: Into<i64>>(&mut self, tag: K, value: ir::FixFieldValue) {
+        self.fields.insert(tag.into(), value);
     }
 }

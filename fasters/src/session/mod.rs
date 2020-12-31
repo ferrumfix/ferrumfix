@@ -2,3 +2,5 @@
 
 mod classic;
 mod fixp;
+
+pub use classic::{ProcessorBuilder, Processor};
