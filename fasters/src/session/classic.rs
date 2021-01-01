@@ -1,4 +1,4 @@
-use crate::ir;
+use crate::app::slr;
 use boolinator::Boolinator;
 use std::cmp::Ordering;
 use std::ops::Range;
@@ -93,7 +93,7 @@ impl HeartbeatConfig {
 }
 
 pub trait Authenticator {
-    fn auth(&mut self, message: &ir::Message) -> bool;
+    fn auth(&mut self, message: &slr::Message) -> bool;
 }
 
 // TODO:
@@ -116,7 +116,7 @@ struct Configuration {
     heartbeat: HeartbeatConfig,
     heartbeat_relaxed: Duration,
     delivery_threshold: Duration,
-    channel_inbound: Channel<ir::Message>,
+    channel_inbound: Channel<slr::Message>,
     channel_outbound: Channel<Event>,
 }
 
@@ -134,8 +134,8 @@ pub struct Processor {
     expected_seqnum_outbound: u64,
     last_receipt: Instant,
     last_test_id: String,
-    queue_inbound: Vec<ir::Message>,
-    history_outbound: Vec<ir::Message>,
+    queue_inbound: Vec<slr::Message>,
+    history_outbound: Vec<slr::Message>,
 }
 
 enum SequenceResetMode {
@@ -145,7 +145,7 @@ enum SequenceResetMode {
 
 #[derive(Debug)]
 pub enum Event {
-    Message(ir::Message),
+    Message(slr::Message),
     Disconnected,
 }
 
@@ -265,14 +265,14 @@ impl Processor {
         )
     }
 
-    pub fn channel(&self) -> (&Sender<ir::Message>, &Receiver<Event>) {
+    pub fn channel(&self) -> (&Sender<slr::Message>, &Receiver<Event>) {
         (
             &self.config.channel_inbound.sender,
             &self.config.channel_outbound.receiver,
         )
     }
 
-    fn process_incoming_disconnected(&mut self, message: ir::Message) -> Result<()> {
+    fn process_incoming_disconnected(&mut self, message: slr::Message) -> Result<()> {
         let id_is_ok = self.identification_is_ok(&message);
         if !id_is_ok {
             self.config
@@ -285,17 +285,17 @@ impl Processor {
         self.heartbeat(Instant::now())?;
         // TODO: Authenticator check.
         let proposed_heartbeat = message.fields.get(&108).unwrap();
-        if let ir::FixFieldValue::Int(hb) = proposed_heartbeat {
+        if let slr::FixFieldValue::Int(hb) = proposed_heartbeat {
             let heartbeat_result = self
                 .config
                 .heartbeat
                 .validate(&Duration::from_secs(*hb as u64));
             if let Err(err_string) = heartbeat_result {
-                let mut logout = ir::Message::new();
-                logout.add_field(35, ir::FixFieldValue::String("5".to_string()));
+                let mut logout = slr::Message::new();
+                logout.add_field(35, slr::FixFieldValue::String("5".to_string()));
                 logout.add_field(
                     58,
-                    ir::FixFieldValue::String("invalid Heartbeat(108)".to_string()),
+                    slr::FixFieldValue::String("invalid Heartbeat(108)".to_string()),
                 );
                 self.config
                     .channel_outbound
@@ -312,25 +312,25 @@ impl Processor {
         Ok(())
     }
 
-    fn process_incoming_established(&mut self, message: ir::Message) -> Result<()> {
+    fn process_incoming_established(&mut self, message: slr::Message) -> Result<()> {
         // If `MsgSeqNum(34)` is missing, a `Logout(35=5)` message should be
         // sent, terminating the FIX connection with the Text(58) field
         // describing the missing field, as this likely indicates a serious
         // application error that is likely only circumvented by software
         // modification.
-        if let Some(ir::FixFieldValue::Int(seq_number)) = message.fields.get(&34) {
+        if let Some(slr::FixFieldValue::Int(seq_number)) = message.fields.get(&34) {
             match seq_number.cmp(&(self.expected_seqnum_inbound as i64)) {
                 Ordering::Equal => {}
                 Ordering::Less => {
-                    let mut logout = ir::Message::new();
+                    let mut logout = slr::Message::new();
                     // Standard header.
-                    logout.add_field(35, ir::FixFieldValue::String("5".to_string()));
+                    logout.add_field(35, slr::FixFieldValue::String("5".to_string()));
                     // Body.
                     let err = format!(
                         "Expected '{}' MsgSeqNum, received '{}'.",
                         self.expected_seqnum_inbound, seq_number
                     );
-                    logout.add_field(58, ir::FixFieldValue::String(err));
+                    logout.add_field(58, slr::FixFieldValue::String(err));
                     self.send(logout)?;
                 }
                 Ordering::Greater => {
@@ -343,16 +343,16 @@ impl Processor {
                 }
             }
         } else {
-            let mut response = ir::Message::new();
-            response.add_field(35, ir::FixFieldValue::String("2".to_string()));
+            let mut response = slr::Message::new();
+            response.add_field(35, slr::FixFieldValue::String("2".to_string()));
         };
-        if let ir::FixFieldValue::String(msg_type) = message.fields.get(&35).unwrap() {
+        if let slr::FixFieldValue::String(msg_type) = message.fields.get(&35).unwrap() {
             match msg_type.as_str() {
                 // `Heartbeat(35=0)`.
                 "0" => {
                     let test_id = message.fields.get(&112);
                     match test_id {
-                        Some(ir::FixFieldValue::String(s)) => {
+                        Some(slr::FixFieldValue::String(s)) => {
                             self.last_test_id = s.to_string();
                         }
                         Some(_) => (),
@@ -362,41 +362,41 @@ impl Processor {
                 // `Logon(35=A)`.
                 "A" => {
                     let seq_num = match message.fields.get(&34).unwrap() {
-                        ir::FixFieldValue::Int(x) => x,
+                        slr::FixFieldValue::Int(x) => x,
                         _ => Err(Error::Generic)?,
                     };
-                    let mut response = ir::Message::new();
+                    let mut response = slr::Message::new();
                     if *seq_num == self.expected_seqnum_inbound as i64 {
                         response
                             .fields
-                            .insert(35, ir::FixFieldValue::String("A".to_string()));
+                            .insert(35, slr::FixFieldValue::String("A".to_string()));
                         self.send(response)?;
                     } else if *seq_num > self.expected_seqnum_inbound as i64 {
                         response
                             .fields
-                            .insert(35, ir::FixFieldValue::String("2".to_string()));
+                            .insert(35, slr::FixFieldValue::String("2".to_string()));
                         self.send(response)?;
                     } else {
                         response
                             .fields
-                            .insert(35, ir::FixFieldValue::String("5".to_string()));
+                            .insert(35, slr::FixFieldValue::String("5".to_string()));
                         self.send(response)?;
                         return Err(Error::Disconnect);
                     }
                 }
                 // `TestRequest(35=1)`.
                 "1" => {
-                    let mut response = ir::Message::new();
+                    let mut response = slr::Message::new();
                     let id = message.fields.get(&112).unwrap();
                     response
                         .fields
-                        .insert(35, ir::FixFieldValue::String("0".to_string()));
+                        .insert(35, slr::FixFieldValue::String("0".to_string()));
                     response.add_field(112, id.clone());
                     self.send(response)?;
                 }
                 // `ResendRequest(35=2)`.
                 "2" => {
-                    let mut response = ir::Message::new();
+                    let mut response = slr::Message::new();
                     let seq_from = message.fields.get(&7).unwrap();
                     let seq_to = message.fields.get(&16).unwrap();
                     let range = seq_from..=seq_to;
@@ -404,10 +404,10 @@ impl Processor {
                 }
                 // `Reject(35=3)`.
                 "3" => {
-                    let mut response = ir::Message::new();
+                    let mut response = slr::Message::new();
                     response.add_field(
                         45,
-                        ir::FixFieldValue::Int(self.expected_seqnum_inbound as i64),
+                        slr::FixFieldValue::Int(self.expected_seqnum_inbound as i64),
                     );
                     self.send(response)?;
                 }
@@ -422,20 +422,20 @@ impl Processor {
         Ok(())
     }
 
-    fn process_incoming(&mut self, message: ir::Message) -> Result<()> {
+    fn process_incoming(&mut self, message: slr::Message) -> Result<()> {
         match self.state {
             State::Disconnected => self.process_incoming_disconnected(message),
             State::Established => self.process_incoming_established(message),
         }
     }
 
-    fn send(&mut self, mut message: ir::Message) -> Result<()> {
+    fn send(&mut self, mut message: slr::Message) -> Result<()> {
         self.expected_seqnum_outbound += 1;
-        message.add_field(49, ir::FixFieldValue::String(self.config.sender.clone()));
-        message.add_field(56, ir::FixFieldValue::String(self.config.target.clone()));
+        message.add_field(49, slr::FixFieldValue::String(self.config.sender.clone()));
+        message.add_field(56, slr::FixFieldValue::String(self.config.target.clone()));
         message.add_field(
             34,
-            ir::FixFieldValue::Int(self.expected_seqnum_outbound as i64),
+            slr::FixFieldValue::Int(self.expected_seqnum_outbound as i64),
         );
         self.config
             .channel_outbound
@@ -449,27 +449,27 @@ impl Processor {
         todo!()
     }
 
-    fn reject_message(&mut self, msg: ir::Message) {
+    fn reject_message(&mut self, msg: slr::Message) {
         self.expected_seqnum_inbound += 1;
     }
 
     fn request_resend(&mut self, range: SeqNumRange) {
-        let mut message = ir::Message::new();
-        message.add_field(35, ir::FixFieldValue::String("2".to_string()));
-        message.add_field(7, ir::FixFieldValue::Int(range.start as i64));
-        message.add_field(16, ir::FixFieldValue::Int(range.end.unwrap_or(0) as i64));
+        let mut message = slr::Message::new();
+        message.add_field(35, slr::FixFieldValue::String("2".to_string()));
+        message.add_field(7, slr::FixFieldValue::Int(range.start as i64));
+        message.add_field(16, slr::FixFieldValue::Int(range.end.unwrap_or(0) as i64));
     }
 
-    fn identification_is_ok(&self, msg: &ir::Message) -> bool {
+    fn identification_is_ok(&self, msg: &slr::Message) -> bool {
         let begin_string = msg.fields.get(&35);
         let sender_comp_id = msg.fields.get(&49);
         let target_comp_id = msg.fields.get(&56);
         match begin_string {
-            Some(ir::FixFieldValue::String(x)) => (),
+            Some(slr::FixFieldValue::String(x)) => (),
             _ => return false,
         };
         match sender_comp_id {
-            Some(ir::FixFieldValue::String(sender)) => {
+            Some(slr::FixFieldValue::String(sender)) => {
                 if *sender == self.config.sender {
                     return false;
                 }
@@ -477,7 +477,7 @@ impl Processor {
             _ => return false,
         };
         match target_comp_id {
-            Some(ir::FixFieldValue::String(target)) => {
+            Some(slr::FixFieldValue::String(target)) => {
                 if *target == self.config.target {
                     return false;
                 }
@@ -487,7 +487,7 @@ impl Processor {
         true
     }
 
-    fn sending_time_within_threshold(&self, msg: &ir::Message) -> bool {
+    fn sending_time_within_threshold(&self, msg: &slr::Message) -> bool {
         true
     }
 }
@@ -509,21 +509,21 @@ mod test {
         builder.build()
     }
 
-    fn msg_add_identifier(msg: &mut ir::Message) {
-        msg.add_field(8, ir::FixFieldValue::String("FIX.4.4".to_string()));
-        msg.add_field(9, ir::FixFieldValue::Int(421337));
-        msg.add_field(49, ir::FixFieldValue::String("BROKER".to_string()));
-        msg.add_field(56, ir::FixFieldValue::String("FUND-MANAGER".to_string()));
+    fn msg_add_identifier(msg: &mut slr::Message) {
+        msg.add_field(8, slr::FixFieldValue::String("FIX.4.4".to_string()));
+        msg.add_field(9, slr::FixFieldValue::Int(421337));
+        msg.add_field(49, slr::FixFieldValue::String("BROKER".to_string()));
+        msg.add_field(56, slr::FixFieldValue::String("FUND-MANAGER".to_string()));
     }
 
     #[test]
     fn testcase_1b_b() {
-        let mut msg = ir::Message::new();
+        let mut msg = slr::Message::new();
         msg_add_identifier(&mut msg);
-        msg.add_field(35, ir::FixFieldValue::String("A".to_string()));
-        msg.add_field(108, ir::FixFieldValue::Int(30));
-        msg.add_field(34, ir::FixFieldValue::Int(1));
-        msg.add_field(52, ir::FixFieldValue::Int(980846));
+        msg.add_field(35, slr::FixFieldValue::String("A".to_string()));
+        msg.add_field(108, slr::FixFieldValue::Int(30));
+        msg.add_field(34, slr::FixFieldValue::Int(1));
+        msg.add_field(52, slr::FixFieldValue::Int(980846));
         let input_buffer = vec![];
         let mut processor = processor(&input_buffer[..]);
         processor.process_incoming(msg).unwrap();
@@ -533,7 +533,7 @@ mod test {
             Event::Message(response) => {
                 assert_eq!(
                     *response.fields.get(&35).unwrap(),
-                    ir::FixFieldValue::String("3".to_string())
+                    slr::FixFieldValue::String("3".to_string())
                 );
                 assert!(response.fields.get(&112).is_none());
             }
@@ -544,7 +544,7 @@ mod test {
             Event::Message(response) => {
                 assert_eq!(
                     *response.fields.get(&35).unwrap(),
-                    ir::FixFieldValue::String("5".to_string())
+                    slr::FixFieldValue::String("5".to_string())
                 );
             }
             Event::Disconnected => panic!(),
@@ -553,12 +553,12 @@ mod test {
 
     #[test]
     fn testcase_1b_c() {
-        let mut msg = ir::Message::new();
+        let mut msg = slr::Message::new();
         msg_add_identifier(&mut msg);
-        msg.add_field(35, ir::FixFieldValue::String("A".to_string()));
-        msg.add_field(108, ir::FixFieldValue::Int(30));
-        msg.add_field(34, ir::FixFieldValue::Int(42));
-        msg.add_field(52, ir::FixFieldValue::Int(980846));
+        msg.add_field(35, slr::FixFieldValue::String("A".to_string()));
+        msg.add_field(108, slr::FixFieldValue::Int(30));
+        msg.add_field(34, slr::FixFieldValue::Int(42));
+        msg.add_field(52, slr::FixFieldValue::Int(980846));
         let input_buffer = vec![];
         let mut processor = processor(&input_buffer[..]);
         processor.process_incoming(msg).unwrap();
@@ -568,7 +568,7 @@ mod test {
             Event::Message(response) => {
                 assert_eq!(
                     *response.fields.get(&35).unwrap(),
-                    ir::FixFieldValue::String("2".to_string())
+                    slr::FixFieldValue::String("2".to_string())
                 );
             }
             Event::Disconnected => panic!(),
@@ -577,10 +577,10 @@ mod test {
 
     #[test]
     fn testcase_1b_e() {
-        let mut msg = ir::Message::new();
+        let mut msg = slr::Message::new();
         msg_add_identifier(&mut msg);
-        msg.add_field(35, ir::FixFieldValue::String("G".to_string()));
-        msg.add_field(108, ir::FixFieldValue::Int(30));
+        msg.add_field(35, slr::FixFieldValue::String("G".to_string()));
+        msg.add_field(108, slr::FixFieldValue::Int(30));
         let input_buffer = vec![];
         let mut processor = processor(&input_buffer[..]);
         processor.process_incoming(msg).unwrap();
@@ -590,7 +590,7 @@ mod test {
             Event::Message(response) => {
                 assert_eq!(
                     *response.fields.get(&35).unwrap(),
-                    ir::FixFieldValue::String("2".to_string())
+                    slr::FixFieldValue::String("2".to_string())
                 );
             }
             Event::Disconnected => panic!(),
@@ -599,10 +599,10 @@ mod test {
 
     #[test]
     fn testcase_1s_a() {
-        let mut msg = ir::Message::new();
+        let mut msg = slr::Message::new();
         msg_add_identifier(&mut msg);
-        msg.add_field(35, ir::FixFieldValue::String("G".to_string()));
-        msg.add_field(108, ir::FixFieldValue::Int(30));
+        msg.add_field(35, slr::FixFieldValue::String("G".to_string()));
+        msg.add_field(108, slr::FixFieldValue::Int(30));
         let input_buffer = vec![];
         let mut processor = processor(&input_buffer[..]);
         processor.process_incoming(msg).unwrap();
@@ -612,7 +612,7 @@ mod test {
             Event::Message(response) => {
                 assert_eq!(
                     *response.fields.get(&35).unwrap(),
-                    ir::FixFieldValue::String("2".to_string())
+                    slr::FixFieldValue::String("2".to_string())
                 );
             }
             Event::Disconnected => panic!(),
@@ -621,10 +621,10 @@ mod test {
 
     #[test]
     fn testcase_2s_a() {
-        let mut msg = ir::Message::new();
+        let mut msg = slr::Message::new();
         msg_add_identifier(&mut msg);
-        msg.add_field(35, ir::FixFieldValue::String("G".to_string()));
-        msg.add_field(108, ir::FixFieldValue::Int(30));
+        msg.add_field(35, slr::FixFieldValue::String("G".to_string()));
+        msg.add_field(108, slr::FixFieldValue::Int(30));
         let input_buffer = vec![];
         let mut processor = processor(&input_buffer[..]);
         processor.process_incoming(msg).unwrap();
@@ -634,7 +634,7 @@ mod test {
             Event::Message(response) => {
                 assert_eq!(
                     *response.fields.get(&35).unwrap(),
-                    ir::FixFieldValue::String("2".to_string())
+                    slr::FixFieldValue::String("2".to_string())
                 );
             }
             Event::Disconnected => panic!(),

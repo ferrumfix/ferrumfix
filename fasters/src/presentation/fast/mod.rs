@@ -1,5 +1,5 @@
-use crate::dictionary::{BaseType, Dictionary};
-use crate::ir;
+use crate::app::dictionary::{BaseType, Dictionary};
+use crate::app::slr;
 use crate::presentation::Encoding;
 use bitvec::vec::BitVec;
 use codec::decode_stop_bit_bitvec;
@@ -41,10 +41,10 @@ impl Encoding for Fast {
     type EncodeErr = Error;
     type DecodeErr = Error;
 
-    fn decode(&self, source: &mut impl io::BufRead) -> DecodeResult<ir::Message> {
+    fn decode(&self, source: &mut impl io::BufRead) -> DecodeResult<slr::Message> {
         let presence_map = decode_stop_bit_bitvec(source).unwrap();
         let mut presence_by_field: BitVec = BitVec::new();
-        let mut message = ir::Message::new();
+        let mut message = slr::Message::new();
         for field in &self.templates.get(&1).unwrap().elements {
             if let template::ElementContent::Field(f) = &field.content {
                 presence_by_field.push(f.presence);
@@ -97,7 +97,7 @@ impl Encoding for Fast {
         Ok(message)
     }
 
-    fn encode(&self, message: ir::Message) -> EncodeResult<Vec<u8>> {
+    fn encode(&self, message: slr::Message) -> EncodeResult<Vec<u8>> {
         let mut presence_by_field: BitVec = BitVec::new();
         let mut buffer = Vec::new();
         Ok(buffer)

@@ -1,6 +1,4 @@
-use crate::dictionary::Datatype;
-use crate::dictionary::{Component, Field, MsgContent};
-use crate::Dictionary;
+use crate::app::dictionary::{Component, Field, MsgContent, Datatype, Dictionary};
 use codegen::Scope;
 use inflector::Inflector;
 

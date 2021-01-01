@@ -1,10 +1,11 @@
 //! Support for FIX-related encoding types (OSI Layer 6).
-use crate::ir;
+use crate::app::slr;
 use std::io;
 use std::error::Error;
 
 mod fast;
 mod tagvalue;
+pub mod sofh;
 
 pub use fast::Fast;
 pub use tagvalue::TagValue;
@@ -14,6 +15,6 @@ pub trait Encoding {
     type DecodeErr: Error;
     type EncodeErr: Error;
 
-    fn decode(&self, source: &mut impl io::BufRead) -> Result<ir::Message, Self::DecodeErr>;
-    fn encode(&self, message: ir::Message) -> Result<Vec<u8>, Self::EncodeErr>;
+    fn decode(&self, source: &mut impl io::BufRead) -> Result<slr::Message, Self::DecodeErr>;
+    fn encode(&self, message: slr::Message) -> Result<Vec<u8>, Self::EncodeErr>;
 }

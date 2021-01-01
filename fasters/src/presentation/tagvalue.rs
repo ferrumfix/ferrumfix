@@ -1,5 +1,5 @@
-use crate::dictionary::{BaseType, Dictionary};
-use crate::ir;
+use crate::app::dictionary::{BaseType, Dictionary};
+use crate::app::slr;
 use crate::presentation::Encoding;
 use std::io;
 use std::str;
@@ -35,10 +35,10 @@ impl TagValue {
     //fn decode_checksum(
     //    &self,
     //    source: &mut impl io::BufRead,
-    //    message: &mut ir::Message,
+    //    message: &mut slr::Message,
     //) -> DecodeResult<u8> {
     //    let field = parse_field(source, self.separator, &|_: i64| BaseType::Int)?;
-    //    if let ir::FixFieldValue::Int(checksum) = field.value {
+    //    if let slr::FixFieldValue::Int(checksum) = field.value {
     //        message.fields.insert(field.tag, field.value);
     //        Ok(checksum as u8)
     //    } else {
@@ -50,7 +50,7 @@ impl TagValue {
         &self,
         source: &mut impl io::BufRead,
         separator: char,
-    ) -> Result<ir::Message, <TagValue as Encoding>::DecodeErr> {
+    ) -> Result<slr::Message, <TagValue as Encoding>::DecodeErr> {
         let tag_lookup = StandardTagLookup::new(&self.dict);
         let mut checksum = Checksum::new();
         let mut field_iter = FieldIter {
@@ -62,7 +62,7 @@ impl TagValue {
             is_last: false,
             data_length: 0,
         };
-        let mut message = ir::Message::new();
+        let mut message = slr::Message::new();
         {
             // `BeginString(8)`.
             let f = field_iter.next().ok_or(Error::Eof)??;
@@ -116,14 +116,14 @@ impl Encoding for TagValue {
     type EncodeErr = Error;
     type DecodeErr = Error;
 
-    fn decode(&self, source: &mut impl io::BufRead) -> Result<ir::Message, Self::DecodeErr> {
+    fn decode(&self, source: &mut impl io::BufRead) -> Result<slr::Message, Self::DecodeErr> {
         self.decode_ws(source, SOH_SEPARATOR)
     }
 
-    fn encode(&self, message: ir::Message) -> Result<Vec<u8>, Self::EncodeErr> {
+    fn encode(&self, message: slr::Message) -> Result<Vec<u8>, Self::EncodeErr> {
         let mut target = Vec::new();
         for (tag, value) in message.fields {
-            let field = ir::Field {
+            let field = slr::Field {
                 tag,
                 value,
                 checksum: 0,
@@ -217,7 +217,7 @@ struct FieldIter<'d, R: io::Read, D: TagLookup> {
 }
 
 impl<'d, R: io::BufRead, D: TagLookup> Iterator for FieldIter<'d, R, D> {
-    type Item = DecodeResult<ir::Field>;
+    type Item = DecodeResult<slr::Field>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.is_last {
@@ -253,10 +253,10 @@ impl<'d, R: io::BufRead, D: TagLookup> Iterator for FieldIter<'d, R, D> {
             self.checksum.roll(&buffer[..]);
         }
         let field_value = field_value(datatype, &buffer[..]).unwrap();
-        if let ir::FixFieldValue::Int(l) = field_value {
+        if let slr::FixFieldValue::Int(l) = field_value {
             self.data_length = l as u32;
         }
-        Some(Ok(ir::Field {
+        Some(Ok(slr::Field {
             tag,
             value: field_value,
             checksum: self.checksum.0,
@@ -265,20 +265,20 @@ impl<'d, R: io::BufRead, D: TagLookup> Iterator for FieldIter<'d, R, D> {
     }
 }
 
-fn field_value(datatype: BaseType, buf: &[u8]) -> Result<ir::FixFieldValue, Error> {
+fn field_value(datatype: BaseType, buf: &[u8]) -> Result<slr::FixFieldValue, Error> {
     Ok(match datatype {
-        BaseType::Char => ir::FixFieldValue::Char(buf[0] as char),
+        BaseType::Char => slr::FixFieldValue::Char(buf[0] as char),
         BaseType::String => {
-            ir::FixFieldValue::String(str::from_utf8(buf).map_err(|_| Error::Syntax)?.to_string())
+            slr::FixFieldValue::String(str::from_utf8(buf).map_err(|_| Error::Syntax)?.to_string())
         }
-        BaseType::Data => ir::FixFieldValue::Data(buf.to_vec()),
-        BaseType::Float => ir::FixFieldValue::Float(
+        BaseType::Data => slr::FixFieldValue::Data(buf.to_vec()),
+        BaseType::Float => slr::FixFieldValue::Float(
             str::from_utf8(buf)
                 .map_err(|_| Error::Syntax)?
                 .parse::<f64>()
                 .map_err(|_| Error::Syntax)?,
         ),
-        BaseType::Int => ir::FixFieldValue::Int(
+        BaseType::Int => slr::FixFieldValue::Int(
             str::from_utf8(buf)
                 .map_err(|_| Error::Syntax)?
                 .parse::<i64>()

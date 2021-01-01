@@ -5,18 +5,16 @@
 //! [`fasters::fix`](fasters::fix) and [`fasters::fast`](fasters::fast) modules,
 //! respectively.
 
+pub mod app;
 pub mod codegen;
-mod dictionary;
 pub mod engines;
 #[deprecated]
 pub mod internals;
-pub mod ir;
 pub mod presentation;
 pub mod session;
-pub mod sofh;
 pub mod transport;
 
-pub use dictionary::Dictionary;
+pub use app::dictionary::Dictionary;
 
 #[cfg(expose_openssl)]
 pub extern crate openssl;

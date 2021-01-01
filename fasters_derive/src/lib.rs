@@ -20,17 +20,17 @@ fn impl_fix(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let des = generate_des(&ast.data);
     let gen = quote! {
-        impl ::std::convert::TryFrom<::fasters::ir::Message> for #name {
+        impl ::std::convert::TryFrom<::fasters::slr::Message> for #name {
             type Error = ();
 
-            fn try_from(msg: ::fasters::ir::Message) -> Result<Self, Self::Error> {
+            fn try_from(msg: ::fasters::slr::Message) -> Result<Self, Self::Error> {
                 todo!();
             }
         }
 
-        impl ::std::convert::From<#name> for ::fasters::ir::Message {
+        impl ::std::convert::From<#name> for ::fasters::slr::Message {
             fn from(msg: #name) -> Self {
-                let message = ::fasters::ir::Message::new();
+                let message = ::fasters::slr::Message::new();
                 message.fields.
             }
         }
