@@ -7,11 +7,19 @@
 
 pub mod codegen;
 mod dictionary;
+pub mod engines;
 #[deprecated]
 pub mod internals;
 pub mod ir;
 pub mod presentation;
 pub mod session;
 pub mod sofh;
+pub mod transport;
 
 pub use dictionary::Dictionary;
+
+#[cfg(expose_openssl)]
+pub extern crate openssl;
+
+#[cfg(not(expose_openssl))]
+pub(crate) extern crate openssl;

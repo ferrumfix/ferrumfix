@@ -16,9 +16,11 @@ license = "MIT"
 name = "fasters"
 
 [features]
-repo_v50sp2ep254 = [ ]
-repo_v2010 = [ ]
-default = [ "repo_v2010", "repo_v50sp2ep254" ]
+default = ["repo_v2010", "repo_v50sp2ep254", "expose_openssl", "expose_tokio"]
+repo_v50sp2ep254 = []
+repo_v2010 = []
+expose_openssl = []
+expose_tokio = []
 
 [dependencies]
 bitvec = "0.18.3"
@@ -26,17 +28,18 @@ boolinator = "2.4.0"
 codegen = "0.1.3"
 futures = "0.3.8"
 Inflector = "0.11.4"
+openssl = "0.10.32"
 roxmltree = "0.13.0"
 rust-embed = "5.7"
-tokio = { version = "1", features = ["time"] }
-uuid = "0.8"
+tokio = { version = "1", features = ["full"] }
+uuid = { version = "0.8.1", features = ["v4"] }
 fasters_derive = { path = "../fasters_derive" }
+fasters_internals = { path = "../fasters_internals" }
+
+[build-dependencies]
 fasters_internals = { path = "../fasters_internals" }
 
 [dev-dependencies]
 quickcheck = "0.8"
 quickcheck_macros = "0.8"
 syn = "1"
-
-[build-dependencies]
-fasters_internals = { path = "../fasters_internals" }

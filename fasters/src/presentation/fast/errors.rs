@@ -1,4 +1,5 @@
 use std::io;
+use std::fmt;
 
 #[derive(Debug)]
 pub enum StaticError {
@@ -21,6 +22,7 @@ pub enum StaticError {
     S5,
 }
 
+#[derive(Debug)]
 pub enum DynamicError {
     /// It is a dynamic error if type of a field in a template cannot be
     /// converted to or from the type of the corresponding application field.
@@ -62,6 +64,7 @@ pub enum DynamicError {
     D12,
 }
 
+#[derive(Debug)]
 pub enum ReportableError {
     /// It is a reportable error if a decimal cannot be represented by an
     /// exponent in the range [-63 … 63] or if the mantissa does not fit in an
@@ -91,6 +94,7 @@ pub enum ReportableError {
     R9,
 }
 
+#[derive(Debug)]
 pub enum Error {
     Static(StaticError),
     Dynamic(DynamicError),
@@ -100,5 +104,17 @@ pub enum Error {
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Self {
         Error::Dynamic(DynamicError::D1)
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "SuperError is here!")
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        None
     }
 }
