@@ -3,6 +3,7 @@ use crate::presentation::Encoding;
 use crate::dictionary::{BaseType, Dictionary};
 use std::io;
 use std::str;
+use std::fmt;
 
 /// "Start of heading" (SOH) control character (ASCII `0x1`). Each tag-value pair
 /// MUST be followed by this control character.
@@ -301,6 +302,18 @@ pub enum Error {
     InvalidStandardTrailer,
     InvalidChecksum(InvalidChecksum),
     Syntax,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "SuperError is here!")
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        None
+    }
 }
 
 #[cfg(test)]
