@@ -1,4 +1,5 @@
 use rust_embed::RustEmbed;
+use std::fmt;
 
 pub mod dictionary;
 pub mod slr;
@@ -46,6 +47,23 @@ impl Version {
             Version::Fixt11,
         ]
         .into_iter()
+    }
+}
+
+impl fmt::Display for Version {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let as_str = match self {
+            Version::Fix40 => "FIX-4.0",
+            Version::Fix41 => "FIX-4.1",
+            Version::Fix42 => "FIX-4.2",
+            Version::Fix43 => "FIX-4.3",
+            Version::Fix44 => "FIX-4.4",
+            Version::Fix50 => "FIX-5.0",
+            Version::Fix50SP1 => "FIX-5.0-SP1",
+            Version::Fix50SP2 => "FIX-5.0-SP2",
+            Version::Fixt11 => "FIXT-1.1",
+        };
+        write!(f, "{}", as_str)
     }
 }
 
