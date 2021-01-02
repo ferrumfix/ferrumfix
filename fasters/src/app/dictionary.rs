@@ -2,6 +2,7 @@
 
 use crate::app::Version;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::rc::Rc;
 
 /// Provides access to embedded primary keys.
@@ -123,27 +124,20 @@ impl Dictionary {
     pub fn from_quickfix_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
         let xml_document = roxmltree::Document::parse(input.as_ref()).unwrap();
         let mut dictionary = Dictionary::empty();
-        let root = xml_document.root();
-        let node_header = root
-            .descendants()
-            .find(|n| n.has_tag_name("header"))
-            .unwrap();
-        let node_trailer = root
-            .descendants()
-            .find(|n| n.has_tag_name("trailer"))
-            .unwrap();
-        let node_messages = root
-            .descendants()
-            .find(|n| n.has_tag_name("messages"))
-            .unwrap();
-        let node_components = root
-            .descendants()
-            .find(|n| n.has_tag_name("components"))
-            .unwrap();
-        let node_fields = root
-            .descendants()
-            .find(|n| n.has_tag_name("fields"))
-            .unwrap();
+        let root = xml_document.root_element();
+        let find_tagged_child = |tag: &str| {
+            root.children()
+                .find(|n| n.has_tag_name(tag))
+                .ok_or_else(|| {
+                    ParseDictionaryError::InvalidData(format!("<{}> tag not found", tag))
+                })
+        };
+        // TODO: header and trailer.
+        let _node_header = find_tagged_child("header")?;
+        let _node_trailer = find_tagged_child("trailer")?;
+        let node_messages = find_tagged_child("messages")?;
+        let node_components = find_tagged_child("components")?;
+        let node_fields = find_tagged_child("fields")?;
         let mut fields_by_name = HashMap::new();
         for node in node_fields.children() {
             if node.is_element() {
@@ -162,14 +156,7 @@ impl Dictionary {
                 dictionary.categories.push(Rc::new(category));
             }
         }
-        for node in node_components.children() {
-            if node.is_element() {
-                let component = Component::from_quickfix_node(&mut dictionary, node);
-                dictionary
-                    .components
-                    .insert(component.name.clone(), Rc::new(component));
-            }
-        }
+        store_components_into_dict(&mut dictionary, node_components);
         for node in node_messages.children() {
             if node.is_element() {
                 let message = Message::from_quickfix_node(&mut dictionary, node);
@@ -256,6 +243,32 @@ impl Component {
 
     pub fn name(&self) -> &str {
         self.name.as_str()
+    }
+}
+
+fn store_components_into_dict(dict: &mut Dictionary, node: roxmltree::Node<'_, '_>) {
+    // The following is a simple algorithm to solve dependency graphs inside
+    // QuickFix specification files.
+    let mut nodes: HashMap<&str, _> = node
+        .children()
+        .filter(|n| n.is_element())
+        .map(|n| (n.attribute("name").unwrap(), n))
+        .collect();
+    while !nodes.is_empty() {
+        let (reachable, nested) = nodes.into_iter().partition(|(_, node)| {
+            node.descendants()
+                .filter(|child| child.id() != node.id() && child.has_tag_name("component"))
+                .all(|child| {
+                    dict.components
+                        .contains_key(child.attribute("name").unwrap())
+                })
+        });
+        nodes = nested;
+        for node in &reachable {
+            let component = Component::from_quickfix_node(dict, *node.1);
+            dict.components
+                .insert(node.0.to_string(), Rc::new(component));
+        }
     }
 }
 
@@ -575,5 +588,13 @@ mod test {
                 false
             }
         }));
+    }
+
+    #[test]
+    fn dictionary_from_quickfix_spec_is_ok() {
+        for version in Version::all() {
+            println!("{}", version);
+            Dictionary::from_version(version);
+        }
     }
 }
