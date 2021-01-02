@@ -1,9 +1,9 @@
 use crate::app::dictionary::{BaseType, Dictionary};
 use crate::app::slr;
 use crate::presentation::Encoding;
+use std::fmt;
 use std::io;
 use std::str;
-use std::fmt;
 
 /// "Start of heading" (SOH) control character (ASCII `0x1`). Each tag-value pair
 /// MUST be followed by this control character.
@@ -32,6 +32,10 @@ impl TagValue {
         Self::default()
     }
 
+    pub fn with_dict(dict: Dictionary) -> Self {
+        TagValue { dict }
+    }
+
     //fn decode_checksum(
     //    &self,
     //    source: &mut impl io::BufRead,
@@ -46,7 +50,7 @@ impl TagValue {
     //    }
     //}
 
-    fn decode_ws(
+    pub fn decode_ws(
         &self,
         source: &mut impl io::BufRead,
         separator: char,

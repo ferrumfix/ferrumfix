@@ -1,5 +1,6 @@
 //! Access to FIX Dictionary reference and message specifications.
 
+use crate::app::Version;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -59,6 +60,10 @@ impl Dictionary {
         }
     }
 
+    pub fn from_version(version: Version) -> Self {
+        Dictionary::from_quickfix_spec(version.get_quickfix_spec()).unwrap()
+    }
+
     /// Create a new empty FIX Dictionary with `FIX.???` as its version string.
     pub fn empty() -> Self {
         Self::new("FIX.???")
@@ -115,8 +120,8 @@ impl Dictionary {
         self.fields.get(&key).map(|rc| &**rc)
     }
 
-    pub fn from_quickfix_spec(input: &str) -> Result<Self, ParseDictionaryError> {
-        let xml_document = roxmltree::Document::parse(input).unwrap();
+    pub fn from_quickfix_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
+        let xml_document = roxmltree::Document::parse(input.as_ref()).unwrap();
         let mut dictionary = Dictionary::empty();
         let root = xml_document.root();
         let node_header = root
@@ -555,17 +560,11 @@ pub struct Value {
 #[cfg(test)]
 mod test {
     use super::*;
-    use rust_embed::RustEmbed;
-
-    #[derive(RustEmbed)]
-    #[folder = "resources/quickfix/"]
-    struct QuickFixDicts;
+    use crate::app::Version;
 
     #[test]
     pub fn fixt11_quickfix_is_ok() {
-        let xml_spec = QuickFixDicts::get("FIXT-1.1.xml").unwrap();
-        let dict = Dictionary::from_quickfix_spec(std::str::from_utf8(xml_spec.as_ref()).unwrap())
-            .unwrap();
+        let dict = Dictionary::from_version(Version::Fixt11);
         let msg_heartbeat = dict.get_message_by_name("Heartbeat").unwrap();
         assert_eq!(msg_heartbeat.msg_type(), "0");
         assert_eq!(msg_heartbeat.name(), "Heartbeat".to_string());
