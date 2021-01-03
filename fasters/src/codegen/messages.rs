@@ -1,4 +1,4 @@
-use crate::app::dictionary::{Component, Field, MsgContent, Datatype, Dictionary};
+use crate::app::dictionary::{Component, Field, LayoutItem, Datatype, Dictionary};
 use codegen::Scope;
 use inflector::Inflector;
 
@@ -60,16 +60,16 @@ fn optionify_type<S: AsRef<str>>(required: bool, t: S) -> String {
 impl Dictionary {
     fn build_message_struct(&self, msg_type: &str) -> codegen::Struct {
         let message = self.get_message_by_msg_type(msg_type).unwrap();
-        let msg_contents = self.get_msg_content(message.msg_type()).unwrap();
+        let msg_contents = self.get_message_by_msg_type(message.msg_type()).unwrap();
         let mut structure = codegen::Struct::new(message.name());
         structure
             .vis("pub")
             .doc(format!("# Message information:\n\nMessage type: {}", message.name()).as_str());
-        for content in msg_contents.iter() {
-            let (field_name, field_type) = self.translate_msg_content_to_struct_field(content);
+        for content in msg_contents.layout() {
+            let (field_name, field_type) = self.translate_msg_content_to_struct_field(&content);
             (&mut structure).field(
                 field_name.as_str(),
-                optionify_type(content.reqd == '1', field_type.as_str()),
+                optionify_type(content.required(), field_type.as_str()),
             );
         }
         structure
@@ -77,33 +77,34 @@ impl Dictionary {
 
     fn build_component_struct(&self, component: &Component, msg_type: &str) -> codegen::Struct {
         println!("FETCHING MSG CONTENTS OF C. WITH ID {}", component.id());
-        let msg_contents = self.get_msg_content(msg_type).unwrap();
+        let msg_contents = self.get_message_by_msg_type(msg_type).unwrap();
         let mut structure = codegen::Struct::new(component.name());
         structure.vis("pub");
-        for content in msg_contents.iter() {
-            let (field_name, field_type) = self.translate_msg_content_to_struct_field(content);
+        for content in msg_contents.layout() {
+            let (field_name, field_type) = self.translate_msg_content_to_struct_field(&content);
             (&mut structure).field(
                 field_name.as_str(),
-                optionify_type(content.reqd == '1', field_type.as_str()),
+                optionify_type(content.required(), field_type.as_str()),
             );
         }
         structure
     }
 
-    fn translate_msg_content_to_struct_field(&self, content: &MsgContent) -> (String, String) {
-        let tag_number_res = content.tag_text.parse::<usize>();
+    fn translate_msg_content_to_struct_field(&self, content: &LayoutItem) -> (String, String) {
+        let tag_number_res = content.tag_text().parse::<usize>();
         if let Ok(tag_number) = tag_number_res {
             let field = self.get_field(tag_number as u32).unwrap();
-            println!("TRYING DATATYPE {}", field.data_type());
-            let data_type = self.get_datatype_of_field(field.tag());
+            println!("TRYING DATATYPE {}", field.data_type().name());
+            let field = self.get_field(field.tag()).unwrap();
+            let data_type = field.data_type();
             (
                 format!("t_{}", &field.name().to_snake_case()),
-                type_to_str(data_type).to_string(),
+                type_to_str(&data_type).to_string(),
             )
         } else {
-            let component = self.get_component(content.tag_text.as_str()).unwrap();
+            let component = self.get_component(content.tag_text()).unwrap();
             (
-                format!("c_{}", content.tag_text.to_snake_case()),
+                format!("c_{}", content.tag_text().to_snake_case()),
                 format!("components::{}", component.name()),
             )
         }
@@ -111,12 +112,11 @@ impl Dictionary {
 }
 
 fn type_to_str(datatype: &Datatype) -> &'static str {
-    match datatype.name.as_str() {
+    match datatype.name() {
         "int" => "u32",
         "string" => "char",
         "decimal" => "f32",
         "data" => "Vec<u8>",
-        "string" => "String",
         _ => "String",
     }
 }
