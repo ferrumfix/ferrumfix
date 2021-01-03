@@ -46,13 +46,7 @@ enum PKeyRef<'a> {
 
 impl PKey {
     fn as_ref<'a>(&'a self) -> PKeyRef<'a> {
-        PKeyRef::from(self)
-    }
-}
-
-impl<'a> std::convert::From<&'a PKey> for PKeyRef<'a> {
-    fn from(pk: &'a PKey) -> Self {
-        match pk {
+        match self {
             PKey::Abbreviation(s) => PKeyRef::Abbreviation(s.as_str()),
             PKey::CategoryByName(s) => PKeyRef::CategoryByName(s.as_str()),
             PKey::ComponentByName(s) => PKeyRef::ComponentByName(s.as_str()),
