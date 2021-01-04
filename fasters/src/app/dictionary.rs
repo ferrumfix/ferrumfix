@@ -143,7 +143,7 @@ impl Dictionary {
     }
 
     pub fn from_version(version: Version) -> Self {
-        Dictionary::from_quickfix_spec(version.get_quickfix_spec()).unwrap()
+        Dictionary::save_definition_spec(version.get_quickfix_spec()).unwrap()
     }
 
     /// Create a new empty FIX Dictionary with `FIX.???` as its version string.
@@ -205,7 +205,7 @@ impl Dictionary {
             .map(|data| Field(self, data))
     }
 
-    pub fn from_quickfix_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
+    pub fn save_definition_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
         let xml_document = roxmltree::Document::parse(input.as_ref()).unwrap();
         QuickFixReader::new(&xml_document)
     }
@@ -442,7 +442,7 @@ impl<'a> LayoutItem<'a> {
         match &self.1.kind {
             DictLayoutItemKind::Component(n) => {
                 self.0.components.get(*n as usize).unwrap().name.as_str()
-            },
+            }
             DictLayoutItemKind::Group(range) => "",
             DictLayoutItemKind::Field(n) => self.0.fields.get(*n as usize).unwrap().name.as_str(),
         }
@@ -534,10 +534,21 @@ mod quickfix {
             xml_document: &'a roxmltree::Document<'a>,
         ) -> Result<Dictionary, ParseDictionaryError> {
             let mut reader = Self::empty(&xml_document)?;
-            reader.add_fields();
-            reader.add_components();
-            reader.add_categories();
-            reader.add_messages();
+            for child in reader.node_with_fields.children() {
+                if child.is_element() {
+                    reader.add_field(child);
+                }
+            }
+            for child in reader.node_with_components.children() {
+                if child.is_element() {
+                    reader.add_component(child);
+                }
+            }
+            for child in reader.node_with_messages.children() {
+                if child.is_element() {
+                    reader.add_message(child);
+                }
+            }
             Ok(reader.dict)
         }
 
@@ -561,108 +572,96 @@ mod quickfix {
             })
         }
 
-        fn add_fields(&mut self) {
-            for node in self.node_with_fields.children() {
-                if node.is_element() {
-                    let iid = self.dict.fields.len() as u32;
-                    let field = DictField::from_quickfix_node(&mut self.dict, node);
-                    self.dict
-                        .symbol_table
-                        .insert(PKey::FieldByName(field.name.clone()).into(), iid);
-                    self.dict
-                        .symbol_table
-                        .insert(PKey::FieldByTag(field.tag as u32).into(), iid);
-                    self.dict.fields.push(field);
-                }
-            }
+        fn add_field(&mut self, node: roxmltree::Node) {
+            let iid = self.dict.fields.len() as u32;
+            let field = DictField::definition_from_node(&mut self.dict, node);
+            self.dict
+                .symbol_table
+                .insert(PKey::FieldByName(field.name.clone()).into(), iid);
+            self.dict
+                .symbol_table
+                .insert(PKey::FieldByTag(field.tag as u32).into(), iid);
+            self.dict.fields.push(field);
         }
 
-        fn add_components(&mut self) {
-            for node in self.node_with_components.children() {
-                if node.is_element() {
-                    let iid = self.dict.components.len();
-                    let component = DictComponent::from_quickfix_node(&mut self.dict, node);
-                    self.dict
-                        .symbol_table
-                        .insert(PKey::ComponentByName(component.name.clone()), iid as u32);
-                    self.dict.components.push(component);
-                }
-            }
+        fn add_component(&mut self, node: roxmltree::Node) {
+            let iid = self.dict.components.len();
+            let component = DictComponent::definition_from_node(&mut self.dict, node);
+            self.dict
+                .symbol_table
+                .insert(PKey::ComponentByName(component.name.clone()), iid as u32);
+            self.dict.components.push(component);
         }
 
-        fn add_categories(&mut self) {
-            for node in self.node_with_messages.children() {
-                if node.is_element() {
-                    let iid = self.dict.categories.len() as u32;
-                    let category_name = node.attribute("msgcat").unwrap();
-                    let category = DictCategory {
-                        name: category_name.to_string(),
-                        fixml_filename: String::new(),
-                    };
-                    self.dict
-                        .symbol_table
-                        .insert(PKey::CategoryByName(category_name.to_string()), iid);
-                    self.dict.categories.push(category);
-                }
-            }
-        }
-
-        fn add_messages(&mut self) {
-            for node in self.node_with_messages.children() {
-                if node.is_element() {
-                    let iid = self.dict.categories.len() as u32;
-                    let message = DictMessage::from_quickfix_node(&mut self.dict, node);
-                    self.dict
-                        .symbol_table
-                        .insert(PKey::MessageByName(message.name.clone()), iid);
-                    self.dict.symbol_table.insert(
-                        PKey::MessageByMsgType(MsgType::from(message.msg_type.as_bytes())),
-                        iid,
-                    );
-                    self.dict.messages.push(message);
-                }
-            }
+        fn add_message(&mut self, node: roxmltree::Node) {
+            let iid = self.dict.messages.len() as u32;
+            let message = DictMessage::definition_from_node(&mut self.dict, node);
+            self.dict
+                .symbol_table
+                .insert(PKey::MessageByName(message.name.clone()), iid);
+            self.dict.symbol_table.insert(
+                PKey::MessageByMsgType(MsgType::from(message.msg_type.as_bytes())),
+                iid,
+            );
+            self.dict.messages.push(message);
         }
     }
 
-    pub(crate) trait FromQuickFixNode {
-        fn from_quickfix_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self;
-    }
-
-    impl FromQuickFixNode for DictComponent {
-        fn from_quickfix_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
+    impl DictComponent {
+        fn definition_from_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
+            debug_assert_eq!(node.tag_name().name(), "component");
             let name = node.attribute("name").unwrap().to_string();
-            let items_count_before = dict.layout_items.len() as u32;
+            let layout_start = dict.layout_items.len() as u32;
             for child in node.children() {
                 if child.is_element() {
-                    let item = DictLayoutItem::from_quickfix_node(dict, child);
+                    // We don't need IID's because we're dealing with ranges.
+                    let item = DictLayoutItem::save_definition(dict, child);
                     dict.layout_items.push(item);
                 }
             }
-            let items_count_after = dict.layout_items.len() as u32;
-            let layout_range = items_count_before..items_count_after;
+            let layout_end = dict.layout_items.len() as u32;
             DictComponent {
                 id: 0,
                 component_type: ComponentType::Block,
-                layout_items_iid_range: layout_range,
+                layout_items_iid_range: layout_start..layout_end,
                 category_iid: 0, // FIXME
                 name: name,
                 abbr_name: None,
             }
         }
+
+        fn get_or_create_iid_from_ref(dict: &mut Dictionary, node: roxmltree::Node) -> InternalId {
+            debug_assert_eq!(node.tag_name().name(), "component");
+            let name = node.attribute("name").unwrap();
+            match dict.symbol(PKeyRef::ComponentByName(name)) {
+                Some(x) => *x,
+                None => {
+                    let iid = dict.data_types.len() as u32;
+                    let data = DictComponent {
+                        id: 0,
+                        component_type: ComponentType::Block,
+                        layout_items_iid_range: 0..0,
+                        name: name.to_string(),
+                        category_iid: 0, // FIXME
+                        abbr_name: None,
+                    };
+                    dict.components.push(data);
+                    dict.symbol_table
+                        .insert(PKey::ComponentByName(name.to_string()), iid);
+                    iid
+                }
+            }
+        }
     }
 
-    impl FromQuickFixNode for DictField {
-        fn from_quickfix_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
-            let data_type_name = node.attribute("type").unwrap();
-            let data_type_iid = dict
-                .symbol(PKeyRef::DatatypeByName(data_type_name))
-                .unwrap();
-            //.or_insert(dict.data_types.len() as u32);
+    impl DictField {
+        fn definition_from_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
+            debug_assert_eq!(node.tag_name().name(), "field");
+            let data_type_iid = DictDatatype::get_or_create_iid_from_ref(dict, node);
             DictField {
                 name: node.attribute("name").unwrap().to_string(),
                 tag: node.attribute("number").unwrap().parse().unwrap(),
-                data_type_iid: *data_type_iid,
+                data_type_iid: data_type_iid,
                 associated_data_tag: None,
                 required: true,
                 abbr_name: None,
@@ -673,8 +672,35 @@ mod quickfix {
         }
     }
 
-    impl FromQuickFixNode for DictLayoutItem {
-        fn from_quickfix_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
+    impl DictDatatype {
+        fn get_or_create_iid_from_ref(dict: &mut Dictionary, node: roxmltree::Node) -> InternalId {
+            // References should only happen at <field> tags.
+            debug_assert_eq!(node.tag_name().name(), "field");
+            let name = node.attribute("type").unwrap();
+            match dict.symbol(PKeyRef::DatatypeByName(name)) {
+                Some(x) => *x,
+                None => {
+                    let iid = dict.data_types.len() as u32;
+                    let data = DictDatatype {
+                        name: name.to_string(),
+                        description: String::new(),
+                        examples: Vec::new(),
+                        base_type: None,
+                    };
+                    dict.data_types.push(data);
+                    dict.symbol_table
+                        .insert(PKey::DatatypeByName(name.to_string()), iid);
+                    iid
+                }
+            }
+        }
+    }
+
+    impl DictLayoutItem {
+        fn save_definition(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
+            // This processing step requires on fields being already present in
+            // the dictionary.
+            debug_assert_ne!(dict.fields.len(), 0);
             let name = node.attribute("name").unwrap();
             let required = node.attribute("required").unwrap() == "Y";
             let tag = node.tag_name().name();
@@ -684,48 +710,71 @@ mod quickfix {
                     DictLayoutItemKind::Field(*field_iid)
                 }
                 "component" => {
-                    let component_iid = dict.symbol(PKeyRef::ComponentByName(name)).unwrap();
-                    DictLayoutItemKind::Component(*component_iid)
+                    // Components may *not* be already present.
+                    let component_iid = DictComponent::get_or_create_iid_from_ref(dict, node);
+                    DictLayoutItemKind::Component(component_iid)
                 }
                 "group" => {
                     let start_range = dict.layout_items.len() as u32;
                     let items = node
                         .children()
                         .filter(|n| n.is_element())
-                        .map(|child| DictLayoutItem::from_quickfix_node(dict, child))
+                        .map(|child| DictLayoutItem::save_definition(dict, child))
                         .count();
                     DictLayoutItemKind::Group(start_range..(start_range + items as u32))
                 }
                 _ => {
-                    panic!()
+                    panic!("Invalid tag!")
                 }
             };
             DictLayoutItem { required, kind }
         }
     }
 
-    impl FromQuickFixNode for DictMessage {
-        fn from_quickfix_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
-            let category_name = node.attribute("msgcat").unwrap();
-            let category_iid = *dict.symbol(PKeyRef::CategoryByName(category_name)).unwrap();
-            let mut start = dict.layout_items.len() as u32;
+    impl DictMessage {
+        fn definition_from_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
+            debug_assert_eq!(node.tag_name().name(), "message");
+            let category_iid = DictCategory::get_or_create_iid_from_ref(dict, node);
+            let layout_start = dict.layout_items.len() as u32;
             for child in node.children() {
                 if child.is_element() {
-                    DictLayoutItem::from_quickfix_node(dict, child);
+                    // We don't need IID's because we're dealing with ranges.
+                    let data = DictLayoutItem::save_definition(dict, child);
+                    dict.layout_items.push(data);
                 }
             }
-            let mut end = dict.layout_items.len() as u32;
+            let layout_end = dict.layout_items.len() as u32;
             DictMessage {
                 name: node.attribute("name").unwrap().to_string(),
                 msg_type: node.attribute("msgtype").unwrap().to_string(),
                 component_id: 0,
                 category_iid,
                 section_id: String::new(),
-                layout_items: start..end,
+                layout_items: layout_start..layout_end,
                 abbr_name: None,
                 required: true,
                 elaboration: None,
                 description: String::new(),
+            }
+        }
+    }
+
+    impl DictCategory {
+        fn get_or_create_iid_from_ref(dict: &mut Dictionary, node: roxmltree::Node) -> InternalId {
+            debug_assert_eq!(node.tag_name().name(), "message");
+            let name = node.attribute("msgcat").unwrap();
+            match dict.symbol(PKeyRef::CategoryByName(name)) {
+                Some(x) => *x,
+                None => {
+                    let iid = dict.categories.len() as u32;
+                    dict.categories.push(DictCategory {
+                        name: name.to_string(),
+                        fixml_filename: String::new(),
+                    });
+                    dict.symbol_table
+                        .insert(PKey::CategoryByName(name.to_string()), iid);
+                    iid
+                }
             }
         }
     }
@@ -758,7 +807,7 @@ mod test {
     }
 
     #[test]
-    fn dictionary_from_quickfix_spec_is_ok() {
+    fn dictionary_save_definition_spec_is_ok() {
         for version in Version::all() {
             println!("{}", version);
             Dictionary::from_version(version);
