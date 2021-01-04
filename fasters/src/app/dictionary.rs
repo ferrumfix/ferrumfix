@@ -108,14 +108,14 @@ impl<'a> PartialEq for dyn SymbolTableIndex + 'a {
 pub struct Dictionary {
     version: String,
     symbol_table: HashMap<PKey, InternalId>,
-    abbreviations: Vec<DictAbbreviation>,
-    data_types: Vec<DictDatatype>,
-    fields: Vec<DictField>,
-    components: Vec<DictComponent>,
-    messages: Vec<DictMessage>,
-    layout_items: Vec<DictLayoutItem>,
-    categories: Vec<DictCategory>,
-    header: Vec<DictField>,
+    abbreviations: Vec<AbbreviatonData>,
+    data_types: Vec<DatatypeData>,
+    fields: Vec<FieldData>,
+    components: Vec<ComponentData>,
+    messages: Vec<MessageData>,
+    layout_items: Vec<LayoutItemData>,
+    categories: Vec<CategoryData>,
+    header: Vec<FieldData>,
 }
 
 impl Dictionary {
@@ -221,7 +221,7 @@ pub enum BaseType {
 }
 
 #[derive(Clone, Debug)]
-pub struct DictCategory {
+pub struct CategoryData {
     /// **Primary key**. A string uniquely identifying this category.
     name: String,
     /// The FIXML file name for a Category.
@@ -229,15 +229,15 @@ pub struct DictCategory {
 }
 
 #[derive(Clone, Debug)]
-pub struct Category<'a>(&'a Dictionary, &'a DictCategory);
+pub struct Category<'a>(&'a Dictionary, &'a CategoryData);
 
 #[derive(Clone, Debug)]
-struct DictAbbreviation {
+struct AbbreviatonData {
     abbreviation: String,
     is_last: bool,
 }
 
-pub struct Abbreviation<'a>(&'a Dictionary, &'a DictAbbreviation);
+pub struct Abbreviation<'a>(&'a Dictionary, &'a AbbreviatonData);
 
 impl<'a> Abbreviation<'a> {
     pub fn term(&self) -> &str {
@@ -246,7 +246,7 @@ impl<'a> Abbreviation<'a> {
 }
 
 #[derive(Clone, Debug)]
-pub struct DictComponent {
+pub struct ComponentData {
     /// **Primary key.** The unique integer identifier of this component
     /// type.
     id: usize,
@@ -260,7 +260,7 @@ pub struct DictComponent {
 }
 
 #[derive(Clone, Debug)]
-pub struct Component<'a>(&'a Dictionary, &'a DictComponent);
+pub struct Component<'a>(&'a Dictionary, &'a ComponentData);
 
 impl<'a> Component<'a> {
     pub fn id(&self) -> u32 {
@@ -290,7 +290,7 @@ pub enum ComponentType {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-struct DictDatatype {
+struct DatatypeData {
     /// **Primary key.** Identifier of the datatype.
     pub name: String,
     /// Base type from which this type is derived.
@@ -302,7 +302,7 @@ struct DictDatatype {
     // TODO: 'XML'.
 }
 
-pub struct Datatype<'a>(&'a Dictionary, &'a DictDatatype);
+pub struct Datatype<'a>(&'a Dictionary, &'a DatatypeData);
 
 impl<'a> Datatype<'a> {
     pub fn name(&self) -> &str {
@@ -320,7 +320,7 @@ pub struct Enum {}
 /// A field is identified by a unique tag number and a name. Each field in a
 /// message is associated with a value.
 #[derive(Clone, Debug)]
-pub struct DictField {
+pub struct FieldData {
     /// A human readable string representing the name of the field.
     name: String,
     /// **Primary key.** A positive integer representing the unique
@@ -345,7 +345,7 @@ pub struct DictField {
     description: Option<String>,
 }
 
-pub struct Field<'a>(&'a Dictionary, &'a DictField);
+pub struct Field<'a>(&'a Dictionary, &'a FieldData);
 
 fn str_to_basetype(s: &str) -> BaseType {
     match s {
@@ -397,20 +397,20 @@ pub struct FieldRef {
 }
 
 #[derive(Clone, Debug)]
-enum DictLayoutItemKind {
+enum LayoutItemKindData {
     Component(u32),
     Group(Range<u32>),
     Field(u32),
 }
 
 #[derive(Clone, Debug)]
-struct DictLayoutItem {
+struct LayoutItemData {
     required: bool,
-    kind: DictLayoutItemKind,
+    kind: LayoutItemKindData,
 }
 
 #[derive(Clone, Debug)]
-pub struct LayoutItem<'a>(&'a Dictionary, &'a DictLayoutItem);
+pub struct LayoutItem<'a>(&'a Dictionary, &'a LayoutItemData);
 
 pub enum LayoutItemKind<'a> {
     Component(Component<'a>),
@@ -425,14 +425,14 @@ impl<'a> LayoutItem<'a> {
 
     pub fn kind(&self) -> LayoutItemKind {
         match &self.1.kind {
-            DictLayoutItemKind::Component(n) => LayoutItemKind::Component(Component(
+            LayoutItemKindData::Component(n) => LayoutItemKind::Component(Component(
                 self.0,
                 self.0.components.get(*n as usize).unwrap(),
             )),
-            DictLayoutItemKind::Group(range) => {
+            LayoutItemKindData::Group(range) => {
                 LayoutItemKind::Group() // FIXME
             }
-            DictLayoutItemKind::Field(n) => {
+            LayoutItemKindData::Field(n) => {
                 LayoutItemKind::Field(Field(self.0, self.0.fields.get(*n as usize).unwrap()))
             }
         }
@@ -440,17 +440,17 @@ impl<'a> LayoutItem<'a> {
 
     pub fn tag_text(&self) -> &str {
         match &self.1.kind {
-            DictLayoutItemKind::Component(n) => {
+            LayoutItemKindData::Component(n) => {
                 self.0.components.get(*n as usize).unwrap().name.as_str()
             }
-            DictLayoutItemKind::Group(range) => "",
-            DictLayoutItemKind::Field(n) => self.0.fields.get(*n as usize).unwrap().name.as_str(),
+            LayoutItemKindData::Group(range) => "",
+            LayoutItemKindData::Field(n) => self.0.fields.get(*n as usize).unwrap().name.as_str(),
         }
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct DictMessage {
+pub struct MessageData {
     /// The unique integer identifier of this message type.
     component_id: u32,
     /// **Primary key**. The unique character identifier of this message
@@ -472,7 +472,7 @@ pub struct DictMessage {
     elaboration: Option<String>,
 }
 
-pub struct Message<'a>(&'a Dictionary, &'a DictMessage);
+pub struct Message<'a>(&'a Dictionary, &'a MessageData);
 
 impl<'a> Message<'a> {
     pub fn name(&self) -> &str {
@@ -574,7 +574,7 @@ mod quickfix {
 
         fn add_field(&mut self, node: roxmltree::Node) {
             let iid = self.dict.fields.len() as u32;
-            let field = DictField::definition_from_node(&mut self.dict, node);
+            let field = FieldData::definition_from_node(&mut self.dict, node);
             self.dict
                 .symbol_table
                 .insert(PKey::FieldByName(field.name.clone()).into(), iid);
@@ -586,7 +586,7 @@ mod quickfix {
 
         fn add_component(&mut self, node: roxmltree::Node) {
             let iid = self.dict.components.len();
-            let component = DictComponent::definition_from_node(&mut self.dict, node);
+            let component = ComponentData::definition_from_node(&mut self.dict, node);
             self.dict
                 .symbol_table
                 .insert(PKey::ComponentByName(component.name.clone()), iid as u32);
@@ -595,7 +595,7 @@ mod quickfix {
 
         fn add_message(&mut self, node: roxmltree::Node) {
             let iid = self.dict.messages.len() as u32;
-            let message = DictMessage::definition_from_node(&mut self.dict, node);
+            let message = MessageData::definition_from_node(&mut self.dict, node);
             self.dict
                 .symbol_table
                 .insert(PKey::MessageByName(message.name.clone()), iid);
@@ -607,7 +607,7 @@ mod quickfix {
         }
     }
 
-    impl DictComponent {
+    impl ComponentData {
         fn definition_from_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
             debug_assert_eq!(node.tag_name().name(), "component");
             let name = node.attribute("name").unwrap().to_string();
@@ -615,12 +615,12 @@ mod quickfix {
             for child in node.children() {
                 if child.is_element() {
                     // We don't need IID's because we're dealing with ranges.
-                    let item = DictLayoutItem::save_definition(dict, child);
+                    let item = LayoutItemData::save_definition(dict, child);
                     dict.layout_items.push(item);
                 }
             }
             let layout_end = dict.layout_items.len() as u32;
-            DictComponent {
+            ComponentData {
                 id: 0,
                 component_type: ComponentType::Block,
                 layout_items_iid_range: layout_start..layout_end,
@@ -637,7 +637,7 @@ mod quickfix {
                 Some(x) => *x,
                 None => {
                     let iid = dict.data_types.len() as u32;
-                    let data = DictComponent {
+                    let data = ComponentData {
                         id: 0,
                         component_type: ComponentType::Block,
                         layout_items_iid_range: 0..0,
@@ -654,11 +654,11 @@ mod quickfix {
         }
     }
 
-    impl DictField {
+    impl FieldData {
         fn definition_from_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
             debug_assert_eq!(node.tag_name().name(), "field");
-            let data_type_iid = DictDatatype::get_or_create_iid_from_ref(dict, node);
-            DictField {
+            let data_type_iid = DatatypeData::get_or_create_iid_from_ref(dict, node);
+            FieldData {
                 name: node.attribute("name").unwrap().to_string(),
                 tag: node.attribute("number").unwrap().parse().unwrap(),
                 data_type_iid: data_type_iid,
@@ -672,7 +672,7 @@ mod quickfix {
         }
     }
 
-    impl DictDatatype {
+    impl DatatypeData {
         fn get_or_create_iid_from_ref(dict: &mut Dictionary, node: roxmltree::Node) -> InternalId {
             // References should only happen at <field> tags.
             debug_assert_eq!(node.tag_name().name(), "field");
@@ -681,7 +681,7 @@ mod quickfix {
                 Some(x) => *x,
                 None => {
                     let iid = dict.data_types.len() as u32;
-                    let data = DictDatatype {
+                    let data = DatatypeData {
                         name: name.to_string(),
                         description: String::new(),
                         examples: Vec::new(),
@@ -696,7 +696,7 @@ mod quickfix {
         }
     }
 
-    impl DictLayoutItem {
+    impl LayoutItemData {
         fn save_definition(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
             // This processing step requires on fields being already present in
             // the dictionary.
@@ -707,44 +707,44 @@ mod quickfix {
             let kind = match tag {
                 "field" => {
                     let field_iid = dict.symbol(PKeyRef::FieldByName(name)).unwrap();
-                    DictLayoutItemKind::Field(*field_iid)
+                    LayoutItemKindData::Field(*field_iid)
                 }
                 "component" => {
                     // Components may *not* be already present.
-                    let component_iid = DictComponent::get_or_create_iid_from_ref(dict, node);
-                    DictLayoutItemKind::Component(component_iid)
+                    let component_iid = ComponentData::get_or_create_iid_from_ref(dict, node);
+                    LayoutItemKindData::Component(component_iid)
                 }
                 "group" => {
                     let start_range = dict.layout_items.len() as u32;
                     let items = node
                         .children()
                         .filter(|n| n.is_element())
-                        .map(|child| DictLayoutItem::save_definition(dict, child))
+                        .map(|child| LayoutItemData::save_definition(dict, child))
                         .count();
-                    DictLayoutItemKind::Group(start_range..(start_range + items as u32))
+                    LayoutItemKindData::Group(start_range..(start_range + items as u32))
                 }
                 _ => {
                     panic!("Invalid tag!")
                 }
             };
-            DictLayoutItem { required, kind }
+            LayoutItemData { required, kind }
         }
     }
 
-    impl DictMessage {
+    impl MessageData {
         fn definition_from_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
             debug_assert_eq!(node.tag_name().name(), "message");
-            let category_iid = DictCategory::get_or_create_iid_from_ref(dict, node);
+            let category_iid = CategoryData::get_or_create_iid_from_ref(dict, node);
             let layout_start = dict.layout_items.len() as u32;
             for child in node.children() {
                 if child.is_element() {
                     // We don't need IID's because we're dealing with ranges.
-                    let data = DictLayoutItem::save_definition(dict, child);
+                    let data = LayoutItemData::save_definition(dict, child);
                     dict.layout_items.push(data);
                 }
             }
             let layout_end = dict.layout_items.len() as u32;
-            DictMessage {
+            MessageData {
                 name: node.attribute("name").unwrap().to_string(),
                 msg_type: node.attribute("msgtype").unwrap().to_string(),
                 component_id: 0,
@@ -759,7 +759,7 @@ mod quickfix {
         }
     }
 
-    impl DictCategory {
+    impl CategoryData {
         fn get_or_create_iid_from_ref(dict: &mut Dictionary, node: roxmltree::Node) -> InternalId {
             debug_assert_eq!(node.tag_name().name(), "message");
             let name = node.attribute("msgcat").unwrap();
@@ -767,7 +767,7 @@ mod quickfix {
                 Some(x) => *x,
                 None => {
                     let iid = dict.categories.len() as u32;
-                    dict.categories.push(DictCategory {
+                    dict.categories.push(CategoryData {
                         name: name.to_string(),
                         fixml_filename: String::new(),
                     });
@@ -809,7 +809,6 @@ mod test {
     #[test]
     fn dictionary_save_definition_spec_is_ok() {
         for version in Version::all() {
-            println!("{}", version);
             Dictionary::from_version(version);
         }
     }
