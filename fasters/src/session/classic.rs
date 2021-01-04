@@ -69,14 +69,14 @@ impl<T> Default for Channel<T> {
 }
 
 /// Config by acceptor.
-pub enum HeartbeatConfig {
+enum HeartbeatConfig {
     Predetermined(Duration),
     Settable(Range<Duration>),
     Custom,
 }
 
 impl HeartbeatConfig {
-    pub fn validate(&self, proposal: &Duration) -> std::result::Result<(), String> {
+    fn validate(&self, proposal: &Duration) -> std::result::Result<(), String> {
         match self {
             HeartbeatConfig::Predetermined(expected) => (proposal == expected).ok_or(format!(
                 "Invalid HeartBtInt(108), expected value {} seconds",
@@ -159,6 +159,7 @@ pub struct ProcessorBuilder {
     profile: SessionProfile,
     sender: String,
     target: String,
+    env: Environment,
     hearbeat: HeartbeatConfig,
     seq_reset_mode: SequenceResetMode,
 }
@@ -169,16 +170,33 @@ impl ProcessorBuilder {
             profile: SessionProfile::Fix4,
             sender: initiator.to_string(),
             target: acceptor.to_string(),
+            env: Environment::Production,
             hearbeat: HeartbeatConfig::Predetermined(Duration::from_secs(30)),
             seq_reset_mode: SequenceResetMode::GapFill,
         }
     }
 
+    /// Set the FIX session profile to FIXT 1.1, which allows mixing multiple
+    /// application versions over the same FIX session.
+    ///
+    /// # Examples
+    /// ```
+    /// let builder = ProcessorBuilder::new("FOO", "BAR").enable_fixt11();
+    /// ```
     pub fn enable_fixt11(mut self) -> Self {
         self.profile = SessionProfile::Fixt;
         self
     }
 
+    /// Set the FIX session profile to FIX4, which is fully backwards compatible
+    /// with FIX 4.4 as defined in Volume 2 of the FIX 4.4 specification.
+    ///
+    /// FIX4 requires `BeginString(8)` to be set to `FIX.4.4`.
+    ///
+    /// # Examples
+    /// ```
+    /// let builder = ProcessorBuilder::new("FOO", "BAR").enable_fix4();
+    /// ```
     pub fn enable_fix4(mut self) -> Self {
         self.profile = SessionProfile::Fix4;
         self
@@ -194,16 +212,24 @@ impl ProcessorBuilder {
         self
     }
 
+    /// Require all initiators to abide by a specific heartbeat interval.
+    /// Initiators that don't comply will be met with `Logout(35=8)`.
     pub fn with_heartbeat(mut self, heartbeat: Duration) -> Self {
         self.hearbeat = HeartbeatConfig::Predetermined(heartbeat);
         self
     }
 
+    /// Allow the initiator to choose its prefereed heartbeat interval in between
+    /// a pre-specified range. All heartbeat intervals inside this range will be
+    /// accepted; all heartbeat intervals outside of it will be met with
+    /// `Logout(35=8)`.
     pub fn with_heartbeat_range(mut self, range: Range<Duration>) -> Self {
         self.hearbeat = HeartbeatConfig::Settable(range);
         self
     }
 
+    /// Allow the initiator to specify its preferred heartbeat interval and
+    /// accept it automatically.
     pub fn with_any_heartbeat(mut self) -> Self {
         self.hearbeat = HeartbeatConfig::Custom;
         self
@@ -216,6 +242,15 @@ impl ProcessorBuilder {
 
     pub fn enable_reset_mode(mut self) -> Self {
         self.seq_reset_mode = SequenceResetMode::Reset;
+        self
+    }
+
+    /// Disable test messages on this FIX session. Under this setting, test
+    /// messages will immediately be met with a `Logout(35=5)` response.
+    ///
+    /// This setting is disabled by default.
+    pub fn for_testing(mut self) -> Self {
+        self.env = Environment::Testing;
         self
     }
 
@@ -257,6 +292,9 @@ impl Processor {
         }
     }
 
+    /// Return identifying data for the current FIX session. A FIX session is
+    /// identified by the unique combination of BeginString(8) + initiator CompID
+    /// + acceptor CompID.
     pub fn identifier(&self) -> (SessionProfile, &str, &str) {
         (
             self.config.profile,
@@ -265,6 +303,9 @@ impl Processor {
         )
     }
 
+    /// Return the communication channel used to both notify and subscribe to
+    /// events.
+    /// Incoming messages MUST be sent over this channel.
     pub fn channel(&self) -> (&Sender<slr::Message>, &Receiver<Event>) {
         (
             &self.config.channel_inbound.sender,
@@ -504,9 +545,8 @@ mod test {
 
     const MSG: &'static [u8] = &[0];
 
-    fn processor(input: &[u8]) -> Processor {
-        let builder = ProcessorBuilder::new("BROKER", "FUND-MANAGER");
-        builder.build()
+    fn processor() -> Processor {
+        ProcessorBuilder::new("BROKER", "FUND-MANAGER").build()
     }
 
     fn msg_add_identifier(msg: &mut slr::Message) {
@@ -524,8 +564,7 @@ mod test {
         msg.add_field(108, slr::FixFieldValue::Int(30));
         msg.add_field(34, slr::FixFieldValue::Int(1));
         msg.add_field(52, slr::FixFieldValue::Int(980846));
-        let input_buffer = vec![];
-        let mut processor = processor(&input_buffer[..]);
+        let mut processor = processor();
         processor.process_incoming(msg).unwrap();
         let (_, recv) = processor.channel();
         let mut event = recv.try_recv().unwrap();
@@ -559,8 +598,7 @@ mod test {
         msg.add_field(108, slr::FixFieldValue::Int(30));
         msg.add_field(34, slr::FixFieldValue::Int(42));
         msg.add_field(52, slr::FixFieldValue::Int(980846));
-        let input_buffer = vec![];
-        let mut processor = processor(&input_buffer[..]);
+        let mut processor = processor();
         processor.process_incoming(msg).unwrap();
         let (_, recv) = processor.channel();
         let event = recv.try_recv().unwrap();
@@ -581,8 +619,7 @@ mod test {
         msg_add_identifier(&mut msg);
         msg.add_field(35, slr::FixFieldValue::String("G".to_string()));
         msg.add_field(108, slr::FixFieldValue::Int(30));
-        let input_buffer = vec![];
-        let mut processor = processor(&input_buffer[..]);
+        let mut processor = processor();
         processor.process_incoming(msg).unwrap();
         let (_, recv) = processor.channel();
         let event = recv.try_recv().unwrap();
@@ -603,8 +640,7 @@ mod test {
         msg_add_identifier(&mut msg);
         msg.add_field(35, slr::FixFieldValue::String("G".to_string()));
         msg.add_field(108, slr::FixFieldValue::Int(30));
-        let input_buffer = vec![];
-        let mut processor = processor(&input_buffer[..]);
+        let mut processor = processor();
         processor.process_incoming(msg).unwrap();
         let (_, recv) = processor.channel();
         let event = recv.try_recv().unwrap();
@@ -625,8 +661,7 @@ mod test {
         msg_add_identifier(&mut msg);
         msg.add_field(35, slr::FixFieldValue::String("G".to_string()));
         msg.add_field(108, slr::FixFieldValue::Int(30));
-        let input_buffer = vec![];
-        let mut processor = processor(&input_buffer[..]);
+        let mut processor = processor();
         processor.process_incoming(msg).unwrap();
         let (_, recv) = processor.channel();
         let event = recv.try_recv().unwrap();
