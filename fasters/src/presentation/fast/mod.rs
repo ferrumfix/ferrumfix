@@ -1,4 +1,4 @@
-use crate::app::dictionary::{BaseType, Dictionary};
+use crate::app::dictionary::Dictionary;
 use crate::app::slr;
 use crate::presentation::Encoding;
 use bitvec::vec::BitVec;
@@ -16,7 +16,7 @@ mod template;
 
 pub struct Fast {
     dict: Dictionary,
-    templates: HashMap<i64, Template>,
+    templates: HashMap<String, Template>,
 }
 
 type DecodeResult<T> = std::result::Result<T, <Fast as Encoding>::DecodeErr>;
@@ -32,7 +32,7 @@ impl Fast {
     }
 
     pub fn with_template(mut self, template: Template) -> Self {
-        self.templates.insert(template.id, template);
+        self.templates.insert(template.name().to_string(), template);
         self
     }
 }
@@ -45,42 +45,42 @@ impl Encoding for Fast {
         let presence_map = decode_stop_bit_bitvec(source).unwrap();
         let mut presence_by_field: BitVec = BitVec::new();
         let mut message = slr::Message::new();
-        for field in &self.templates.get(&1).unwrap().elements {
-            if let template::ElementContent::Field(f) = &field.content {
-                presence_by_field.push(f.presence);
+        for field in self.templates.get("").unwrap().iter_items() {
+            if let template::FieldType::Primitive(f) = &field.kind() {
+                presence_by_field.push(field.is_mandatory());
             } else {
                 presence_by_field.push(false);
             }
         }
-        for field in &self.templates.get(&1).unwrap().elements {
-            if let template::ElementContent::Field(f) = &field.content {
-                match f.kind {
-                    template::FieldType::SInt32 => {
+        for field in self.templates.get("").unwrap().iter_items() {
+            if let template::FieldType::Primitive(f) = field.kind() {
+                match f {
+                    template::FieldPrimitiveType::SInt32 => {
                         let mut val = 0i32;
                         val.deserialize(source)?;
                         template::FieldValue::SInt32(val)
                     }
-                    template::FieldType::UInt32 => {
+                    template::FieldPrimitiveType::UInt32 => {
                         let mut val = 0u32;
                         val.deserialize(source)?;
                         template::FieldValue::UInt32(val)
                     }
-                    template::FieldType::SInt64 => {
+                    template::FieldPrimitiveType::SInt64 => {
                         let mut val = 0i64;
                         val.deserialize(source)?;
                         template::FieldValue::SInt64(val)
                     }
-                    template::FieldType::UInt64 => {
+                    template::FieldPrimitiveType::UInt64 => {
                         let mut val = 0u64;
                         val.deserialize(source)?;
                         template::FieldValue::UInt64(val)
                     }
-                    template::FieldType::ByteVector => {
+                    template::FieldPrimitiveType::ByteVector => {
                         let mut val: Vec<u8> = Vec::new();
                         val.deserialize(source)?;
                         template::FieldValue::ByteVector(val)
                     }
-                    template::FieldType::AsciiString => {
+                    template::FieldPrimitiveType::AsciiString => {
                         let mut val = String::new();
                         val.deserialize(source)?;
                         template::FieldValue::AsciiString(val.into_bytes())

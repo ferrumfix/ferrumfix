@@ -1,27 +1,6 @@
 use super::errors::StaticError;
 use super::field_operators::FieldOperatorInstruction;
 use crate::app::dictionary::Dictionary;
-use std::collections::HashMap;
-
-#[derive(Clone, Debug)]
-pub struct Element {
-    name: String,
-    pub content: ElementContent,
-}
-
-#[derive(Clone, Debug)]
-pub enum ElementContent {
-    Field(Field),
-    Sequence(Vec<Element>),
-}
-
-#[derive(Clone, Debug)]
-pub struct Field {
-    id: i64,
-    pub kind: FieldType,
-    pub presence: bool,
-    operator: FieldOperatorInstruction,
-}
 
 #[derive(Clone, Debug)]
 pub enum FieldValue {
@@ -36,7 +15,7 @@ pub enum FieldValue {
 }
 
 #[derive(Clone, Debug)]
-pub enum FieldType {
+pub enum FieldPrimitiveType {
     SInt32,
     UInt32,
     SInt64,
@@ -45,6 +24,51 @@ pub enum FieldType {
     AsciiString,
     UnicodeString,
     ByteVector,
+}
+
+#[derive(Clone, Debug)]
+pub struct FieldInstruction {
+    field_type: FieldType,
+    name: String,
+    id: u32,
+    mandatory: bool,
+    operator: FieldOperatorInstruction,
+}
+
+impl FieldInstruction {
+    pub fn kind(&self) -> &FieldType {
+        &self.field_type
+    }
+
+    pub fn is_mandatory(&self) -> bool {
+        self.mandatory
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum FieldType {
+    Primitive(FieldPrimitiveType),
+    Group(u32),
+}
+
+impl FieldInstruction {
+    fn from_template(node: roxmltree::Node) -> Result<Self, StaticError> {
+        let name = node.attribute("name").ok_or(StaticError::S1)?;
+        let id = node.attribute("id").unwrap().parse().unwrap();
+        let mandatory = {
+            let attr = node.attribute("presence").unwrap_or("true");
+            attr == "true"
+        };
+        let type_name = node.tag_name().name();
+        let instruction = FieldInstruction {
+            field_type: FieldType::Primitive(Template::xml_tag_to_instruction(type_name)?),
+            name: name.to_string(),
+            id,
+            mandatory,
+            operator: FieldOperatorInstruction::Constant,
+        };
+        Ok(instruction)
+    }
 }
 
 /// Templates are used to represent the structure of the data that is to be
@@ -58,14 +82,14 @@ pub enum FieldType {
 /// defined.
 #[derive(Clone, Debug)]
 pub struct Template {
-    /// Used for code generation.
-    name: String,
     /// Each template is assigned a Template ID that can be used to uniquely
     /// describe the format of an encoded message. A Template ID will be carried
     /// in every encoded message which will provide a link to the correct
     /// template for decoding.
-    pub id: i64,
-    pub elements: Vec<Element>,
+    id: Option<u32>,
+    /// Used for code generation.
+    name: String,
+    instructions: Vec<FieldInstruction>,
     dictionary: Dictionary,
 }
 
@@ -74,45 +98,72 @@ impl Template {
         let document = roxmltree::Document::parse(xml_document).unwrap();
         let container = document.root().first_element_child().unwrap();
         let root = container.first_element_child().unwrap();
-        let mut template = Template {
-            name: String::new(),
-            id: 0,
-            elements: Vec::new(),
-            dictionary: Dictionary::empty(),
+        Template::from_xml(Dictionary::empty(), root)
+    }
+
+    fn from_xml(dict: Dictionary, root: roxmltree::Node) -> Result<Self, StaticError> {
+        debug_assert_eq!(root.tag_name().name(), "template");
+        let name = root.attribute("name").unwrap();
+        let id = {
+            let id = root.attribute("id");
+            match id {
+                Some(num) => Some(num.parse().map_err(|_| StaticError::S1)?),
+                None => None,
+            }
         };
-        template.name = root.attribute("name").unwrap().to_string();
+        let mut instructions = Vec::new();
         for node in root.children() {
             if node.is_element() {
-                let instruction = node.tag_name().name();
-                let field = Field {
-                    id: 0,
-                    kind: Template::xml_tag_to_instruction(instruction),
-                    presence: Template::xml_presence_attribute_to_bool(
-                        node.attribute("presence").unwrap_or("true"),
-                    ),
-                    operator: FieldOperatorInstruction::None,
-                };
-                let element = Element {
-                    name: instruction.to_string(),
-                    content: ElementContent::Field(field),
-                };
-                template.elements.push(element);
+                match node.tag_name().name() {
+                    "sequence" => {
+                        for child in node.children() {
+                            if child.is_element() {
+                                let instruction = FieldInstruction::from_template(child)?;
+                                instructions.push(instruction);
+                            }
+                        }
+                    }
+                    "typeRef" => (),
+                    _ => {
+                        let instruction = FieldInstruction::from_template(node)?;
+                        instructions.push(instruction);
+                    }
+                }
             }
         }
+        let template = Template {
+            id,
+            name: name.to_string(),
+            instructions,
+            dictionary: dict,
+        };
         Ok(template)
     }
 
-    fn xml_tag_to_instruction(tag: &str) -> FieldType {
-        match tag {
-            "string" => FieldType::AsciiString,
-            "uInt32" => FieldType::UInt32,
-            "int32" => FieldType::SInt32,
-            "uInt64" => FieldType::UInt64,
-            "int64" => FieldType::SInt64,
-            "decimal" => FieldType::Decimal,
-            "byteVector" => FieldType::ByteVector,
-            _ => FieldType::SInt32,
-        }
+    pub fn id(&self) -> Option<u32> {
+        self.id
+    }
+
+    pub fn name(&self) -> &str {
+        self.name.as_str()
+    }
+
+    pub fn iter_items(&self) -> impl Iterator<Item = &FieldInstruction> {
+        self.instructions.iter()
+    }
+
+    fn xml_tag_to_instruction(tag: &str) -> Result<FieldPrimitiveType, StaticError> {
+        Ok(match tag {
+            "string" => FieldPrimitiveType::AsciiString,
+            "uInt32" => FieldPrimitiveType::UInt32,
+            "int32" => FieldPrimitiveType::SInt32,
+            "uInt64" => FieldPrimitiveType::UInt64,
+            "int64" => FieldPrimitiveType::SInt64,
+            "decimal" => FieldPrimitiveType::Decimal,
+            "byteVector" => FieldPrimitiveType::ByteVector,
+            "length" => FieldPrimitiveType::UInt32,
+            _ => return Err(StaticError::S1),
+        })
     }
 
     fn xml_presence_attribute_to_bool(attribute: &str) -> bool {
@@ -131,9 +182,9 @@ mod test {
     const SIMPLE_TEMPLATE: &str = std::include_str!("templates/example.xml");
 
     #[test]
-    fn test() {
+    fn first_field_instruction() {
         let template = Template::new(SIMPLE_TEMPLATE).unwrap();
-        let first_element = template.elements.get(1).unwrap();
-        assert_eq!(first_element.name, "BeginString");
+        let first_field_instruction = template.instructions.get(0).unwrap();
+        assert_eq!(first_field_instruction.name, "BeginString");
     }
 }
