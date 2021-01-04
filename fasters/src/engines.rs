@@ -4,8 +4,8 @@ use std::net::{TcpListener, SocketAddr};
 use std::path::Path;
 use std::sync::Arc;
 
-pub fn fixua_config(cert: &Path, key: &Path, port: u16) -> (TcpListener, Arc<SslAcceptor>) {
-    let tcp_listener = TcpListener::bind(format!("0.0.0.0:{}", port)).unwrap();
+pub fn fixua_config(cert: &Path, key: &Path, address: SocketAddr) -> (TcpListener, Arc<SslAcceptor>) {
+    let tcp_listener = TcpListener::bind(address).unwrap();
     let mut acceptor = fixs::Version::V1Draft.recommended_acceptor();
     acceptor
         .set_private_key_file(key, SslFiletype::PEM)
@@ -22,8 +22,18 @@ mod test {
     use super::*;
     use crate::transport::fixs;
     use std::io::Write;
-    use std::path::Path;
+    use std::path::PathBuf;
     use std::net::TcpStream;
+
+    fn exampledotcom_cert_key_pair() -> (PathBuf, PathBuf) {
+        let mut src_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        src_dir.push("src");
+        let mut path_to_cert = src_dir.clone();
+        let mut path_to_key = src_dir;
+        path_to_cert.push("example.com.cert.pem");
+        path_to_key.push("example.com.key.pem");
+        (path_to_cert, path_to_key)
+    }
 
     #[test]
     fn fixua_hello() {
@@ -43,10 +53,11 @@ mod test {
 
             stream.write_all(b"Hello, world!").unwrap();
         });
+        let (path_to_cert, path_to_key) = exampledotcom_cert_key_pair();
         fixua_config(
-            Path::new("/home/neysofu/Projects/fasters/fasters/example.com.cert.pem"),
-            Path::new("/home/neysofu/Projects/fasters/fasters/example.com.key.pem"),
-            8443,
+            path_to_cert.as_path(),
+            path_to_key.as_path(),
+            "0.0.0.0:8443".parse().unwrap(),
         );
     }
 }
