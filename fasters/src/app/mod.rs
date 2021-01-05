@@ -1,7 +1,6 @@
 use rust_embed::RustEmbed;
 use std::fmt;
 
-pub mod dictionary;
 pub mod slr;
 
 pub enum Version {
@@ -34,7 +33,7 @@ impl Version {
     }
 
     #[cfg(test)]
-    fn all() -> impl Iterator<Item = Self> {
+    pub(crate) fn all() -> impl Iterator<Item = Self> {
         vec![
             Version::Fix40,
             Version::Fix41,

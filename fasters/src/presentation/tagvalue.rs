@@ -1,4 +1,4 @@
-use crate::app::dictionary::{BaseType, Dictionary};
+use crate::dictionary::{BaseType, Dictionary};
 use crate::app::slr;
 use crate::presentation::Encoding;
 use std::fmt;

@@ -1,4 +1,4 @@
-use crate::app::dictionary::Dictionary;
+use crate::dictionary::Dictionary;
 use crate::app::slr;
 use crate::presentation::Encoding;
 use bitvec::vec::BitVec;

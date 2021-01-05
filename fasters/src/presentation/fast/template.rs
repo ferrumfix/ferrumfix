@@ -1,6 +1,6 @@
 use super::errors::StaticError;
 use super::field_operators::FieldOperatorInstruction;
-use crate::app::dictionary::Dictionary;
+use crate::dictionary::Dictionary;
 
 #[derive(Clone, Debug)]
 pub enum FieldValue {

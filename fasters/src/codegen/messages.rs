@@ -1,4 +1,4 @@
-use crate::app::dictionary::{Component, Field, LayoutItem, Datatype, Dictionary};
+use crate::dictionary::{Component, Field, LayoutItem, Datatype, Dictionary};
 use codegen::Scope;
 use inflector::Inflector;
 

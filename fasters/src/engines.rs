@@ -1,4 +1,4 @@
-use crate::app::dictionary::Dictionary;
+use crate::dictionary::Dictionary;
 use crate::openssl::ssl::{SslAcceptor, SslFiletype};
 use crate::presentation::Encoding;
 use crate::session;
