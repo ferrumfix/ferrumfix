@@ -1,6 +1,6 @@
 use crate::app::slr;
 use crate::dictionary::Dictionary;
-use crate::presentation::Encoding;
+use crate::encoders::Encoding;
 use crate::session;
 use std::marker::PhantomData;
 use std::net::TcpListener;

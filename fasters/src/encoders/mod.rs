@@ -8,6 +8,7 @@ pub mod sofh;
 mod tagvalue;
 
 pub use fast::Fast;
+pub use json::Json;
 pub use tagvalue::TagValue;
 
 /// Capabilities to decode and encode FIX messages according to a FIX dictionary.

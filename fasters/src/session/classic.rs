@@ -541,7 +541,7 @@ struct SeqNumRange {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::presentation;
+    use crate::encoders;
 
     const MSG: &'static [u8] = &[0];
 

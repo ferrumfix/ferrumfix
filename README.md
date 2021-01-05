@@ -25,7 +25,7 @@ Fasters enforces strict separation of concerns according to the OSI model, as re
 
 - Layer 4 (Transport Layer): `fasters::transport`.
 - Layer 5 (Session Layer): `fasters::session`.
-- Layer 6 (Presentation Layer): `fasters::presentation`.
+- Layer 6 (Presentation Layer): `fasters::encoders`.
 - Layer 7 (Application Layer): `fasters::app`.
 
 You don't have to understand the whole tech stack to use a single layer; in fact, Fasters makes sure that you only ever need to worry about layers above your chosen abstraction level. For most users, that would be Layer 7 (i.e. semantics of FIX messages and business logic). On the other hand, you will need to delve deep into lower layers in case you plan on building a fully-fledged FIX engine.

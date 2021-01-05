@@ -1,5 +1,5 @@
 use crate::app::slr;
-use crate::presentation::Encoding;
+use crate::encoders::Encoding;
 use crate::Dictionary;
 use serde_json::json;
 use std::collections::HashMap;

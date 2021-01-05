@@ -1,6 +1,6 @@
 use crate::app::slr;
 use crate::dictionary::{BaseType, Dictionary};
-use crate::presentation::Encoding;
+use crate::encoders::Encoding;
 use std::fmt;
 use std::io;
 use std::str;

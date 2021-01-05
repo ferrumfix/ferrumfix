@@ -8,10 +8,10 @@
 pub mod app;
 pub mod codegen;
 mod dictionary;
+pub mod encoders;
 pub mod engines;
 #[deprecated]
 pub mod internals;
-pub mod presentation;
 pub mod session;
 pub mod transport;
 
