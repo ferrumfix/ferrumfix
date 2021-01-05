@@ -205,6 +205,12 @@ impl Dictionary {
             .map(|data| Field(self, data))
     }
 
+    pub fn get_field_by_name<S: AsRef<str>>(&self, name: S) -> Option<Field> {
+        self.symbol(PKeyRef::FieldByName(name.as_ref()))
+            .map(|iid| self.fields.get(*iid as usize).unwrap())
+            .map(|data| Field(self, data))
+    }
+
     pub fn save_definition_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
         let xml_document = roxmltree::Document::parse(input.as_ref()).unwrap();
         QuickFixReader::new(&xml_document)
@@ -274,6 +280,24 @@ impl<'a> Component<'a> {
     pub fn category(&self) -> Category {
         let data = self.0.categories.get(self.1.category_iid as usize).unwrap();
         Category(self.0, data)
+    }
+
+    pub fn items(&self) -> impl Iterator<Item = LayoutItem> {
+        let start = self.1.layout_items_iid_range.start as usize;
+        let end = self.1.layout_items_iid_range.end as usize;
+        self.0.layout_items[start..end]
+            .iter()
+            .map(move |data| LayoutItem(self.0, data))
+    }
+
+    pub fn contains_field(&self, field: &Field) -> bool {
+        self.items().any(|layout_item| {
+            if let LayoutItemKind::Field(f) = layout_item.kind() {
+                f.tag() == field.tag()
+            } else {
+                false
+            }
+        })
     }
 }
 

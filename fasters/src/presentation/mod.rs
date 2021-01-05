@@ -4,6 +4,7 @@ use std::io;
 use std::error::Error;
 
 mod fast;
+mod json;
 mod tagvalue;
 pub mod sofh;
 
