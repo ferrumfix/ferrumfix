@@ -463,7 +463,7 @@ impl Processor {
         Ok(())
     }
 
-    fn process_incoming(&mut self, message: slr::Message) -> Result<()> {
+    pub fn process_incoming(&mut self, message: slr::Message) -> Result<()> {
         match self.state {
             State::Disconnected => self.process_incoming_disconnected(message),
             State::Established => self.process_incoming_established(message),

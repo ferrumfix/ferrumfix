@@ -1,8 +1,7 @@
 use crate::openssl::ssl::*;
-use std::io;
-use std::net::SocketAddr;
-use std::net::{TcpListener, TcpStream};
+use std::net::{TcpListener, SocketAddr};
 use std::path::Path;
+use std::sync::Arc;
 
 pub const RECOMMENDED_CIPHERSUITES: &[&str] = &[
     // The original FIXS specification uses IANA cipher names. You can convert
@@ -132,9 +131,38 @@ impl Version {
             .unwrap();
         context
     }
+
+    pub fn fixua_acceptor(&self, config: FixuaConfig) -> (TcpListener, Arc<SslAcceptor>) {
+        let tcp_listener = TcpListener::bind(config.address).unwrap();
+        let mut acceptor = Version::V1Draft.recommended_acceptor();
+        acceptor
+            .set_private_key_file(config.key, SslFiletype::PEM)
+            .unwrap();
+        acceptor
+            .set_certificate_file(config.cert, SslFiletype::PEM)
+            .unwrap();
+        let acceptor = Arc::new(acceptor.build());
+        (tcp_listener, acceptor)
+    }
+}
+
+pub struct FixuaConfig<'a> {
+    pub cert: &'a Path,
+    pub key: &'a Path,
+    pub address: SocketAddr,
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn v1draft_acceptor_is_ok() {
+        Version::V1Draft.recommended_acceptor();
+    }
+
+    #[test]
+    fn v1draft_connector_is_ok() {
+        Version::V1Draft.recommended_connector();
+    }
 }

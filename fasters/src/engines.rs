@@ -1,29 +1,51 @@
-use crate::transport::fixs;
+use crate::app::dictionary::Dictionary;
 use crate::openssl::ssl::{SslAcceptor, SslFiletype};
-use std::net::{TcpListener, SocketAddr};
+use crate::presentation::Encoding;
+use crate::session;
+use crate::transport::fixs;
+use std::net::{SocketAddr, TcpListener};
 use std::path::Path;
 use std::sync::Arc;
+use uuid::Uuid;
 
-pub fn fixua_config(cert: &Path, key: &Path, address: SocketAddr) -> (TcpListener, Arc<SslAcceptor>) {
-    let tcp_listener = TcpListener::bind(address).unwrap();
-    let mut acceptor = fixs::Version::V1Draft.recommended_acceptor();
-    acceptor
-        .set_private_key_file(key, SslFiletype::PEM)
-        .unwrap();
-    acceptor
-        .set_certificate_file(cert, SslFiletype::PEM)
-        .unwrap();
-    let acceptor = Arc::new(acceptor.build());
-    (tcp_listener, acceptor)
+struct Acceptor<E: Encoding> {
+    id: Uuid,
+    dictionary: Dictionary,
+    encoder: E,
+}
+
+impl<E: Encoding> Acceptor<E> {
+    pub fn new(dict: Dictionary, encoder: E) -> Self {
+        Acceptor {
+            id: Uuid::new_v4(),
+            dictionary: dict,
+            encoder,
+        }
+    }
+
+    pub async fn listen(self, listener: TcpListener) {
+        self.handle_connection(listener.incoming().map(|stream| stream.unwrap())).await;
+    }
+
+    async fn handle_connection<T: std::io::Read>(&self, channels: impl Iterator<Item = T>) {
+        let mut payload = Vec::with_capacity(8192);
+        let mut offset = 0;
+        let mut session_layer = session::ProcessorBuilder::new("FOO", "BAR").build();
+        for mut channel in channels {
+            let payload_size = channel.read(&mut payload).unwrap();
+            offset += payload_size;
+            let msg = self.encoder.decode(&mut &payload[offset..]).unwrap();
+            session_layer.process_incoming(msg).unwrap();
+        }
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use crate::transport::fixs;
     use std::io::Write;
-    use std::path::PathBuf;
     use std::net::TcpStream;
+    use std::path::PathBuf;
 
     fn exampledotcom_cert_key_pair() -> (PathBuf, PathBuf) {
         let mut src_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -38,7 +60,8 @@ mod test {
     #[test]
     fn fixua_hello() {
         std::thread::spawn(|| {
-            let mut connector = fixs::Version::V1Draft.recommended_connector()
+            let mut connector = fixs::Version::V1Draft
+                .recommended_connector()
                 .build()
                 .configure()
                 .unwrap()
@@ -47,17 +70,15 @@ mod test {
             connector.set_use_server_name_indication(false);
 
             let stream = TcpStream::connect("127.0.0.1:8443").unwrap();
-            let mut stream = connector
-                .connect("example.com", stream)
-                .unwrap();
+            let mut stream = connector.connect("example.com", stream).unwrap();
 
             stream.write_all(b"Hello, world!").unwrap();
         });
         let (path_to_cert, path_to_key) = exampledotcom_cert_key_pair();
-        fixua_config(
-            path_to_cert.as_path(),
-            path_to_key.as_path(),
-            "0.0.0.0:8443".parse().unwrap(),
-        );
+        fixs::Version::V1Draft.fixua_acceptor(fixs::FixuaConfig {
+            cert: path_to_cert.as_path(),
+            key: path_to_key.as_path(),
+            address: "0.0.0.0:8443".parse().unwrap(),
+        });
     }
 }
