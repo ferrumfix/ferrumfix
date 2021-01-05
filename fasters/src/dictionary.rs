@@ -573,6 +573,8 @@ mod quickfix {
                     reader.add_message(child);
                 }
             }
+            reader.add_component_with_name(reader.node_with_header, "StandardHeader");
+            reader.add_component_with_name(reader.node_with_trailer, "StandardTrailer");
             Ok(reader.dict)
         }
 
@@ -608,6 +610,15 @@ mod quickfix {
             self.dict.fields.push(field);
         }
 
+        fn add_component_with_name<S: AsRef<str>>(&mut self, node: roxmltree::Node, name: S) {
+            let iid = self.dict.components.len();
+            let component = ComponentData::definition_from_node_with_name(&mut self.dict, node, name.as_ref());
+            self.dict
+                .symbol_table
+                .insert(PKey::ComponentByName(name.as_ref().to_string()), iid as u32);
+            self.dict.components.push(component);
+        }
+
         fn add_component(&mut self, node: roxmltree::Node) {
             let iid = self.dict.components.len();
             let component = ComponentData::definition_from_node(&mut self.dict, node);
@@ -635,6 +646,10 @@ mod quickfix {
         fn definition_from_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
             debug_assert_eq!(node.tag_name().name(), "component");
             let name = node.attribute("name").unwrap().to_string();
+            Self::definition_from_node_with_name(dict, node, name)
+        }
+
+        fn definition_from_node_with_name<S: AsRef<str>>(dict: &mut Dictionary, node: roxmltree::Node, name: S) -> Self {
             let layout_start = dict.layout_items.len() as u32;
             for child in node.children() {
                 if child.is_element() {
@@ -649,7 +664,7 @@ mod quickfix {
                 component_type: ComponentType::Block,
                 layout_items_iid_range: layout_start..layout_end,
                 category_iid: 0, // FIXME
-                name: name,
+                name: name.as_ref().to_string(),
                 abbr_name: None,
             }
         }
