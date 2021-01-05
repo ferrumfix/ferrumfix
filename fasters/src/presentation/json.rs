@@ -22,7 +22,7 @@ impl Json {
     }
 }
 
-impl Encoding for Json {
+impl Encoding<slr::Message> for Json {
     type EncodeErr = DecodeError;
     type DecodeErr = DecodeError;
 

@@ -19,8 +19,8 @@ pub struct Fast {
     templates: HashMap<String, Template>,
 }
 
-type DecodeResult<T> = std::result::Result<T, <Fast as Encoding>::DecodeErr>;
-type EncodeResult<T> = std::result::Result<T, <Fast as Encoding>::EncodeErr>;
+type DecodeResult<T> = std::result::Result<T, <Fast as Encoding<slr::Message>>::DecodeErr>;
+type EncodeResult<T> = std::result::Result<T, <Fast as Encoding<slr::Message>>::EncodeErr>;
 
 impl Fast {
     /// Builds a new `TagValue` encoding device with an empty FIX dictionary.
@@ -37,7 +37,7 @@ impl Fast {
     }
 }
 
-impl Encoding for Fast {
+impl Encoding<slr::Message> for Fast {
     type EncodeErr = Error;
     type DecodeErr = Error;
 

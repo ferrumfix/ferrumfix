@@ -23,8 +23,8 @@ pub struct TagValue {
     dict: Dictionary,
 }
 
-type DecodeResult<T> = Result<T, <TagValue as Encoding>::DecodeErr>;
-type EncodeResult<T> = Result<T, <TagValue as Encoding>::EncodeErr>;
+type DecodeResult<T> = Result<T, <TagValue as Encoding<slr::Message>>::DecodeErr>;
+type EncodeResult<T> = Result<T, <TagValue as Encoding<slr::Message>>::EncodeErr>;
 
 impl TagValue {
     /// Builds a new `TagValue` encoding device with an empty FIX dictionary.
@@ -54,7 +54,7 @@ impl TagValue {
         &self,
         source: &mut impl io::BufRead,
         separator: char,
-    ) -> Result<slr::Message, <TagValue as Encoding>::DecodeErr> {
+    ) -> Result<slr::Message, <TagValue as Encoding<slr::Message>>::DecodeErr> {
         let tag_lookup = StandardTagLookup::new(&self.dict);
         let mut checksum = Checksum::new();
         let mut field_iter = FieldIter {
@@ -116,7 +116,7 @@ impl Default for TagValue {
     }
 }
 
-impl Encoding for TagValue {
+impl Encoding<slr::Message> for TagValue {
     type EncodeErr = Error;
     type DecodeErr = Error;
 

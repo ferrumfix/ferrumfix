@@ -1,4 +1,5 @@
 use crate::dictionary::Dictionary;
+use crate::app::slr;
 use crate::openssl::ssl::{SslAcceptor, SslFiletype};
 use crate::presentation::Encoding;
 use crate::session;
@@ -6,20 +7,23 @@ use crate::transport::fixs;
 use std::net::{SocketAddr, TcpListener};
 use std::path::Path;
 use std::sync::Arc;
+use std::marker::PhantomData;
 use uuid::Uuid;
 
-struct Acceptor<E: Encoding> {
+struct Acceptor<M, E: Encoding<M>> {
     id: Uuid,
     dictionary: Dictionary,
     encoder: E,
+    phantom: PhantomData<M>,
 }
 
-impl<E: Encoding> Acceptor<E> {
+impl<E: Encoding<slr::Message>> Acceptor<slr::Message, E> {
     pub fn new(dict: Dictionary, encoder: E) -> Self {
         Acceptor {
             id: Uuid::new_v4(),
             dictionary: dict,
             encoder,
+            phantom: PhantomData,
         }
     }
 
