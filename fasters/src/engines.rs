@@ -1,12 +1,8 @@
 use crate::dictionary::Dictionary;
 use crate::app::slr;
-use crate::openssl::ssl::{SslAcceptor, SslFiletype};
 use crate::presentation::Encoding;
 use crate::session;
-use crate::transport::fixs;
-use std::net::{SocketAddr, TcpListener};
-use std::path::Path;
-use std::sync::Arc;
+use std::net::TcpListener;
 use std::marker::PhantomData;
 use uuid::Uuid;
 

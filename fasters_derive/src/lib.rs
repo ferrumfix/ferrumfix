@@ -7,7 +7,7 @@
 
 extern crate proc_macro;
 use proc_macro2::TokenStream;
-use quote::{quote, quote_spanned};
+use quote::quote;
 
 #[proc_macro_derive(FixMessage)]
 pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -18,7 +18,7 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
 fn impl_fix(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
-    let des = generate_des(&ast.data);
+    let _des = generate_des(&ast.data);
     let gen = quote! {
         impl ::std::convert::TryFrom<::fasters::slr::Message> for #name {
             type Error = ();

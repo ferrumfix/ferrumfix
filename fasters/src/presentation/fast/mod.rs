@@ -42,9 +42,9 @@ impl Encoding<slr::Message> for Fast {
     type DecodeErr = Error;
 
     fn decode(&self, source: &mut impl io::BufRead) -> DecodeResult<slr::Message> {
-        let presence_map = decode_stop_bit_bitvec(source).unwrap();
+        let _presence_map = decode_stop_bit_bitvec(source).unwrap();
         let mut presence_by_field: BitVec = BitVec::new();
-        let mut message = slr::Message::new();
+        let message = slr::Message::new();
         for field in self.templates.get("").unwrap().iter_items() {
             if let template::FieldType::Primitive(f) = &field.kind() {
                 presence_by_field.push(field.is_mandatory());

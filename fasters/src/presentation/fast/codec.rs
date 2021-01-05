@@ -102,17 +102,17 @@ impl Codec for i32 {
 }
 
 impl Codec for u64 {
-    fn deserialize(&mut self, input: &mut impl io::Read) -> io::Result<usize> {
+    fn deserialize(&mut self, _input: &mut impl io::Read) -> io::Result<usize> {
         todo!();
     }
 
-    fn serialize(&self, output: &mut impl io::Write) -> io::Result<usize> {
+    fn serialize(&self, _output: &mut impl io::Write) -> io::Result<usize> {
         todo!();
     }
 }
 
 impl Codec for i64 {
-    fn deserialize(&mut self, input: &mut impl io::Read) -> io::Result<usize> {
+    fn deserialize(&mut self, _input: &mut impl io::Read) -> io::Result<usize> {
         todo!();
     }
 
