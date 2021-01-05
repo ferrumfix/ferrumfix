@@ -28,12 +28,12 @@ impl<E: Encoding<slr::Message>> Acceptor<slr::Message, E> {
             .await;
     }
 
-    async fn handle_connection<T: std::io::Read>(&self, channels: impl Iterator<Item = T>) {
+    async fn handle_connection<T: std::io::Read>(&self, listener: impl Iterator<Item = T>) {
         let mut payload = Vec::with_capacity(8192);
         let mut offset = 0;
         let mut session_layer = session::ProcessorBuilder::new("FOO", "BAR").build();
-        for mut channel in channels {
-            let payload_size = channel.read(&mut payload).unwrap();
+        for mut socket in listener {
+            let payload_size = socket.read(&mut payload).unwrap();
             offset += payload_size;
             let msg = self.encoder.decode(&mut &payload[offset..]).unwrap();
             session_layer.process_incoming(msg).unwrap();
