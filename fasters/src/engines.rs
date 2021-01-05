@@ -1,9 +1,9 @@
-use crate::dictionary::Dictionary;
 use crate::app::slr;
+use crate::dictionary::Dictionary;
 use crate::presentation::Encoding;
 use crate::session;
-use std::net::TcpListener;
 use std::marker::PhantomData;
+use std::net::TcpListener;
 use uuid::Uuid;
 
 struct Acceptor<M, E: Encoding<M>> {
@@ -24,7 +24,8 @@ impl<E: Encoding<slr::Message>> Acceptor<slr::Message, E> {
     }
 
     pub async fn listen(self, listener: TcpListener) {
-        self.handle_connection(listener.incoming().map(|stream| stream.unwrap())).await;
+        self.handle_connection(listener.incoming().map(|stream| stream.unwrap()))
+            .await;
     }
 
     async fn handle_connection<T: std::io::Read>(&self, channels: impl Iterator<Item = T>) {

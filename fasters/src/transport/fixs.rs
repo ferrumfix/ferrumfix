@@ -1,5 +1,5 @@
 use crate::openssl::ssl::*;
-use std::net::{TcpListener, SocketAddr};
+use std::net::{SocketAddr, TcpListener};
 use std::path::Path;
 use std::sync::Arc;
 

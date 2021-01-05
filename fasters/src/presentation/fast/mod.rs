@@ -1,5 +1,5 @@
-use crate::dictionary::Dictionary;
 use crate::app::slr;
+use crate::dictionary::Dictionary;
 use crate::presentation::Encoding;
 use bitvec::vec::BitVec;
 use codec::decode_stop_bit_bitvec;

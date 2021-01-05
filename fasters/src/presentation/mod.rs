@@ -1,11 +1,11 @@
 //! Support for FIX-related encoding types (OSI Layer 6).
-use std::io;
 use std::error::Error;
+use std::io;
 
 mod fast;
 mod json;
-mod tagvalue;
 pub mod sofh;
+mod tagvalue;
 
 pub use fast::Fast;
 pub use tagvalue::TagValue;

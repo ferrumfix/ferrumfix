@@ -3,4 +3,4 @@
 mod classic;
 mod fixp;
 
-pub use classic::{ProcessorBuilder, Processor};
+pub use classic::{Processor, ProcessorBuilder};

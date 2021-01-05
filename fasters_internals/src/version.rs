@@ -55,12 +55,12 @@ impl Version {
             Self::Fix30 => false,
             Self::Fix40 => false,
             Self::Fix41 => false,
-            Self::Fix42 => false,//true
+            Self::Fix42 => false, //true
             Self::Fix43 => false,
-            Self::Fix44 => false,//true
+            Self::Fix44 => false, //true
             Self::Fix50 => false,
             Self::Fix50SP1 => false,
-            Self::Fix50SP2 => false,//true
+            Self::Fix50SP2 => false, //true
             Self::Fixt11 => false,
         }
     }
