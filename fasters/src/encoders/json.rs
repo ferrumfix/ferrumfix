@@ -20,6 +20,67 @@ impl Json {
             pretty_print: pretty,
         }
     }
+
+    fn decode_field(
+        dictionary: &Dictionary,
+        key: &str,
+        value: &serde_json::Value,
+    ) -> Result<(u32, slr::FixFieldValue), DecodeError> {
+        if let Some(field) = dictionary.get_field_by_name(key) {
+            match value {
+                serde_json::Value::String(s) => Ok((
+                    field.tag() as u32,
+                    slr::FixFieldValue::String(s.to_string()),
+                )),
+                serde_json::Value::Array(values) => {
+                    let mut group = Vec::new();
+                    for item in values {
+                        group.push(Self::decode_component_block(dictionary, item)?);
+                    }
+                    Ok((field.tag() as u32, slr::FixFieldValue::Group(group)))
+                }
+                _ => Err(DecodeError::InvalidData),
+            }
+        } else {
+            Err(DecodeError::InvalidData)
+        }
+    }
+
+    fn decode_component_block(
+        dictionary: &Dictionary,
+        value: &serde_json::Value,
+    ) -> Result<HashMap<i64, slr::FixFieldValue>, DecodeError> {
+        let mut group = HashMap::new();
+        for item in value.as_object().unwrap() {
+            let (tag, field) = Self::decode_field(dictionary, item.0, item.1)?;
+            group.insert(tag as i64, field);
+        }
+        Ok(group)
+    }
+
+    fn translate(dict: &Dictionary, field: &slr::FixFieldValue) -> serde_json::Value {
+        match field {
+            slr::FixFieldValue::String(c) => serde_json::Value::String(c.to_string()),
+            slr::FixFieldValue::Group(array) => {
+                let mut values = Vec::new();
+                for group in array {
+                    let mut map = serde_json::Map::new();
+                    for item in group {
+                        let field = dict
+                            .get_field(*item.0 as u32)
+                            .ok_or(DecodeError::InvalidData)
+                            .unwrap();
+                        let field_name = field.name().to_string();
+                        let field_value = Self::translate(dict, item.1);
+                        map.insert(field_name, field_value);
+                    }
+                    values.push(serde_json::Value::Object(map));
+                }
+                serde_json::Value::Array(values)
+            }
+            _ => panic!(),
+        }
+    }
 }
 
 impl Encoding<slr::Message> for Json {
@@ -41,23 +102,22 @@ impl Encoding<slr::Message> for Json {
             .get("Trailer")
             .and_then(|v| v.as_object())
             .ok_or(DecodeError::Schema)?;
-        let msg_type = header
+        let _field_msg_type = header // TODO: field presence checks.
             .get("MsgType")
+            .and_then(|v| v.as_str())
+            .ok_or(DecodeError::Schema)?;
+        let field_begin_string = header
+            .get("BeginString")
             .and_then(|v| v.as_str())
             .ok_or(DecodeError::Schema)?;
         let dictionary = self
             .dictionaries
-            .get(msg_type)
+            .get(field_begin_string)
             .ok_or(DecodeError::InvalidMsgType)?;
         let mut message = slr::Message::new();
         for item in header.iter().chain(body).chain(trailer) {
-            let field = dictionary.get_field_by_name(item.0);
-            if let Some(field) = field {
-                message.add_field(
-                    field.tag(),
-                    slr::FixFieldValue::String(item.1.as_str().unwrap().to_string()),
-                );
-            }
+            let (tag, field) = Self::decode_field(dictionary, item.0, item.1)?;
+            message.add_field(tag, field);
         }
         Ok(message)
     }
@@ -86,7 +146,7 @@ impl Encoding<slr::Message> for Json {
                 .get_field(*field_tag as u32)
                 .ok_or(DecodeError::InvalidData)?;
             let field_name = field.name().to_string();
-            let field_value = serde_json::Value::from(field_value);
+            let field_value = Json::translate(dictionary, field_value);
             if component_std_header.contains_field(&field) {
                 map_header
                     .as_object_mut()
@@ -110,21 +170,11 @@ impl Encoding<slr::Message> for Json {
             "Trailer": map_trailer,
         });
         let bytes = if self.pretty_print {
-            serde_json::to_vec(&value).unwrap()
-        } else {
             serde_json::to_vec_pretty(&value).unwrap()
+        } else {
+            serde_json::to_vec(&value).unwrap()
         };
         Ok(bytes)
-    }
-}
-
-impl From<&slr::FixFieldValue> for serde_json::Value {
-    fn from(field: &slr::FixFieldValue) -> Self {
-        let string = match field {
-            slr::FixFieldValue::Char(c) => c.to_string(),
-            _ => panic!(),
-        };
-        serde_json::Value::String(string)
     }
 }
 
@@ -145,5 +195,89 @@ impl fmt::Display for DecodeError {
 impl std::error::Error for DecodeError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use serde_json::*;
+
+    const MESSAGE_SIMPLE: &str = r#"
+{
+    "Header": {
+        "BeginString": "FIX.4.4",
+        "MsgType": "W",
+        "MsgSeqNum": "4567",
+        "SenderCompID": "SENDER",
+        "TargetCompID": "TARGET",
+        "SendingTime": "20160802-21:14:38.717"
+    },
+    "Body": {
+        "SecurityIDSource": "8",
+        "SecurityID": "ESU6",
+        "MDReqID": "789",
+        "NoMDEntries": [
+            { "MDEntryType": "0", "MDEntryPx": "1.50", "MDEntrySize": "75", "MDEntryTime": "21:14:38.688" },
+            { "MDEntryType": "1", "MDEntryPx": "1.75", "MDEntrySize": "25", "MDEntryTime": "21:14:38.688" }
+        ]
+    },
+    "Trailer": {
+    }
+}
+    "#;
+
+    const MESSAGE_WITHOUT_HEADER: &str = r#"
+{
+    "Body": {
+        "SecurityIDSource": "8",
+        "SecurityID": "ESU6",
+        "MDReqID": "789",
+        "NoMDEntries": [
+            { "MDEntryType": "0", "MDEntryPx": "1.50", "MDEntrySize": "75", "MDEntryTime": "21:14:38.688" },
+            { "MDEntryType": "1", "MDEntryPx": "1.75", "MDEntrySize": "25", "MDEntryTime": "21:14:38.688" }
+        ]
+    },
+    "Trailer": {
+    }
+}
+    "#;
+
+    fn dict_fix44() -> Dictionary {
+        Dictionary::from_version(crate::app::Version::Fix44)
+    }
+
+    fn encoder_fix44() -> Json {
+        Json::new(dict_fix44(), true)
+    }
+
+    #[test]
+    fn decode_then_decode() {
+        let encoder = encoder_fix44();
+        let json_value_before: Value = from_str(MESSAGE_SIMPLE).unwrap();
+        let message = encoder.decode(&mut MESSAGE_SIMPLE.as_bytes()).unwrap();
+        let bytes = encoder.encode(message).unwrap();
+        let json_value_after: Value = from_slice(&bytes[..]).unwrap();
+        assert_eq!(json_value_before, json_value_after);
+    }
+
+    #[test]
+    fn message_without_header() {
+        let encoder = encoder_fix44();
+        let result = encoder.decode(&mut MESSAGE_WITHOUT_HEADER.as_bytes());
+        match result {
+            Err(DecodeError::Schema) => (),
+            _ => panic!(),
+        };
+    }
+
+    #[test]
+    fn invalid_json() {
+        let encoder = encoder_fix44();
+        let result = encoder.decode(&mut "this is invalid JSON".as_bytes());
+        match result {
+            Err(DecodeError::Syntax) => (),
+            _ => panic!(),
+        };
     }
 }

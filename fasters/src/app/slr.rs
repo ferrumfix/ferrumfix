@@ -11,6 +11,7 @@ pub enum FixFieldValue {
     Char(char),
     String(String),
     Data(Vec<u8>),
+    Group(Vec<HashMap<i64, FixFieldValue>>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -31,6 +32,7 @@ impl Field {
             FixFieldValue::Int(int) => write.write(int.to_string().as_bytes()),
             FixFieldValue::Float(float) => write.write(float.to_string().as_bytes()),
             FixFieldValue::Data(raw_data) => write.write(&raw_data),
+            FixFieldValue::Group(_) => panic!("Can't encode a group!"),
         }?;
         write.write_all(&[1u8])?;
         Ok(length)

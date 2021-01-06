@@ -12,6 +12,7 @@ pub mod encoders;
 pub mod engines;
 #[deprecated]
 pub mod internals;
+pub mod prelude;
 pub mod session;
 pub mod transport;
 

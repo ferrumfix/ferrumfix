@@ -544,7 +544,6 @@ mod quickfix {
     use super::*;
 
     pub(crate) struct QuickFixReader<'a> {
-        version: String,
         node_with_header: roxmltree::Node<'a, 'a>,
         node_with_trailer: roxmltree::Node<'a, 'a>,
         node_with_components: roxmltree::Node<'a, 'a>,
@@ -587,14 +586,29 @@ mod quickfix {
                         ParseDictionaryError::InvalidData(format!("<{}> tag not found", tag))
                     })
             };
+            let version_type = root
+                .attribute("type")
+                .ok_or(ParseDictionaryError::InvalidData(
+                    "No version attribute.".to_string(),
+                ))?;
+            let version_major =
+                root.attribute("major")
+                    .ok_or(ParseDictionaryError::InvalidData(
+                        "No majorr version attribute.".to_string(),
+                    ))?;
+            let version_minor =
+                root.attribute("minor")
+                    .ok_or(ParseDictionaryError::InvalidData(
+                        "No minor version attribute.".to_string(),
+                    ))?;
+            let version = format!("{}.{}.{}", version_type, version_major, version_minor);
             Ok(QuickFixReader {
-                version: String::new(),
                 node_with_header: find_tagged_child("header")?,
                 node_with_trailer: find_tagged_child("trailer")?,
                 node_with_messages: find_tagged_child("messages")?,
                 node_with_components: find_tagged_child("components")?,
                 node_with_fields: find_tagged_child("fields")?,
-                dict: Dictionary::empty(),
+                dict: Dictionary::new(version),
             })
         }
 
@@ -612,7 +626,8 @@ mod quickfix {
 
         fn add_component_with_name<S: AsRef<str>>(&mut self, node: roxmltree::Node, name: S) {
             let iid = self.dict.components.len();
-            let component = ComponentData::definition_from_node_with_name(&mut self.dict, node, name.as_ref());
+            let component =
+                ComponentData::definition_from_node_with_name(&mut self.dict, node, name.as_ref());
             self.dict
                 .symbol_table
                 .insert(PKey::ComponentByName(name.as_ref().to_string()), iid as u32);
@@ -649,7 +664,11 @@ mod quickfix {
             Self::definition_from_node_with_name(dict, node, name)
         }
 
-        fn definition_from_node_with_name<S: AsRef<str>>(dict: &mut Dictionary, node: roxmltree::Node, name: S) -> Self {
+        fn definition_from_node_with_name<S: AsRef<str>>(
+            dict: &mut Dictionary,
+            node: roxmltree::Node,
+            name: S,
+        ) -> Self {
             let layout_start = dict.layout_items.len() as u32;
             for child in node.children() {
                 if child.is_element() {
