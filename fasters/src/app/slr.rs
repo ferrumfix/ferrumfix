@@ -54,4 +54,18 @@ impl Message {
     pub fn add_field<K: Into<i64>>(&mut self, tag: K, value: slr::FixFieldValue) {
         self.fields.insert(tag.into(), value);
     }
+
+    pub fn msg_type(&self) -> Option<&str> {
+        match self.fields.get(&35) {
+            Some(FixFieldValue::String(s)) => Some(s.as_str()),
+            _ => None,
+        }
+    }
+
+    pub fn seq_num(&self) -> Option<u64> {
+        match self.fields.get(&34) {
+            Some(FixFieldValue::Int(n)) => Some(*n as u64),
+            _ => None,
+        }
+    }
 }
