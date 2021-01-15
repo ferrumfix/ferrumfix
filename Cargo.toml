@@ -3,6 +3,6 @@ members = [
     "fasters",
     "fasters_derive",
     "fasters_internals",
-    "examples/hello",
-    "examples/fast_simple_template",
+    "examples/json_relay",
+    "examples/tls_fixua_acceptor",
 ]
