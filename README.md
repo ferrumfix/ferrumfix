@@ -39,11 +39,11 @@ You don't have to understand the whole tech stack to use a single layer; in fact
 
 **Encodings:**
 
-- [ ] Tagvalue (classic FIX).
+- [X] Tagvalue (classic FIX).
 - [ ] FIXML.
 - [ ] Simple Binary Encoding (SBE).
 - [ ] Google Protocol Buffers (GPB).
-- [ ] JavaScript Object Notation (JSON).
+- [X] JavaScript Object Notation (JSON).
 - [ ] Abstract Syntax Notation (ASN.1).
 - [ ] FIX Adapted for STreaming (FAST).
 
@@ -59,7 +59,7 @@ Please reach out to `Filippo Costa <filippo.costa@protonmail.com>` for business 
 
 All development happens on GitHub at [`neysofu/fasters`](https://github.com/neysofu/fasters). Contributions both from volunteers and companies are welcome. Depending on the size and scope of your intented contributions, it's likely a good idea to open beforehand a pull request to discuss any details. Please note that our branching strategy is inspired by the (in)famous [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/), which is a good fit for software that requires complex versioning such as FIX implementations. Versioning adheres to [SemVer 2.0](https://semver.org/).
 
-Please reach out to Filippo Costa `filippo.costa@protonmail.com` if you want to provide more structured and long-term contribution efforts.
+Please reach out to `Filippo Costa filippo.costa@protonmail.com` if you want to provide more structured and long-term contribution efforts.
 
 ## Legal
 
