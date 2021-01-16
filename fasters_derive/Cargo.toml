@@ -2,6 +2,14 @@
 name = "fasters_derive"
 version = "0.2.0"
 edition = "2018"
+authors = ["Filippo Costa @neysofu"]
+homepage = "https://github.com/neysofu/fasters"
+repository = "https://github.com/neysofu/fasters"
+description = "Code generation for Fasters"
+publish = true
+keywords = ["fix", "fast", "protocol", "finance", "streaming"]
+categories = ["network-programming", "parser-implementations", "encoding"]
+license = "MIT"
 
 [lib]
 name = "fasters_derive"
