@@ -6,10 +6,10 @@
 //! respectively.
 
 pub mod app;
-mod fix_codegen;
 mod dictionary;
 pub mod encoders;
 pub mod engines;
+mod fix_codegen;
 pub mod prelude;
 pub mod session;
 pub mod transport;
