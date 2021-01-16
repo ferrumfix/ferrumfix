@@ -37,12 +37,8 @@ serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 uuid = { version = "0.8.1", features = ["v4"] }
 fasters_derive = { path = "../fasters_derive" }
-fasters_internals = { path = "../fasters_internals" }
-
-[build-dependencies]
-fasters_internals = { path = "../fasters_internals" }
 
 [dev-dependencies]
 quickcheck = "0.8"
 quickcheck_macros = "0.8"
-syn = "1"
+syn = { version = "1", features = ["full"] }

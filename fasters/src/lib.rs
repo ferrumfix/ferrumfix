@@ -6,17 +6,16 @@
 //! respectively.
 
 pub mod app;
-pub mod codegen;
+mod fix_codegen;
 mod dictionary;
 pub mod encoders;
 pub mod engines;
-#[deprecated]
-pub mod internals;
 pub mod prelude;
 pub mod session;
 pub mod transport;
 
 pub use dictionary::Dictionary;
+pub use fix_codegen::codegen;
 
 #[cfg(expose_openssl)]
 pub extern crate openssl;

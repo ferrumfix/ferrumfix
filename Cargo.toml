@@ -2,7 +2,7 @@
 members = [
     "fasters",
     "fasters_derive",
-    "fasters_internals",
+    "examples/codegen_fix42",
     "examples/json_relay",
     "examples/tls_fixua_acceptor",
 ]

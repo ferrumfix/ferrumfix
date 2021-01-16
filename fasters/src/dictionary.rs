@@ -189,6 +189,12 @@ impl Dictionary {
             .map(|data| Component(self, data))
     }
 
+    pub fn components(&self) -> impl Iterator<Item = Component> {
+        self.components
+            .iter()
+            .map(move |data| Component(&self, data))
+    }
+
     pub fn messages(&self) -> impl Iterator<Item = Message> {
         self.messages.iter().map(move |data| Message(&self, data))
     }
@@ -384,8 +390,20 @@ fn str_to_basetype(s: &str) -> BaseType {
 
 impl<'a> Field<'a> {
     pub fn doc_url_onixs(&self, version: &str) -> String {
+        let v = match version {
+            "FIX.4.0" => "4.0",
+            "FIX.4.1" => "4.1",
+            "FIX.4.2" => "4.2",
+            "FIX.4.3" => "4.3",
+            "FIX.4.4" => "4.4",
+            "FIX.5.0" => "5.0",
+            "FIX.5.0SP1" => "5.0.SP1",
+            "FIX.5.0SP2" => "5.0.SP2",
+            "FIXT.1.1" => "FIXT.1.1",
+            s => s,
+        };
         let mut url = "https://www.onixs.biz/fix-dictionary/".to_string();
-        url.push_str(version);
+        url.push_str(v);
         url.push_str("/tagNum_");
         url.push_str(self.1.tag.to_string().as_str());
         url.push_str(".html");
@@ -393,7 +411,12 @@ impl<'a> Field<'a> {
     }
 
     pub fn basetype(&self) -> BaseType {
-        str_to_basetype((&self.data_type().1.base_type).as_ref().unwrap().as_str())
+        str_to_basetype(
+            (&self.data_type().1.base_type)
+                .as_ref()
+                .unwrap_or(&"char".to_string())
+                .as_str(),
+        )
     }
 
     pub fn name(&self) -> &str {
