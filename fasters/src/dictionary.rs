@@ -476,7 +476,7 @@ impl<'a> LayoutItem<'a> {
                 self.0,
                 self.0.components.get(*n as usize).unwrap(),
             )),
-            LayoutItemKindData::Group(range) => {
+            LayoutItemKindData::Group(_range) => {
                 LayoutItemKind::Group() // FIXME
             }
             LayoutItemKindData::Field(n) => {
@@ -490,7 +490,7 @@ impl<'a> LayoutItem<'a> {
             LayoutItemKindData::Component(n) => {
                 self.0.components.get(*n as usize).unwrap().name.as_str()
             }
-            LayoutItemKindData::Group(range) => "",
+            LayoutItemKindData::Group(_range) => "",
             LayoutItemKindData::Field(n) => self.0.fields.get(*n as usize).unwrap().name.as_str(),
         }
     }

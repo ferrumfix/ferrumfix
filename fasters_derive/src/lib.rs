@@ -5,7 +5,7 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use std::convert::TryFrom;
-use std::iter::Extend;
+
 
 #[proc_macro_derive(TsrMessage, attributes(fasters))]
 pub fn derive_tsr_message(input: TokenStream) -> TokenStream {
@@ -15,7 +15,7 @@ pub fn derive_tsr_message(input: TokenStream) -> TokenStream {
         crate_path: CratePath::Relative,
         message_structure: darling_context,
     };
-    let mut gen = context.gen_get_field();
+    let gen = context.gen_get_field();
     //gen.extend(context.gen_set_field());
     //gen.extend(context.gen_transforms());
     gen.into()

@@ -87,7 +87,7 @@ impl HeartbeatConfig {
                 range.start.as_secs(),
                 range.end.as_secs() + 1,
             )),
-            Custom => Ok(()),
+            _Custom => Ok(()),
         }
     }
 }
@@ -331,7 +331,7 @@ impl Processor {
                 .config
                 .heartbeat
                 .validate(&Duration::from_secs(*hb as u64));
-            if let Err(err_string) = heartbeat_result {
+            if let Err(_err_string) = heartbeat_result {
                 let mut logout = slr::Message::new();
                 logout.add_field(35, slr::FixFieldValue::String("5".to_string()));
                 logout.add_field(
@@ -437,10 +437,10 @@ impl Processor {
                 }
                 // `ResendRequest(35=2)`.
                 "2" => {
-                    let mut response = slr::Message::new();
+                    let response = slr::Message::new();
                     let seq_from = message.fields.get(&7).unwrap();
                     let seq_to = message.fields.get(&16).unwrap();
-                    let range = seq_from..=seq_to;
+                    let _range = seq_from..=seq_to;
                     self.send(response)?;
                 }
                 // `Reject(35=3)`.
@@ -490,7 +490,7 @@ impl Processor {
         todo!()
     }
 
-    fn reject_message(&mut self, msg: slr::Message) {
+    fn reject_message(&mut self, _msg: slr::Message) {
         self.expected_seqnum_inbound += 1;
     }
 
@@ -506,7 +506,7 @@ impl Processor {
         let sender_comp_id = msg.fields.get(&49);
         let target_comp_id = msg.fields.get(&56);
         match begin_string {
-            Some(slr::FixFieldValue::String(x)) => (),
+            Some(slr::FixFieldValue::String(_x)) => (),
             _ => return false,
         };
         match sender_comp_id {
@@ -528,7 +528,7 @@ impl Processor {
         true
     }
 
-    fn sending_time_within_threshold(&self, msg: &slr::Message) -> bool {
+    fn sending_time_within_threshold(&self, _msg: &slr::Message) -> bool {
         true
     }
 }
@@ -541,7 +541,7 @@ struct SeqNumRange {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::encoders;
+    
 
     const MSG: &'static [u8] = &[0];
 

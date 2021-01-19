@@ -2,9 +2,9 @@ use crate::app::slr;
 use boolinator::Boolinator;
 use std::cmp::Ordering;
 use std::ops::RangeInclusive;
-use std::sync::mpsc::channel;
-use std::sync::mpsc::{Receiver, Sender};
-use std::time::{Duration, Instant};
+
+
+use std::time::{Duration};
 
 /// The acceptor should convey the rules placed on the expected heartbeat
 /// interval via out-of-band rules of engagement when such rules are required by

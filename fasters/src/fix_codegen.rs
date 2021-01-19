@@ -101,17 +101,17 @@ impl Dictionary {
             LayoutItemKind::Field(f) => f.name().to_snake_case(),
         };
         let field_type = match item.kind() {
-            LayoutItemKind::Component(c) => "()".to_string(),
+            LayoutItemKind::Component(_c) => "()".to_string(),
             LayoutItemKind::Group() => "()".to_string(),
             LayoutItemKind::Field(f) => data_type_to_str(&f.data_type()).to_string(),
         };
         let field_tag = match item.kind() {
-            LayoutItemKind::Component(c) => 1337,
+            LayoutItemKind::Component(_c) => 1337,
             LayoutItemKind::Group() => 42,
             LayoutItemKind::Field(f) => f.tag(),
         };
-        let field_doc = match item.kind() {
-            LayoutItemKind::Component(c) => "///".to_string(),
+        let _field_doc = match item.kind() {
+            LayoutItemKind::Component(_c) => "///".to_string(),
             LayoutItemKind::Group() => "///".to_string(),
             LayoutItemKind::Field(f) => docs::gen_field(self.get_version().to_string(), &f),
         };

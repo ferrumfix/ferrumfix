@@ -116,7 +116,7 @@ impl Codec for i64 {
         todo!();
     }
 
-    fn serialize(&self, output: &mut impl io::Write) -> io::Result<usize> {
+    fn serialize(&self, _output: &mut impl io::Write) -> io::Result<usize> {
         todo!();
     }
 }
@@ -185,7 +185,7 @@ impl PresenceMap {
 }
 
 impl Codec for PresenceMap {
-    fn serialize(&self, output: &mut impl io::Write) -> io::Result<usize> {
+    fn serialize(&self, _output: &mut impl io::Write) -> io::Result<usize> {
         todo!();
     }
 

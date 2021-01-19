@@ -56,7 +56,7 @@ impl TagValue {
         separator: char,
     ) -> Result<slr::Message, <TagValue as Encoding<slr::Message>>::DecodeErr> {
         let tag_lookup = StandardTagLookup::new(&self.dict);
-        let mut checksum = Checksum::new();
+        let checksum = Checksum::new();
         let mut field_iter = FieldIter {
             handle: source,
             separator: separator as u8,
@@ -140,7 +140,7 @@ impl Encoding<slr::Message> for TagValue {
 }
 
 impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Self {
+    fn from(_err: io::Error) -> Self {
         Error::Eof // FIXME
     }
 }
@@ -359,6 +359,6 @@ mod test {
     #[test]
     fn detect_incorrect_checksum() {
         let msg = "8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=126|";
-        let result = TagValue::new().decode_ws(&mut msg.as_bytes(), '|');
+        let _result = TagValue::new().decode_ws(&mut msg.as_bytes(), '|');
     }
 }

@@ -46,7 +46,7 @@ impl Encoding<slr::Message> for Fast {
         let mut presence_by_field: BitVec = BitVec::new();
         let message = slr::Message::new();
         for field in self.templates.get("").unwrap().iter_items() {
-            if let template::FieldType::Primitive(f) = &field.kind() {
+            if let template::FieldType::Primitive(_f) = &field.kind() {
                 presence_by_field.push(field.is_mandatory());
             } else {
                 presence_by_field.push(false);
@@ -97,9 +97,9 @@ impl Encoding<slr::Message> for Fast {
         Ok(message)
     }
 
-    fn encode(&self, message: slr::Message) -> EncodeResult<Vec<u8>> {
-        let mut presence_by_field: BitVec = BitVec::new();
-        let mut buffer = Vec::new();
+    fn encode(&self, _message: slr::Message) -> EncodeResult<Vec<u8>> {
+        let _presence_by_field: BitVec = BitVec::new();
+        let buffer = Vec::new();
         Ok(buffer)
     }
 }
