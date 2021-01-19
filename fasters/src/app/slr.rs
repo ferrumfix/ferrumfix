@@ -3,6 +3,7 @@
 use crate::app::slr;
 use std::collections::HashMap;
 use std::io;
+use std::time::SystemTime;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum FixFieldValue {
@@ -12,6 +13,66 @@ pub enum FixFieldValue {
     String(String),
     Data(Vec<u8>),
     Group(Vec<HashMap<i64, FixFieldValue>>),
+}
+
+impl From<i64> for FixFieldValue {
+    fn from(v: i64) -> Self {
+        FixFieldValue::Int(v)
+    }
+}
+
+impl From<String> for FixFieldValue {
+    fn from(v: String) -> Self {
+        FixFieldValue::String(v)
+    }
+}
+
+impl From<f64> for FixFieldValue {
+    fn from(v: f64) -> Self {
+        FixFieldValue::Float(v)
+    }
+}
+
+impl From<(u8, u16)> for FixFieldValue {
+    fn from(v: (u8, u16)) -> Self {
+        FixFieldValue::Int(((v.0 as i64) << 16) + (v.1 as i64))
+    }
+}
+
+impl From<char> for FixFieldValue {
+    fn from(v: char) -> Self {
+        FixFieldValue::Char(v)
+    }
+}
+
+impl From<usize> for FixFieldValue {
+    fn from(v: usize) -> Self {
+        FixFieldValue::Int(v as i64)
+    }
+}
+
+impl From<Vec<u8>> for FixFieldValue {
+    fn from(v: Vec<u8>) -> Self {
+        FixFieldValue::Data(v)
+    }
+}
+
+impl From<bool> for FixFieldValue {
+    fn from(v: bool) -> Self {
+        FixFieldValue::Char(if v { 't' } else { 'f' })
+    }
+}
+
+impl From<u8> for FixFieldValue {
+    fn from(v: u8) -> Self {
+        FixFieldValue::Int(v.into())
+    }
+}
+
+impl From<SystemTime> for FixFieldValue {
+    fn from(v: SystemTime) -> Self {
+        FixFieldValue::Int(v.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

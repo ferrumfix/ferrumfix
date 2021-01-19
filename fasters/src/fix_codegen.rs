@@ -1,107 +1,131 @@
 use crate::dictionary::{Component, Datatype, Dictionary, Field, LayoutItem, LayoutItemKind};
-use codegen::Scope;
 use inflector::Inflector;
 
-pub fn codegen(dict: &Dictionary) -> String {
-    let mut scope = Scope::new();
-    scope.raw("#![allow(dead_code)]");
-    let mod_components = scope
-        .new_module("components")
-        .import("super", "*")
-        .import("fasters::prelude", "*")
-        .import("std::io", "Write");
-    //dict.fields.values().for_each(|field| {
-    //    let structure = scope
-    //        .get_or_new_module("fields")
-    //        .new_struct(field.name.as_str())
-    //        .vis("pub");
-    //    let data_type = dict.get_data_type(&field.data_type).unwrap().clone();
-    //    let docstring = field_docstring(dict.version, &field);
-    //    structure.doc(docstring.as_str());
-    //    structure.field("data", (settings.typer)(data_type));
-    //});
-    dict.components().for_each(|component| {
-        let struct_component = dict.build_component_struct(&component);
-        mod_components.push_struct(struct_component);
-    });
-    let mod_messages = scope
-        .new_module("messages")
-        .import("super", "*")
-        .import("fasters::prelude", "*")
-        .import("std::io", "Write");
-    dict.messages().for_each(|msg| {
-        let struct_msg = dict.build_message_struct(msg.msg_type());
-        mod_messages.push_struct(struct_msg);
-    });
-    scope.to_string()
+fn crate_name() -> &'static str {
+    "crate"
 }
 
-fn optionify_type<S: AsRef<str>>(required: bool, t: S) -> String {
+pub fn codegen(dict: &Dictionary) -> String {
+    let component_defs: Vec<String> = dict
+        .components()
+        .map(|comp| dict.build_component_struct(&comp))
+        .collect();
+    let message_defs: Vec<String> = dict
+        .messages()
+        .map(|msg| dict.build_message_struct(msg.msg_type()))
+        .collect();
+    let code = format!(
+        "#![allow(dead_code)]
+
+        use fasters_derive::*;
+        
+        pub mod components {{
+            use super::*;
+        
+            {components}
+        }}
+        
+        pub mod messages {{
+            use super::*;
+        
+            {messages}
+        }}
+        ",
+        components = component_defs.join("\n\n"),
+        messages = message_defs.join("\n\n")
+    );
+    code
+}
+
+fn make_type_optional(required: bool, typ: String) -> String {
     if required {
-        t.as_ref().to_string()
+        typ
     } else {
-        format!("Option<{}>", t.as_ref())
+        format!("::std::option::Option<{}>", typ)
     }
 }
 
 impl Dictionary {
-    fn build_message_struct(&self, msg_type: &str) -> codegen::Struct {
+    fn build_message_struct(&self, msg_type: &str) -> String {
         let message = self.get_message_by_msg_type(msg_type).unwrap();
-        let msg_contents = self.get_message_by_msg_type(message.msg_type()).unwrap();
-        let mut structure = codegen::Struct::new(message.name());
-        structure
-            .vis("pub")
-            .doc(format!("# Message information:\n\nMessage type: {}", message.name()).as_str());
-        for layout_item in msg_contents.layout() {
-            let field =
-                self.translate_msg_content_to_struct_field(&layout_item, layout_item.required());
-            (&mut structure).push_field(field);
-        }
-        structure
+        let fields: Vec<String> = message
+            .layout()
+            .map(|layout_item| {
+                self.translate_layout_item_to_struct_field(&layout_item, layout_item.required())
+            })
+            .filter(|opt| opt.is_some())
+            .map(|opt| opt.unwrap())
+            .collect();
+        format!(
+            r#"
+            /// Message information: {msg_name}
+            #[derive(TsrMessage)]
+            #[fasters(msg_type = "{msg_type}")]
+            pub struct {msg_name} {{
+                {fields}
+            }}
+            "#,
+            msg_type = message.msg_type(),
+            msg_name = message.name(),
+            fields = fields.join(", ")
+        )
     }
 
-    fn build_component_struct(&self, component: &Component) -> codegen::Struct {
-        let mut structure = codegen::Struct::new(component.name());
-        structure.vis("pub");
-        for layout_item in component.items() {
-            let field =
-                self.translate_msg_content_to_struct_field(&layout_item, layout_item.required());
-            (&mut structure).push_field(field);
-        }
-        structure
+    fn build_component_struct(&self, component: &Component) -> String {
+        let fields: Vec<String> = component
+            .items()
+            .map(|layout_item| {
+                self.translate_layout_item_to_struct_field(&layout_item, layout_item.required())
+            })
+            .filter(|opt| opt.is_some())
+            .map(|opt| opt.unwrap())
+            .collect();
+        format!(
+            r#"
+            /// Component information: {msg_name}
+            #[fasters(msg_type = "TODO")]
+            #[derive(TsrMessage)]
+            pub struct {msg_name} {{
+                {fields}
+            }}
+            "#,
+            msg_name = component.name(),
+            fields = fields.join(", ")
+        )
     }
 
-    fn translate_msg_content_to_struct_field(
-        &self,
-        content: &LayoutItem,
-        required: bool,
-    ) -> codegen::Field {
-        let field_name = match content.kind() {
+    fn translate_layout_item_to_struct_field(&self, item: &LayoutItem, required: bool) -> Option<String> {
+        let field_name = match item.kind() {
             LayoutItemKind::Component(c) => c.name().to_snake_case(),
-            LayoutItemKind::Group() => "a".to_snake_case(),
+            LayoutItemKind::Group() => return None,
             LayoutItemKind::Field(f) => f.name().to_snake_case(),
         };
-        let field_type = match content.kind() {
+        let field_type = match item.kind() {
             LayoutItemKind::Component(c) => "()".to_string(),
             LayoutItemKind::Group() => "()".to_string(),
             LayoutItemKind::Field(f) => data_type_to_str(&f.data_type()).to_string(),
         };
-        let field_doc = match content.kind() {
+        let field_tag = match item.kind() {
+            LayoutItemKind::Component(c) => 1337,
+            LayoutItemKind::Group() => 42,
+            LayoutItemKind::Field(f) => f.tag(),
+        };
+        let field_doc = match item.kind() {
             LayoutItemKind::Component(c) => "///".to_string(),
             LayoutItemKind::Group() => "///".to_string(),
             LayoutItemKind::Field(f) => docs::gen_field(self.get_version().to_string(), &f),
         };
-        let mut field =
-            codegen::Field::new(field_name.as_str(), optionify_type(required, field_type));
-        field.doc(vec![field_doc.as_str()]);
-        match content.kind() {
-            LayoutItemKind::Component(c) => (),
-            LayoutItemKind::Group() => (),
-            LayoutItemKind::Field(f) => {
-                field.annotation(vec![format!("#[fasters(msg_type = {})]", f.tag()).as_str()]);
-            }
-        };
-        field
+        Some(format!(
+            r#"
+            #[fasters(tag = {field_tag}, rust_type = "{rust_type}", opt = {opt})]
+            pub {field_name}: {field_type}
+            "#,
+            opt = !required,
+            rust_type = "",
+            field_tag = field_tag,
+            field_name = field_name,
+            field_type = make_type_optional(required, field_type)
+        ))
     }
 }
 
@@ -115,9 +139,10 @@ fn data_type_to_str(basetype: &Datatype) -> &'static str {
         "CHAR" => "char",
         "MONTHYEAR" => "(u8, u16)",
         "DAYOFMONTH" => "u8",
-        "PRICE" => "f64",
+        "PRICE" => "f64", // FIXME
         "EXCHANGE" => "String",
         "CURRENCY" => "String",
+        "TIME" => "::std::time::Instant",
         _ => "Vec<u8>",
     }
 }
