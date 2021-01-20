@@ -2,6 +2,6 @@
 
 mod classic;
 mod fixp;
-mod new_classic;
+pub mod new_classic;
 
 pub use classic::{Processor, ProcessorBuilder};

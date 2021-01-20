@@ -2,28 +2,58 @@ use crate::app::slr;
 use boolinator::Boolinator;
 use std::cmp::Ordering;
 use std::ops::RangeInclusive;
-
-
-use std::time::{Duration};
+use std::time::Duration;
 
 /// The acceptor should convey the rules placed on the expected heartbeat
 /// interval via out-of-band rules of engagement when such rules are required by
 /// the acceptor.
 ///
-/// There are three methods for determining the heartbeat interval:
-/// - Acceptor requires a specific heartbeat interval.
-/// - Acceptor requires initiator to specify a value within a heartbeat interval
-/// range.
-/// - Acceptor accepts the initiator specified heartbeat interval.
+/// Please note that [`HeartbeatRule`](HeartbeatRule) is marked with
+/// `#[non_exhaustive]`, which future-proofs the enumeration type in case more
+/// variants are added.
+///
+/// Please refer to specs. §4.3.5 for more information.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum HeartbeatRule {
+    /// The acceptor requires a specific heartbeat interval, expressed as a
+    /// [`Duration`](std::time::Duration). Please refer to specs. §4.3.5.1 for
+    /// more information.
     Exact(Duration),
+    /// The acceptor requires the initiator to specify a heartbeat value within a
+    /// [`Range`](std::ops::Range) of [`Duration`s](std::time::Duration). Please
+    /// refer to specs. §4.3.5.3 for more information.
     Range(RangeInclusive<Duration>),
+    /// The acceptor poses no restrictions on the heartbeat interval and the
+    /// initiator can choose any value. Please refer to specs. §4.3.5.3 for more
+    /// information.
     Any,
 }
 
 impl HeartbeatRule {
-    /// Validate a proposed heartbeat value depending on the selected configuration.
+    /// Validates an initiator-provided heartbeat value according to the
+    /// heartbeat rule.
+    ///
+    /// # Examples
+    /// Require exact matching with [`HeartbeatRule::Exact`](HeartbeatRule):
+    /// ```
+    /// use fasters::session::new_classic::HeartbeatRule;
+    /// use std::time::Duration;
+    ///
+    /// let rule = HeartbeatRule::Exact(Duration::from_secs(30));
+    /// assert!(rule.validate(&Duration::from_secs(60)).is_err());
+    /// assert!(rule.validate(&Duration::from_secs(20)).is_err());
+    /// assert!(rule.validate(&Duration::from_secs(30)).is_ok());
+    /// ```
+    /// Accepting any proposed heartbeat value:
+    /// ```
+    /// use fasters::session::new_classic::HeartbeatRule;
+    /// use std::time::Duration;
+    ///
+    /// let rule = HeartbeatRule::Any;
+    /// assert!(rule.validate(&Duration::from_secs(1000)).is_ok());
+    /// assert!(rule.validate(&Duration::from_secs(1)).is_ok());
+    /// ```
     pub fn validate(&self, proposal: &Duration) -> std::result::Result<(), String> {
         match self {
             HeartbeatRule::Exact(expected) => {
