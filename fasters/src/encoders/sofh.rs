@@ -7,47 +7,81 @@
 //! - payload's total length
 //!
 //! For more information read the official documentation.
+//!
+//! https://www.fixtrading.org/standards/fix-sofh-online/
 
 use std::convert::TryInto;
 use std::io;
+use std::num::NonZeroU8;
 
-/// The FIX Trading Community has reserved some encodings.
+/// Enumeration type mapped from the 16-bit raw space.
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum EncodingType {
-    Private(u8),
+    /// Value in the user-reserved space.
+    Private(NonZeroU8),
+    /// Simple Binary Encoding (SBE) v1.0, big-endian mode.
+    /// https://www.fixtrading.org/standards/sbe/
     SimpleBinaryEncodingV10BE,
+    /// Simple Binary Encoding (SBE) v1.0, little-endian mode.
+    /// https://www.fixtrading.org/standards/sbe/
     SimpleBinaryEncodingV10LE,
-    Gcb,
-    ASN1PER,
-    ASN1BER,
-    ASN1OER,
+    /// Google's "Protobuf".
+    /// https://www.fixtrading.org/standards/gpb/
+    Protobuf,
+    /// ASN.1 with Packed Encoding Rules (PER).
+    /// https://www.fixtrading.org/standards/asn1/
+    Asn1PER,
+    /// ASN.1 with Basic Encoding Rules (BER).
+    /// https://www.fixtrading.org/standards/asn1/
+    Asn1BER,
+    /// ASN.1 with Octet Encoding Rules (OER).
+    /// https://www.fixtrading.org/standards/asn1/
+    Asn1OER,
+    /// Tag-value (classic) encoding.
+    /// https://www.fixtrading.org/standards/tagvalue/
     TagValue,
+    /// FIXML.
+    /// https://www.fixtrading.org/standards/fixml/
     FixmlSchema,
-    Fast,
+    /// FAST.
+    /// https://www.fixtrading.org/standards/fast/
+    Fast(NonZeroU8),
+    /// JSON.
+    /// https://www.fixtrading.org/standards/json/
     Json,
+    /// BSON.
+    /// https://www.fixtrading.org/standards/bson/
     Bson,
+    /// Unknown value.
     Other(u16),
 }
 
 impl From<u16> for EncodingType {
-    fn from(val: u16) -> Self {
+    fn from(encoding_type: u16) -> Self {
         // https://www.fixtrading.org/standards/fix-sofh-online/#encoding_type-field
-        match val {
-            0x5be0 => EncodingType::SimpleBinaryEncodingV10BE,
-            0xeb50 => EncodingType::SimpleBinaryEncodingV10LE,
-            0x4700 => EncodingType::Gcb,
-            0xa500 => EncodingType::ASN1PER,
-            0xa501 => EncodingType::ASN1BER,
-            0xa502 => EncodingType::ASN1OER,
-            0xf000 => EncodingType::TagValue,
-            0xf100 => EncodingType::FixmlSchema,
-            0xfa01 | 0xfaff => EncodingType::Fast,
-            0xf500 => EncodingType::Json,
-            0xfb00 => EncodingType::Bson,
-            x if (0x1..=0xff).contains(&x) => EncodingType::Private(x as u8),
-            _ => EncodingType::Other(val),
+        match encoding_type {
+            0x1..=0xFF => EncodingType::Private(u16_as_nonzero_u8(encoding_type, 0).unwrap()),
+            0x4700 => EncodingType::Protobuf,
+            0x5BE0 => EncodingType::SimpleBinaryEncodingV10BE,
+            0xA500 => EncodingType::Asn1PER,
+            0xA501 => EncodingType::Asn1BER,
+            0xA502 => EncodingType::Asn1OER,
+            0xEB50 => EncodingType::SimpleBinaryEncodingV10LE,
+            0xF000 => EncodingType::TagValue,
+            0xF100 => EncodingType::FixmlSchema,
+            0xF500 => EncodingType::Json,
+            0xFA01..=0xFAFF => {
+                EncodingType::Fast(u16_as_nonzero_u8(encoding_type, 0xFA00).unwrap())
+            }
+            0xFB00 => EncodingType::Bson,
+            _ => EncodingType::Other(encoding_type),
         }
     }
+}
+
+fn u16_as_nonzero_u8(value: u16, offset: u16) -> Option<NonZeroU8> {
+    NonZeroU8::new((value - offset).try_into().ok()?)
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -76,9 +110,19 @@ impl From<&[u8; 6]> for Header {
 
 #[derive(Clone, Debug)]
 pub struct Frame {
-    pub message_length: u32,
-    pub encoding_type: u16,
-    pub payload: Vec<u8>,
+    message_length: u32,
+    encoding_type: u16,
+    payload: Vec<u8>,
+}
+
+impl Frame {
+    pub fn encoding_type(&self) -> u16 {
+        self.encoding_type
+    }
+
+    pub fn payload(&self) -> &[u8] {
+        &self.payload[..]
+    }
 }
 
 pub struct OpenFrameIter<R: io::Read> {
