@@ -141,4 +141,12 @@ impl Message {
             _ => None,
         }
     }
+
+    pub fn test_indicator(&self) -> Option<bool> {
+        match self.fields.get(&464) {
+            Some(FixFieldValue::Char('Y')) => Some(true),
+            Some(FixFieldValue::Char('N')) => Some(false),
+            _ => Some(false)
+        }
+    }
 }
