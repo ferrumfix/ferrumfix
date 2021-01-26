@@ -1,678 +1,795 @@
 use crate::app::slr;
 use boolinator::Boolinator;
+use futures_lite::prelude::*;
 use std::cmp::Ordering;
-use std::ops::Range;
-use std::sync::mpsc::channel;
-use std::sync::mpsc::{Receiver, Sender};
-use std::time::{Duration, Instant};
+use std::num::NonZeroU64;
+use std::ops::RangeInclusive;
+use std::time::Duration;
+use uuid::Uuid;
 
-const MAX_MESSAGE_SIZE_ERR: &str = "MaxMessageSize(383) = {} < required message size {}";
+pub use acceptor::*;
+pub use initiator::Initiator;
 
-fn reasonable_amount_of_time(heartbeat: &Duration) -> Duration {
-    Duration::from_secs_f32(heartbeat.as_secs_f32() / 5.0)
-}
-
-pub trait FixConnection<T> {
-    fn read(&mut self) -> Result<T>;
-    fn write(&mut self, message: T) -> Result<()>;
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum Error {
-    /// A message shall be considered garbled if any of the following occur as a
-    /// result of encoding, decoding, or transmission errors:
-    ///
-    /// - `BeginString(8)` is not the first tag in a message or is not one of the
-    /// defined FIX session profile identifiers.
-    /// - `BodyLength(9)` is not the second tag in a message or does not contain
-    /// the correct byte count.
-    /// - `MsgType(35)` is not the third tag in a message.
-    /// - `Checksum(10)` is not the last tag or contains an incorrect value.
-    ///
-    /// The FIX session layer presumes that a garbled message is received due to
-    /// a transmission error rather than a FIX session processor defect and
-    /// should be recoverable from the peer.
-    Garbled,
-    Generic,
-    Disconnect,
-}
-
-pub type Result<T> = std::result::Result<T, Error>;
-
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum SessionProfile {
-    Fix42,
-    Fix4,
-    Fixt,
-    LightweightFixt,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-enum State {
-    Disconnected,
-    Established,
-}
-
-struct Channel<T> {
-    sender: Sender<T>,
-    receiver: Receiver<T>,
-}
-
-impl<T> Default for Channel<T> {
-    fn default() -> Self {
-        let channel = channel();
-        Channel {
-            sender: channel.0,
-            receiver: channel.1,
-        }
-    }
-}
-
-/// Config by acceptor.
-enum HeartbeatConfig {
-    Predetermined(Duration),
-    Settable(Range<Duration>),
-    Custom,
-}
-
-impl HeartbeatConfig {
-    fn validate(&self, proposal: &Duration) -> std::result::Result<(), String> {
-        match self {
-            HeartbeatConfig::Predetermined(expected) => (proposal == expected).ok_or(format!(
-                "Invalid HeartBtInt(108), expected value {} seconds",
-                expected.as_secs()
-            )),
-            HeartbeatConfig::Settable(range) => range.contains(proposal).ok_or(format!(
-                "Invalid HeartBtInt(108), expected value between {} and {} seconds",
-                range.start.as_secs(),
-                range.end.as_secs() + 1,
-            )),
-            _Custom => Ok(()),
-        }
-    }
-}
-
-pub trait Authenticator {
-    fn auth(&mut self, message: &slr::Message) -> bool;
-}
-
-// TODO:
-// - Maximum message size
-// - Specifying application version
-// - Specifying supported message types
-// - Identification of application system and FIX session processor
-// "MaxMessageSize(383) = InboundValue < required message size M"
-
-struct Configuration {
-    profile: SessionProfile,
-    sender: String,
-    target: String,
-    app_encryption: bool,
-    // There are three methods for determining the heartbeat interval:
-    //
-    // 1. Acceptor requires a specific heartbeat interval
-    // 2. Acceptor requires initiator to specify a value within a heartbeat interval range
-    // 3. Acceptor accepts the initiator specified heartbeat interval
-    heartbeat: HeartbeatConfig,
-    heartbeat_relaxed: Duration,
-    delivery_threshold: Duration,
-    channel_inbound: Channel<slr::Message>,
-    channel_outbound: Channel<Event>,
-}
-
-/// A standard-compliant FIX session processor (also known as FIX engine). It has
-/// support for all session profiles.
+/// The acceptor should convey the rules placed on the expected heartbeat
+/// interval via out-of-band rules of engagement when such rules are required by
+/// the acceptor.
 ///
-/// ```
-/// let builder = ProcessorBuilder::new("FUNDMANAGER", "BROKER", input, output);
-/// let fix_engine = builder.build();
-/// ```
-pub struct Processor {
-    state: State,
-    config: Configuration,
-    expected_seqnum_inbound: u64,
-    expected_seqnum_outbound: u64,
-    last_receipt: Instant,
-    last_test_id: String,
-    queue_inbound: Vec<slr::Message>,
-    history_outbound: Vec<slr::Message>,
+/// Please note that [`HeartbeatRule`](HeartbeatRule) is marked with
+/// `#[non_exhaustive]`, which future-proofs the enumeration type in case more
+/// variants are added.
+///
+/// Please refer to specs. §4.3.5 for more information.
+#[derive(Debug, Clone, Hash)]
+#[non_exhaustive]
+pub enum HeartbeatRule {
+    /// The acceptor requires a specific heartbeat interval, expressed as a
+    /// [`Duration`](std::time::Duration). Please refer to specs. §4.3.5.1 for
+    /// more information.
+    Exact(Duration),
+    /// The acceptor requires the initiator to specify a heartbeat value within a
+    /// [`RangeInclusive`](std::ops::RangeInclusive) of
+    /// [`Duration`s](std::time::Duration). Please refer to specs. §4.3.5.3 for
+    /// more information.
+    Range(RangeInclusive<Duration>),
+    /// The acceptor poses no restrictions on the heartbeat interval and the
+    /// initiator can choose any value. Please refer to specs. §4.3.5.3 for more
+    /// information.
+    Any,
 }
 
-enum SequenceResetMode {
-    GapFill,
-    Reset,
-}
-
-#[derive(Debug)]
-pub enum Event {
-    Message(slr::Message),
-    Disconnected,
-}
-
-/// For `TestMessageIndicator(464)`.
-enum Environment {
-    Production,
-    Testing,
-}
-
-pub struct ProcessorBuilder {
-    profile: SessionProfile,
-    sender: String,
-    target: String,
-    env: Environment,
-    hearbeat: HeartbeatConfig,
-    seq_reset_mode: SequenceResetMode,
-}
-
-impl ProcessorBuilder {
-    pub fn new<S1: ToString, S2: ToString>(acceptor: S1, initiator: S2) -> Self {
-        ProcessorBuilder {
-            profile: SessionProfile::Fix4,
-            sender: initiator.to_string(),
-            target: acceptor.to_string(),
-            env: Environment::Production,
-            hearbeat: HeartbeatConfig::Predetermined(Duration::from_secs(30)),
-            seq_reset_mode: SequenceResetMode::GapFill,
-        }
-    }
-
-    /// Set the FIX session profile to FIXT 1.1, which allows mixing multiple
-    /// application versions over the same FIX session.
+impl HeartbeatRule {
+    /// Validates an initiator-provided heartbeat value according to the
+    /// heartbeat rule.
     ///
     /// # Examples
+    /// Require exact matching with [`HeartbeatRule::Exact`](HeartbeatRule):
     /// ```
-    /// let builder = ProcessorBuilder::new("FOO", "BAR").enable_fixt11();
-    /// ```
-    pub fn enable_fixt11(mut self) -> Self {
-        self.profile = SessionProfile::Fixt;
-        self
-    }
-
-    /// Set the FIX session profile to FIX4, which is fully backwards compatible
-    /// with FIX 4.4 as defined in Volume 2 of the FIX 4.4 specification.
+    /// use fasters::session::classic::HeartbeatRule;
+    /// use std::time::Duration;
     ///
-    /// FIX4 requires `BeginString(8)` to be set to `FIX.4.4`.
-    ///
-    /// # Examples
+    /// let rule = HeartbeatRule::Exact(Duration::from_secs(30));
+    /// assert!(rule.validate(&Duration::from_secs(60)).is_err());
+    /// assert!(rule.validate(&Duration::from_secs(20)).is_err());
+    /// assert!(rule.validate(&Duration::from_secs(30)).is_ok());
     /// ```
-    /// let builder = ProcessorBuilder::new("FOO", "BAR").enable_fix4();
+    /// Accepting any proposed heartbeat value:
     /// ```
-    pub fn enable_fix4(mut self) -> Self {
-        self.profile = SessionProfile::Fix4;
-        self
-    }
-
-    pub fn enable_fix42(mut self) -> Self {
-        self.profile = SessionProfile::Fix42;
-        self
-    }
-
-    pub fn enable_lightweight_fixt(mut self) -> Self {
-        self.profile = SessionProfile::LightweightFixt;
-        self
-    }
-
-    /// Require all initiators to abide by a specific heartbeat interval.
-    /// Initiators that don't comply will be met with `Logout(35=8)`.
-    pub fn with_heartbeat(mut self, heartbeat: Duration) -> Self {
-        self.hearbeat = HeartbeatConfig::Predetermined(heartbeat);
-        self
-    }
-
-    /// Allow the initiator to choose its prefereed heartbeat interval in between
-    /// a pre-specified range. All heartbeat intervals inside this range will be
-    /// accepted; all heartbeat intervals outside of it will be met with
-    /// `Logout(35=8)`.
-    pub fn with_heartbeat_range(mut self, range: Range<Duration>) -> Self {
-        self.hearbeat = HeartbeatConfig::Settable(range);
-        self
-    }
-
-    /// Allow the initiator to specify its preferred heartbeat interval and
-    /// accept it automatically.
-    pub fn with_any_heartbeat(mut self) -> Self {
-        self.hearbeat = HeartbeatConfig::Custom;
-        self
-    }
-
-    pub fn enable_gap_fill_mode(mut self) -> Self {
-        self.seq_reset_mode = SequenceResetMode::GapFill;
-        self
-    }
-
-    pub fn enable_reset_mode(mut self) -> Self {
-        self.seq_reset_mode = SequenceResetMode::Reset;
-        self
-    }
-
-    /// Disable test messages on this FIX session. Under this setting, test
-    /// messages will immediately be met with a `Logout(35=5)` response.
+    /// use fasters::session::classic::HeartbeatRule;
+    /// use std::time::Duration;
     ///
-    /// This setting is disabled by default.
-    pub fn for_testing(mut self) -> Self {
-        self.env = Environment::Testing;
-        self
-    }
-
-    /// Generate a FIX messaging processor (a.k.a. FIX engine) from the current
-    /// configuration.
-    pub fn build(self) -> Processor {
-        Processor {
-            config: Configuration {
-                profile: self.profile,
-                sender: self.sender,
-                target: self.target,
-                app_encryption: false,
-                heartbeat: self.hearbeat,
-                heartbeat_relaxed: Duration::from_secs(5), //self.hearbeat + reasonable_amount_of_time(&self.hearbeat),
-                delivery_threshold: Duration::from_secs(5),
-                channel_inbound: Channel::default(),
-                channel_outbound: Channel::default(),
-            },
-            state: State::Disconnected,
-            expected_seqnum_inbound: 1,
-            expected_seqnum_outbound: 1,
-            last_receipt: Instant::now(),
-            last_test_id: String::new(),
-            queue_inbound: vec![],
-            history_outbound: vec![],
+    /// let rule = HeartbeatRule::Any;
+    /// assert!(rule.validate(&Duration::from_secs(1000)).is_ok());
+    /// assert!(rule.validate(&Duration::from_secs(1)).is_ok());
+    /// ```
+    pub fn validate(&self, proposal: &Duration) -> std::result::Result<(), String> {
+        match self {
+            HeartbeatRule::Exact(expected) => {
+                (proposal == expected).ok_or_else(|| errs::heartbeat_exact(expected.as_secs()))
+            }
+            HeartbeatRule::Range(range) => range.contains(proposal).ok_or_else(|| {
+                errs::heartbeat_range(range.start().as_secs(), range.end().as_secs())
+            }),
+            HeartbeatRule::Any => {
+                (*proposal != Duration::from_secs(0)).ok_or_else(|| errs::heartbeat_gt_0())
+            }
         }
     }
 }
 
-impl Processor {
-    fn heartbeat(&mut self, now: Instant) -> Result<()> {
-        let interval = now.duration_since(self.last_receipt);
-        self.last_receipt = now;
-        if interval > Duration::from_secs(30) {
-            // self.config.heartbeat {
-            Err(Error::Generic)
-        } else {
+#[derive(Debug, Copy, Clone)]
+pub struct SeqNumbers {
+    next_inbound: u64,
+    next_outbound: u64,
+}
+
+impl SeqNumbers {
+    pub fn new(inbound: NonZeroU64, outbound: NonZeroU64) -> Self {
+        Self {
+            next_inbound: inbound.get(),
+            next_outbound: outbound.get(),
+        }
+    }
+
+    pub fn next_inbound(&self) -> u64 {
+        self.next_inbound
+    }
+
+    pub fn next_outbound(&self) -> u64 {
+        self.next_outbound
+    }
+
+    pub fn incr_inbound(&mut self) {
+        self.next_inbound += 1;
+    }
+
+    pub fn incr_outbound(&mut self) {
+        self.next_outbound += 1;
+    }
+
+    pub fn validate_inbound(&self, inbound: u64) -> Result<(), SeqNumberError> {
+        match inbound.cmp(&self.next_inbound) {
+            Ordering::Equal => Ok(()),
+            Ordering::Less => Err(SeqNumberError::TooLow),
+            Ordering::Greater => Err(SeqNumberError::Recover),
+        }
+    }
+}
+
+impl Default for SeqNumbers {
+    fn default() -> Self {
+        Self {
+            next_inbound: 1,
+            next_outbound: 1,
+        }
+    }
+}
+
+pub enum SeqNumberError {
+    Recover,
+    TooLow,
+    NoSeqNum,
+}
+
+pub trait Session {
+    type Inbound;
+    type Outbound;
+
+    fn feed(&mut self, event: Self::Inbound);
+    fn notifications(&mut self) -> Vec<Self::Outbound>;
+}
+
+type CompID = String;
+
+mod acceptor {
+    use super::*;
+
+    /// FIX Session Layer configuration, for acceptors only.
+    #[derive(Debug, Clone)]
+    pub struct Configuration {
+        heartbeat_rule: HeartbeatRule,
+        delivery_threshold: Duration,
+        company_id: String,
+        environment: Environment,
+    }
+
+    /// An indicator for the kind of environment relative to a FIX Connection.
+    #[derive(Debug, Copy, Clone)]
+    #[non_exhaustive]
+    pub enum Environment {
+        ProductionDisallowTest,
+        ProductionAllowTest,
+        Testing,
+    }
+
+    impl Configuration {
+        pub fn new() -> Self {
+            Self {
+                heartbeat_rule: HeartbeatRule::Any,
+                delivery_threshold: Duration::from_secs(60),
+                company_id: "FOOBAR".to_string(),
+                environment: Environment::ProductionDisallowTest,
+            }
+        }
+
+        /// Decide whether or not to allow test messages from initiators.
+        ///
+        /// Please refer to specs. §4.3.2 for more information.
+        pub fn with_environment(&mut self, env: Environment) -> &mut Self {
+            self.environment = env;
+            self
+        }
+
+        pub fn with_hb_rule(&mut self, rule: HeartbeatRule) -> &mut Self {
+            self.heartbeat_rule = rule;
+            self
+        }
+
+        pub fn with_company_id(&mut self, id: String) -> &mut Self {
+            self.company_id = id;
+            self
+        }
+
+        pub fn acceptor(self) -> Acceptor {
+            Acceptor::new(self)
+        }
+    }
+
+    /// A FIX Session acceptor.
+    #[derive(Debug, Clone)]
+    pub struct Acceptor {
+        config: Configuration,
+        state: State,
+        heartbeat: Duration,
+        seq_numbers: SeqNumbers,
+    }
+
+    #[derive(Clone, Debug)]
+    #[non_exhaustive]
+    pub enum EventInbound {
+        Terminated,
+        IncomingMessage(slr::Message),
+    }
+
+    #[derive(Clone, Debug)]
+    pub enum EventOutbound {
+        Terminate,
+        Message(slr::Message),
+    }
+
+    pub trait Session {
+        type Inbound;
+        type Outbound;
+
+        fn feed(&mut self, event: Self::Inbound);
+        fn notifications(&mut self) -> Vec<Self::Outbound>;
+    }
+
+    impl Acceptor {
+        /// Creates a new FIX session acceptor based on the given configuration.
+        pub fn new(config: Configuration) -> Self {
+            Acceptor {
+                config,
+                state: State::Disconnected,
+                heartbeat: Duration::default(),
+                seq_numbers: SeqNumbers::default(),
+            }
+        }
+
+        /// Get the expected heartbeat interval on the underlying FIX connection.
+        pub fn heartbeat(&self) -> Option<Duration> {
+            Some(self.heartbeat)
+        }
+
+        /// Returns the internal seq. numbers state.
+        pub fn seq_numbers(&self) -> SeqNumbers {
+            self.seq_numbers
+        }
+
+        async fn feed_incoming_message(&mut self, message: slr::Message) {
+            let msg_type = message.msg_type();
+            match (self.config.environment, message.test_indicator()) {
+                (Environment::ProductionAllowTest, Some(true)) => (),
+                _ => (),
+            };
+            let seqnum_state = message
+                .seq_num()
+                .map(|seqnum| self.seq_numbers().validate_inbound(seqnum))
+                .unwrap_or(Err(SeqNumberError::NoSeqNum));
+            // Compare the incoming seq. number to the one we expected and act
+            // accordingly.
+            match seqnum_state {
+                Ok(()) => {}
+                Err(SeqNumberError::NoSeqNum) => {}
+                Err(SeqNumberError::Recover) => {
+                    // Refer to specs. §4.8 for more information.
+                    let mut response = slr::Message::new();
+                    // TODO: add other details to response message.
+                    response.add_str(35, "2");
+                    response.add_str(49, self.config.company_id.as_str());
+                    response.add_int(7, self.seq_numbers().next_inbound() as i64);
+                    response.add_int(16, message.seq_num().unwrap() as i64);
+                    self.seq_numbers.incr_outbound();
+                    self.send_message(response).await;
+                    return;
+                }
+                Err(SeqNumberError::TooLow) => {
+                    self.send_error_seqnum_too_low().await;
+                }
+            };
+            if msg_type != Some("A") && self.state == State::Terminated {
+                self.send_terminate_signal().await;
+                return;
+            }
+            if let Some("A") = msg_type {
+                if self.state == State::Active {
+                    return;
+                }
+                let mut response = slr::Message::new();
+                // TODO: add other details to response message.
+                response.add_field(35, slr::FixFieldValue::String("A".to_string()));
+                response.add_field(
+                    49,
+                    slr::FixFieldValue::String(self.config.company_id.clone()),
+                );
+                self.seq_numbers.incr_outbound();
+                self.send_message(response).await;
+                self.state = State::Active;
+            }
+        }
+
+        async fn send_error_seqnum_too_low(&mut self) -> EventOutbound {
+            let error_message = errs::msg_seq_num(self.seq_numbers().next_inbound());
+            let mut response = slr::Message::new();
+            response.add_str(35, "5");
+            response.add_str(49, self.config.company_id.as_str());
+            response.add_int(7, self.seq_numbers().next_outbound() as i64);
+            response.add_str(58, error_message);
+            self.send_message(response).await
+        }
+
+        async fn send_message(&mut self, message: slr::Message) -> EventOutbound {
+            EventOutbound::Message(message)
+        }
+
+        async fn send_terminate_signal(&mut self) -> EventOutbound {
+            EventOutbound::Terminate
+        }
+
+        pub async fn session_loop(
+            &mut self,
+            mut events: impl Stream<Item = EventInbound> + Unpin,
+        ) -> impl Stream<Item = EventOutbound> {
+            while let Some(event) = events.next().await {
+                match event {
+                    EventInbound::Terminated => {}
+                    EventInbound::IncomingMessage(msg) => {}
+                };
+            }
+            futures_lite::stream::empty()
+        }
+
+        pub fn notify<'a>(
+            &'a mut self,
+            event: EventInbound,
+        ) -> impl Iterator<Item = EventOutbound> + 'a {
+            match event {
+                EventInbound::Terminated => {}
+                EventInbound::IncomingMessage(msg) => {}
+            };
+            // TODO...
+            AcceptorPendingEvents { acceptor: self }
+        }
+    }
+
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    enum State {
+        /// No FIX Session currently active.
+        Disconnected,
+        /// The FIX Session is over, we just need to terminate the transport layer
+        /// connection.
+        Terminate,
+        /// The FIX Session is completely over. Nothing left to do.
+        Terminated,
+        /// Normal active state of a FIX Session.
+        Active,
+    }
+
+    struct AcceptorPendingEvents<'a> {
+        acceptor: &'a mut Acceptor,
+    }
+
+    impl<'a> Iterator for AcceptorPendingEvents<'a> {
+        type Item = EventOutbound;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            let next = match self.acceptor.state {
+                State::Terminate => Some(Self::Item::Terminate),
+                State::Terminated => None,
+                State::Disconnected => None,
+                State::Active => None,
+            };
+            self.acceptor.state = State::Terminated;
+            next
+        }
+    }
+}
+
+mod initiator {
+    use super::*;
+    use std::time::Instant;
+    use tokio::time::{sleep, sleep_until};
+    use futures::select;
+    use futures::StreamExt;
+    use futures::FutureExt;
+
+    enum State {
+        NoActiveSession,
+        LogonInitiated,
+        ActiveSession,
+        LogoffReceived,
+        Retransmit,
+    }
+
+    #[derive(Debug, Clone)]
+    pub struct Configuration {
+        company_id_from: String,
+        company_id_to: String,
+        preferred_heartbeat: Duration,
+        acceptable_heartbeat: HeartbeatRule,
+    }
+
+    pub enum ConfigurationError {
+        CompIDNotAlphanumeric,
+    }
+
+    type Result<T> = std::result::Result<T, ConfigurationError>;
+
+    fn is_alphanumeric(s: impl AsRef<str>) -> bool {
+        s.as_ref().chars().all(|c| c.is_alphanumeric())
+    }
+
+    const DEFAULT_HEARTBEAT: Duration = Duration::from_secs(60);
+
+    impl Configuration {
+        pub fn new(from: CompID, to: CompID) -> Result<Self> {
+            if !(is_alphanumeric(from.as_str()) && is_alphanumeric(to.as_str())) {
+                return Err(ConfigurationError::CompIDNotAlphanumeric);
+            }
+            Ok(Self {
+                company_id_from: from,
+                company_id_to: to,
+                preferred_heartbeat: DEFAULT_HEARTBEAT,
+                acceptable_heartbeat: HeartbeatRule::Any,
+            })
+        }
+
+        pub fn preferred_heartbeat(&mut self, heartbeat: Duration) -> &mut Self {
+            self.preferred_heartbeat = heartbeat;
+            self
+        }
+
+        pub fn allow_heartbeat_rule(&mut self, rule: HeartbeatRule) -> &mut Self {
+            self.acceptable_heartbeat = rule;
+            self
+        }
+    }
+
+    struct Session<S: Stream<Item = slr::Message>> {
+        initiator: Initiator,
+        next_heartbeat: tokio::time::Sleep,
+        end_of_trading_hours: tokio::time::Sleep,
+        events: S,
+    }
+
+    use std::pin::Pin;
+    use std::task::Context;
+    use std::task::Poll;
+
+    //impl<S: Stream<Item = slr::Message> + Unpin> Stream for Session<S> {
+    //    type Item = slr::Message;
+
+    //    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    //        let heartbeat = sleep(self.initiator.heartbeat());
+    //        let end_of_trading_hours = sleep_until(self.initiator.end_of_trading_hours().into());
+    //        //let incoming_message = match (*self).events.poll_next(cx) {
+    //        //    Poll::Ready(None) => Poll::Ready(None),
+    //        //    Poll::Ready(Some(_event)) => unimplemented!(),
+    //        //    Poll::Pending => Poll::Pending,
+    //        //};
+    //        select! {
+    //            () = heartbeat => {
+    //                Poll::Pending
+    //            },
+    //            () = end_of_trading_hours => {
+    //                Poll::Pending
+    //            },
+    //            //() = incoming_message => (),
+    //        }
+    //    }
+    //}
+
+    #[derive(Debug)]
+    pub struct Initiator {
+        config: Configuration,
+        seq_numbers: SeqNumbers,
+        notifications: Vec<slr::Message>,
+    }
+
+    impl Initiator {
+        pub fn new(config: Configuration) -> Self {
+            Self {
+                config,
+                seq_numbers: SeqNumbers::default(),
+                notifications: vec![],
+            }
+        }
+
+        pub async fn session(
+            self,
+            events: impl Stream<Item = slr::Message> + Unpin,
+        ) -> impl Stream<Item = slr::Message> {
+            let mut events = events.into_future();
+            let mut heartbeat_sleep = tokio::time::sleep(Duration::from_secs(1)).fuse();
+            tokio::pin!(heartbeat_sleep);
+            loop {
+                select! {
+                    () = heartbeat_sleep => (),
+                    event = events => (),
+                }
+            }
+            futures::stream::empty()
+            //Session {
+            //    events,
+            //    initiator: self,
+            //}
+        }
+
+        pub fn heartbeat(&self) -> Duration {
+            self.config.preferred_heartbeat
+        }
+
+        pub fn end_of_trading_hours(&self) -> Instant {
+            Instant::now()
+        }
+
+        fn initiate(&mut self) -> slr::Message {
+            let mut msg = slr::Message::new();
+            msg.add_str(35, "A".to_string());
+            msg.add_str(49, self.config.company_id_from.clone());
+            msg.add_str(56, self.config.company_id_to.clone());
+            msg.add_int(108, 30);
+            msg.add_int(34, self.seq_numbers.next_outbound as i64);
+            msg.add_int(52, 1337); // TODO
+            msg
+        }
+
+        pub async fn terminate(&mut self) -> std::result::Result<(), Vec<slr::Message>> {
+            let test_request_id = Uuid::new_v4().to_string();
+            // Send `TestRequest` to ensure we didn't miss any messages.
+            let mut msg = slr::Message::new();
+            msg.add_str(35, "1".to_string());
+            msg.add_str(49, self.config.company_id_from.clone());
+            msg.add_str(56, self.config.company_id_to.clone());
+            msg.add_int(108, 30);
+            msg.add_str(112, test_request_id.clone());
+            msg.add_int(34, self.seq_numbers.next_inbound as i64);
+            msg.add_int(52, 1337); // TODO
+            self.send_message(msg).await;
+            // Wait for heartbeat:
+            let heartbeat = self.next_msg().await;
+            assert_eq!(
+                heartbeat.get_field(112),
+                Some(&slr::FixFieldValue::String(test_request_id))
+            );
+            // TODO: check seq number.
+            // TODO: resend missed messages.
+            // Finally send `Logout`.
+            let mut msg = slr::Message::new();
+            msg.add_str(35, "5".to_string());
+            msg.add_str(49, self.config.company_id_from.clone());
+            msg.add_str(56, self.config.company_id_to.clone());
+            msg.add_int(108, 30);
+            msg.add_int(34, self.seq_numbers.next_outbound as i64);
+            msg.add_int(52, 1337); // FIXME
+            self.send_message(msg).await;
             Ok(())
         }
-    }
 
-    /// Return identifying data for the current FIX session. A FIX session is
-    /// identified by the unique combination of BeginString(8) + initiator CompID
-    /// + acceptor CompID.
-    pub fn identifier(&self) -> (SessionProfile, &str, &str) {
-        (
-            self.config.profile,
-            self.config.sender.as_str(),
-            self.config.target.as_str(),
-        )
-    }
-
-    /// Return the communication channel used to both notify and subscribe to
-    /// events.
-    /// Incoming messages MUST be sent over this channel.
-    pub fn channel(&self) -> (&Sender<slr::Message>, &Receiver<Event>) {
-        (
-            &self.config.channel_inbound.sender,
-            &self.config.channel_outbound.receiver,
-        )
-    }
-
-    fn process_incoming_disconnected(&mut self, message: slr::Message) -> Result<()> {
-        let id_is_ok = self.identification_is_ok(&message);
-        if !id_is_ok {
-            self.config
-                .channel_outbound
-                .sender
-                .send(Event::Disconnected)
-                .unwrap();
-            return Ok(());
+        async fn send_message(&mut self, msg: slr::Message) {
+            self.notifications.push(msg);
         }
-        self.heartbeat(Instant::now())?;
-        // TODO: Authenticator check.
-        let proposed_heartbeat = message.fields.get(&108).unwrap();
-        if let slr::FixFieldValue::Int(hb) = proposed_heartbeat {
-            let heartbeat_result = self
-                .config
-                .heartbeat
-                .validate(&Duration::from_secs(*hb as u64));
-            if let Err(_err_string) = heartbeat_result {
-                let mut logout = slr::Message::new();
-                logout.add_field(35, slr::FixFieldValue::String("5".to_string()));
-                logout.add_field(
-                    58,
-                    slr::FixFieldValue::String("invalid Heartbeat(108)".to_string()),
-                );
-                self.config
-                    .channel_outbound
-                    .sender
-                    .send(Event::Message(logout))
-                    .unwrap();
-                self.config
-                    .channel_outbound
-                    .sender
-                    .send(Event::Disconnected)
-                    .unwrap();
+
+        pub async fn next_msg(&mut self) -> slr::Message {
+            unimplemented!()
+        }
+
+        async fn feed_event(&mut self, event: slr::Message) {
+            match event.msg_type() {
+                Some("A") => (),
+                Some("0") => (),
+                Some("5") => (),
+                Some("3") => (),
+                Some("2") => (),
+                Some("4") => (),
+                Some("1") => (),
+                Some(_) => {}
+                None => (),
             }
         }
-        Ok(())
-    }
 
-    fn process_incoming_established(&mut self, message: slr::Message) -> Result<()> {
-        // If `MsgSeqNum(34)` is missing, a `Logout(35=5)` message should be
-        // sent, terminating the FIX connection with the Text(58) field
-        // describing the missing field, as this likely indicates a serious
-        // application error that is likely only circumvented by software
-        // modification.
-        if let Some(slr::FixFieldValue::Int(seq_number)) = message.fields.get(&34) {
-            match seq_number.cmp(&(self.expected_seqnum_inbound as i64)) {
-                Ordering::Equal => {}
-                Ordering::Less => {
-                    let mut logout = slr::Message::new();
-                    // Standard header.
-                    logout.add_field(35, slr::FixFieldValue::String("5".to_string()));
-                    // Body.
-                    let err = format!(
-                        "Expected '{}' MsgSeqNum, received '{}'.",
-                        self.expected_seqnum_inbound, seq_number
-                    );
-                    logout.add_field(58, slr::FixFieldValue::String(err));
-                    self.send(logout)?;
-                }
-                Ordering::Greater => {
-                    // Start message recovery.
-                    let range = SeqNumRange {
-                        start: self.expected_seqnum_inbound.into(),
-                        end: Some(*seq_number as u64),
-                    };
-                    self.request_resend(range);
-                }
-            }
-        } else {
-            let mut response = slr::Message::new();
-            response.add_field(35, slr::FixFieldValue::String("2".to_string()));
-        };
-        if let slr::FixFieldValue::String(msg_type) = message.fields.get(&35).unwrap() {
-            match msg_type.as_str() {
-                // `Heartbeat(35=0)`.
-                "0" => {
-                    let test_id = message.fields.get(&112);
-                    match test_id {
-                        Some(slr::FixFieldValue::String(s)) => {
-                            self.last_test_id = s.to_string();
-                        }
-                        Some(_) => (),
-                        None => (),
-                    };
-                }
-                // `Logon(35=A)`.
-                "A" => {
-                    let seq_num = match message.fields.get(&34).unwrap() {
-                        slr::FixFieldValue::Int(x) => x,
-                        _ => Err(Error::Generic)?,
-                    };
-                    let mut response = slr::Message::new();
-                    if *seq_num == self.expected_seqnum_inbound as i64 {
-                        response
-                            .fields
-                            .insert(35, slr::FixFieldValue::String("A".to_string()));
-                        self.send(response)?;
-                    } else if *seq_num > self.expected_seqnum_inbound as i64 {
-                        response
-                            .fields
-                            .insert(35, slr::FixFieldValue::String("2".to_string()));
-                        self.send(response)?;
-                    } else {
-                        response
-                            .fields
-                            .insert(35, slr::FixFieldValue::String("5".to_string()));
-                        self.send(response)?;
-                        return Err(Error::Disconnect);
-                    }
-                }
-                // `TestRequest(35=1)`.
-                "1" => {
-                    let mut response = slr::Message::new();
-                    let id = message.fields.get(&112).unwrap();
-                    response
-                        .fields
-                        .insert(35, slr::FixFieldValue::String("0".to_string()));
-                    response.add_field(112, id.clone());
-                    self.send(response)?;
-                }
-                // `ResendRequest(35=2)`.
-                "2" => {
-                    let response = slr::Message::new();
-                    let seq_from = message.fields.get(&7).unwrap();
-                    let seq_to = message.fields.get(&16).unwrap();
-                    let _range = seq_from..=seq_to;
-                    self.send(response)?;
-                }
-                // `Reject(35=3)`.
-                "3" => {
-                    let mut response = slr::Message::new();
-                    response.add_field(
-                        45,
-                        slr::FixFieldValue::Int(self.expected_seqnum_inbound as i64),
-                    );
-                    self.send(response)?;
-                }
-                // `SequenceReset(35=4)`.
-                "4" => (),
-                // `Logout(35=5)`.
-                "5" => return Err(Error::Disconnect),
-                // Business-related message.
-                _ => (),
-            }
-        };
-        Ok(())
-    }
-
-    pub fn process_incoming(&mut self, message: slr::Message) -> Result<()> {
-        match self.state {
-            State::Disconnected => self.process_incoming_disconnected(message),
-            State::Established => self.process_incoming_established(message),
+        pub async fn notifications(&mut self) -> impl Stream<Item = slr::Message> {
+            // FIXME
+            futures_lite::stream::empty()
         }
-    }
 
-    fn send(&mut self, mut message: slr::Message) -> Result<()> {
-        self.expected_seqnum_outbound += 1;
-        message.add_field(49, slr::FixFieldValue::String(self.config.sender.clone()));
-        message.add_field(56, slr::FixFieldValue::String(self.config.target.clone()));
-        message.add_field(
-            34,
-            slr::FixFieldValue::Int(self.expected_seqnum_outbound as i64),
-        );
-        self.config
-            .channel_outbound
-            .sender
-            .send(Event::Message(message))
-            .unwrap();
-        Ok(())
-    }
-
-    fn interrupt_connection(&mut self) {
-        todo!()
-    }
-
-    fn reject_message(&mut self, _msg: slr::Message) {
-        self.expected_seqnum_inbound += 1;
-    }
-
-    fn request_resend(&mut self, range: SeqNumRange) {
-        let mut message = slr::Message::new();
-        message.add_field(35, slr::FixFieldValue::String("2".to_string()));
-        message.add_field(7, slr::FixFieldValue::Int(range.start as i64));
-        message.add_field(16, slr::FixFieldValue::Int(range.end.unwrap_or(0) as i64));
-    }
-
-    fn identification_is_ok(&self, msg: &slr::Message) -> bool {
-        let begin_string = msg.fields.get(&35);
-        let sender_comp_id = msg.fields.get(&49);
-        let target_comp_id = msg.fields.get(&56);
-        match begin_string {
-            Some(slr::FixFieldValue::String(_x)) => (),
-            _ => return false,
-        };
-        match sender_comp_id {
-            Some(slr::FixFieldValue::String(sender)) => {
-                if *sender == self.config.sender {
-                    return false;
-                }
-            }
-            _ => return false,
-        };
-        match target_comp_id {
-            Some(slr::FixFieldValue::String(target)) => {
-                if *target == self.config.target {
-                    return false;
-                }
-            }
-            _ => return false,
-        };
-        true
-    }
-
-    fn sending_time_within_threshold(&self, _msg: &slr::Message) -> bool {
-        true
+        fn notify<'a>(
+            &'a mut self,
+            event: slr::Message,
+        ) -> impl Iterator<Item = EventOutbound> + 'a {
+            std::iter::empty()
+        }
     }
 }
 
-struct SeqNumRange {
-    start: u64,
-    end: Option<u64>,
+pub enum SessionRejectReason {
+    InvalidTagNumber,
+    RequiredTagMissing,
+    TagNotDefinedForThisMessageType,
+    UndefinedTag,
+    TagSpecifiedWithoutAValue,
+    ValueIsIncorrect,
+    IncorrectDataFormatForValue,
+    DecryptionProblem,
+    SignatureProblem,
+    CompIDProblem,
+    SendingTimeAccuracyProblem,
+    InvalidMsgType,
+    XMLValidationError,
+    TagAppearsMoreThanOnce,
+    TagSpecifiedOutOfRequiredOrder,
+    RepeatingGroupFieldsOutOfOrder,
+    IncorrectNumInGroupCountForRepeatingGroup,
+    FieldDelimiterInFieldValue,
+    InvalidUnsupportedAppVersion,
+    Other,
+}
+
+impl From<u32> for SessionRejectReason {
+    fn from(v: u32) -> Self {
+        match v {
+            0 => Self::InvalidTagNumber,
+            1 => Self::RequiredTagMissing,
+            2 => Self::TagNotDefinedForThisMessageType,
+            3 => Self::UndefinedTag,
+            4 => Self::TagSpecifiedWithoutAValue,
+            5 => Self::ValueIsIncorrect,
+            6 => Self::IncorrectDataFormatForValue,
+            7 => Self::DecryptionProblem,
+            8 => Self::SignatureProblem,
+            9 => Self::CompIDProblem,
+            10 => Self::SendingTimeAccuracyProblem,
+            11 => Self::InvalidMsgType,
+            12 => Self::XMLValidationError,
+            13 => Self::TagAppearsMoreThanOnce,
+            14 => Self::TagSpecifiedOutOfRequiredOrder,
+            15 => Self::RepeatingGroupFieldsOutOfOrder,
+            16 => Self::IncorrectNumInGroupCountForRepeatingGroup,
+            17 => Self::FieldDelimiterInFieldValue,
+            18 => Self::InvalidUnsupportedAppVersion,
+            _ => Self::Other,
+        }
+    }
+}
+
+/// Error messages generation.
+mod errs {
+    pub fn heartbeat_exact(secs: u64) -> String {
+        format!("Invalid HeartBtInt(108), expected value {} seconds", secs)
+    }
+
+    pub fn heartbeat_range(a: u64, b: u64) -> String {
+        format!(
+            "Invalid HeartBtInt(108), expected value between {} and {} seconds",
+            a, b,
+        )
+    }
+
+    pub fn heartbeat_gt_0() -> String {
+        "Invalid HeartBtInt(108), expected value greater than 0 seconds".to_string()
+    }
+
+    pub fn inbound_seqnum() -> String {
+        "NextExpectedMsgSeqNum(789) > than last message sent".to_string()
+    }
+
+    pub fn msg_seq_num(seq_number: u64) -> String {
+        format!("Invalid MsgSeqNum <34>, expected value {}", seq_number)
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    
 
-    const MSG: &'static [u8] = &[0];
+    const COMPANY_ID: &str = "FOOBAR-INC";
 
-    fn processor() -> Processor {
-        ProcessorBuilder::new("BROKER", "FUND-MANAGER").build()
-    }
-
-    fn msg_add_identifier(msg: &mut slr::Message) {
-        msg.add_field(8, slr::FixFieldValue::String("FIX.4.4".to_string()));
-        msg.add_field(9, slr::FixFieldValue::Int(421337));
-        msg.add_field(49, slr::FixFieldValue::String("BROKER".to_string()));
-        msg.add_field(56, slr::FixFieldValue::String("FUND-MANAGER".to_string()));
+    fn acceptor() -> Acceptor {
+        let mut config = Configuration::new();
+        config.with_hb_rule(HeartbeatRule::Any);
+        config.with_environment(Environment::ProductionDisallowTest);
+        config.acceptor()
     }
 
     #[test]
-    fn testcase_1b_b() {
+    fn heartebeat_validation() {
+        let rule_exact_1 = HeartbeatRule::Exact(Duration::from_secs(1));
+        let rule_range_5_30 =
+            HeartbeatRule::Range(Duration::from_secs(5)..=Duration::from_secs(30));
+        let rule_any = HeartbeatRule::Any;
+        assert!(rule_exact_1.validate(&Duration::from_secs(1)).is_ok());
+        assert!(!rule_exact_1.validate(&Duration::from_secs(2)).is_ok());
+        assert!(!rule_exact_1.validate(&Duration::from_secs(0)).is_ok());
+        assert!(rule_range_5_30.validate(&Duration::from_secs(5)).is_ok());
+        assert!(rule_range_5_30.validate(&Duration::from_secs(10)).is_ok());
+        assert!(rule_range_5_30.validate(&Duration::from_secs(30)).is_ok());
+        assert!(!rule_range_5_30.validate(&Duration::from_secs(0)).is_ok());
+        assert!(!rule_range_5_30.validate(&Duration::from_secs(4)).is_ok());
+        assert!(!rule_range_5_30.validate(&Duration::from_secs(60)).is_ok());
+        assert!(rule_any.validate(&Duration::from_secs(1)).is_ok());
+        assert!(!rule_any.validate(&Duration::from_secs(0)).is_ok());
+    }
+
+    #[tokio::test]
+    async fn testcase_1s_a_1() {
         let mut msg = slr::Message::new();
-        msg_add_identifier(&mut msg);
         msg.add_field(35, slr::FixFieldValue::String("A".to_string()));
         msg.add_field(108, slr::FixFieldValue::Int(30));
         msg.add_field(34, slr::FixFieldValue::Int(1));
-        msg.add_field(52, slr::FixFieldValue::Int(980846));
-        let mut processor = processor();
-        processor.process_incoming(msg).unwrap();
-        let (_, recv) = processor.channel();
-        let mut event = recv.try_recv().unwrap();
-        match event {
-            Event::Message(response) => {
+        let mut acceptor = acceptor();
+        let mut events = acceptor.notify(EventInbound::IncomingMessage(msg));
+        match events.next().unwrap() {
+            EventOutbound::Message(response) => {
                 assert_eq!(
-                    *response.fields.get(&35).unwrap(),
-                    slr::FixFieldValue::String("3".to_string())
+                    *response.get_field(35).unwrap(),
+                    slr::FixFieldValue::String("A".to_string())
                 );
-                assert!(response.fields.get(&112).is_none());
-            }
-            Event::Disconnected => panic!(),
-        }
-        event = recv.try_recv().unwrap();
-        match event {
-            Event::Message(response) => {
                 assert_eq!(
-                    *response.fields.get(&35).unwrap(),
-                    slr::FixFieldValue::String("5".to_string())
+                    *response.get_field(49).unwrap(),
+                    slr::FixFieldValue::String(COMPANY_ID.to_string())
                 );
+                assert!(response.get_field(112).is_none());
             }
-            Event::Disconnected => panic!(),
+            EventOutbound::Terminate => panic!(),
         }
+        assert!(events.next().is_none());
     }
 
-    #[test]
-    fn testcase_1b_c() {
+    #[tokio::test]
+    async fn testcase_1s_a_2() {
         let mut msg = slr::Message::new();
-        msg_add_identifier(&mut msg);
         msg.add_field(35, slr::FixFieldValue::String("A".to_string()));
         msg.add_field(108, slr::FixFieldValue::Int(30));
         msg.add_field(34, slr::FixFieldValue::Int(42));
-        msg.add_field(52, slr::FixFieldValue::Int(980846));
-        let mut processor = processor();
-        processor.process_incoming(msg).unwrap();
-        let (_, recv) = processor.channel();
-        let event = recv.try_recv().unwrap();
-        match event {
-            Event::Message(response) => {
+        let mut acceptor = acceptor();
+        let mut events = acceptor.notify(EventInbound::IncomingMessage(msg));
+        match events.next().unwrap() {
+            EventOutbound::Message(response) => {
                 assert_eq!(
-                    *response.fields.get(&35).unwrap(),
+                    *response.get_field(35).unwrap(),
                     slr::FixFieldValue::String("2".to_string())
                 );
+                assert_eq!(
+                    *response.get_field(49).unwrap(),
+                    slr::FixFieldValue::String(COMPANY_ID.to_string())
+                );
+                assert!(response.get_field(112).is_none());
             }
-            Event::Disconnected => panic!(),
+            EventOutbound::Terminate => panic!(),
         }
+        assert!(events.next().is_none());
+    }
+
+    #[tokio::test]
+    async fn testcase_1s_b() {
+        let mut msg = slr::Message::new();
+        msg.add_field(35, slr::FixFieldValue::String("A".to_string()));
+        msg.add_field(108, slr::FixFieldValue::Int(30));
+        msg.add_field(34, slr::FixFieldValue::Int(1));
+        let mut acceptor = acceptor();
+        let mut events = acceptor.notify(EventInbound::IncomingMessage(msg.clone()));
+        // First Logon message is fine.
+        match events.next().unwrap() {
+            EventOutbound::Message(response) => {
+                assert_eq!(
+                    *response.get_field(35).unwrap(),
+                    slr::FixFieldValue::String("A".to_string())
+                );
+                assert_eq!(
+                    *response.get_field(49).unwrap(),
+                    slr::FixFieldValue::String(COMPANY_ID.to_string())
+                );
+                assert!(response.get_field(112).is_none());
+            }
+            EventOutbound::Terminate => panic!(),
+        }
+        // The second one is ignored.
+        assert!(events.next().is_none());
     }
 
     #[test]
-    fn testcase_1b_e() {
+    fn testcase_2s() {
         let mut msg = slr::Message::new();
-        msg_add_identifier(&mut msg);
-        msg.add_field(35, slr::FixFieldValue::String("G".to_string()));
+        msg.add_field(35, slr::FixFieldValue::String("0".to_string()));
         msg.add_field(108, slr::FixFieldValue::Int(30));
-        let mut processor = processor();
-        processor.process_incoming(msg).unwrap();
-        let (_, recv) = processor.channel();
-        let event = recv.try_recv().unwrap();
-        match event {
-            Event::Message(response) => {
-                assert_eq!(
-                    *response.fields.get(&35).unwrap(),
-                    slr::FixFieldValue::String("2".to_string())
-                );
-            }
-            Event::Disconnected => panic!(),
-        }
-    }
-
-    #[test]
-    fn testcase_1s_a() {
-        let mut msg = slr::Message::new();
-        msg_add_identifier(&mut msg);
-        msg.add_field(35, slr::FixFieldValue::String("G".to_string()));
-        msg.add_field(108, slr::FixFieldValue::Int(30));
-        let mut processor = processor();
-        processor.process_incoming(msg).unwrap();
-        let (_, recv) = processor.channel();
-        let event = recv.try_recv().unwrap();
-        match event {
-            Event::Message(response) => {
-                assert_eq!(
-                    *response.fields.get(&35).unwrap(),
-                    slr::FixFieldValue::String("2".to_string())
-                );
-            }
-            Event::Disconnected => panic!(),
-        }
-    }
-
-    #[test]
-    fn testcase_2s_a() {
-        let mut msg = slr::Message::new();
-        msg_add_identifier(&mut msg);
-        msg.add_field(35, slr::FixFieldValue::String("G".to_string()));
-        msg.add_field(108, slr::FixFieldValue::Int(30));
-        let mut processor = processor();
-        processor.process_incoming(msg).unwrap();
-        let (_, recv) = processor.channel();
-        let event = recv.try_recv().unwrap();
-        match event {
-            Event::Message(response) => {
-                assert_eq!(
-                    *response.fields.get(&35).unwrap(),
-                    slr::FixFieldValue::String("2".to_string())
-                );
-            }
-            Event::Disconnected => panic!(),
-        }
+        msg.add_field(34, slr::FixFieldValue::Int(1));
+        let mut acceptor = acceptor();
+        let mut events = acceptor.notify(EventInbound::IncomingMessage(msg));
+        // First Logon message is fine.
+        match events.next().unwrap() {
+            EventOutbound::Terminate => (),
+            _ => assert!(false),
+        };
+        // The second one is ignored.
+        assert!(events.next().is_none());
     }
 }

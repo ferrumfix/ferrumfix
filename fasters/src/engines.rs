@@ -2,6 +2,9 @@ use crate::app::slr;
 use crate::dictionary::Dictionary;
 use crate::encoders::Encoding;
 use crate::session;
+use crate::session::Session;
+use crate::session::EventOutbound;
+use crate::session::EventInbound;
 use std::marker::PhantomData;
 use std::net::TcpListener;
 use uuid::Uuid;
@@ -28,15 +31,27 @@ impl<E: Encoding<slr::Message>> Acceptor<slr::Message, E> {
             .await;
     }
 
-    async fn handle_connection<T: std::io::Read>(&self, listener: impl Iterator<Item = T>) {
+    async fn handle_connection<T: std::io::Read + std::io::Write>(&self, listener: impl Iterator<Item = T>) {
         let mut payload = Vec::with_capacity(8192);
         let mut offset = 0;
-        let mut session_layer = session::ProcessorBuilder::new("FOO", "BAR").build();
+        let config = session::Configuration::new();
+        let mut session_layer = session::Acceptor::new(config);
         for mut socket in listener {
             let payload_size = socket.read(&mut payload).unwrap();
             offset += payload_size;
             let msg = self.encoder.decode(&mut &payload[offset..]).unwrap();
-            session_layer.process_incoming(msg).unwrap();
+            let event = session::EventInbound::IncomingMessage(msg);
+            for pending_event in session_layer.notify(event) {
+                match pending_event {
+                    EventOutbound::Message(msg) => {
+                        let payload: Vec<u8> = self.encoder.encode(msg).unwrap();
+                        socket.write(&payload).unwrap();
+                    }
+                    EventOutbound::Terminate => {
+                        break;
+                    }
+                }
+            }
         }
     }
 }

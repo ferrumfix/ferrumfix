@@ -1,7 +1,6 @@
 //! Support for FIX-related session protocols (OSI Layer 5).
 
-mod classic;
 mod fixp;
-pub mod new_classic;
+pub mod classic;
 
-pub use classic::{Processor, ProcessorBuilder};
+pub use classic::*;
