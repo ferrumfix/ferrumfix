@@ -12,56 +12,67 @@
 
 use std::convert::TryInto;
 use std::io;
-use std::num::NonZeroU8;
 
 /// Enumeration type mapped from the 16-bit raw space.
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[non_exhaustive]
 pub enum EncodingType {
-    /// Value in the user-reserved space.
-    Private(NonZeroU8),
+    /// User-specified encoding type. Legal values and their respective semantics
+    /// ought to be agreed upon out-of-band by counterparties.
+    Private(u8),
     /// Simple Binary Encoding (SBE) v1.0, big-endian mode.
-    /// https://www.fixtrading.org/standards/sbe/
+    /// Please refer to https://www.fixtrading.org/standards/sbe/ for more
+    /// information.
     SimpleBinaryEncodingV10BE,
     /// Simple Binary Encoding (SBE) v1.0, little-endian mode.
-    /// https://www.fixtrading.org/standards/sbe/
+    /// Please refer to https://www.fixtrading.org/standards/sbe/ for more
+    /// information.
     SimpleBinaryEncodingV10LE,
     /// Google's "Protobuf".
-    /// https://www.fixtrading.org/standards/gpb/
+    /// Please refer to https://www.fixtrading.org/standards/gpb/ for more
+    /// information.
     Protobuf,
     /// ASN.1 with Packed Encoding Rules (PER).
-    /// https://www.fixtrading.org/standards/asn1/
+    /// Please refer to https://www.fixtrading.org/standards/asn1/ for more
+    /// information.
     Asn1PER,
     /// ASN.1 with Basic Encoding Rules (BER).
-    /// https://www.fixtrading.org/standards/asn1/
+    /// Please refer to https://www.fixtrading.org/standards/asn1/ for more
+    /// information.
     Asn1BER,
     /// ASN.1 with Octet Encoding Rules (OER).
-    /// https://www.fixtrading.org/standards/asn1/
+    /// Please refer to https://www.fixtrading.org/standards/asn1/ for more
+    /// information.
     Asn1OER,
     /// Tag-value (classic) encoding.
-    /// https://www.fixtrading.org/standards/tagvalue/
+    /// Please refer to https://www.fixtrading.org/standards/tagvalue/ for more
+    /// information.
     TagValue,
-    /// FIXML.
-    /// https://www.fixtrading.org/standards/fixml/
+    /// FIXML encoding.
+    /// Please refer to https://www.fixtrading.org/standards/fixml/ for more
+    /// information.
     FixmlSchema,
-    /// FAST.
-    /// https://www.fixtrading.org/standards/fast/
-    Fast(NonZeroU8),
-    /// JSON.
-    /// https://www.fixtrading.org/standards/json/
+    /// FAST encoding.
+    /// Please refer to https://www.fixtrading.org/standards/fast/ for more
+    /// information.
+    Fast(u8),
+    /// JSON encoding.
+    /// Please refer to https://www.fixtrading.org/standards/json/ for more
+    /// information.
     Json,
-    /// BSON.
-    /// https://www.fixtrading.org/standards/bson/
+    /// BSON encoding.
+    /// Please refer to https://www.fixtrading.org/standards/bson/ for more
+    /// information.
     Bson,
     /// Unknown value.
-    Other(u16),
+    Unknown(u16),
 }
 
 impl From<u16> for EncodingType {
     fn from(encoding_type: u16) -> Self {
         // https://www.fixtrading.org/standards/fix-sofh-online/#encoding_type-field
         match encoding_type {
-            0x1..=0xFF => EncodingType::Private(u16_as_nonzero_u8(encoding_type, 0).unwrap()),
+            0x1..=0xFF => EncodingType::Private(encoding_type as u8),
             0x4700 => EncodingType::Protobuf,
             0x5BE0 => EncodingType::SimpleBinaryEncodingV10BE,
             0xA500 => EncodingType::Asn1PER,
@@ -72,22 +83,38 @@ impl From<u16> for EncodingType {
             0xF100 => EncodingType::FixmlSchema,
             0xF500 => EncodingType::Json,
             0xFA01..=0xFAFF => {
-                EncodingType::Fast(u16_as_nonzero_u8(encoding_type, 0xFA00).unwrap())
+                EncodingType::Fast((encoding_type - 0xFA00) as u8)
             }
             0xFB00 => EncodingType::Bson,
-            _ => EncodingType::Other(encoding_type),
+            _ => EncodingType::Unknown(encoding_type),
         }
     }
 }
 
-fn u16_as_nonzero_u8(value: u16, offset: u16) -> Option<NonZeroU8> {
-    NonZeroU8::new((value - offset).try_into().ok()?)
+impl From<EncodingType> for u16 {
+    fn from(encoding_type: EncodingType) -> Self {
+        match encoding_type {
+            EncodingType::Private(x) => x as u16,
+            EncodingType::Protobuf => 0x4700,
+            EncodingType::SimpleBinaryEncodingV10BE => 0x5BE0,
+            EncodingType::Asn1PER => 0xA500,
+            EncodingType::Asn1BER => 0xA501,
+            EncodingType::Asn1OER => 0xA502,
+            EncodingType::SimpleBinaryEncodingV10LE => 0xEB50,
+            EncodingType::TagValue => 0xF000,
+            EncodingType::FixmlSchema => 0xF100,
+            EncodingType::Json => 0xF500,
+            EncodingType::Fast(x) => 0xFA00u16 + (x as u16),
+            EncodingType::Bson => 0xFB00,
+            EncodingType::Unknown(x) => x,
+        }
+    }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-struct Header {
-    message_length: u32,
-    encoding_type: u16,
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct Header {
+    pub message_length: u32,
+    pub encoding_type: u16,
 }
 
 impl From<Header> for [u8; 6] {
@@ -110,7 +137,6 @@ impl From<&[u8; 6]> for Header {
 
 #[derive(Clone, Debug)]
 pub struct Frame {
-    message_length: u32,
     encoding_type: u16,
     payload: Vec<u8>,
 }
@@ -122,16 +148,6 @@ impl Frame {
 
     pub fn payload(&self) -> &[u8] {
         &self.payload[..]
-    }
-}
-
-pub struct OpenFrameIter<R: io::Read> {
-    reader: R,
-}
-
-impl<R: io::Read> OpenFrameIter<R> {
-    pub fn new(reader: R) -> Self {
-        OpenFrameIter { reader }
     }
 }
 
@@ -149,7 +165,18 @@ impl From<io::Error> for Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
-impl<R: io::Read> Iterator for OpenFrameIter<R> {
+/// A parser for Simple Open Framing Header (SOFH) -encoded messages.
+pub struct SofhParser<R: io::Read> {
+    reader: R
+}
+
+impl<R: io::Read> SofhParser<R> {
+    pub fn new(reader: R) -> Self {
+        SofhParser { reader }
+    }
+}
+
+impl<R: io::Read> Iterator for SofhParser<R> {
     type Item = Result<Frame>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -167,7 +194,6 @@ impl<R: io::Read> Iterator for OpenFrameIter<R> {
         }
         assert_eq!(payload.len(), header.message_length as usize - 6);
         let frame = Frame {
-            message_length: header.message_length,
             encoding_type: header.encoding_type,
             payload,
         };
@@ -214,7 +240,7 @@ mod test {
     #[test]
     fn frame_too_short() {
         let bytes = vec![0u8, 0, 0, 4, 13, 37, 42];
-        match OpenFrameIter::new(&bytes[..]).next() {
+        match SofhParser::new(&bytes[..]).next() {
             Some(Err(Error::InvalidMessageLength)) => (),
             _ => panic!(),
         }
@@ -223,7 +249,7 @@ mod test {
     #[test]
     fn frame_with_only_header_is_valid() {
         let bytes = vec![0u8, 0, 0, 6, 13, 37];
-        match OpenFrameIter::new(&bytes[..]).next() {
+        match SofhParser::new(&bytes[..]).next() {
             Some(Ok(_)) => (),
             _ => panic!(),
         }
