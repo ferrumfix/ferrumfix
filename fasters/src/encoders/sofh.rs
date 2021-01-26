@@ -6,9 +6,8 @@
 //! - payload's encoding type
 //! - payload's total length
 //!
-//! For more information read the official documentation.
-//!
-//! https://www.fixtrading.org/standards/fix-sofh-online/
+//! Please refer to https://www.fixtrading.org/standards/fix-sofh/ for more
+//! information.
 
 use std::convert::TryInto;
 use std::io;
@@ -82,9 +81,7 @@ impl From<u16> for EncodingType {
             0xF000 => EncodingType::TagValue,
             0xF100 => EncodingType::FixmlSchema,
             0xF500 => EncodingType::Json,
-            0xFA01..=0xFAFF => {
-                EncodingType::Fast((encoding_type - 0xFA00) as u8)
-            }
+            0xFA01..=0xFAFF => EncodingType::Fast((encoding_type - 0xFA00) as u8),
             0xFB00 => EncodingType::Bson,
             _ => EncodingType::Unknown(encoding_type),
         }
@@ -136,12 +133,12 @@ impl From<&[u8; 6]> for Header {
 }
 
 #[derive(Clone, Debug)]
-pub struct Frame {
+pub struct Frame<'a> {
     encoding_type: u16,
-    payload: Vec<u8>,
+    payload: &'a [u8],
 }
 
-impl Frame {
+impl<'a> Frame<'a> {
     pub fn encoding_type(&self) -> u16 {
         self.encoding_type
     }
@@ -166,20 +163,41 @@ impl From<io::Error> for Error {
 type Result<T> = std::result::Result<T, Error>;
 
 /// A parser for Simple Open Framing Header (SOFH) -encoded messages.
-pub struct SofhParser<R: io::Read> {
-    reader: R
+pub struct SofhParser {
+    buffer: Vec<u8>,
 }
 
-impl<R: io::Read> SofhParser<R> {
-    pub fn new(reader: R) -> Self {
-        SofhParser { reader }
+impl SofhParser {
+    pub fn new() -> Self {
+        Self::with_capacity(1024)
+    }
+
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            buffer: Vec::with_capacity(capacity)
+        }
+    }
+
+    pub fn iter_frames<'a, R: io::Read + 'a>(
+        &'a mut self,
+        reader: R,
+    ) -> FramesIter<'a, R> {
+        FramesIter { reader, parser: self }
+    }
+
+    pub fn reserved(&self) -> usize {
+        self.buffer.capacity()
     }
 }
 
-impl<R: io::Read> Iterator for SofhParser<R> {
-    type Item = Result<Frame>;
+pub struct FramesIter<'a, R: io::Read> {
+    reader: R,
+    parser: &'a mut SofhParser,
+}
 
-    fn next(&mut self) -> Option<Self::Item> {
+impl<'a, R: io::Read> FramesIter<'a, R> {
+
+    pub fn next<'b>(&'b mut self) -> Option<Result<Frame<'b>>>{
         let mut header_buffer = [0u8; 6];
         if let Err(e) = self.reader.read_exact(&mut header_buffer) {
             return Some(Err(e.into()));
@@ -188,14 +206,14 @@ impl<R: io::Read> Iterator for SofhParser<R> {
         if header.message_length < 6 {
             return Some(Err(Error::InvalidMessageLength));
         }
-        let mut payload = vec![0u8; header.message_length as usize - 6];
-        if let Err(e) = self.reader.read_exact(&mut payload) {
+        self.parser.buffer.resize(header.message_length as usize - 6, 0);
+        if let Err(e) = self.reader.read_exact(&mut self.parser.buffer[..]) {
             return Some(Err(e.into()));
         }
-        assert_eq!(payload.len(), header.message_length as usize - 6);
+        assert_eq!(self.parser.buffer.len(), header.message_length as usize - 6);
         let frame = Frame {
             encoding_type: header.encoding_type,
-            payload,
+            payload: &self.parser.buffer[..],
         };
         Some(Ok(frame))
     }
@@ -240,7 +258,8 @@ mod test {
     #[test]
     fn frame_too_short() {
         let bytes = vec![0u8, 0, 0, 4, 13, 37, 42];
-        match SofhParser::new(&bytes[..]).next() {
+        let mut frames = SofhParser::new().iter_frames(&bytes[..]);
+        match frames.next() {
             Some(Err(Error::InvalidMessageLength)) => (),
             _ => panic!(),
         }
@@ -249,7 +268,8 @@ mod test {
     #[test]
     fn frame_with_only_header_is_valid() {
         let bytes = vec![0u8, 0, 0, 6, 13, 37];
-        match SofhParser::new(&bytes[..]).next() {
+        let mut frames = SofhParser::new().iter_frames(&bytes[..]);
+        match frames.next() {
             Some(Ok(_)) => (),
             _ => panic!(),
         }

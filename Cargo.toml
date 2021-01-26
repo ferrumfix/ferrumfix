@@ -4,5 +4,6 @@ members = [
     "fasters_derive",
     "examples/codegen_fix42",
     "examples/json_relay",
+    "examples/tcp_sofh",
     "examples/tls_fixua_acceptor",
 ]
