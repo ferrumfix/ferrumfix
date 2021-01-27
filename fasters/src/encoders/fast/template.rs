@@ -1,29 +1,30 @@
 use super::errors::StaticError;
 use super::field_operators::FieldOperatorInstruction;
+use super::Decimal;
 use crate::dictionary::Dictionary;
 
 #[derive(Clone, Debug)]
-pub enum FieldValue {
+pub enum PrimitiveValue<'a> {
     SInt32(i32),
     UInt32(u32),
     SInt64(i64),
     UInt64(u64),
-    Decimal(f32), // FIXME
-    AsciiString(Vec<u8>),
-    UnicodeString(String),
-    ByteVector(Vec<u8>),
+    Decimal(Decimal),
+    Ascii(&'a [u8]),
+    Utf8(&'a [u8]),
+    Bytes(&'a [u8]),
 }
 
 #[derive(Clone, Debug)]
-pub enum FieldPrimitiveType {
+pub enum PrimitiveType {
     SInt32,
     UInt32,
     SInt64,
     UInt64,
     Decimal,
-    AsciiString,
-    UnicodeString,
-    ByteVector,
+    Ascii,
+    Utf8,
+    Bytes,
 }
 
 #[derive(Clone, Debug)]
@@ -47,7 +48,7 @@ impl FieldInstruction {
 
 #[derive(Clone, Debug)]
 pub enum FieldType {
-    Primitive(FieldPrimitiveType),
+    Primitive(PrimitiveType),
     Group(u32),
 }
 
@@ -61,7 +62,7 @@ impl FieldInstruction {
         };
         let type_name = node.tag_name().name();
         let instruction = FieldInstruction {
-            field_type: FieldType::Primitive(Template::xml_tag_to_instruction(type_name)?),
+            field_type: Template::xml_tag_to_instruction(type_name)?,
             name: name.to_string(),
             id,
             mandatory,
@@ -152,16 +153,16 @@ impl Template {
         self.instructions.iter()
     }
 
-    fn xml_tag_to_instruction(tag: &str) -> Result<FieldPrimitiveType, StaticError> {
+    fn xml_tag_to_instruction(tag: &str) -> Result<FieldType, StaticError> {
         Ok(match tag {
-            "string" => FieldPrimitiveType::AsciiString,
-            "uInt32" => FieldPrimitiveType::UInt32,
-            "int32" => FieldPrimitiveType::SInt32,
-            "uInt64" => FieldPrimitiveType::UInt64,
-            "int64" => FieldPrimitiveType::SInt64,
-            "decimal" => FieldPrimitiveType::Decimal,
-            "byteVector" => FieldPrimitiveType::ByteVector,
-            "length" => FieldPrimitiveType::UInt32,
+            "string" => FieldType::Primitive(PrimitiveType::Ascii),
+            "uInt32" => FieldType::Primitive(PrimitiveType::UInt32),
+            "int32" => FieldType::Primitive(PrimitiveType::SInt32),
+            "uInt64" => FieldType::Primitive(PrimitiveType::UInt64),
+            "int64" => FieldType::Primitive(PrimitiveType::SInt64),
+            "decimal" => FieldType::Primitive(PrimitiveType::Decimal),
+            "byteVector" => FieldType::Primitive(PrimitiveType::Decimal),
+            "length" => FieldType::Primitive(PrimitiveType::UInt32),
             _ => return Err(StaticError::S1),
         })
     }

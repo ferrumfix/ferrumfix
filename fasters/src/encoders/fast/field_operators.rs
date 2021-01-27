@@ -29,19 +29,24 @@ pub trait FieldOperator {
 
 /// The constant operator specifies that the value of a field will always be the
 /// same, as initialized with `new`.
-pub struct Constant<T>(T);
+pub struct Constant<T> {
+    value: T,
+}
 
 impl<T> Constant<T> {
     pub fn new(value: T) -> Self {
-        Constant(value)
+        Constant { value }
     }
 }
 
-impl<T: Codec> FieldOperator for Constant<T> {
+impl<T> FieldOperator for Constant<T>
+where
+    T: Codec,
+{
     type Item = T;
 
     fn previous_value(&self) -> Option<&T> {
-        Some(&self.0)
+        Some(&self.value)
     }
 
     fn can_omit(&self, _value: &T) -> bool {
@@ -53,15 +58,19 @@ impl<T: Codec> FieldOperator for Constant<T> {
     fn reset(&mut self) {}
 }
 
+/// The delta operator specifies that a delta value is present in the stream. If
+/// the field has optional presence, the delta value can be NULL. In that case
+/// the value of the field is considered absent. Otherwise the field is obtained
+/// by combining the delta value with a base value.
 pub struct Delta<T, U> {
     prev: Option<T>,
     delta: U,
 }
 
-impl<U, T: Codec> FieldOperator for Delta<T, U>
+impl<U, T> FieldOperator for Delta<T, U>
 where
     U: PartialEq,
-    T: Sub<Output = U> + std::marker::Copy,
+    T: Codec + Sub<Output = U> + std::marker::Copy,
 {
     type Item = T;
 
@@ -90,9 +99,9 @@ pub struct Copy<T> {
     prev: Option<T>,
 }
 
-impl<T: Codec> FieldOperator for Copy<T>
+impl<T> FieldOperator for Copy<T>
 where
-    T: PartialEq + std::marker::Copy,
+    T: Codec + PartialEq + std::marker::Copy,
 {
     type Item = T;
 
@@ -126,7 +135,7 @@ impl<T> Default for None<T> {
     }
 }
 
-impl<T: Codec> FieldOperator for None<T> {
+impl<T> FieldOperator for None<T> where T: Codec {
     type Item = T;
 
     fn previous_value(&self) -> Option<&T> {

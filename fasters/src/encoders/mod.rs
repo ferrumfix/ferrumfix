@@ -2,7 +2,7 @@
 use std::error::Error;
 use std::io;
 
-mod fast;
+pub mod fast;
 mod json;
 pub mod sofh;
 mod tagvalue;

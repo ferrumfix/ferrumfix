@@ -3,7 +3,6 @@ use crate::dictionary::Dictionary;
 use crate::encoders::Encoding;
 use bitvec::vec::BitVec;
 use codec::decode_stop_bit_bitvec;
-use codec::Codec;
 use errors::Error;
 use std::collections::HashMap;
 use std::io;
@@ -13,6 +12,13 @@ mod codec;
 mod errors;
 mod field_operators;
 mod template;
+pub mod decimal;
+
+
+pub use codec::Codec;
+pub use decimal::Decimal;
+pub use field_operators::*;
+pub use template::*;
 
 pub struct Fast {
     dict: Dictionary,
@@ -55,35 +61,35 @@ impl Encoding<slr::Message> for Fast {
         for field in self.templates.get("").unwrap().iter_items() {
             if let template::FieldType::Primitive(f) = field.kind() {
                 match f {
-                    template::FieldPrimitiveType::SInt32 => {
+                    PrimitiveType::SInt32 => {
                         let mut val = 0i32;
                         val.deserialize(source)?;
-                        template::FieldValue::SInt32(val)
+                        PrimitiveValue::SInt32(val)
                     }
-                    template::FieldPrimitiveType::UInt32 => {
+                    PrimitiveType::UInt32 => {
                         let mut val = 0u32;
                         val.deserialize(source)?;
-                        template::FieldValue::UInt32(val)
+                        PrimitiveValue::UInt32(val)
                     }
-                    template::FieldPrimitiveType::SInt64 => {
+                    PrimitiveType::SInt64 => {
                         let mut val = 0i64;
                         val.deserialize(source)?;
-                        template::FieldValue::SInt64(val)
+                        PrimitiveValue::SInt64(val)
                     }
-                    template::FieldPrimitiveType::UInt64 => {
+                    PrimitiveType::UInt64 => {
                         let mut val = 0u64;
                         val.deserialize(source)?;
-                        template::FieldValue::UInt64(val)
+                        PrimitiveValue::UInt64(val)
                     }
-                    template::FieldPrimitiveType::ByteVector => {
+                    PrimitiveType::Bytes => {
                         let mut val: Vec<u8> = Vec::new();
                         val.deserialize(source)?;
-                        template::FieldValue::ByteVector(val)
+                        PrimitiveValue::Bytes(&val[..])
                     }
-                    template::FieldPrimitiveType::AsciiString => {
+                    PrimitiveType::Ascii => {
                         let mut val = String::new();
                         val.deserialize(source)?;
-                        template::FieldValue::AsciiString(val.into_bytes())
+                        PrimitiveValue::Ascii(val.as_bytes())
                     }
                     _ => {
                         todo!();
