@@ -146,7 +146,7 @@ impl Message {
         match self.fields.get(&464) {
             Some(FixFieldValue::Char('Y')) => Some(true),
             Some(FixFieldValue::Char('N')) => Some(false),
-            _ => Some(false)
+            _ => Some(false),
         }
     }
 }

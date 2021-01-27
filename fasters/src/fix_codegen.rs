@@ -94,7 +94,11 @@ impl Dictionary {
         )
     }
 
-    fn translate_layout_item_to_struct_field(&self, item: &LayoutItem, required: bool) -> Option<String> {
+    fn translate_layout_item_to_struct_field(
+        &self,
+        item: &LayoutItem,
+        required: bool,
+    ) -> Option<String> {
         let field_name = match item.kind() {
             LayoutItemKind::Component(c) => c.name().to_snake_case(),
             LayoutItemKind::Group() => return None,

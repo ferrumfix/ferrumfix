@@ -174,15 +174,15 @@ impl SofhParser {
 
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            buffer: Vec::with_capacity(capacity)
+            buffer: Vec::with_capacity(capacity),
         }
     }
 
-    pub fn iter_frames<'a, R: io::Read + 'a>(
-        &'a mut self,
-        reader: R,
-    ) -> FramesIter<'a, R> {
-        FramesIter { reader, parser: self }
+    pub fn iter_frames<'a, R: io::Read + 'a>(&'a mut self, reader: R) -> FramesIter<'a, R> {
+        FramesIter {
+            reader,
+            parser: self,
+        }
     }
 
     pub fn reserved(&self) -> usize {
@@ -196,8 +196,7 @@ pub struct FramesIter<'a, R: io::Read> {
 }
 
 impl<'a, R: io::Read> FramesIter<'a, R> {
-
-    pub fn next<'b>(&'b mut self) -> Option<Result<Frame<'b>>>{
+    pub fn next<'b>(&'b mut self) -> Option<Result<Frame<'b>>> {
         let mut header_buffer = [0u8; 6];
         if let Err(e) = self.reader.read_exact(&mut header_buffer) {
             return Some(Err(e.into()));
@@ -206,7 +205,9 @@ impl<'a, R: io::Read> FramesIter<'a, R> {
         if header.message_length < 6 {
             return Some(Err(Error::InvalidMessageLength));
         }
-        self.parser.buffer.resize(header.message_length as usize - 6, 0);
+        self.parser
+            .buffer
+            .resize(header.message_length as usize - 6, 0);
         if let Err(e) = self.reader.read_exact(&mut self.parser.buffer[..]) {
             return Some(Err(e.into()));
         }
@@ -258,7 +259,8 @@ mod test {
     #[test]
     fn frame_too_short() {
         let bytes = vec![0u8, 0, 0, 4, 13, 37, 42];
-        let mut frames = SofhParser::new().iter_frames(&bytes[..]);
+        let mut parser = SofhParser::new();
+        let mut frames = parser.iter_frames(&bytes[..]);
         match frames.next() {
             Some(Err(Error::InvalidMessageLength)) => (),
             _ => panic!(),
@@ -268,7 +270,8 @@ mod test {
     #[test]
     fn frame_with_only_header_is_valid() {
         let bytes = vec![0u8, 0, 0, 6, 13, 37];
-        let mut frames = SofhParser::new().iter_frames(&bytes[..]);
+        let mut parser = SofhParser::new();
+        let mut frames = parser.iter_frames(&bytes[..]);
         match frames.next() {
             Some(Ok(_)) => (),
             _ => panic!(),

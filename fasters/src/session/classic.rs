@@ -376,11 +376,11 @@ mod acceptor {
 
 mod initiator {
     use super::*;
+    use futures::select;
+    use futures::FutureExt;
+    use futures::StreamExt;
     use std::time::Instant;
     use tokio::time::{sleep, sleep_until};
-    use futures::select;
-    use futures::StreamExt;
-    use futures::FutureExt;
 
     enum State {
         NoActiveSession,

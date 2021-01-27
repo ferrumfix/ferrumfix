@@ -5,10 +5,6 @@ use std::fmt;
 use std::io;
 use std::str;
 
-/// "Start of heading" (SOH) control character (ASCII `0x1`). Each tag-value pair
-/// MUST be followed by this control character.
-const SOH_SEPARATOR: char = 1u8 as char;
-
 /// A (de)serializer for the classic FIX tag-value encoding.
 ///
 /// The FIX tag-value encoding is designed to be both human-readable and easy for
@@ -19,52 +15,42 @@ const SOH_SEPARATOR: char = 1u8 as char;
 /// [^1]: [FIX TagValue Encoding: Online reference.](https://www.fixtrading.org/standards/tagvalue-online)
 ///
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
-pub struct TagValue {
+pub struct TagValue<Z: Transmuter> {
     dict: Dictionary,
+    transmuter: Z,
 }
 
-type DecodeResult<T> = Result<T, <TagValue as Encoding<slr::Message>>::DecodeErr>;
-type EncodeResult<T> = Result<T, <TagValue as Encoding<slr::Message>>::EncodeErr>;
-
-impl TagValue {
-    /// Builds a new `TagValue` encoding device with an empty FIX dictionary.
-    pub fn new() -> Self {
-        Self::default()
+pub trait Transmuter: Clone {
+    fn soh_separator(&self) -> u8 {
+        0x1u8
     }
 
-    pub fn with_dict(dict: Dictionary) -> Self {
-        TagValue { dict }
+    fn validate_checksum(&self) -> bool {
+        true
     }
+}
 
-    //fn decode_checksum(
-    //    &self,
-    //    source: &mut impl io::BufRead,
-    //    message: &mut slr::Message,
-    //) -> DecodeResult<u8> {
-    //    let field = parse_field(source, self.separator, &|_: i64| BaseType::Int)?;
-    //    if let slr::FixFieldValue::Int(checksum) = field.value {
-    //        message.fields.insert(field.tag, field.value);
-    //        Ok(checksum as u8)
-    //    } else {
-    //        Err(Error::Syntax)
-    //    }
-    //}
+impl<Z> Encoding<slr::Message> for TagValue<Z>
+where
+    Z: Transmuter,
+{
+    type EncodeErr = Error;
+    type DecodeErr = Error;
 
-    pub fn decode_ws(
+    fn decode(
         &self,
         source: &mut impl io::BufRead,
-        separator: char,
-    ) -> Result<slr::Message, <TagValue as Encoding<slr::Message>>::DecodeErr> {
+    ) -> Result<slr::Message, <Self as Encoding<slr::Message>>::DecodeErr> {
         let tag_lookup = StandardTagLookup::new(&self.dict);
         let checksum = Checksum::new();
         let mut field_iter = FieldIter {
             handle: source,
-            separator: separator as u8,
             checksum,
             designator: tag_lookup,
             length: std::u32::MAX,
             is_last: false,
             data_length: 0,
+            transmuter: self.transmuter.clone(),
         };
         let mut message = slr::Message::new();
         {
@@ -106,23 +92,6 @@ impl TagValue {
             Err(Error::InvalidStandardTrailer)
         }
     }
-}
-
-impl Default for TagValue {
-    fn default() -> Self {
-        TagValue {
-            dict: Dictionary::empty(),
-        }
-    }
-}
-
-impl Encoding<slr::Message> for TagValue {
-    type EncodeErr = Error;
-    type DecodeErr = Error;
-
-    fn decode(&self, source: &mut impl io::BufRead) -> Result<slr::Message, Self::DecodeErr> {
-        self.decode_ws(source, SOH_SEPARATOR)
-    }
 
     fn encode(&self, message: slr::Message) -> Result<Vec<u8>, Self::EncodeErr> {
         let mut target = Vec::new();
@@ -137,6 +106,37 @@ impl Encoding<slr::Message> for TagValue {
         }
         Ok(target)
     }
+}
+
+type DecodeResult<T, Z> = Result<T, <TagValue<Z> as Encoding<slr::Message>>::DecodeErr>;
+type EncodeResult<T, Z> = Result<T, <TagValue<Z> as Encoding<slr::Message>>::EncodeErr>;
+
+impl<Z: Transmuter> TagValue<Z> {
+    /// Builds a new `TagValue` encoding device with an empty FIX dictionary.
+    pub fn new(transmuter: Z) -> Self {
+        TagValue {
+            dict: Dictionary::empty(),
+            transmuter,
+        }
+    }
+
+    pub fn with_dict(transmuter: Z, dict: Dictionary) -> Self {
+        TagValue { dict, transmuter }
+    }
+
+    //fn decode_checksum(
+    //    &self,
+    //    source: &mut impl io::BufRead,
+    //    message: &mut slr::Message,
+    //) -> DecodeResult<u8> {
+    //    let field = parse_field(source, self.separator, &|_: i64| BaseType::Int)?;
+    //    if let slr::FixFieldValue::Int(checksum) = field.value {
+    //        message.fields.insert(field.tag, field.value);
+    //        Ok(checksum as u8)
+    //    } else {
+    //        Err(Error::Syntax)
+    //    }
+    //}
 }
 
 impl From<io::Error> for Error {
@@ -210,20 +210,26 @@ pub enum TypeInfo {
     Data(usize),
 }
 
-struct FieldIter<'d, R: io::Read, D: TagLookup> {
+struct FieldIter<'d, R: io::Read, D: TagLookup, Z: Transmuter> {
     handle: &'d mut R,
-    separator: u8,
     checksum: Checksum,
     designator: D,
     length: u32,
     is_last: bool,
     data_length: u32,
+    transmuter: Z,
 }
 
-impl<'d, R: io::BufRead, D: TagLookup> Iterator for FieldIter<'d, R, D> {
-    type Item = DecodeResult<slr::Field>;
+impl<'d, R, D, Z> Iterator for FieldIter<'d, R, D, Z>
+where
+    R: io::BufRead,
+    D: TagLookup,
+    Z: Transmuter,
+{
+    type Item = DecodeResult<slr::Field, Z>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let soh_separator: u8 = self.transmuter.soh_separator();
         if self.is_last {
             return None;
         }
@@ -245,13 +251,13 @@ impl<'d, R: io::BufRead, D: TagLookup> Iterator for FieldIter<'d, R, D> {
             buffer = vec![0u8; self.data_length as usize];
             self.handle.read_exact(&mut buffer).unwrap();
             self.checksum.roll(&buffer[..]);
-            self.checksum.roll_byte(self.separator);
+            self.checksum.roll_byte(soh_separator);
             self.handle.read_exact(&mut buffer[0..1]).unwrap();
         } else {
             buffer = vec![];
-            self.handle.read_until(self.separator, &mut buffer).unwrap();
+            self.handle.read_until(soh_separator, &mut buffer).unwrap();
             match buffer.last() {
-                Some(b) if *b == self.separator => buffer.pop(),
+                Some(b) if *b == soh_separator => buffer.pop(),
                 _ => return Some(Err(Error::Eof)),
             };
             self.checksum.roll(&buffer[..]);
@@ -324,41 +330,50 @@ impl std::error::Error for Error {
 mod test {
     use super::*;
 
-    fn simple_dict() -> Dictionary {
-        Dictionary::empty()
+    #[derive(Clone)]
+    struct SimpleTransmuter;
+
+    impl Transmuter for SimpleTransmuter {
+        fn soh_separator(&self) -> u8 {
+            '|' as u8
+        }
+    }
+
+    fn encoder() -> TagValue<SimpleTransmuter> {
+        TagValue::new(SimpleTransmuter)
     }
 
     #[test]
     fn can_parse_simple_message() {
         let msg = "8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127|";
-        let result = TagValue::new().decode_ws(&mut msg.as_bytes(), '|');
+        let result = encoder().decode(&mut msg.as_bytes());
         assert!(result.is_ok());
     }
 
     #[test]
     fn message_must_end_with_separator() {
         let msg = "8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127";
-        let result = TagValue::new().decode_ws(&mut msg.as_bytes(), '|');
+        let result = encoder().decode(&mut msg.as_bytes());
         assert_eq!(result, Err(Error::Eof));
     }
 
     #[test]
     fn message_without_checksum() {
         let msg = "8=FIX.4.4|9=251|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|";
-        let result = TagValue::new().decode_ws(&mut msg.as_bytes(), '|');
+        let result = encoder().decode(&mut msg.as_bytes());
         assert_eq!(result, Err(Error::InvalidStandardTrailer));
     }
 
     #[test]
     fn message_without_standard_header() {
         let msg = "35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=000|";
-        let result = TagValue::new().decode_ws(&mut msg.as_bytes(), '|');
+        let result = encoder().decode(&mut msg.as_bytes());
         assert_eq!(result, Err(Error::InvalidStandardHeader));
     }
 
     #[test]
     fn detect_incorrect_checksum() {
         let msg = "8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=126|";
-        let _result = TagValue::new().decode_ws(&mut msg.as_bytes(), '|');
+        let _result = encoder().decode(&mut msg.as_bytes());
     }
 }
