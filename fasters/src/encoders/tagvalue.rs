@@ -20,7 +20,15 @@ pub struct TagValue<Z: Transmuter> {
     transmuter: Z,
 }
 
+impl<Z> TagValue<Z> where Z: Transmuter {}
+
+/// The [`Transmuter`](Transmuter) pattern allows deep customization of encoding
+/// and decoding behavior without relying on runtime settings. By using this
+/// trait and specializing the behavior of particular methods, users can change
+/// the behavior of the FIX encoder without incurring in performance loss.
 pub trait Transmuter: Clone {
+    /// The delimiter character, which terminates every tag-value pair including
+    /// the last one. It is the ASCII control character SOH (0x1) by default.
     fn soh_separator(&self) -> u8 {
         0x1u8
     }
@@ -34,13 +42,13 @@ impl<Z> Encoding<slr::Message> for TagValue<Z>
 where
     Z: Transmuter,
 {
-    type EncodeErr = Error;
-    type DecodeErr = Error;
+    type EncodeError = EncodeError;
+    type DecodeError = DecodeError;
 
     fn decode(
         &self,
         source: &mut impl io::BufRead,
-    ) -> Result<slr::Message, <Self as Encoding<slr::Message>>::DecodeErr> {
+    ) -> Result<slr::Message, <Self as Encoding<slr::Message>>::DecodeError> {
         let tag_lookup = StandardTagLookup::new(&self.dict);
         let checksum = Checksum::new();
         let mut field_iter = FieldIter {
@@ -93,7 +101,7 @@ where
         }
     }
 
-    fn encode(&self, message: slr::Message) -> Result<Vec<u8>, Self::EncodeErr> {
+    fn encode(&mut self, message: slr::Message) -> Result<Vec<u8>, Self::EncodeError> {
         let mut target = Vec::new();
         for (tag, value) in message.fields {
             let field = slr::Field {
@@ -108,8 +116,11 @@ where
     }
 }
 
-type DecodeResult<T, Z> = Result<T, <TagValue<Z> as Encoding<slr::Message>>::DecodeErr>;
-type EncodeResult<T, Z> = Result<T, <TagValue<Z> as Encoding<slr::Message>>::EncodeErr>;
+type DecodeError = Error;
+type EncodeError = Error;
+
+type DecodeResult<T> = Result<T, DecodeError>;
+type EncodeResult<T> = Result<T, EncodeError>;
 
 impl<Z: Transmuter> TagValue<Z> {
     /// Builds a new `TagValue` encoding device with an empty FIX dictionary.
@@ -226,7 +237,7 @@ where
     D: TagLookup,
     Z: Transmuter,
 {
-    type Item = DecodeResult<slr::Field, Z>;
+    type Item = Result<slr::Field, DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let soh_separator: u8 = self.transmuter.soh_separator();
@@ -238,7 +249,6 @@ where
         if let None = buffer.pop() {
             return None;
         }
-        //println!("{:?}", std::str::from_utf8(&buffer[..]).unwrap());
         let tag = std::str::from_utf8(&buffer[..])
             .unwrap()
             .parse::<i64>()

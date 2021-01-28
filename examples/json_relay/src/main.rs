@@ -9,7 +9,7 @@ fn print_listening(addr: net::SocketAddr) {
 
 fn main() -> io::Result<()> {
     let fix_v44 = Dictionary::from_version(fasters::app::Version::Fix44);
-    let encoder = encoders::Json::new(fix_v44, true);
+    let mut encoder = encoders::Json::new(fix_v44, true);
     let listener = net::TcpListener::bind("0.0.0.0:0")?;
     print_listening(listener.local_addr()?);
     let mut payload = vec![0u8; 8192];
@@ -21,7 +21,7 @@ fn main() -> io::Result<()> {
         let msg = encoder.decode(&mut &payload[..offset]).unwrap();
         println!(
             "{}",
-            std::str::from_utf8(&encoder.encode(msg).unwrap()[..]).unwrap()
+            std::str::from_utf8(&mut encoder.encode(msg).unwrap()[..]).unwrap()
         );
     }
     Ok(())

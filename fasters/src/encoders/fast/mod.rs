@@ -9,11 +9,10 @@ use std::io;
 use template::Template;
 
 mod codec;
+pub mod decimal;
 mod errors;
 mod field_operators;
 mod template;
-pub mod decimal;
-
 
 pub use codec::Codec;
 pub use decimal::Decimal;
@@ -25,8 +24,8 @@ pub struct Fast {
     templates: HashMap<String, Template>,
 }
 
-type DecodeResult<T> = std::result::Result<T, <Fast as Encoding<slr::Message>>::DecodeErr>;
-type EncodeResult<T> = std::result::Result<T, <Fast as Encoding<slr::Message>>::EncodeErr>;
+type DecodeResult<T> = std::result::Result<T, <Fast as Encoding<slr::Message>>::DecodeError>;
+type EncodeResult<T> = std::result::Result<T, <Fast as Encoding<slr::Message>>::EncodeError>;
 
 impl Fast {
     /// Builds a new `TagValue` encoding device with an empty FIX dictionary.
@@ -44,8 +43,8 @@ impl Fast {
 }
 
 impl Encoding<slr::Message> for Fast {
-    type EncodeErr = Error;
-    type DecodeErr = Error;
+    type EncodeError = Error;
+    type DecodeError = Error;
 
     fn decode(&self, source: &mut impl io::BufRead) -> DecodeResult<slr::Message> {
         let _presence_map = decode_stop_bit_bitvec(source).unwrap();
@@ -103,7 +102,7 @@ impl Encoding<slr::Message> for Fast {
         Ok(message)
     }
 
-    fn encode(&self, _message: slr::Message) -> EncodeResult<Vec<u8>> {
+    fn encode(&mut self, _message: slr::Message) -> EncodeResult<Vec<u8>> {
         let _presence_by_field: BitVec = BitVec::new();
         let buffer = Vec::new();
         Ok(buffer)

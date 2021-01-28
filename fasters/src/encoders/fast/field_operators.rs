@@ -135,7 +135,10 @@ impl<T> Default for None<T> {
     }
 }
 
-impl<T> FieldOperator for None<T> where T: Codec {
+impl<T> FieldOperator for None<T>
+where
+    T: Codec,
+{
     type Item = T;
 
     fn previous_value(&self) -> Option<&T> {

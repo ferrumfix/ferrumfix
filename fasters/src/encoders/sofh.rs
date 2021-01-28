@@ -9,6 +9,8 @@
 //! Please refer to https://www.fixtrading.org/standards/fix-sofh/ for more
 //! information.
 
+use super::Codec;
+use super::Poll;
 use std::convert::TryInto;
 use std::io;
 
@@ -187,6 +189,48 @@ impl SofhParser {
 
     pub fn reserved(&self) -> usize {
         self.buffer.capacity()
+    }
+}
+
+impl<'a, 's> Codec<'a, 's, Frame<'s>> for SofhParser
+where
+    's: 'a,
+{
+    type DecodeError = Error;
+    type EncodeError = ();
+
+    fn erase_buffer(&mut self) {
+        self.buffer = Vec::new();
+    }
+
+    fn supply_buffer(&mut self) -> Result<&mut [u8]> {
+        Ok(&mut self.buffer[..])
+    }
+
+    fn poll(&self, num_bytes: usize) -> Poll {
+        if self.buffer.len() == num_bytes {
+            Poll::StopNow
+        } else {
+            Poll::KeepThemComing
+        }
+    }
+
+    fn decode(&mut self) -> Result<()> {
+        Ok(())
+    }
+
+    fn get_item(&self) -> Frame {
+        Frame {
+            encoding_type: 0,
+            payload: &self.buffer[..],
+        }
+    }
+
+    fn encode(&mut self, data: Frame) -> std::result::Result<&[u8], Self::EncodeError> {
+        self.buffer.push((data.encoding_type() >> 8) as u8);
+        self.buffer.push(data.encoding_type() as u8);
+        // TODO
+        Ok(&self.buffer[..])
     }
 }
 

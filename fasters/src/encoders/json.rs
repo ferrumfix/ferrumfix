@@ -1,5 +1,7 @@
 use crate::app::slr;
+use crate::encoders::Codec;
 use crate::encoders::Encoding;
+use crate::encoders::Poll;
 use crate::Dictionary;
 use serde_json::json;
 use std::collections::HashMap;
@@ -9,6 +11,13 @@ use std::io;
 pub struct Json {
     dictionaries: HashMap<String, Dictionary>,
     pretty_print: bool,
+    buffer: Vec<u8>,
+    cursor: usize,
+    message: slr::Message,
+}
+
+pub trait Transmuter {
+    const PRETTY: bool;
 }
 
 impl Json {
@@ -18,6 +27,9 @@ impl Json {
         Json {
             dictionaries,
             pretty_print: pretty,
+            buffer: Vec::with_capacity(1024),
+            cursor: 0,
+            message: slr::Message::new(),
         }
     }
 
@@ -83,11 +95,128 @@ impl Json {
     }
 }
 
-impl Encoding<slr::Message> for Json {
-    type EncodeErr = DecodeError;
-    type DecodeErr = DecodeError;
+impl<'a, 's: 'a> Codec<'a, 's, &'a slr::Message> for Json {
+    type EncodeError = DecodeError;
+    type DecodeError = DecodeError;
 
-    fn decode(&self, source: &mut impl io::BufRead) -> Result<slr::Message, Self::DecodeErr> {
+    fn erase_buffer(&mut self) {
+        self.buffer = Vec::new();
+    }
+
+    fn supply_buffer(&mut self) -> Result<&mut [u8], Self::DecodeError> {
+        Ok(&mut self.buffer[self.cursor..])
+    }
+
+    fn poll(&self, _num_bytes: usize) -> Poll {
+        // The JSON encoding has no message frame, so we have no idea when the
+        // message is over! We must try decoding every time.
+        Poll::StopNow
+    }
+
+    fn decode(&mut self) -> Result<(), Self::DecodeError> {
+        let value: serde_json::Value =
+            serde_json::from_reader(&self.buffer[..]).map_err(|_| DecodeError::Syntax)?;
+        let header = value
+            .get("Header")
+            .and_then(|v| v.as_object())
+            .ok_or(DecodeError::Schema)?;
+        let body = value
+            .get("Body")
+            .and_then(|v| v.as_object())
+            .ok_or(DecodeError::Schema)?;
+        let trailer = value
+            .get("Trailer")
+            .and_then(|v| v.as_object())
+            .ok_or(DecodeError::Schema)?;
+        let _field_msg_type = header // TODO: field presence checks.
+            .get("MsgType")
+            .and_then(|v| v.as_str())
+            .ok_or(DecodeError::Schema)?;
+        let field_begin_string = header
+            .get("BeginString")
+            .and_then(|v| v.as_str())
+            .ok_or(DecodeError::Schema)?;
+        let dictionary = self
+            .dictionaries
+            .get(field_begin_string)
+            .ok_or(DecodeError::InvalidMsgType)?;
+        let mut message = slr::Message::new();
+        for item in header.iter().chain(body).chain(trailer) {
+            let (tag, field) = Self::decode_field(dictionary, item.0, item.1)?;
+            message.add_field(tag, field);
+        }
+        self.message = message;
+        Ok(())
+    }
+
+    fn get_item(&self) -> &slr::Message {
+        &self.message
+    }
+
+    fn encode(&mut self, data: &slr::Message) -> Result<&[u8], Self::EncodeError> {
+        let dictionary = if let Some(slr::FixFieldValue::String(fix_version)) = data.fields.get(&8)
+        {
+            self.dictionaries
+                .get(fix_version.as_str())
+                .ok_or(DecodeError::Schema)?
+        } else {
+            return Err(DecodeError::Schema);
+        };
+        let component_std_header = dictionary.get_component("StandardHeader").unwrap();
+        let component_std_traler = dictionary.get_component("StandardTrailer").unwrap();
+        let msg_type = if let Some(slr::FixFieldValue::String(s)) = data.fields.get(&35) {
+            s
+        } else {
+            return Err(DecodeError::InvalidData);
+        };
+        let mut map_body = json!({});
+        let mut map_trailer = json!({});
+        let mut map_header = json!({ "MsgType": msg_type });
+        for (field_tag, field_value) in data.fields.iter() {
+            let field = dictionary
+                .get_field(*field_tag as u32)
+                .ok_or(DecodeError::InvalidData)?;
+            let field_name = field.name().to_string();
+            let field_value = Json::translate(dictionary, field_value);
+            if component_std_header.contains_field(&field) {
+                map_header
+                    .as_object_mut()
+                    .unwrap()
+                    .insert(field_name, field_value);
+            } else if component_std_traler.contains_field(&field) {
+                map_trailer
+                    .as_object_mut()
+                    .unwrap()
+                    .insert(field_name, field_value);
+            } else {
+                map_body
+                    .as_object_mut()
+                    .unwrap()
+                    .insert(field_name, field_value);
+            }
+        }
+        let value = json!({
+            "Header": map_header,
+            "Body": map_body,
+            "Trailer": map_trailer,
+        });
+        let mut writer = GrowableVecU8 {
+            bytes: &mut self.buffer,
+        };
+        if self.pretty_print {
+            serde_json::to_writer_pretty(&mut writer, &value).unwrap()
+        } else {
+            serde_json::to_writer(&mut writer, &value).unwrap()
+        };
+        Ok(&self.buffer[..])
+    }
+}
+
+impl Encoding<slr::Message> for Json {
+    type EncodeError = DecodeError;
+    type DecodeError = DecodeError;
+
+    fn decode(&self, source: &mut impl io::BufRead) -> Result<slr::Message, Self::DecodeError> {
         let value: serde_json::Value =
             serde_json::from_reader(source).map_err(|_| DecodeError::Syntax)?;
         let header = value
@@ -122,59 +251,24 @@ impl Encoding<slr::Message> for Json {
         Ok(message)
     }
 
-    fn encode(&self, message: slr::Message) -> Result<Vec<u8>, Self::EncodeErr> {
-        let dictionary =
-            if let Some(slr::FixFieldValue::String(fix_version)) = message.fields.get(&8) {
-                self.dictionaries
-                    .get(fix_version.as_str())
-                    .ok_or(DecodeError::Schema)?
-            } else {
-                return Err(DecodeError::Schema);
-            };
-        let component_std_header = dictionary.get_component("StandardHeader").unwrap();
-        let component_std_traler = dictionary.get_component("StandardTrailer").unwrap();
-        let msg_type = if let Some(slr::FixFieldValue::String(s)) = message.fields.get(&35) {
-            s
-        } else {
-            return Err(DecodeError::InvalidData);
-        };
-        let mut map_body = json!({});
-        let mut map_trailer = json!({});
-        let mut map_header = json!({ "MsgType": msg_type });
-        for (field_tag, field_value) in message.fields.iter() {
-            let field = dictionary
-                .get_field(*field_tag as u32)
-                .ok_or(DecodeError::InvalidData)?;
-            let field_name = field.name().to_string();
-            let field_value = Json::translate(dictionary, field_value);
-            if component_std_header.contains_field(&field) {
-                map_header
-                    .as_object_mut()
-                    .unwrap()
-                    .insert(field_name, field_value);
-            } else if component_std_traler.contains_field(&field) {
-                map_trailer
-                    .as_object_mut()
-                    .unwrap()
-                    .insert(field_name, field_value);
-            } else {
-                map_body
-                    .as_object_mut()
-                    .unwrap()
-                    .insert(field_name, field_value);
-            }
-        }
-        let value = json!({
-            "Header": map_header,
-            "Body": map_body,
-            "Trailer": map_trailer,
-        });
-        let bytes = if self.pretty_print {
-            serde_json::to_vec_pretty(&value).unwrap()
-        } else {
-            serde_json::to_vec(&value).unwrap()
-        };
-        Ok(bytes)
+    fn encode(&mut self, message: slr::Message) -> Result<Vec<u8>, Self::EncodeError> {
+        Codec::erase_buffer(self);
+        return Codec::encode(self, &message).map(|data| data.to_vec());
+    }
+}
+
+struct GrowableVecU8<'a> {
+    bytes: &'a mut Vec<u8>,
+}
+
+impl<'a> io::Write for GrowableVecU8<'a> {
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.bytes.extend_from_slice(buf);
+        Ok(buf.len())
     }
 }
 
@@ -253,10 +347,10 @@ mod test {
 
     #[test]
     fn decode_then_decode() {
-        let encoder = encoder_fix44();
+        let mut encoder = encoder_fix44();
         let json_value_before: Value = from_str(MESSAGE_SIMPLE).unwrap();
         let message = encoder.decode(&mut MESSAGE_SIMPLE.as_bytes()).unwrap();
-        let bytes = encoder.encode(message).unwrap();
+        let bytes = Codec::encode(&mut encoder, &message).unwrap();
         let json_value_after: Value = from_slice(&bytes[..]).unwrap();
         assert_eq!(json_value_before, json_value_after);
     }
