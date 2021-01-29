@@ -310,7 +310,7 @@ impl Decimal {
     /// let num = Decimal::new(0, 0);
     /// assert_eq!(num.floor(), Decimal::new(0, 0));
     /// ```
-    pub fn round(&self, dp: u32, strategy: RoundingStrategy) -> Self {
+    pub fn round(&self, _dp: u32, _strategy: RoundingStrategy) -> Self {
         let mut me = *self;
         me = me.truncate();
         me

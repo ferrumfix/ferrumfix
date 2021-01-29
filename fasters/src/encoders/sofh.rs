@@ -166,7 +166,7 @@ where
 
     fn advance(&mut self) {
         let mut header_buffer = [0u8; 6];
-        if let Err(e) = self.source.read_exact(&mut header_buffer) {
+        if let Err(_e) = self.source.read_exact(&mut header_buffer) {
             //return Some(Err(e.into()));
         }
         let header = Header::from(&header_buffer);
@@ -176,7 +176,7 @@ where
         self.parser
             .buffer
             .resize(header.message_length as usize - 6, 0);
-        if let Err(e) = self.source.read_exact(&mut self.parser.buffer[..]) {
+        if let Err(_e) = self.source.read_exact(&mut self.parser.buffer[..]) {
             //return Some(Err(e.into()));
         }
         debug_assert_eq!(self.parser.buffer.len(), header.message_length as usize - 6);
@@ -448,8 +448,8 @@ mod test {
 
     #[test]
     fn frame_too_short() {
-        let bytes = vec![0u8, 0, 0, 4, 13, 37, 42];
-        let mut parser = SofhParser::new();
+        let _bytes = vec![0u8, 0, 0, 4, 13, 37, 42];
+        let _parser = SofhParser::new();
         //parser.read_frames(&bytes[..]).count();
         //let frame = frames.next();
         //match frame {
@@ -462,7 +462,7 @@ mod test {
     fn frame_with_only_header_is_valid() {
         let bytes = vec![0u8, 0, 0, 6, 13, 37];
         let mut parser = SofhParser::new();
-        let frames = parser.read_frames(&bytes[..]);
+        let _frames = parser.read_frames(&bytes[..]);
         //match frames.next() {
         //    Some(Ok(_)) => (),
         //    _ => panic!(),

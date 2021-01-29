@@ -322,7 +322,7 @@ mod acceptor {
             while let Some(event) = events.next().await {
                 match event {
                     EventInbound::Terminated => {}
-                    EventInbound::IncomingMessage(msg) => {}
+                    EventInbound::IncomingMessage(_msg) => {}
                 };
             }
             futures_lite::stream::empty()
@@ -334,7 +334,7 @@ mod acceptor {
         ) -> impl Iterator<Item = EventOutbound> + 'a {
             match event {
                 EventInbound::Terminated => {}
-                EventInbound::IncomingMessage(msg) => {}
+                EventInbound::IncomingMessage(_msg) => {}
             };
             // TODO...
             AcceptorPendingEvents { acceptor: self }
@@ -380,7 +380,7 @@ mod initiator {
     use futures::FutureExt;
     use futures::StreamExt;
     use std::time::Instant;
-    use tokio::time::{sleep, sleep_until};
+    
 
     enum State {
         NoActiveSession,
@@ -441,9 +441,9 @@ mod initiator {
         events: S,
     }
 
-    use std::pin::Pin;
-    use std::task::Context;
-    use std::task::Poll;
+    
+    
+    
 
     //impl<S: Stream<Item = slr::Message> + Unpin> Stream for Session<S> {
     //    type Item = slr::Message;
@@ -489,12 +489,12 @@ mod initiator {
             events: impl Stream<Item = slr::Message> + Unpin,
         ) -> impl Stream<Item = slr::Message> {
             let mut events = events.into_future();
-            let mut heartbeat_sleep = tokio::time::sleep(Duration::from_secs(1)).fuse();
+            let heartbeat_sleep = tokio::time::sleep(Duration::from_secs(1)).fuse();
             tokio::pin!(heartbeat_sleep);
             loop {
                 select! {
                     () = heartbeat_sleep => (),
-                    event = events => (),
+                    _event = events => (),
                 }
             }
             futures::stream::empty()
@@ -584,7 +584,7 @@ mod initiator {
 
         fn notify<'a>(
             &'a mut self,
-            event: slr::Message,
+            _event: slr::Message,
         ) -> impl Iterator<Item = EventOutbound> + 'a {
             std::iter::empty()
         }

@@ -49,7 +49,7 @@ impl Version {
                 .iter()
                 .chain(V1_DRAFT_RECOMMENDED_CIPHERSUITES_PSK_ONLY),
         }
-        .map(|s| *s)
+        .copied()
     }
 
     pub fn recommended_cs_openssl(&self, psk: bool) -> impl Iterator<Item = &str> {
