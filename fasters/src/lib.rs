@@ -13,11 +13,14 @@ pub mod fix42;
 mod fix_codegen;
 pub mod prelude;
 pub mod session;
+pub mod stream_iterator;
 pub mod transport;
+pub(crate) mod utils;
 
 pub use dictionary::Dictionary;
 pub use fasters_derive::*;
 pub use fix_codegen::codegen;
+pub use stream_iterator::StreamIterator;
 
 #[cfg(expose_openssl)]
 pub extern crate openssl;

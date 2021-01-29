@@ -1,4 +1,5 @@
 use fasters::encoders::sofh::SofhParser;
+use fasters::StreamIterator;
 use std::io;
 use std::net;
 
@@ -14,9 +15,9 @@ fn main() -> io::Result<()> {
     print_listening(listener.local_addr()?);
     let stream = listener.accept()?.0;
     let mut parser = SofhParser::new();
-    let mut frames = parser.iter_frames(stream);
+    let mut frames = parser.read_frames(stream);
     while let Some(frame_result) = frames.next() {
-        let frame = frame_result.unwrap();
+        let frame = frame_result.as_ref().unwrap();
         let payload = std::str::from_utf8(frame.payload()).unwrap();
         println!("{}", payload);
     }

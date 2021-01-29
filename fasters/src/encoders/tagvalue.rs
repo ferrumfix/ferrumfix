@@ -1,6 +1,6 @@
 use crate::app::slr;
 use crate::dictionary::{BaseType, Dictionary};
-use crate::encoders::Encoding;
+use crate::encoders::{Codec, Encoding, Poll};
 use std::fmt;
 use std::io;
 use std::str;
@@ -20,21 +20,39 @@ pub struct TagValue<Z: Transmuter> {
     transmuter: Z,
 }
 
-impl<Z> TagValue<Z> where Z: Transmuter {}
-
-/// The [`Transmuter`](Transmuter) pattern allows deep customization of encoding
-/// and decoding behavior without relying on runtime settings. By using this
-/// trait and specializing the behavior of particular methods, users can change
-/// the behavior of the FIX encoder without incurring in performance loss.
-pub trait Transmuter: Clone {
-    /// The delimiter character, which terminates every tag-value pair including
-    /// the last one. It is the ASCII control character SOH (0x1) by default.
-    fn soh_separator(&self) -> u8 {
-        0x1u8
+impl<Z: Transmuter> TagValue<Z> {
+    /// Builds a new `TagValue` encoding device with an empty FIX dictionary.
+    pub fn new(transmuter: Z) -> Self {
+        Self::with_dict(transmuter, Dictionary::empty())
     }
 
-    fn validate_checksum(&self) -> bool {
-        true
+    /// Creates a new codec for the tag-value format. `transmuter` specifies its
+    /// settings and `dict` is used to parse messages.
+    pub fn with_dict(transmuter: Z, dict: Dictionary) -> Self {
+        TagValue {
+            dict,
+            transmuter,
+        }
+    }
+}
+
+impl<'s, Z> Codec<'s, &'s slr::Message> for TagValue<Z>
+where
+    Z: Transmuter + 's,
+{
+    type DecodeError = DecodeError;
+    type EncodeError = EncodeError;
+
+    fn decode(&mut self, _data: &[u8]) -> ResultDecode<Poll> {
+        unimplemented!()
+    }
+
+    fn get_item(&self) -> &slr::Message {
+        unimplemented!()
+    }
+
+    fn encode(&mut self, _data: &slr::Message) -> ResultEncode<&[u8]> {
+        unimplemented!()
     }
 }
 
@@ -48,13 +66,11 @@ where
     fn decode(
         &self,
         source: &mut impl io::BufRead,
-    ) -> Result<slr::Message, <Self as Encoding<slr::Message>>::DecodeError> {
-        let tag_lookup = StandardTagLookup::new(&self.dict);
-        let checksum = Checksum::new();
+    ) -> ResultDecode<slr::Message> {
         let mut field_iter = FieldIter {
             handle: source,
-            checksum,
-            designator: tag_lookup,
+            checksum: Z::ChecksumCalculator::default(),
+            designator: StandardTagLookup::new(&self.dict),
             length: std::u32::MAX,
             is_last: false,
             data_length: 0,
@@ -101,7 +117,7 @@ where
         }
     }
 
-    fn encode(&mut self, message: slr::Message) -> Result<Vec<u8>, Self::EncodeError> {
+    fn encode(&mut self, message: slr::Message) -> ResultEncode<Vec<u8>> {
         let mut target = Vec::new();
         for (tag, value) in message.fields {
             let field = slr::Field {
@@ -119,70 +135,12 @@ where
 type DecodeError = Error;
 type EncodeError = Error;
 
-type DecodeResult<T> = Result<T, DecodeError>;
-type EncodeResult<T> = Result<T, EncodeError>;
-
-impl<Z: Transmuter> TagValue<Z> {
-    /// Builds a new `TagValue` encoding device with an empty FIX dictionary.
-    pub fn new(transmuter: Z) -> Self {
-        TagValue {
-            dict: Dictionary::empty(),
-            transmuter,
-        }
-    }
-
-    pub fn with_dict(transmuter: Z, dict: Dictionary) -> Self {
-        TagValue { dict, transmuter }
-    }
-
-    //fn decode_checksum(
-    //    &self,
-    //    source: &mut impl io::BufRead,
-    //    message: &mut slr::Message,
-    //) -> DecodeResult<u8> {
-    //    let field = parse_field(source, self.separator, &|_: i64| BaseType::Int)?;
-    //    if let slr::FixFieldValue::Int(checksum) = field.value {
-    //        message.fields.insert(field.tag, field.value);
-    //        Ok(checksum as u8)
-    //    } else {
-    //        Err(Error::Syntax)
-    //    }
-    //}
-}
+type ResultDecode<T> = Result<T, DecodeError>;
+type ResultEncode<T> = Result<T, EncodeError>;
 
 impl From<io::Error> for Error {
     fn from(_err: io::Error) -> Self {
         Error::Eof // FIXME
-    }
-}
-
-/// A rolling checksum over a byte array. Sums over each byte wrapping around at
-/// 256.
-#[derive(Copy, Clone, Debug)]
-struct Checksum(u8, usize);
-
-impl Checksum {
-    fn new() -> Self {
-        Checksum(0, 0)
-    }
-
-    fn roll(&mut self, window: &[u8]) {
-        for byte in window {
-            self.roll_byte(*byte);
-        }
-    }
-
-    fn roll_byte(&mut self, byte: u8) {
-        self.0 = self.0.wrapping_add(byte);
-        self.1 += 1;
-    }
-
-    fn window_length(&self) -> usize {
-        self.1
-    }
-
-    fn result(self) -> u8 {
-        self.0
     }
 }
 
@@ -223,7 +181,7 @@ pub enum TypeInfo {
 
 struct FieldIter<'d, R: io::Read, D: TagLookup, Z: Transmuter> {
     handle: &'d mut R,
-    checksum: Checksum,
+    checksum: Z::ChecksumCalculator,
     designator: D,
     length: u32,
     is_last: bool,
@@ -240,7 +198,6 @@ where
     type Item = Result<slr::Field, DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let soh_separator: u8 = self.transmuter.soh_separator();
         if self.is_last {
             return None;
         }
@@ -261,13 +218,15 @@ where
             buffer = vec![0u8; self.data_length as usize];
             self.handle.read_exact(&mut buffer).unwrap();
             self.checksum.roll(&buffer[..]);
-            self.checksum.roll_byte(soh_separator);
+            self.checksum.roll_byte(Z::SOH_SEPARATOR);
             self.handle.read_exact(&mut buffer[0..1]).unwrap();
         } else {
             buffer = vec![];
-            self.handle.read_until(soh_separator, &mut buffer).unwrap();
+            self.handle
+                .read_until(Z::SOH_SEPARATOR, &mut buffer)
+                .unwrap();
             match buffer.last() {
-                Some(b) if *b == soh_separator => buffer.pop(),
+                Some(b) if *b == Z::SOH_SEPARATOR => buffer.pop(),
                 _ => return Some(Err(Error::Eof)),
             };
             self.checksum.roll(&buffer[..]);
@@ -279,7 +238,7 @@ where
         Some(Ok(slr::Field {
             tag,
             value: field_value,
-            checksum: self.checksum.0,
+            checksum: self.checksum.clone().result(),
             len: self.checksum.window_length(),
         }))
     }
@@ -307,10 +266,107 @@ fn field_value(datatype: BaseType, buf: &[u8]) -> Result<slr::FixFieldValue, Err
     })
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct InvalidChecksum {
-    pub expected: u8,
-    pub actual: u8,
+/// The [`Transmuter`](Transmuter) pattern allows deep customization of encoding
+/// and decoding behavior without relying on runtime settings. By using this
+/// trait and specializing the behavior of particular methods, users can change
+/// the behavior of the FIX encoder without incurring in performance loss.
+pub trait Transmuter: Clone {
+    type ChecksumCalculator: ChecksumCalculator;
+
+    /// The delimiter character, which terminates every tag-value pair including
+    /// the last one. It is the ASCII control character SOH (0x1) by default.
+    const SOH_SEPARATOR: u8 = 0x1;
+
+    /// Determines if checksum should be calculated or not.
+    const VALIDATE_CHECKSUM: bool = true;
+}
+
+#[derive(Clone)]
+pub struct TransVerticalSlash;
+
+impl Transmuter for TransVerticalSlash {
+    type ChecksumCalculator = RollingChecksumCalculator;
+
+    const SOH_SEPARATOR: u8 = '|' as u8;
+}
+
+pub trait ChecksumCalculator: Default + Clone {
+    /// Calculates the checksum of `window` and compounds it with `self`.
+    fn roll(&mut self, window: &[u8]);
+
+    /// Calculates the checksum of `byte` and compounds it with `self`.
+    fn roll_byte(&mut self, byte: u8);
+
+    /// Returns the amount of bytes that were processed calculating for this
+    /// checksum.
+    fn window_length(&self) -> usize;
+
+    /// Returns the final checksum value.
+    fn result(self) -> u8;
+
+    /// Checks that the calculated checksum of `self` matches `checksum`.
+    fn verify(&self, checksum: u8) -> bool;
+}
+
+/// A rolling checksum over a byte array. Sums over each byte wrapping around at
+/// 256.
+#[derive(Copy, Clone, Debug, Default)]
+pub struct RollingChecksumCalculator {
+    checksum: u8,
+    len: usize,
+}
+
+impl ChecksumCalculator for RollingChecksumCalculator {
+    fn roll(&mut self, window: &[u8]) {
+        for byte in window {
+            self.roll_byte(*byte);
+        }
+    }
+
+    fn roll_byte(&mut self, byte: u8) {
+        self.checksum = self.checksum.wrapping_add(byte);
+        self.len += 1;
+    }
+
+    fn window_length(&self) -> usize {
+        self.len
+    }
+
+    fn result(self) -> u8 {
+        self.checksum
+    }
+
+    fn verify(&self, checksum: u8) -> bool {
+        self.checksum == checksum
+    }
+}
+
+/// A non-verifying checksum calculator.
+#[derive(Copy, Clone, Debug, Default)]
+pub struct FakeChecksumCalculator {
+    len: usize,
+}
+
+impl ChecksumCalculator for FakeChecksumCalculator {
+    fn roll(&mut self, window: &[u8]) {
+        self.len += window.len();
+    }
+
+    fn roll_byte(&mut self, _byte: u8) {
+        self.len += 1;
+    }
+
+    fn window_length(&self) -> usize {
+        self.len
+    }
+
+    fn result(self) -> u8 {
+        0
+    }
+
+    fn verify(&self, _checksum: u8) -> bool {
+        true
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -336,21 +392,18 @@ impl std::error::Error for Error {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct InvalidChecksum {
+    pub expected: u8,
+    pub actual: u8,
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
 
-    #[derive(Clone)]
-    struct SimpleTransmuter;
-
-    impl Transmuter for SimpleTransmuter {
-        fn soh_separator(&self) -> u8 {
-            '|' as u8
-        }
-    }
-
-    fn encoder() -> TagValue<SimpleTransmuter> {
-        TagValue::new(SimpleTransmuter)
+    fn encoder() -> TagValue<TransVerticalSlash> {
+        TagValue::new(TransVerticalSlash)
     }
 
     #[test]

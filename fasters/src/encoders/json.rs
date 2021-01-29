@@ -1,32 +1,49 @@
+use super::TransmuterPattern;
 use crate::app::slr;
 use crate::encoders::Codec;
 use crate::encoders::Encoding;
 use crate::encoders::Poll;
+use crate::utils::GrowableVecU8;
 use crate::Dictionary;
 use serde_json::json;
 use std::collections::HashMap;
 use std::fmt;
 use std::io;
 
+/// Transmuter configuration for the [`Json`] encoding.
+pub trait Transmuter: Clone {
+    /// This setting indicates that all encoded messages should be "prettified",
+    /// i.e. the JSON code will not be compressed and instead it will have
+    /// indentation and other whitespace that favors human readability. Some
+    /// performance loss is expected.
+    ///
+    /// This is turned off be default.
+    const PRETTY_PRINT: bool = false;
+}
+
+/// A pretty-printer transmuter for [`Json`](Json) encoding.
+#[derive(Clone)]
+pub struct TransPrettyPrint;
+
+impl Transmuter for TransPrettyPrint {
+    const PRETTY_PRINT: bool = true;
+}
+
+impl<T> TransmuterPattern for T where T: Transmuter {}
+
 pub struct Json {
     dictionaries: HashMap<String, Dictionary>,
-    pretty_print: bool,
     buffer: Vec<u8>,
     cursor: usize,
     message: slr::Message,
 }
 
-pub trait Transmuter {
-    const PRETTY: bool;
-}
-
 impl Json {
-    pub fn new(dict: Dictionary, pretty: bool) -> Self {
+    pub fn new(dict: Dictionary) -> Self {
         let mut dictionaries = HashMap::new();
         dictionaries.insert(dict.get_version().to_string(), dict);
         Json {
             dictionaries,
-            pretty_print: pretty,
             buffer: Vec::with_capacity(1024),
             cursor: 0,
             message: slr::Message::new(),
@@ -95,27 +112,17 @@ impl Json {
     }
 }
 
-impl<'a, 's: 'a> Codec<'a, 's, &'a slr::Message> for Json {
+impl<'s, Z> Codec<'s, &'s slr::Message> for (Json, Z)
+where
+    Z: Transmuter + 's,
+{
     type EncodeError = DecodeError;
     type DecodeError = DecodeError;
 
-    fn erase_buffer(&mut self) {
-        self.buffer = Vec::new();
-    }
-
-    fn supply_buffer(&mut self) -> Result<&mut [u8], Self::DecodeError> {
-        Ok(&mut self.buffer[self.cursor..])
-    }
-
-    fn poll(&self, _num_bytes: usize) -> Poll {
-        // The JSON encoding has no message frame, so we have no idea when the
-        // message is over! We must try decoding every time.
-        Poll::StopNow
-    }
-
-    fn decode(&mut self) -> Result<(), Self::DecodeError> {
+    fn decode(&mut self, data: &[u8]) -> Result<Poll, Self::DecodeError> {
+        self.0.buffer.extend_from_slice(data);
         let value: serde_json::Value =
-            serde_json::from_reader(&self.buffer[..]).map_err(|_| DecodeError::Syntax)?;
+            serde_json::from_reader(&self.0.buffer[..]).map_err(|_| DecodeError::Syntax)?;
         let header = value
             .get("Header")
             .and_then(|v| v.as_object())
@@ -137,26 +144,28 @@ impl<'a, 's: 'a> Codec<'a, 's, &'a slr::Message> for Json {
             .and_then(|v| v.as_str())
             .ok_or(DecodeError::Schema)?;
         let dictionary = self
+            .0
             .dictionaries
             .get(field_begin_string)
             .ok_or(DecodeError::InvalidMsgType)?;
         let mut message = slr::Message::new();
         for item in header.iter().chain(body).chain(trailer) {
-            let (tag, field) = Self::decode_field(dictionary, item.0, item.1)?;
+            let (tag, field) = Json::decode_field(dictionary, item.0, item.1)?;
             message.add_field(tag, field);
         }
-        self.message = message;
-        Ok(())
+        self.0.message = message;
+        Ok(Poll::Ready)
     }
 
     fn get_item(&self) -> &slr::Message {
-        &self.message
+        &self.0.message
     }
 
     fn encode(&mut self, data: &slr::Message) -> Result<&[u8], Self::EncodeError> {
         let dictionary = if let Some(slr::FixFieldValue::String(fix_version)) = data.fields.get(&8)
         {
-            self.dictionaries
+            self.0
+                .dictionaries
                 .get(fix_version.as_str())
                 .ok_or(DecodeError::Schema)?
         } else {
@@ -201,18 +210,21 @@ impl<'a, 's: 'a> Codec<'a, 's, &'a slr::Message> for Json {
             "Trailer": map_trailer,
         });
         let mut writer = GrowableVecU8 {
-            bytes: &mut self.buffer,
+            bytes: &mut self.0.buffer,
         };
-        if self.pretty_print {
+        if Z::PRETTY_PRINT {
             serde_json::to_writer_pretty(&mut writer, &value).unwrap()
         } else {
             serde_json::to_writer(&mut writer, &value).unwrap()
         };
-        Ok(&self.buffer[..])
+        Ok(&self.0.buffer[..])
     }
 }
 
-impl Encoding<slr::Message> for Json {
+impl<Z> Encoding<slr::Message> for (Json, Z)
+where
+    Z: Transmuter,
+{
     type EncodeError = DecodeError;
     type DecodeError = DecodeError;
 
@@ -240,35 +252,21 @@ impl Encoding<slr::Message> for Json {
             .and_then(|v| v.as_str())
             .ok_or(DecodeError::Schema)?;
         let dictionary = self
+            .0
             .dictionaries
             .get(field_begin_string)
             .ok_or(DecodeError::InvalidMsgType)?;
         let mut message = slr::Message::new();
         for item in header.iter().chain(body).chain(trailer) {
-            let (tag, field) = Self::decode_field(dictionary, item.0, item.1)?;
+            let (tag, field) = Json::decode_field(dictionary, item.0, item.1)?;
             message.add_field(tag, field);
         }
         Ok(message)
     }
 
     fn encode(&mut self, message: slr::Message) -> Result<Vec<u8>, Self::EncodeError> {
-        Codec::erase_buffer(self);
-        return Codec::encode(self, &message).map(|data| data.to_vec());
-    }
-}
-
-struct GrowableVecU8<'a> {
-    bytes: &'a mut Vec<u8>,
-}
-
-impl<'a> io::Write for GrowableVecU8<'a> {
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
-    }
-
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.bytes.extend_from_slice(buf);
-        Ok(buf.len())
+        debug_assert!(self.0.buffer.is_empty());
+        Codec::encode(self, &message).map(|data| data.to_vec())
     }
 }
 
@@ -341,8 +339,8 @@ mod test {
         Dictionary::from_version(crate::app::Version::Fix44)
     }
 
-    fn encoder_fix44() -> Json {
-        Json::new(dict_fix44(), true)
+    fn encoder_fix44() -> (Json, impl Transmuter) {
+        (Json::new(dict_fix44()), TransPrettyPrint)
     }
 
     #[test]
