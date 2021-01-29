@@ -11,7 +11,6 @@ pub use json::Json;
 pub use tagvalue::TagValue;
 
 /// Capabilities to decode and encode FIX messages according to a FIX dictionary.
-#[deprecated]
 pub trait Encoding<M> {
     type DecodeError;
     type EncodeError;
