@@ -62,7 +62,7 @@ where
     /// Please note that even though serialization errors are way less common
     /// than deserialization errors, one should still be careful to manage them
     /// when they arise.
-    fn encode(&'s mut self, data: M) -> Result<&'s [u8], Self::EncodeError>;
+    fn encode(&mut self, data: M) -> Result<&[u8], Self::EncodeError>;
 }
 
 /// Represents the progress that a codec device has made in regard to the current

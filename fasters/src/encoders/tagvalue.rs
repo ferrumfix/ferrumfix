@@ -18,6 +18,7 @@ use std::str;
 pub struct TagValue<Z: Transmuter> {
     dict: Dictionary,
     transmuter: Z,
+    buffer: Vec<u8>,
 }
 
 impl<Z: Transmuter> TagValue<Z> {
@@ -29,10 +30,7 @@ impl<Z: Transmuter> TagValue<Z> {
     /// Creates a new codec for the tag-value format. `transmuter` specifies its
     /// settings and `dict` is used to parse messages.
     pub fn with_dict(transmuter: Z, dict: Dictionary) -> Self {
-        TagValue {
-            dict,
-            transmuter,
-        }
+        TagValue { dict, transmuter, buffer: Vec::new() }
     }
 }
 
@@ -43,16 +41,26 @@ where
     type DecodeError = DecodeError;
     type EncodeError = EncodeError;
 
-    fn decode(&mut self, _data: &[u8]) -> ResultDecode<Poll> {
-        unimplemented!()
+    fn decode(&mut self, data: &[u8]) -> ResultDecode<Poll> {
+        self.buffer.extend_from_slice(data);
+        Ok(Poll::Ready)
     }
 
     fn get_item(&self) -> &slr::Message {
         unimplemented!()
     }
 
-    fn encode(&mut self, _data: &slr::Message) -> ResultEncode<&[u8]> {
-        unimplemented!()
+    fn encode(&mut self, message: &slr::Message) -> ResultEncode<&[u8]> {
+        for (tag, value) in message.fields.iter() {
+            let field = slr::Field {
+                tag: *tag,
+                value: value.clone(),
+                checksum: 0,
+                len: 0,
+            };
+            field.encode(&mut &mut self.buffer[..])?;
+        }
+        Ok(&self.buffer[..])
     }
 }
 
@@ -63,15 +71,11 @@ where
     type EncodeError = EncodeError;
     type DecodeError = DecodeError;
 
-    fn decode(
-        &self,
-        source: &mut impl io::BufRead,
-    ) -> ResultDecode<slr::Message> {
+    fn decode(&self, source: &mut impl io::BufRead) -> ResultDecode<slr::Message> {
         let mut field_iter = FieldIter {
             handle: source,
             checksum: Z::ChecksumCalculator::default(),
             designator: StandardTagLookup::new(&self.dict),
-            length: std::u32::MAX,
             is_last: false,
             data_length: 0,
             transmuter: self.transmuter.clone(),
@@ -132,33 +136,17 @@ where
     }
 }
 
-type DecodeError = Error;
-type EncodeError = Error;
-
-type ResultDecode<T> = Result<T, DecodeError>;
-type ResultEncode<T> = Result<T, EncodeError>;
-
-impl From<io::Error> for Error {
-    fn from(_err: io::Error) -> Self {
-        Error::Eof // FIXME
-    }
-}
-
 trait TagLookup {
     fn lookup(&mut self, tag: u32) -> BaseType;
 }
 
 struct StandardTagLookup<'d> {
     dictionary: &'d Dictionary,
-    data_length: usize,
 }
 
 impl<'d> StandardTagLookup<'d> {
     fn new(dict: &'d Dictionary) -> Self {
-        StandardTagLookup {
-            dictionary: dict,
-            data_length: 0,
-        }
+        StandardTagLookup { dictionary: dict }
     }
 }
 
@@ -183,7 +171,6 @@ struct FieldIter<'d, R: io::Read, D: TagLookup, Z: Transmuter> {
     handle: &'d mut R,
     checksum: Z::ChecksumCalculator,
     designator: D,
-    length: u32,
     is_last: bool,
     data_length: u32,
     transmuter: Z,
@@ -369,6 +356,12 @@ impl ChecksumCalculator for FakeChecksumCalculator {
     }
 }
 
+type DecodeError = Error;
+type EncodeError = Error;
+
+type ResultDecode<T> = Result<T, DecodeError>;
+type ResultEncode<T> = Result<T, EncodeError>;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
     FieldWithoutValue(u32),
@@ -389,6 +382,12 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(_err: io::Error) -> Self {
+        Error::Eof // FIXME
     }
 }
 
