@@ -1,3 +1,8 @@
+//! FIX tag-value encoding support.
+//!
+//! This is the original encoding used for FIX messages and also the encoding
+//! currently used by the FIX session layer.
+
 use crate::app::slr;
 use crate::dictionary::{BaseType, Dictionary};
 use crate::encoders::{Codec, Encoding, Poll};

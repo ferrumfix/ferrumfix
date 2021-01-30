@@ -3,10 +3,10 @@
 //! Encoders (*aka* codecs) must implement [`Encoding`](Encoding) or
 //! [`Codec`](Codec).
 //!
-//! - FIX tag-value: [`encoders::tagvalue::TagValue`](encoders::tagvalue::TagValue).
-//! - FAST: [`encoders::fast::Fast`](encoders::fast::Fast).
-//! - JSON: [`encoders::json::Json`](encoders::json::Json).
-//! - SOFH: [`encoders::sofh::SofhParser`](encoders::sofh::SofhParser).
+//! - FIX tag-value: [`tagvalue::TagValue`].
+//! - FAST: [`fast::Fast`].
+//! - JSON: [`json::Json`].
+//! - SOFH: [`sofh::SofhParser`].
 //!
 //! Most encoding types support configuration options via the *transmuter
 //! pattern*. Transmuters are traits that define all configurable options for a

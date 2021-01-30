@@ -4,20 +4,20 @@ use std::cmp;
 use std::fmt;
 use std::ops;
 
-/// [`Decimal`](Decimal) is a fixed 96-bit representation of a decimal number. It can be
+/// [`Decimal`] is a fixed 96-bit representation of a decimal number. It can be
 /// used to represent all values of the form `m * 10**e`, with `-2**63 <= m <=
-/// 2**63 - 1` and `-63 <= e <= 63`. [`Decimal`](Decimal) can thus represent up to 63
+/// 2**63 - 1` and `-63 <= e <= 63`. [`Decimal`] can thus represent up to 63
 /// decimal digits and hold values up to `(2**63 - 1) * 10**63`.
 ///
 /// This module implements most of the API available for both primitive integer
 /// types in Rust and [`rust_decimal::Decimal`](https://docs.rs/rust_decimal/1.10.1/rust_decimal/struct.Decimal.html), from which this module borrows
 /// many design choices. Most examples available for the above mentioned modules
-/// will work seamlessly even with this [`Decimal`](Decimal).
+/// will work seamlessly even with this [`Decimal`].
 ///
-/// Please note that [`Decimal`](Decimal) is *not* a standardized floating-point
+/// Please note that [`Decimal`] is *not* a standardized floating-point
 /// format; or
 /// rather, it is a poorly specified and FAST-specific format. While basic
-/// operations are available directly on [`Decimal`](Decimal), you should
+/// operations are available directly on [`Decimal`], you should
 /// consider
 /// converting to more battle-tested formats such as `decimal128` (see the
 /// Wikipedia
@@ -187,10 +187,10 @@ impl Decimal {
     /// # Overflow behavior
     ///
     /// Panics when the mantissa *m* is at its minimum value.
-    /// The absolute value of [`decimal::MIN`](MIN) cannot be represented as a
-    /// [`Decimal`](Decimal), and attempting to calculate it will cause an
+    /// The absolute value of [`Decimal::MIN`] cannot be represented as a
+    /// [`Decimal`], and attempting to calculate it will cause an
     /// overflow. This means that code in debug mode will trigger a panic on this
-    /// case and optimized code will return [`decimal::MIN`](MIN) without a
+    /// case and optimized code will return [`Decimal::MIN`] without a
     /// panic.
     ///
     /// # Example

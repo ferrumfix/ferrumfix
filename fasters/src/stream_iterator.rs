@@ -51,10 +51,7 @@
 #[cfg(feature = "std")]
 extern crate core;
 
-
-
-
-/// An interface for dealing with streaming iterators.
+/// [`Iterator`]-like interface with support for borrowed items.
 pub trait StreamIterator<'a> {
     /// The type of the elements being iterated over.
     type Item;
