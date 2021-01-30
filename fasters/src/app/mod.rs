@@ -1,3 +1,5 @@
+//! Inspection and representation of FIX messages.
+
 use rust_embed::RustEmbed;
 use std::fmt;
 

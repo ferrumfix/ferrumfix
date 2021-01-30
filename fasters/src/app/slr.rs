@@ -1,4 +1,4 @@
-//! A schema-less, dynamic internal representation for FIX data.
+//! A schema-less, [`HashMap`]-backed internal representation for FIX messages.
 
 use crate::app::slr;
 use std::collections::HashMap;
