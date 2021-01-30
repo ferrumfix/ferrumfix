@@ -1,3 +1,5 @@
+//! Decimal floating-point arithmetic for FAST.
+
 use std::cmp;
 use std::fmt;
 use std::ops;
@@ -36,6 +38,60 @@ pub enum Error {
 type Result<T> = std::result::Result<T, Error>;
 
 impl Decimal {
+    /// The greatest value that can be represented by a [`Decimal`](Decimal).
+    pub const MAX: Decimal = Decimal {
+        exp: 63,
+        mantissa: i64::MAX,
+    };
+
+    /// The smallest value that can be represented by a [`Decimal`](Decimal).
+    pub const MIN: Decimal = Decimal {
+        exp: 63,
+        mantissa: i64::MIN,
+    };
+
+    /// The unit value. It is the neutral element of multiplication.
+    pub const ONE: Decimal = Decimal {
+        exp: 0,
+        mantissa: 1,
+    };
+
+    /// The negative unit value.
+    pub const NEG_ONE: Decimal = Decimal {
+        exp: 0,
+        mantissa: -1,
+    };
+
+    /// The zero value. It is the neutral element of addition.
+    pub const ZERO: Decimal = Decimal {
+        exp: 0,
+        mantissa: 0,
+    };
+
+    pub const MIN_POSITIVE: Decimal = Decimal {
+        exp: 0,
+        mantissa: 0,
+    };
+
+    /// [Machine epsilon] value for [`Decimal`](Decimal).
+    ///
+    /// This is the difference between `1.0` and the next larger representable number.
+    ///
+    /// [Machine epsilon]: https://en.wikipedia.org/wiki/Machine_epsilon
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use fasters::encoders::fast::decimal::Decimal;
+    ///
+    /// let epsilon = Decimal::EPSILON;
+    /// ```
+    pub const EPSILON: Decimal = Decimal {
+        // FIXME
+        exp: 0,
+        mantissa: 0,
+    };
+
     /// Returns a `Decimal` with a 64 bit *m* representation and corresponding
     /// *e* scale.
     ///
@@ -119,9 +175,9 @@ impl Decimal {
     /// ```
     pub fn signum(&self) -> Self {
         match self.mantissa().signum() {
-            0 => ZERO,
-            1 => ONE,
-            -1 => NEG_ONE,
+            0 => Self::ZERO,
+            1 => Self::ONE,
+            -1 => Self::NEG_ONE,
             _ => panic!("You found a bug! Please file it immediately."),
         }
     }
@@ -205,7 +261,7 @@ impl Decimal {
     /// ```
     pub fn pow(&self, exp: i32) -> Self {
         match exp.signum() {
-            0 => ONE,
+            0 => Self::ONE,
             1 if exp % 2 == 0 => (*self * *self).pow(exp / 2),
             1 => *self * ((*self * *self).pow(exp / 2)),
             -1 => todo!(),
@@ -337,6 +393,12 @@ impl Decimal {
     }
 }
 
+impl Default for Decimal {
+    fn default() -> Self {
+        Self::ZERO
+    }
+}
+
 impl fmt::Display for Decimal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.is_negative() {
@@ -380,36 +442,6 @@ impl fmt::Display for Decimal {
         Ok(())
     }
 }
-
-/// The smallest value that can be represented by a `Decimal`.
-pub const MIN: Decimal = Decimal {
-    exp: 63,
-    mantissa: i64::MIN,
-};
-
-/// The greatest value that can be represented by a `Decimal`.
-pub const MAX: Decimal = Decimal {
-    exp: 63,
-    mantissa: i64::MAX,
-};
-
-/// The unit value. It is the neutral element of multiplication.
-pub const ONE: Decimal = Decimal {
-    exp: 0,
-    mantissa: 1,
-};
-
-/// The negative unit value.
-pub const NEG_ONE: Decimal = Decimal {
-    exp: 0,
-    mantissa: -1,
-};
-
-/// The zero value. It is the neutral element of addition.
-pub const ZERO: Decimal = Decimal {
-    exp: 0,
-    mantissa: 0,
-};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum RoundingStrategy {

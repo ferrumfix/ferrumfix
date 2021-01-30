@@ -1,3 +1,5 @@
+//! FIX Adapted for Streaming (FAST) support.
+
 use crate::app::slr;
 use crate::dictionary::Dictionary;
 use crate::encoders::Encoding;

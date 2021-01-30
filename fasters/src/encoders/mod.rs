@@ -1,14 +1,22 @@
 //! Support for FIX-related encoding types (OSI Layer 6).
+//!
+//! Encoders (*aka* codecs) must implement [`Encoding`](Encoding) or
+//! [`Codec`](Codec).
+//!
+//! - FIX tag-value: [`encoders::tagvalue::TagValue`](encoders::tagvalue::TagValue).
+//! - FAST: [`encoders::fast::Fast`](encoders::fast::Fast).
+//! - JSON: [`encoders::json::Json`](encoders::json::Json).
+//! - SOFH: [`encoders::sofh::SofhParser`](encoders::sofh::SofhParser).
+//!
+//! Most encoding types support configuration options via the *transmuter
+//! pattern*. Transmuters are traits that define all configurable options for a
+//! specific encoding.
 use std::io;
 
 pub mod fast;
 pub mod json;
 pub mod sofh;
 pub mod tagvalue;
-
-pub use fast::Fast;
-pub use json::Json;
-pub use tagvalue::TagValue;
 
 /// Capabilities to decode and encode FIX messages according to a FIX dictionary.
 pub trait Encoding<M> {

@@ -1,3 +1,5 @@
+//! JSON encoding for FIX support.
+
 use super::TransmuterPattern;
 use crate::app::slr;
 use crate::encoders::Codec;
