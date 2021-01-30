@@ -223,7 +223,7 @@ impl Dictionary {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum BaseType {
     Int,
     Float,

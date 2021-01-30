@@ -8,8 +8,9 @@ use crate::dictionary::{BaseType, Dictionary};
 use crate::encoders::{Codec, Encoding, Poll};
 use std::fmt;
 use std::io;
-use std::str;
 use std::rc::Rc;
+use std::str;
+use std::fmt::Debug;
 
 /// A (de)serializer for the classic FIX tag-value encoding.
 ///
@@ -168,45 +169,69 @@ where
 /// # Naming conventions
 /// Implementors of this trait should start with `TagLookup`.
 pub trait TagLookup {
+    type Error: Debug;
+
     fn from_dict(dict: &Dictionary) -> Self;
 
     /// Returns the [`BaseType`](BaseType) of the tag number `tag`.
-    fn lookup(&mut self, tag: u32) -> BaseType;
+    fn lookup(&mut self, tag: u32) -> Result<BaseType, Self::Error>;
 }
 
+/// A [`TagLookup`] that only allows a specific revision of the standard, like
+/// most venues do.
 pub struct TagLookupPredetermined {
     current_dict: Rc<Dictionary>,
 }
 
 impl TagLookup for TagLookupPredetermined {
+    type Error = TagLookupPredeterminedError;
+
     fn from_dict(dict: &Dictionary) -> Self {
         Self {
-            current_dict: Rc::new(dict.clone())
+            current_dict: Rc::new(dict.clone()),
         }
     }
 
-    fn lookup(&mut self, tag: u32) -> BaseType {
+    fn lookup(&mut self, tag: u32) -> Result<BaseType, Self::Error> {
         // TODO
         match tag {
             // `ApplVerID <1128>`
-            1128 => (),
+            1128 => {}
             // `ApplExtID <1156>`
-            1156 => (),
+            1156 => {
+                return Err(Self::Error::InvalidApplExtID);
+            }
             // `CstmApplVerID <1129>`
-            1129 => (),
+            1129 => {
+                return Err(Self::Error::InvalidCstmApplVerID);
+            }
             // `DefaultApplVerID <1137>`
-            1137 => (),
+            1137 => {
+                return Err(Self::Error::InvalidApplExtID);
+            }
             // `DefaultApplExtID <1407>`
-            1407 => (),
+            1407 => {
+                return Err(Self::Error::InvalidApplExtID);
+            }
             // `DefaultCstmApplVerID <1408>`
-            1408 => (),
+            1408 => {
+                return Err(Self::Error::InvalidCstmApplVerID);
+            }
             _ => (),
         };
-        self.current_dict
+        Ok(self
+            .current_dict
             .get_field(tag)
             .map(|f| f.basetype())
-            .unwrap_or(BaseType::String)
+            .unwrap_or(BaseType::String))
     }
+}
+
+#[derive(Debug)]
+pub enum TagLookupPredeterminedError {
+    InvalidApplVerID,
+    InvalidApplExtID,
+    InvalidCstmApplVerID,
 }
 
 pub enum TypeInfo {
@@ -250,23 +275,28 @@ where
             self.is_last = true;
         }
         let datatype = self.designator.lookup(tag as u32);
-        if let BaseType::Data = datatype {
-            buffer = vec![0u8; self.data_length as usize];
-            self.handle.read_exact(&mut buffer).unwrap();
-            self.checksum.roll(&buffer[..]);
-            self.checksum.roll_byte(Z::SOH_SEPARATOR);
-            self.handle.read_exact(&mut buffer[0..1]).unwrap();
-        } else {
-            buffer = vec![];
-            self.handle
-                .read_until(Z::SOH_SEPARATOR, &mut buffer)
-                .unwrap();
-            match buffer.last() {
-                Some(b) if *b == Z::SOH_SEPARATOR => buffer.pop(),
-                _ => return Some(Err(Error::Eof)),
-            };
-            self.checksum.roll(&buffer[..]);
-        }
+        match datatype {
+            Ok(BaseType::Data) => {
+                buffer = vec![0u8; self.data_length as usize];
+                self.handle.read_exact(&mut buffer).unwrap();
+                self.checksum.roll(&buffer[..]);
+                self.checksum.roll_byte(Z::SOH_SEPARATOR);
+                self.handle.read_exact(&mut buffer[0..1]).unwrap();
+            }
+            Ok(basetype) => {
+                buffer = vec![];
+                self.handle
+                    .read_until(Z::SOH_SEPARATOR, &mut buffer)
+                    .unwrap();
+                match buffer.last() {
+                    Some(b) if *b == Z::SOH_SEPARATOR => buffer.pop(),
+                    _ => return Some(Err(Error::Eof)),
+                };
+                self.checksum.roll(&buffer[..]);
+            }
+            Err(ref e) => (),
+        };
+        let datatype = datatype.unwrap();
         let field_value = field_value(datatype, &buffer[..]).unwrap();
         if let slr::FixFieldValue::Int(l) = field_value {
             self.data_length = l as u32;
@@ -333,7 +363,7 @@ impl Transmuter for TransStd {
     type TagLookup = TagLookupPredetermined;
 }
 
-/// A [`Transmuter`](Transmuter) for [`TagValue`] with `|` (ASCII 0x7C) 
+/// A [`Transmuter`](Transmuter) for [`TagValue`] with `|` (ASCII 0x7C)
 /// as a field separator.
 #[derive(Clone)]
 pub struct TransVerticalSlash;
@@ -345,7 +375,7 @@ impl Transmuter for TransVerticalSlash {
     const SOH_SEPARATOR: u8 = '|' as u8;
 }
 
-/// A [`Transmuter`](Transmuter) for [`TagValue`] with `^` (ASCII 0x5F) 
+/// A [`Transmuter`](Transmuter) for [`TagValue`] with `^` (ASCII 0x5F)
 /// as a field separator.
 #[derive(Clone)]
 pub struct TransCaret;
