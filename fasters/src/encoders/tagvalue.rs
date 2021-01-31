@@ -7,10 +7,10 @@ use crate::app::slr;
 use crate::dictionary::{BaseType, Dictionary};
 use crate::encoders::{Codec, Encoding, Poll};
 use std::fmt;
+use std::fmt::Debug;
 use std::io;
 use std::rc::Rc;
 use std::str;
-use std::fmt::Debug;
 
 /// A (de)serializer for the classic FIX tag-value encoding.
 ///
@@ -280,7 +280,7 @@ where
                 buffer = vec![0u8; self.data_length as usize];
                 self.handle.read_exact(&mut buffer).unwrap();
                 self.checksum.roll(&buffer[..]);
-                self.checksum.roll_byte(Z::SOH_SEPARATOR);
+                self.checksum.roll(&[Z::SOH_SEPARATOR]);
                 self.handle.read_exact(&mut buffer[0..1]).unwrap();
             }
             Ok(basetype) => {
@@ -397,9 +397,6 @@ pub trait ChecksumAlgo: Default + Clone {
     /// Calculates the checksum of `window` and compounds it with `self`.
     fn roll(&mut self, window: &[u8]);
 
-    /// Calculates the checksum of `byte` and compounds it with `self`.
-    fn roll_byte(&mut self, byte: u8);
-
     /// Returns the amount of bytes that were processed calculating for this
     /// checksum.
     fn window_length(&self) -> usize;
@@ -422,13 +419,9 @@ pub struct ChecksumAlgoStd {
 impl ChecksumAlgo for ChecksumAlgoStd {
     fn roll(&mut self, window: &[u8]) {
         for byte in window {
-            self.roll_byte(*byte);
+            self.checksum = self.checksum.wrapping_add(*byte);
         }
-    }
-
-    fn roll_byte(&mut self, byte: u8) {
-        self.checksum = self.checksum.wrapping_add(byte);
-        self.len += 1;
+        self.len += window.len();
     }
 
     fn window_length(&self) -> usize {
@@ -453,10 +446,6 @@ pub struct ChecksumAlgoTrusting {
 impl ChecksumAlgo for ChecksumAlgoTrusting {
     fn roll(&mut self, window: &[u8]) {
         self.len += window.len();
-    }
-
-    fn roll_byte(&mut self, _byte: u8) {
-        self.len += 1;
     }
 
     fn window_length(&self) -> usize {
