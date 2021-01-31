@@ -1,6 +1,6 @@
 use fasters::app::Version;
 use fasters::encoders::json::{self, TransPrettyPrint};
-use fasters::encoders::Encoding;
+use fasters::encoders::{Encoder, Decoder};
 use fasters::Dictionary;
 use std::io;
 use std::io::Read;
@@ -22,9 +22,11 @@ fn main() -> io::Result<()> {
         offset += payload_size;
         println!("{}", std::str::from_utf8(&payload[..offset]).unwrap());
         let msg = codec.decode(&mut &payload[..offset]).unwrap();
+        let mut buffer = Vec::<u8>::new();
+        codec.encode(&mut buffer, &msg).unwrap();
         println!(
             "{}",
-            std::str::from_utf8(&mut codec.encode(msg).unwrap()[..]).unwrap()
+            std::str::from_utf8(buffer.as_slice()).unwrap()
         );
     }
     Ok(())

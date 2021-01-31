@@ -95,6 +95,32 @@ impl<'s> Codec<'s, Frame<'s>> for SofhParser {
     type DecodeError = Error;
     type EncodeError = ();
 
+    fn supply_buffer(&mut self) -> &mut [u8] {
+        let old_len = self.buffer.len();
+        for _ in 0..1024 {
+            self.buffer.extend_from_slice(&[0]);
+        }
+        let new_len = self.buffer.len();
+        &mut self.buffer[old_len..new_len]
+    }
+
+    fn poll_decoding(&mut self) -> Result<Poll> {
+        if self.next_size == 0 {
+            self.next_size = u32::from_be_bytes(self.buffer[0..4].try_into().unwrap()) as usize;
+        }
+        match self.next_size {
+            0 => Ok(Poll::Incomplete),
+            len => {
+                if self.buffer.len() >= len {
+                    self.encoding_type = 0;
+                    Ok(Poll::Ready)
+                } else {
+                    Ok(Poll::Incomplete)
+                }
+            }
+        }
+    }
+
     fn decode(&mut self, data: &[u8]) -> Result<Poll> {
         self.buffer.extend_from_slice(data);
         if self.next_size == 0 {
