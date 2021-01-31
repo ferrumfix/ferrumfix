@@ -26,7 +26,6 @@ pub mod app;
 mod dictionary;
 pub mod encoders;
 pub mod engines;
-pub mod fix42;
 mod fix_codegen;
 pub mod prelude;
 pub mod session;

@@ -4,6 +4,7 @@ use rust_embed::RustEmbed;
 use std::fmt;
 
 pub mod slr;
+pub mod fix42;
 
 pub trait TsrMessage {
     fn get_field(&self, msg_type: i32) -> slr::FixFieldValue;
