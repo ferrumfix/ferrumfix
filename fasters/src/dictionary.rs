@@ -3,18 +3,31 @@
 use crate::app::Version;
 use quickfix::{ParseDictionaryError, QuickFixReader};
 use std::collections::HashMap;
+use std::io;
 use std::ops::Range;
 
+/// Value for the field `MsgType (35)`.
 #[derive(Copy, Debug, Clone, PartialEq, Eq, Hash)]
-struct MsgType(u32);
+pub struct MsgType(u16);
+
+impl MsgType {
+    pub fn write(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        let bytes = self.0.to_be_bytes();
+        for byte in bytes.iter() {
+            writer.write(&[*byte])?;
+        }
+        Ok(())
+    }
+}
 
 impl From<&[u8]> for MsgType {
     fn from(bytes: &[u8]) -> Self {
-        let mut arr_bytes: [u8; 4] = [0, 0, 0, 0];
-        for (i, byte) in bytes.iter().take(4).enumerate() {
-            arr_bytes[i] = *byte;
+        debug_assert!(bytes.len() <= std::mem::size_of::<u16>());
+        let mut value: u16 = 0;
+        for byte in bytes {
+            value = (value << 8) + (*byte as u16);
         }
-        MsgType(u32::from_be_bytes(arr_bytes))
+        MsgType(value)
     }
 }
 
@@ -205,8 +218,9 @@ impl Dictionary {
         .map(|data| Message(self, data))
     }
 
-    pub fn get_component<S: AsRef<str>>(&self, key: S) -> Option<Component> {
-        self.symbol(PKeyRef::ComponentByName(key.as_ref()))
+    /// Returns the [`Component`] named `name`, if any.
+    pub fn get_component<S: AsRef<str>>(&self, name: S) -> Option<Component> {
+        self.symbol(PKeyRef::ComponentByName(name.as_ref()))
             .map(|iid| self.components.get(*iid as usize).unwrap())
             .map(|data| Component(self, data))
     }
@@ -968,9 +982,25 @@ mod quickfix {
 mod test {
     use super::*;
     use crate::app::Version;
+    use quickcheck::QuickCheck;
+    use std::convert::TryInto;
 
     #[test]
-    pub fn fixt11_quickfix_is_ok() {
+    fn msg_type_conversion() {
+        fn prop(val: u16) -> bool {
+            let bytes = val.to_le_bytes();
+            let msg_type = MsgType::from(&bytes[..]);
+            let mut buffer = vec![0, 0];
+            msg_type.write(&mut &mut buffer[..]).unwrap();
+            val == u16::from_le_bytes((&buffer[..]).try_into().unwrap())
+        }
+        QuickCheck::new()
+            .tests(1000)
+            .quickcheck(prop as fn(u16) -> bool)
+    }
+
+    #[test]
+    fn fixt11_quickfix_is_ok() {
         let dict = Dictionary::from_version(Version::Fixt11);
         let msg_heartbeat = dict.get_message_by_name("Heartbeat").unwrap();
         assert_eq!(msg_heartbeat.msg_type(), "0");
