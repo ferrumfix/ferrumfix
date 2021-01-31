@@ -9,9 +9,10 @@
 //! Please refer to https://www.fixtrading.org/standards/fix-sofh/ for more
 //! information.
 
-use super::Codec;
 use super::Poll;
+use super::{Codec, Encoder};
 use crate::stream_iterator::StreamIterator;
+use crate::utils::Buffer;
 use std::convert::TryInto;
 use std::fmt;
 use std::io;
@@ -69,7 +70,7 @@ impl SofhParser {
     /// # Examples
     ///
     /// ```
-    /// use fasters::encoders::sofh::SofhParser;
+    /// use fasters::codec::sofh::SofhParser;
     ///
     /// let parser = SofhParser::with_capacity(8192);
     /// assert_eq!(parser.capacity(), 8192);
@@ -155,6 +156,45 @@ impl<'s> Codec<'s, Frame<'s>> for SofhParser {
         self.buffer.extend_from_slice(data.payload());
         Ok(&self.buffer[..])
     }
+}
+
+impl Encoder<(u16, &[u8])> for SofhParser {
+    type Error = EncodeError;
+
+    fn encode(
+        &mut self,
+        mut buffer: impl Buffer,
+        message: &(u16, &[u8]),
+    ) -> std::result::Result<usize, Self::Error> {
+        let body_len: u32 = message
+            .1
+            .len()
+            .try_into()
+            .map_err(|_| Self::Error::TooLong(message.1.len()))?;
+        let message_length = body_len.to_be_bytes();
+        let encoding_type = message.0.to_be_bytes();
+        buffer.extend_from_slice(&message_length[..]);
+        buffer.extend_from_slice(&encoding_type[..]);
+        buffer.extend_from_slice(message.1);
+        Ok(buffer.len())
+    }
+}
+
+impl<'a> Encoder<Frame<'a>> for SofhParser {
+    type Error = EncodeError;
+
+    fn encode(
+        &mut self,
+        buffer: impl Buffer,
+        message: &Frame,
+    ) -> std::result::Result<usize, Self::Error> {
+        let message = (message.encoding_type(), message.payload());
+        Encoder::encode(self, buffer, &message)
+    }
+}
+
+pub enum EncodeError {
+    TooLong(usize),
 }
 
 /// A non-owning message frame, with an internal pointer to the buffer that

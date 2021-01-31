@@ -1,6 +1,6 @@
 use fasters::app::Version;
-use fasters::encoders::json::{self, TransPrettyPrint};
-use fasters::encoders::{Encoder, Decoder};
+use fasters::codec::json::{self, TransPrettyPrint};
+use fasters::codec::{Encoder, Decoder};
 use fasters::Dictionary;
 use std::io;
 use std::io::Read;

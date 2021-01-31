@@ -5,7 +5,7 @@
 
 use crate::app::{slr, Version};
 use crate::dictionary::{BaseType, Dictionary};
-use crate::encoders::{Codec, Encoding, Poll};
+use crate::codec::{Codec, Encoding, Poll};
 use std::fmt;
 use std::fmt::Debug;
 use std::io;

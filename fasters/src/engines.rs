@@ -1,6 +1,6 @@
 use crate::app::slr;
 use crate::dictionary::Dictionary;
-use crate::encoders::Encoding;
+use crate::codec::Encoding;
 use crate::session;
 use crate::session::EventOutbound;
 use std::marker::PhantomData;

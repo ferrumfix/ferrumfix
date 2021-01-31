@@ -2,9 +2,9 @@
 
 use super::TransmuterPattern;
 use crate::app::slr;
-use crate::encoders::Codec;
-use crate::encoders::Poll;
-use crate::encoders::*;
+use crate::codec::Codec;
+use crate::codec::Poll;
+use crate::codec::*;
 use crate::Dictionary;
 use serde_json::json;
 use std::collections::HashMap;

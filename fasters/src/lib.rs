@@ -23,8 +23,8 @@
 //! general information regarding Fasters.
 
 pub mod app;
+pub mod codec;
 mod dictionary;
-pub mod encoders;
 pub mod engines;
 mod fix_codegen;
 pub mod session;

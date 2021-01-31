@@ -1,4 +1,4 @@
-use fasters::encoders::sofh::SofhParser;
+use fasters::codec::sofh::SofhParser;
 use fasters::StreamIterator;
 use std::io;
 use std::net;
