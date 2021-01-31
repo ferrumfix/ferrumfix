@@ -3,7 +3,7 @@
 //! This is the original encoding used for FIX messages and also the encoding
 //! currently used by the FIX session layer.
 
-use crate::app::slr;
+use crate::app::{slr, Version};
 use crate::dictionary::{BaseType, Dictionary};
 use crate::encoders::{Codec, Encoding, Poll};
 use std::fmt;
@@ -28,9 +28,9 @@ pub struct TagValue {
 }
 
 impl TagValue {
-    /// Builds a new `TagValue` encoding device with an empty FIX dictionary.
+    /// Builds a new `TagValue` encoding device with a FIX 4.4 dictionary.
     pub fn new() -> Self {
-        Self::with_dict(Dictionary::empty())
+        Self::default()
     }
 
     /// Creates a new codec for the tag-value format. `transmuter` specifies its
@@ -40,6 +40,12 @@ impl TagValue {
             dict,
             buffer: Vec::new(),
         }
+    }
+}
+
+impl Default for TagValue {
+    fn default() -> Self {
+        Self::with_dict(Dictionary::from_version(Version::Fix44))
     }
 }
 
@@ -239,7 +245,7 @@ pub enum TypeInfo {
     Data(usize),
 }
 
-struct FieldIter<R:, Z: Transmuter> {
+struct FieldIter<R, Z: Transmuter> {
     handle: R,
     is_last: bool,
     data_length: u32,
