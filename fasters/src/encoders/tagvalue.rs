@@ -11,7 +11,6 @@ use std::fmt::Debug;
 use std::io;
 use std::rc::Rc;
 use std::str;
-use std::marker::PhantomData;
 
 /// A (de)serializer for the classic FIX tag-value encoding.
 ///
@@ -23,30 +22,28 @@ use std::marker::PhantomData;
 /// [^1]: [FIX TagValue Encoding: Online reference.](https://www.fixtrading.org/standards/tagvalue-online)
 ///
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
-pub struct TagValue<Z: Transmuter> {
+pub struct TagValue {
     dict: Dictionary,
-    phantom: PhantomData<Z>,
     buffer: Vec<u8>,
 }
 
-impl<Z: Transmuter> TagValue<Z> {
+impl TagValue {
     /// Builds a new `TagValue` encoding device with an empty FIX dictionary.
-    pub fn new(transmuter: Z) -> Self {
-        Self::with_dict(transmuter, Dictionary::empty())
+    pub fn new() -> Self {
+        Self::with_dict(Dictionary::empty())
     }
 
     /// Creates a new codec for the tag-value format. `transmuter` specifies its
     /// settings and `dict` is used to parse messages.
-    pub fn with_dict(transmuter: Z, dict: Dictionary) -> Self {
+    pub fn with_dict(dict: Dictionary) -> Self {
         TagValue {
             dict,
-            phantom: PhantomData::default(),
             buffer: Vec::new(),
         }
     }
 }
 
-impl<'s, Z> Codec<'s, &'s slr::Message> for TagValue<Z>
+impl<'s, Z> Codec<'s, &'s slr::Message> for (TagValue, Z)
 where
     Z: Transmuter + 's,
 {
@@ -54,7 +51,7 @@ where
     type EncodeError = EncodeError;
 
     fn decode(&mut self, data: &[u8]) -> ResultDecode<Poll> {
-        self.buffer.extend_from_slice(data);
+        self.0.buffer.extend_from_slice(data);
         Ok(Poll::Ready)
     }
 
@@ -70,13 +67,13 @@ where
                 checksum: 0,
                 len: 0,
             };
-            field.encode(&mut &mut self.buffer[..])?;
+            field.encode(&mut &mut self.0.buffer[..])?;
         }
-        Ok(&self.buffer[..])
+        Ok(&self.0.buffer[..])
     }
 }
 
-impl<Z> Encoding<slr::Message> for TagValue<Z>
+impl<Z> Encoding<slr::Message> for (TagValue, Z)
 where
     Z: Transmuter,
 {
@@ -87,7 +84,7 @@ where
         let mut field_iter: FieldIter<_, Z> = FieldIter {
             handle: source,
             checksum: Z::ChecksumAlgo::default(),
-            designator: Z::TagLookup::from_dict(&self.dict),
+            designator: Z::TagLookup::from_dict(&self.0.dict),
             is_last: false,
             data_length: 0,
         };
@@ -507,8 +504,8 @@ mod test {
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
-    fn encoder() -> TagValue<TransVerticalSlash> {
-        TagValue::new(TransVerticalSlash)
+    fn encoder() -> (TagValue, impl Transmuter) {
+        (TagValue::new(), TransVerticalSlash)
     }
 
     #[test]
