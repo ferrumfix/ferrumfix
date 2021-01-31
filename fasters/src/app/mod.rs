@@ -11,6 +11,8 @@ pub trait TsrMessage {
     fn set_field(&mut self, msg_type: i32, val: slr::FixFieldValue);
 }
 
+/// Enumeration type for all existing revisions of FIX.
+#[non_exhaustive]
 pub enum Version {
     Fix40,
     Fix41,
@@ -24,6 +26,10 @@ pub enum Version {
 }
 
 impl Version {
+
+    /// Returns a [`String`] with the QuickFix definition file for `self` as its
+    /// content. The QuickFix definition files are extracted and decompressed
+    /// from the binary without filesystem access.
     pub fn get_quickfix_spec(&self) -> String {
         let filename = match self {
             Version::Fix40 => "FIX-4.0.xml",

@@ -142,17 +142,27 @@ impl Dictionary {
         }
     }
 
+    /// Creates a new [`Dictionary`] according to the specification of
+    /// `version`.
     pub fn from_version(version: Version) -> Self {
         Dictionary::save_definition_spec(version.get_quickfix_spec()).unwrap()
     }
 
-    /// Create a new empty FIX Dictionary with `FIX.???` as its version string.
+    /// Creates a new empty FIX Dictionary with `FIX.???` as its version string.
     pub fn empty() -> Self {
         Self::new("FIX.???")
     }
 
-    /// Return the version string associated with this FIX Dictionary (e.g.
+    /// Returns the version string associated with this [`Dictionary`] (e.g.
     /// `FIXT.1.1`, `FIX.4.2`).
+    ///
+    /// ```
+    /// use fasters::Dictionary;
+    /// use fasters::app::Version;
+    ///
+    /// let dict = Dictionary::from_version(Version::Fix44);
+    /// assert_eq!(dict.get_version(), "FIX.4.4");
+    /// ```
     pub fn get_version(&self) -> &str {
         self.version.as_str()
     }
@@ -169,8 +179,20 @@ impl Dictionary {
             .map(move |data| Abbreviation(self, data))
     }
 
-    pub fn get_message_by_name<S: AsRef<str>>(&self, key: S) -> Option<Message> {
-        self.symbol(PKeyRef::MessageByName(key.as_ref()))
+    /// Returns the [`Message`] associated with `name`, if any.
+    ///
+    /// ```
+    /// use fasters::Dictionary;
+    /// use fasters::app::Version;
+    ///
+    /// let dict = Dictionary::from_version(Version::Fix44);
+    ///
+    /// let msg1 = dict.get_message_by_name("Heartbeat").unwrap();
+    /// let msg2 = dict.get_message_by_msg_type("0").unwrap();
+    /// assert_eq!(msg1.name(), msg2.name());
+    /// ```
+    pub fn get_message_by_name<S: AsRef<str>>(&self, name: S) -> Option<Message> {
+        self.symbol(PKeyRef::MessageByName(name.as_ref()))
             .map(|iid| self.messages.get(*iid as usize).unwrap())
             .map(|data| Message(self, data))
     }
@@ -189,40 +211,71 @@ impl Dictionary {
             .map(|data| Component(self, data))
     }
 
+    /// Returns an [`Iterator`] over this [`Dictionary`]'s components. Items are in
+    /// no particular order.
     pub fn components(&self) -> impl Iterator<Item = Component> {
         self.components
             .iter()
             .map(move |data| Component(&self, data))
     }
 
+    /// Returns an [`Iterator`] over this [`Dictionary`]'s messages. Items are in
+    /// no particular order.
+    ///
+    /// ```
+    /// use fasters::Dictionary;
+    /// use fasters::app::Version;
+    ///
+    /// let dict = Dictionary::from_version(Version::Fix44);
+    /// let msg = dict.messages().find(|m| m.name() == "MarketDataRequest");
+    /// assert_eq!(msg.unwrap().msg_type(), "V");
+    /// ```
     pub fn messages(&self) -> impl Iterator<Item = Message> {
         self.messages.iter().map(move |data| Message(&self, data))
     }
 
+    /// Returns an [`Iterator`] over this [`Dictionary`]'s categories. Items are
+    /// in no particular order.
     pub fn categories(&self) -> impl Iterator<Item = Category> {
         self.categories
             .iter()
             .map(move |data| Category(&self, data))
     }
 
-    pub fn get_field(&self, key: u32) -> Option<Field> {
-        self.symbol(PKeyRef::FieldByTag(key))
+    /// Returns the [`Field`] associated with `tag`, if any.
+    ///
+    /// ```
+    /// use fasters::Dictionary;
+    /// use fasters::app::Version;
+    ///
+    /// let dict = Dictionary::from_version(Version::Fix44);
+    ///
+    /// let field1 = dict.get_field(112).unwrap();
+    /// let field2 = dict.get_field_by_name("TestReqID").unwrap();
+    /// assert_eq!(field1.name(), field2.name());
+    /// ```
+    pub fn get_field(&self, tag: u32) -> Option<Field> {
+        self.symbol(PKeyRef::FieldByTag(tag))
             .map(|iid| self.fields.get(*iid as usize).unwrap())
             .map(|data| Field(self, data))
     }
 
+    /// Returns the [`Field`] named `name`, if any.
     pub fn get_field_by_name<S: AsRef<str>>(&self, name: S) -> Option<Field> {
         self.symbol(PKeyRef::FieldByName(name.as_ref()))
             .map(|iid| self.fields.get(*iid as usize).unwrap())
             .map(|data| Field(self, data))
     }
 
+    /// Attempts to read a QuickFIX-style specification file and convert it into
+    /// a [`Dictionary`].
     pub fn save_definition_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
         let xml_document = roxmltree::Document::parse(input.as_ref()).unwrap();
         QuickFixReader::new(&xml_document)
     }
 }
 
+/// Enumeration type for all base types in the FIX specification.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum BaseType {
     Int,
@@ -233,13 +286,15 @@ pub enum BaseType {
 }
 
 #[derive(Clone, Debug)]
-pub struct CategoryData {
+struct CategoryData {
     /// **Primary key**. A string uniquely identifying this category.
     name: String,
     /// The FIXML file name for a Category.
     fixml_filename: String,
 }
 
+/// A [`Category`] is a collection of loosely related FIX messages or components
+/// all belonging to the same [`Section`].
 #[derive(Clone, Debug)]
 pub struct Category<'a>(&'a Dictionary, &'a CategoryData);
 
@@ -249,16 +304,21 @@ struct AbbreviatonData {
     is_last: bool,
 }
 
+/// An [`Abbreviation`] is a standardized abbreviated form for a specific word,
+/// pattern, or name. Abbreviation data is mostly meant for documentation
+/// purposes, but in general it can have other uses as well, e.g. FIXML field
+/// naming.
 pub struct Abbreviation<'a>(&'a Dictionary, &'a AbbreviatonData);
 
 impl<'a> Abbreviation<'a> {
+    /// Returns the full term (non-abbreviated) associated with `self`.
     pub fn term(&self) -> &str {
         self.1.abbreviation.as_str()
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct ComponentData {
+struct ComponentData {
     /// **Primary key.** The unique integer identifier of this component
     /// type.
     id: usize,
@@ -271,18 +331,29 @@ pub struct ComponentData {
     abbr_name: Option<String>,
 }
 
+/// A [`Component`] is an ordered collection of fields and/or other components.
+/// There are two kinds of components: (1) common blocks and (2) repeating
+/// groups. Common blocks are merely commonly reused sequences of the same
+/// fields/components
+/// which are given names for simplicity, i.e. they serve as "macros". Repeating
+/// groups, on the other hand, are components which can appear zero or more times
+/// inside FIX messages (or other components, for that matter).
 #[derive(Clone, Debug)]
 pub struct Component<'a>(&'a Dictionary, &'a ComponentData);
 
 impl<'a> Component<'a> {
+    /// Returns the unique numberic ID of `self`.
     pub fn id(&self) -> u32 {
         self.1.id as u32
     }
 
+    /// Returns the name of `self`. The name of every [`Component`] is unique
+    /// across a [`Dictionary`].
     pub fn name(&self) -> &str {
         self.1.name.as_str()
     }
 
+    /// Returns the [`Category`] to which `self` belongs.
     pub fn category(&self) -> Category {
         let data = self.0.categories.get(self.1.category_iid as usize).unwrap();
         Category(self.0, data)
@@ -296,6 +367,8 @@ impl<'a> Component<'a> {
             .map(move |data| LayoutItem(self.0, data))
     }
 
+    /// Checks whether `field` appears in the definition of `self` and returns
+    /// `true` if it does, `false` otherwise.
     pub fn contains_field(&self, field: &Field) -> bool {
         self.items().any(|layout_item| {
             if let LayoutItemKind::Field(f) = layout_item.kind() {
@@ -307,6 +380,7 @@ impl<'a> Component<'a> {
     }
 }
 
+// FIXME: this is FIXML-specific stuff.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ComponentType {
     BlockRepeating,
@@ -350,7 +424,7 @@ pub struct Enum {}
 /// A field is identified by a unique tag number and a name. Each field in a
 /// message is associated with a value.
 #[derive(Clone, Debug)]
-pub struct FieldData {
+struct FieldData {
     /// A human readable string representing the name of the field.
     name: String,
     /// **Primary key.** A positive integer representing the unique
@@ -375,6 +449,10 @@ pub struct FieldData {
     description: Option<String>,
 }
 
+/// A field is the most granular message structure abstraction. It carries a
+/// specific business meaning as described by the FIX specifications. The data
+/// domain of a [`Field`] is either a [`Datatype`] or a "code set", i.e.
+/// enumeration.
 pub struct Field<'a>(&'a Dictionary, &'a FieldData);
 
 fn str_to_basetype(s: &str) -> BaseType {
@@ -410,6 +488,7 @@ impl<'a> Field<'a> {
         url
     }
 
+    /// Returns the [`BaseType`] of `self`.
     pub fn basetype(&self) -> BaseType {
         str_to_basetype(
             (&self.data_type().1.base_type)
@@ -419,14 +498,19 @@ impl<'a> Field<'a> {
         )
     }
 
+    /// Returns the name of `self`. Field names are unique across each FIX
+    /// [`Dictionary`].
     pub fn name(&self) -> &str {
         self.1.name.as_str()
     }
 
+    /// Returns the numeric tag of `self`. Field tags are unique across each FIX
+    /// [`Dictionary`].
     pub fn tag(&self) -> u32 {
         self.1.tag
     }
 
+    /// Returns the [`Datatype`] of `self`.
     pub fn data_type(&self) -> Datatype {
         let data = self
             .0
@@ -459,6 +543,7 @@ struct LayoutItemData {
 #[derive(Clone, Debug)]
 pub struct LayoutItem<'a>(&'a Dictionary, &'a LayoutItemData);
 
+/// The kind of element contained in a [`Message`].
 pub enum LayoutItemKind<'a> {
     Component(Component<'a>),
     Group(),
@@ -466,6 +551,8 @@ pub enum LayoutItemKind<'a> {
 }
 
 impl<'a> LayoutItem<'a> {
+    /// Returns `true` if `self` is required in order to have a valid definition
+    /// of its parent container, `false` otherwise.
     pub fn required(&self) -> bool {
         self.1.required
     }
@@ -497,7 +584,7 @@ impl<'a> LayoutItem<'a> {
 }
 
 #[derive(Clone, Debug)]
-pub struct MessageData {
+struct MessageData {
     /// The unique integer identifier of this message type.
     component_id: u32,
     /// **Primary key**. The unique character identifier of this message
@@ -519,21 +606,27 @@ pub struct MessageData {
     elaboration: Option<String>,
 }
 
+/// A [`Message`] is a unit of information sent on the wire between
+/// counterparties. Every [`Message`] is composed of fields and/or components.
 pub struct Message<'a>(&'a Dictionary, &'a MessageData);
 
 impl<'a> Message<'a> {
+    /// Returns the human-readable name of `self`.
     pub fn name(&self) -> &str {
         self.1.name.as_str()
     }
 
+    /// Returns the message type of `self`.
     pub fn msg_type(&self) -> &str {
         self.1.msg_type.as_str()
     }
 
+    /// Returns the description associated with `self`.
     pub fn description(&self) -> &str {
         &self.1.description
     }
 
+    /// Returns the component ID of `self`.
     pub fn component_id(&self) -> u32 {
         self.1.component_id
     }
@@ -554,6 +647,9 @@ pub struct MsgContent {
     pub reqd: char,
 }
 
+/// A [`Section`] is a collection of many [`Components`]-s. It has no practical
+/// effect on encoding and decoding of FIX data and it's only used for
+/// documentation and human readability.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Section {}
 
@@ -860,6 +956,7 @@ mod quickfix {
         }
     }
 
+    /// The error type that can arise when decoding a QuickFIX Dictionary.
     #[derive(Clone, Debug)]
     pub enum ParseDictionaryError {
         InvalidFormat,
