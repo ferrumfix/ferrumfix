@@ -3,8 +3,8 @@
 use rust_embed::RustEmbed;
 use std::fmt;
 
-pub mod slr;
 pub mod fix42;
+pub mod slr;
 
 pub trait TsrMessage {
     fn get_field(&self, msg_type: i32) -> slr::FixFieldValue;
@@ -26,7 +26,6 @@ pub enum Version {
 }
 
 impl Version {
-
     /// Returns a [`String`] with the QuickFix definition file for `self` as its
     /// content. The QuickFix definition files are extracted and decompressed
     /// from the binary without filesystem access.

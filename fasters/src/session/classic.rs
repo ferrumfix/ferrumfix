@@ -380,7 +380,6 @@ mod initiator {
     use futures::FutureExt;
     use futures::StreamExt;
     use std::time::Instant;
-    
 
     enum State {
         NoActiveSession,
@@ -440,10 +439,6 @@ mod initiator {
         end_of_trading_hours: tokio::time::Sleep,
         events: S,
     }
-
-    
-    
-    
 
     //impl<S: Stream<Item = slr::Message> + Unpin> Stream for Session<S> {
     //    type Item = slr::Message;

@@ -107,7 +107,6 @@ pub trait StreamIterator<'a> {
         self
     }
 
-
     /// Returns the first element of the iterator that satisfies the predicate.
     #[inline]
     fn find<F>(&'a mut self, mut f: F) -> Option<Self::Item>
