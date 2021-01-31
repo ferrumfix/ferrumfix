@@ -46,15 +46,15 @@ pub trait Codec<'s, M>
 where
     Self: 's,
 {
-    /// The error type that can arise during message deserialization.
+    /// The type of any error that can arise during message decoding.
     type DecodeError;
-    /// The error type that can arise during message serialization.
+    /// The type of any error that can arise during message encoding.
     type EncodeError;
 
     /// Writes a slice of bytes into the internal buffer and attempts
-    /// deserialization. Three scenarios are then possible:
+    /// decoding. Three scenarios are then possible:
     ///
-    /// 1. Deserialization is complete, and the user can fetch the item:
+    /// 1. Decoding is complete, and the user can fetch the item:
     ///    `Ok(Poll::Ready)`.
     /// 2. No errors are detected so far, but the message is complete. The
     ///    message is not yet available for reading: `Ok(Poll::Incomplete)`.
@@ -64,11 +64,11 @@ where
     /// Returns the last message.
     fn get_item(&'s self) -> M;
 
-    /// Serializes `data` into the internal buffer and finally returns an
+    /// Encodes `data` into the internal buffer and finally returns an
     /// immutable reference to the internal buffer.
     ///
-    /// Please note that even though serialization errors are way less common
-    /// than deserialization errors, one should still be careful to manage them
+    /// Please note that even though encoding errors are way less common
+    /// than decoding errors, one should still be careful to manage them
     /// when they arise.
     fn encode(&mut self, data: M) -> Result<&[u8], Self::EncodeError>;
 }
@@ -76,10 +76,10 @@ where
 /// Represents the progress that a codec device has made in regard to the current
 /// message.
 pub enum Poll {
-    /// The message has been fully deserialized and is available in the internal buffer.
+    /// The message has been fully decoded and is available in the internal buffer.
     Ready,
     /// The message is incomplete and more bytes are needed for completing
-    /// deserialization.
+    /// decoding.
     Incomplete,
 }
 

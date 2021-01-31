@@ -33,8 +33,7 @@ impl TagValue {
         Self::default()
     }
 
-    /// Creates a new codec for the tag-value format. `transmuter` specifies its
-    /// settings and `dict` is used to parse messages.
+    /// Creates a new codec for the tag-value format. `dict` is used to parse messages.
     pub fn with_dict(dict: Dictionary) -> Self {
         TagValue {
             dict,
@@ -44,6 +43,7 @@ impl TagValue {
 }
 
 impl Default for TagValue {
+    /// New [`TagValue`] codecs with use FIX 4.4 by default.
     fn default() -> Self {
         Self::with_dict(Dictionary::from_version(Version::Fix44))
     }
