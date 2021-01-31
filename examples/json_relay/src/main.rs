@@ -1,5 +1,7 @@
-use fasters::encoders::json::TransPrettyPrint;
-use fasters::prelude::*;
+use fasters::encoders::json::{self, TransPrettyPrint};
+use fasters::encoders::Encoding;
+use fasters::app::Version;
+use fasters::Dictionary;
 use std::io;
 use std::io::Read;
 use std::net;
@@ -9,8 +11,8 @@ fn print_listening(addr: net::SocketAddr) {
 }
 
 fn main() -> io::Result<()> {
-    let fix_v44 = Dictionary::from_version(fasters::app::Version::Fix44);
-    let mut codec = (encoders::json::Json::new(fix_v44), TransPrettyPrint);
+    let fix_v44 = Dictionary::from_version(Version::Fix44);
+    let mut codec = (json::Json::new(fix_v44), TransPrettyPrint);
     let listener = net::TcpListener::bind("0.0.0.0:0")?;
     print_listening(listener.local_addr()?);
     let mut payload = vec![0u8; 8192];
