@@ -11,6 +11,7 @@ use std::fmt::Debug;
 use std::io;
 use std::rc::Rc;
 use std::str;
+use std::marker::PhantomData;
 
 /// A (de)serializer for the classic FIX tag-value encoding.
 ///
@@ -24,7 +25,7 @@ use std::str;
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
 pub struct TagValue<Z: Transmuter> {
     dict: Dictionary,
-    transmuter: Z,
+    phantom: PhantomData<Z>,
     buffer: Vec<u8>,
 }
 
@@ -39,7 +40,7 @@ impl<Z: Transmuter> TagValue<Z> {
     pub fn with_dict(transmuter: Z, dict: Dictionary) -> Self {
         TagValue {
             dict,
-            transmuter,
+            phantom: PhantomData::default(),
             buffer: Vec::new(),
         }
     }
@@ -83,13 +84,12 @@ where
     type DecodeError = DecodeError;
 
     fn decode(&self, source: &mut impl io::BufRead) -> ResultDecode<slr::Message> {
-        let mut field_iter = FieldIter {
+        let mut field_iter: FieldIter<_, Z> = FieldIter {
             handle: source,
             checksum: Z::ChecksumAlgo::default(),
             designator: Z::TagLookup::from_dict(&self.dict),
             is_last: false,
             data_length: 0,
-            transmuter: self.transmuter.clone(),
         };
         let mut message = slr::Message::new();
         {
@@ -242,16 +242,15 @@ pub enum TypeInfo {
     Data(usize),
 }
 
-struct FieldIter<'d, R: io::Read, Z: Transmuter> {
-    handle: &'d mut R,
-    checksum: Z::ChecksumAlgo,
-    designator: Z::TagLookup,
+struct FieldIter<R:, Z: Transmuter> {
+    handle: R,
     is_last: bool,
     data_length: u32,
-    transmuter: Z,
+    checksum: Z::ChecksumAlgo,
+    designator: Z::TagLookup,
 }
 
-impl<'d, R, Z> Iterator for FieldIter<'d, R, Z>
+impl<'d, R, Z> Iterator for FieldIter<&'d mut R, Z>
 where
     R: io::BufRead,
     Z: Transmuter,
