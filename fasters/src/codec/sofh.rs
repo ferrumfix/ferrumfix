@@ -18,30 +18,6 @@ use std::io;
 
 const HEADER_LENGTH: usize = 6;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-struct Header {
-    pub message_length: u32,
-    pub encoding_type: u16,
-}
-
-impl From<Header> for [u8; 6] {
-    fn from(header: Header) -> Self {
-        let mut bytes = [0u8; 6];
-        bytes[0..4].copy_from_slice(&header.message_length.to_be_bytes());
-        bytes[4..6].copy_from_slice(&header.encoding_type.to_be_bytes());
-        bytes
-    }
-}
-
-impl From<&[u8; 6]> for Header {
-    fn from(bytes: &[u8; 6]) -> Self {
-        Header {
-            message_length: u32::from_be_bytes(bytes[0..4].try_into().unwrap()),
-            encoding_type: u16::from_be_bytes(bytes[4..6].try_into().unwrap()),
-        }
-    }
-}
-
 /// A parser for Simple Open Framing Header (SOFH) -encoded messages.
 pub struct Codec {
     buffer: Vec<u8>,
@@ -244,11 +220,16 @@ impl From<io::Error> for DecodeError {
 }
 
 /// Enumeration type mapped from the 16-bit raw space.
+///
+/// One should always prefer to deal with raw 16-bit values and only convert to
+/// [`EncodingType`] when matching.
 #[derive(Copy, Clone, Debug)]
 #[non_exhaustive]
 pub enum EncodingType {
     /// User-specified encoding type. Legal values and their respective semantics
     /// ought to be agreed upon out-of-band by counterparties.
+    ///
+    /// Please note that `0x0` is *not* a valid [`EncodingType::Private`] value.
     Private(u8),
     /// Simple Binary Encoding (SBE) v1.0, big-endian mode.
     /// Please refer to https://www.fixtrading.org/standards/sbe/ for more
@@ -285,6 +266,8 @@ pub enum EncodingType {
     /// FAST encoding.
     /// Please refer to https://www.fixtrading.org/standards/fast/ for more
     /// information.
+    ///
+    /// Please note that `0xFA00` is *not* a valid [`EncodingType::Fast`] value.
     Fast(u8),
     /// JSON encoding.
     /// Please refer to https://www.fixtrading.org/standards/json/ for more
@@ -352,105 +335,130 @@ mod test {
     use super::*;
     use crate::codec::FramelessError;
     use crate::StreamIterator;
-    use quickcheck::{Arbitrary, Gen, QuickCheck};
-    use quickcheck_macros::quickcheck;
 
-    // https://github.com/BurntSushi/quickcheck#generating-structs
-    impl Arbitrary for Header {
-        fn arbitrary<G: Gen>(g: &mut G) -> Self {
-            Header {
-                message_length: u32::arbitrary(g),
-                encoding_type: u16::arbitrary(g),
+    fn frames_with_increasing_length() -> impl Iterator<Item = Vec<u8>> {
+        std::iter::once(()).enumerate().map(|(i, ())| {
+            let header = encode_header(i as u32 + 6, 0);
+            let mut buffer = Vec::new();
+            buffer.extend_from_slice(&header[..]);
+            for _ in 0..i {
+                buffer.extend_from_slice(&[0]);
             }
-        }
+            buffer
+        })
     }
 
-    impl Arbitrary for EncodingType {
-        fn arbitrary<G: Gen>(g: &mut G) -> Self {
-            // Note: u8 intervals e.g. Private and Fast can't have 0.
-            match u16::arbitrary(g) % 14 {
-                0 => Self::Private(u8::arbitrary(g).max(1)),
-                1 => Self::SimpleBinaryEncodingV10BE,
-                2 => Self::SimpleBinaryEncodingV10LE,
-                3 => Self::Protobuf,
-                4 => Self::Asn1PER,
-                5 => Self::Asn1BER,
-                6 => Self::Asn1OER,
-                7 => Self::TagValue,
-                8 => Self::FixmlSchema,
-                9 => Self::Fast(u8::arbitrary(g).max(1)),
-                10 => Self::Json,
-                11 => Self::Bson,
-                n => n.into(),
+    struct Reader<T> {
+        source: T,
+    }
+
+    impl<T> std::io::Read for Reader<T>
+    where
+        T: Iterator<Item = u8>,
+    {
+        fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+            for i in 0..buffer.len() {
+                buffer[i] = self.source.next().unwrap();
             }
+            Ok(buffer.len())
         }
     }
 
-    #[quickcheck]
-    fn encode_than_decode_random_header(header: Header) -> bool {
-        header == (&(<[u8; 6]>::from(header))).into()
+    fn increasing_frames_as_read() -> impl std::io::Read {
+        let stream = frames_with_increasing_length()
+            .map(|vec| vec.into_iter())
+            .flatten();
+        Reader { source: stream }
+    }
+
+    fn encode_header(len: u32, encoding_type: u16) -> [u8; 6] {
+        let a = len.to_be_bytes();
+        let b = encoding_type.to_be_bytes();
+        let mut bytes = [0u8; 6];
+        bytes[0..4].copy_from_slice(&a);
+        bytes[4..6].copy_from_slice(&b);
+        bytes
     }
 
     #[test]
-    fn encoding_type_to_u16_then_back() {
-        fn prop(val: EncodingType) -> bool {
-            val == EncodingType::from(u16::from(val))
+    fn encoding_type_conversion_is_correct() {
+        let mut value = 0u16;
+        loop {
+            let encoding_type = EncodingType::from(value);
+            assert_eq!(value, u16::from(encoding_type));
+            if value == u16::MAX {
+                return;
+            }
+            value += 1;
         }
-        QuickCheck::new()
-            .tests(1000)
-            .quickcheck(prop as fn(EncodingType) -> bool)
     }
 
     #[test]
-    fn u16_to_encoding_type_then_back() {
-        fn prop(val: u16) -> bool {
-            val == u16::from(EncodingType::from(val))
-        }
-        QuickCheck::new()
-            .tests(1000)
-            .quickcheck(prop as fn(u16) -> bool)
-    }
-
-    #[test]
-    fn private_encodings() {
-        for val in &[0x1, 0x82, 0xff] {
-            match EncodingType::from(*val) {
-                EncodingType::Private(_) => (),
+    fn low_values_correspond_to_private_encoding_types() {
+        for value in &[0x1, 0x82, 0xff] {
+            let encoding_type = EncodingType::from(*value);
+            match encoding_type {
+                EncodingType::Private(x) if x as u16 == *value => (),
                 _ => panic!(),
             };
         }
-        for val in &[0x0, 0x100] {
-            if let EncodingType::Private(_) = EncodingType::from(*val) {
-                panic!();
+    }
+
+    #[test]
+    fn every_encoding_type_is_equal_to_itself() {
+        let mut value = 0u16;
+        loop {
+            let encoding_type = EncodingType::from(value);
+            assert_eq!(encoding_type, encoding_type);
+            if value == u16::MAX {
+                return;
+            }
+            value += 1;
+        }
+    }
+
+    #[test]
+    fn value_0x100u16_is_not_a_private_encoding_type() {
+        let encoding_type = EncodingType::from(0x100);
+        if let EncodingType::Private(_) = encoding_type {
+            panic!();
+        }
+    }
+
+    #[test]
+    fn frameless_decoder_returns_error_when_frame_has_len_lt_6() {
+        for len in 0..6 {
+            let header = encode_header(len, 0x4324);
+            let parser = Codec::new();
+            let mut frames = parser.frames_streamiter(&header[..]);
+            let frame = frames.next();
+            match frame {
+                Some(Err(FramelessError::Decoder(DecodeError::InvalidMessageLength(_)))) => (),
+                _ => panic!(),
             }
         }
     }
 
     #[test]
-    fn frame_too_short() {
-        let bytes = vec![0u8, 0, 0, 4, 13, 37, 42];
-        let parser = Codec::new();
-        let mut frames = parser.frames_streamiter(&bytes[..]);
-        let frame = frames.next();
-        match frame {
-            Some(Err(FramelessError::Decoder(DecodeError::InvalidMessageLength(_)))) => (),
-            _ => panic!(),
+    fn decoder_returns_error_when_frame_has_len_lt_6() {
+        for len in 0..6 {
+            let header = encode_header(len, 0x4324);
+            let mut parser = Codec::new();
+            let frame = parser.decode(&header[..]);
+            match frame {
+                Err(DecodeError::InvalidMessageLength(_)) => (),
+                _ => panic!(),
+            }
         }
     }
 
     #[test]
-    fn frame_with_only_header_is_valid() {
-        let bytes = vec![0u8, 0, 0, 6, 13, 37];
-        let parser = Codec::new();
-        let mut frames = parser.frames_streamiter(&bytes[..]);
-        let frame = frames.next();
-        match frame {
-            Some(Ok(_)) => (),
-            None => panic!(),
-            Some(Err(e)) => {
-                println!("{:?}", e);
-                panic!()
-            }
+    fn decoder_accepts_frame_with_len_6() {
+        let header = encode_header(6, 0x4324);
+        let mut parser = Codec::new();
+        let frame = parser.decode(&header[..]);
+        if frame.is_err() {
+            panic!();
         }
     }
 }

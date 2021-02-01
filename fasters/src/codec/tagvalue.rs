@@ -4,7 +4,7 @@
 //! currently used by the FIX session layer.
 
 use crate::app::{slr, Version};
-use crate::codec::{Decoder, Encoder, Poll};
+use crate::codec::{Decoder, Encoder, FramelessDecoder, Poll};
 use crate::dictionary::{BaseType, Dictionary};
 use crate::utils::{Buffer, BufferWriter};
 use std::fmt;
@@ -26,6 +26,7 @@ use std::str;
 pub struct Codec {
     dict: Dictionary,
     buffer: Vec<u8>,
+    state: DecoderState,
 }
 
 impl Codec {
@@ -39,7 +40,77 @@ impl Codec {
         Codec {
             dict,
             buffer: Vec::new(),
+            state: DecoderState::Header,
         }
+    }
+}
+
+enum DecoderState {
+    Header,
+    Body(usize),
+    Trailer,
+}
+
+impl<'a, Z> FramelessDecoder<'a, &'a [u8]> for (Codec, Z)
+where
+    Z: Transmuter,
+{
+    type Error = DecodeError;
+
+    fn supply_buffer(&mut self) -> &mut [u8] {
+        let buffer_len = self.0.buffer.len();
+        let additional_capacity = match self.0.state {
+            DecoderState::Header => 50,
+            DecoderState::Body(n) => n,
+            DecoderState::Trailer => 7,
+        };
+        for _ in 0..additional_capacity {
+            self.0.buffer.push(0);
+        }
+        &mut self.0.buffer[buffer_len..]
+    }
+
+    fn attempt_decoding(&mut self) -> Result<Poll, Self::Error> {
+        let mut field_iter: FieldIter<_, Z> = FieldIter {
+            handle: &mut &self.0.buffer[..],
+            checksum: Z::ChecksumAlgo::default(),
+            designator: Z::TagLookup::from_dict(&self.0.dict),
+            is_last: false,
+            data_length: 0,
+        };
+        let mut message = slr::Message::new();
+        {
+            // `BeginString(8)`.
+            let f = field_iter.next().ok_or(Error::Eof)??;
+            if f.tag == 8 {
+                message.fields.insert(f.tag, f.value);
+            } else {
+                return Err(Error::InvalidStandardHeader);
+            }
+        };
+        {
+            // `BodyLength(9)`.
+            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+            if f.tag == 9 {
+                message.fields.insert(f.tag, f.value);
+            } else {
+                return Err(Error::InvalidStandardHeader);
+            }
+        };
+        {
+            // `MsgType(35)`.
+            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+            if f.tag == 35 {
+                message.fields.insert(f.tag, f.value);
+            } else {
+                return Err(Error::InvalidStandardHeader);
+            }
+        };
+        unimplemented!()
+    }
+
+    fn get_item(&'a self) -> &'a [u8] {
+        unimplemented!()
     }
 }
 
