@@ -82,7 +82,10 @@ impl Buffer for Vec<u8> {
     }
 }
 
-impl<B> Buffer for &mut B where B: Buffer {
+impl<B> Buffer for &mut B
+where
+    B: Buffer,
+{
     fn as_slice(&self) -> &[u8] {
         Buffer::as_slice(*self)
     }

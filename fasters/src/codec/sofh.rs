@@ -10,12 +10,13 @@
 //! information.
 
 use super::Poll;
-use super::{Codec, Encoder};
-use crate::stream_iterator::StreamIterator;
+use super::{Decoder, Encoder, FramelessDecoder};
 use crate::utils::Buffer;
 use std::convert::TryInto;
 use std::fmt;
 use std::io;
+
+const HEADER_LENGTH: usize = 6;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 struct Header {
@@ -44,8 +45,7 @@ impl From<&[u8; 6]> for Header {
 /// A parser for Simple Open Framing Header (SOFH) -encoded messages.
 pub struct SofhParser {
     buffer: Vec<u8>,
-    encoding_type: u16,
-    next_size: usize,
+    header: Option<(usize, u16)>,
 }
 
 impl SofhParser {
@@ -59,8 +59,7 @@ impl SofhParser {
     pub fn with_capacity(capacity: usize) -> Self {
         SofhParser {
             buffer: Vec::with_capacity(capacity),
-            next_size: 1024,
-            encoding_type: 0,
+            header: None,
         }
     }
 
@@ -78,83 +77,69 @@ impl SofhParser {
     pub fn capacity(&self) -> usize {
         self.buffer.capacity()
     }
+}
 
-    /// Returns a [`StreamIterator`](StreamIterator) over the message frames
-    /// produced by `source`.
-    pub fn read_frames<'a, R: io::Read + 'a>(
-        &'a mut self,
-        source: R,
-    ) -> impl StreamIterator<'a, Item = Result<Frame<'a>>> {
-        Frames {
-            parser: self,
-            source,
+impl<'a> FramelessDecoder<'a, Frame<'a>> for SofhParser {
+    type Error = DecodeError;
+
+    fn supply_buffer(&mut self) -> &mut [u8] {
+        let buffer_len = self.buffer.len();
+        let additional_capacity = match self.header {
+            None => 6,
+            Some((len, _)) => (len as i64 - buffer_len as i64).max(0),
+        };
+        for _ in 0..additional_capacity {
+            self.buffer.push(0);
         }
+        &mut self.buffer[buffer_len..]
+    }
+
+    fn attempt_decoding(&mut self) -> Result<Poll, Self::Error> {
+        match self.header {
+            None => {
+                if self.buffer.len() >= 6 {
+                    self.header = Some((
+                        get_message_length(&self.buffer[..]) as usize,
+                        get_encoding_type(&self.buffer[..]),
+                    ));
+                }
+                Ok(Poll::Incomplete)
+            }
+            Some((len, _)) if len < HEADER_LENGTH => {
+                Err(DecodeError::InvalidMessageLength(len.try_into().unwrap()))
+            }
+            Some((len, _)) if len < self.buffer.len() => Ok(Poll::Incomplete),
+            Some((_, _)) => Ok(Poll::Ready),
+        }
+    }
+
+    fn get_item(&'a self) -> Frame<'a> {
+        Frame::new(self.header.unwrap().1, &self.buffer[..])
     }
 }
 
-impl<'s> Codec<'s, Frame<'s>> for SofhParser {
-    type DecodeError = Error;
-    type EncodeError = ();
+fn get_message_length(data: &[u8]) -> u32 {
+    u32::from_be_bytes(data[0..4].try_into().unwrap())
+}
 
-    fn supply_buffer(&mut self) -> &mut [u8] {
-        let old_len = self.buffer.len();
-        for _ in 0..1024 {
-            self.buffer.extend_from_slice(&[0]);
-        }
-        let new_len = self.buffer.len();
-        &mut self.buffer[old_len..new_len]
-    }
+fn get_encoding_type(data: &[u8]) -> u16 {
+    u16::from_be_bytes(data[4..HEADER_LENGTH].try_into().unwrap())
+}
 
-    fn poll_decoding(&mut self) -> Result<Poll> {
-        if self.next_size == 0 {
-            self.next_size = u32::from_be_bytes(self.buffer[0..4].try_into().unwrap()) as usize;
-        }
-        match self.next_size {
-            0 => Ok(Poll::Incomplete),
-            len => {
-                if self.buffer.len() >= len {
-                    self.encoding_type = 0;
-                    Ok(Poll::Ready)
-                } else {
-                    Ok(Poll::Incomplete)
-                }
-            }
-        }
-    }
+impl<'a> Decoder<'a, Frame<'a>> for SofhParser {
+    type Error = DecodeError;
 
-    fn decode(&mut self, data: &[u8]) -> Result<Poll> {
-        self.buffer.extend_from_slice(data);
-        if self.next_size == 0 {
-            self.next_size = u32::from_be_bytes(self.buffer[0..4].try_into().unwrap()) as usize;
+    fn decode(&'a mut self, data: &'a [u8]) -> Result<Frame<'a>, Self::Error> {
+        let err = || DecodeError::InvalidMessageLength(data.len() as u32);
+        if data.len() < HEADER_LENGTH {
+            return Err(err());
         }
-        match self.next_size {
-            0 => Ok(Poll::Incomplete),
-            len => {
-                if self.buffer.len() >= len {
-                    self.encoding_type = 0;
-                    Ok(Poll::Ready)
-                } else {
-                    Ok(Poll::Incomplete)
-                }
-            }
+        // Note that the message length field also includes the header.
+        if data.len() != get_message_length(data) as usize {
+            return Err(err());
         }
-    }
-
-    fn get_item(&self) -> Frame {
-        Frame {
-            encoding_type: self.encoding_type,
-            payload: &self.buffer[..],
-        }
-    }
-
-    fn encode(&mut self, data: Frame) -> std::result::Result<&[u8], Self::EncodeError> {
-        debug_assert!(self.buffer.is_empty());
-        self.buffer
-            .extend_from_slice(&(data.payload().len() as u32).to_be_bytes()[..]);
-        self.buffer
-            .extend_from_slice(&(data.encoding_type() as u16).to_be_bytes()[..]);
-        self.buffer.extend_from_slice(data.payload());
-        Ok(&self.buffer[..])
+        let encoding_type = get_encoding_type(data);
+        Ok(Frame::new(encoding_type, &data[HEADER_LENGTH..]))
     }
 }
 
@@ -206,6 +191,15 @@ pub struct Frame<'a> {
 }
 
 impl<'a> Frame<'a> {
+    /// Creates a new [`Frame`] with `payload` as its contents and tagged with
+    /// `encoding_type`.
+    pub fn new(encoding_type: u16, payload: &'a [u8]) -> Self {
+        Self {
+            encoding_type,
+            payload,
+        }
+    }
+
     /// Returns the encoding type for this message.
     pub fn encoding_type(&self) -> u16 {
         self.encoding_type
@@ -218,103 +212,21 @@ impl<'a> Frame<'a> {
     }
 }
 
-/// A support structure to iterate over frames.
-pub struct Frames<'a, R> {
-    parser: &'a mut SofhParser,
-    source: R,
-}
-
-impl<'a, R> StreamIterator<'a> for Frames<'a, R>
-where
-    R: io::Read,
-{
-    type Item = Result<Frame<'a>>;
-
-    fn advance(&mut self) {
-        let mut header_buffer = [0u8; 6];
-        if let Err(_e) = self.source.read_exact(&mut header_buffer) {
-            //return Some(Err(e.into()));
-        }
-        let header = Header::from(&header_buffer);
-        if header.message_length < 6 {
-            //return Some(Err(Error::InvalidMessageLength(header.message_length)));
-        }
-        self.parser
-            .buffer
-            .resize(header.message_length as usize - 6, 0);
-        if let Err(_e) = self.source.read_exact(&mut self.parser.buffer[..]) {
-            //return Some(Err(e.into()));
-        }
-        debug_assert_eq!(self.parser.buffer.len(), header.message_length as usize - 6);
-        //self.result = Ok(Frame {
-        //    encoding_type: 0,
-        //    payload: &self.parser.buffer[..],
-        //}.clone());
-        //Some(self.result.clone().map(|s| s.clone()))
-    }
-
-    fn next(&'a self) -> Option<Self::Item> {
-        Some(Ok(Frame {
-            encoding_type: 0,
-            payload: &self.parser.buffer[..],
-        }))
-    }
-}
-
-//pub struct Fram<R> {
-//    parser: SofhParser,
-//    source: R,
-//}
-
-//impl<'a, R> Iterator for &'a mut Fram<R>
-//where
-//    R: io::Read,
-//{
-//    type Item = Result<&'a [u8]>;
-//
-//    fn next(&mut self) -> Option<Self::Item> {
-//        let mut header_buffer = [0u8; 6];
-//        if let Err(e) = self.source.read_exact(&mut header_buffer) {
-//            //return Some(Err(e.into()));
-//        }
-//        let header = Header::from(&header_buffer);
-//        if header.message_length < 6 {
-//            //return Some(Err(Error::InvalidMessageLength(header.message_length)));
-//        }
-//        self.parser
-//            .buffer
-//            .resize(header.message_length as usize - 6, 0);
-//        if let Err(e) = self.source.read_exact(&mut self.parser.buffer[..]) {
-//            //return Some(Err(e.into()));
-//        }
-//        debug_assert_eq!(self.parser.buffer.len(), header.message_length as usize - 6);
-//        Some(Ok(&self.parser.buffer[..]))
-//        //Some(Ok(Frame {
-//        //    encoding_type: 0,
-//        //    payload: &self.parser.buffer[..],
-//        //}))
-//    }
-//}
-
-/// A specialized [`Result`](std::result::Result) for SOFH decoding operations.
-/// Encoding, on the other hand, is infallible and will never result in an error.
-type Result<T> = std::result::Result<T, Error>;
-
 /// The error type that can be returned if some error occurs during SOFH parsing.
 #[derive(Debug)]
-pub enum Error {
+pub enum DecodeError {
     InvalidMessageLength(u32),
     Io(io::Error),
 }
 
-impl fmt::Display for Error {
+impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::Io(err) => {
+            DecodeError::Io(err) => {
                 writeln!(f, "I/O error while reading the message.")?;
                 (*err).fmt(f)
             }
-            Error::InvalidMessageLength(len) => {
+            DecodeError::InvalidMessageLength(len) => {
                 writeln!(
                     f,
                     "Message length is {} but it must be greater than or equal to 6.",
@@ -325,7 +237,7 @@ impl fmt::Display for Error {
     }
 }
 
-impl From<io::Error> for Error {
+impl From<io::Error> for DecodeError {
     fn from(err: io::Error) -> Self {
         Self::Io(err)
     }
@@ -438,6 +350,8 @@ impl std::cmp::Eq for EncodingType {}
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::codec::FramelessError;
+    use crate::StreamIterator;
     use quickcheck::{Arbitrary, Gen, QuickCheck};
     use quickcheck_macros::quickcheck;
 
@@ -514,24 +428,29 @@ mod test {
 
     #[test]
     fn frame_too_short() {
-        let _bytes = vec![0u8, 0, 0, 4, 13, 37, 42];
-        let _parser = SofhParser::new();
-        //parser.read_frames(&bytes[..]).count();
-        //let frame = frames.next();
-        //match frame {
-        //    Some(Err(Error::InvalidMessageLength(_))) => (),
-        //    _ => panic!(),
-        //}
+        let bytes = vec![0u8, 0, 0, 4, 13, 37, 42];
+        let parser = SofhParser::new();
+        let mut frames = parser.frames_streamiter(&bytes[..]);
+        let frame = frames.next();
+        match frame {
+            Some(Err(FramelessError::Decoder(DecodeError::InvalidMessageLength(_)))) => (),
+            _ => panic!(),
+        }
     }
 
     #[test]
     fn frame_with_only_header_is_valid() {
         let bytes = vec![0u8, 0, 0, 6, 13, 37];
-        let mut parser = SofhParser::new();
-        let _frames = parser.read_frames(&bytes[..]);
-        //match frames.next() {
-        //    Some(Ok(_)) => (),
-        //    _ => panic!(),
-        //}
+        let parser = SofhParser::new();
+        let mut frames = parser.frames_streamiter(&bytes[..]);
+        let frame = frames.next();
+        match frame {
+            Some(Ok(_)) => (),
+            None => panic!(),
+            Some(Err(e)) => {
+                println!("{:?}", e);
+                panic!()
+            }
+        }
     }
 }

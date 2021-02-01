@@ -61,100 +61,17 @@ pub trait StreamIterator<'a> {
     /// Returns a reference to the current element of the iterator.
     ///
     /// The behavior of calling this method before `advance` has been called is unspecified.
-    fn next(&'a self) -> Option<Self::Item>;
+    fn get(&'a self) -> Option<Self::Item>;
 
-    /// Returns the bounds on the remaining length of the iterator.
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, None)
-    }
-
-    /// Determines if all elements of the iterator satisfy a predicate.
-    #[inline]
-    fn all<F>(&'a mut self, mut f: F) -> bool
-    where
-        Self: Sized,
-        F: FnMut(Self::Item) -> bool,
-    {
-        while let Some(i) = self.next() {
-            if !f(i) {
-                return false;
-            }
-        }
-
-        true
-    }
-
-    /// Determines if any elements of the iterator satisfy a predicate.
-    #[inline]
-    fn any<F>(&'a mut self, mut f: F) -> bool
-    where
-        Self: Sized,
-        F: FnMut(Self::Item) -> bool,
-    {
-        !self.all(|i| !f(i))
-    }
-
-    /// Borrows an iterator, rather than consuming it.
+    /// Advances the iterator and returns the next value.
     ///
-    /// This is useful to allow the application of iterator adaptors while still retaining ownership
-    /// of the original adaptor.
+    /// The behavior of calling this method after the end of the iterator has been reached is
+    /// unspecified.
+    ///
+    /// The default implementation simply calls `advance` followed by `get`.
     #[inline]
-    fn by_ref(&mut self) -> &mut Self
-    where
-        Self: Sized,
-    {
-        self
-    }
-
-    /// Returns the first element of the iterator that satisfies the predicate.
-    #[inline]
-    fn find<F>(&'a mut self, mut f: F) -> Option<Self::Item>
-    where
-        Self: Sized,
-        F: FnMut(Self::Item) -> bool,
-    {
-        loop {
-            match self.next() {
-                Some(i) => {
-                    if f(i) {
-                        break;
-                    }
-                }
-                None => break,
-            }
-        }
-
-        self.next()
-    }
-
-    /// Consumes the first `n` elements of the iterator, returning the next one.
-    #[inline]
-    fn nth(&'a mut self, n: usize) -> Option<Self::Item> {
-        for _ in 0..n {
-            if self.next().is_none() {
-                return None;
-            }
-        }
-        self.next()
-    }
-
-    /// Returns the index of the first element of the iterator matching a predicate.
-    #[inline]
-    fn position<F>(&'a mut self, mut f: F) -> Option<usize>
-    where
-        Self: Sized,
-        F: FnMut(Self::Item) -> bool,
-    {
-        let mut n = 0;
-
-        while let Some(i) = self.next() {
-            if f(i) {
-                return Some(n);
-            }
-            n += 1;
-        }
-
-        None
+    fn next(&'a mut self) -> Option<Self::Item> {
+        self.advance();
+        self.get()
     }
 }

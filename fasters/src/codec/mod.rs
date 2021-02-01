@@ -125,8 +125,8 @@ where
     }
 }
 
-pub trait FramelessDecoder<'s, M> {
-    type Error;
+pub trait FramelessDecoder<'s, M> where Self: Sized {
+    type Error: 's;
 
     /// Returns a mutable slice of bytes to accomodate for new input.
     ///
@@ -138,10 +138,10 @@ pub trait FramelessDecoder<'s, M> {
     /// Validates the contents of the internal buffer and possibly caches the
     /// resulting message. When successful, this method will return a [`Poll`] to
     /// let the caller know whether more bytes are needed or not.
-    fn attemp_decoding(&mut self) -> Result<Poll, Self::Error>;
+    fn attempt_decoding(&mut self) -> Result<Poll, Self::Error>;
 
     fn decode_next_item(&'s mut self) -> Result<Option<M>, Self::Error> {
-        self.attemp_decoding().map(move |t| match t {
+        self.attempt_decoding().map(move |t| match t {
             Poll::Ready => Some(self.get_item()),
             Poll::Incomplete => None,
         })
@@ -149,6 +149,20 @@ pub trait FramelessDecoder<'s, M> {
 
     /// Returns the last message.
     fn get_item(&'s self) -> M;
+
+    /// Returns a [`StreamIterator`] over the message frames
+    /// produced by `source`.
+    fn frames_streamiter<R>(self, reader: R) -> Frames<Self, R, M, Self::Error>
+    where
+        R: io::Read,
+    {
+        Frames {
+            codec: self,
+            source: reader,
+            phantom: PhantomData::default(),
+            err: None,
+        }
+    }
 }
 
 pub trait Decoder<'s, M> {
@@ -180,6 +194,54 @@ pub struct ItemsIter<C, R, M> {
     phantom: PhantomData<M>,
 }
 
+pub struct Frames<C, R, M, T> {
+    codec: C,
+    source: R,
+    phantom: PhantomData<M>,
+    err: Option<FramelessError<T>>,
+}
+
+#[derive(Debug)]
+pub enum FramelessError<E> {
+    Decoder(E),
+    Io(io::Error),
+}
+
+impl<'s, M, C, R> StreamIterator<'s> for Frames<C, R, M, C::Error>
+where
+    C: FramelessDecoder<'s, M>,
+    R: io::Read,
+{
+    type Item = Result<M, &'s FramelessError<C::Error>>;
+
+    fn advance(&mut self) {
+        loop {
+            let buffer = self.codec.supply_buffer();
+            if let Err(e) = self.source.read(buffer) {
+                self.err = Some(FramelessError::Io(e));
+                break;
+            }
+            match self.codec.attempt_decoding() {
+                Err(e) => {
+                    self.err = Some(FramelessError::Decoder(e));
+                    break;
+                },
+                Ok(Poll::Incomplete) => (),
+                Ok(Poll::Ready) => break,
+            }
+        }
+    }
+
+    fn get(&'s self) -> Option<Self::Item> {
+        match &self.err {
+            Some(e) => {
+                Some(Err(&e))
+            }
+            None => Some(Ok(self.codec.get_item())),
+        }
+    }
+}
+
 impl<'s, M, C, R> StreamIterator<'s> for ItemsIter<C, R, M>
 where
     C: Codec<'s, M>,
@@ -199,7 +261,7 @@ where
         }
     }
 
-    fn next(&'s self) -> Option<Self::Item> {
+    fn get(&'s self) -> Option<Self::Item> {
         Some(self.codec.get_item())
     }
 }

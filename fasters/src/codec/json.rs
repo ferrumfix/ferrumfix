@@ -2,8 +2,6 @@
 
 use super::TransmuterPattern;
 use crate::app::slr;
-use crate::codec::Codec;
-use crate::codec::Poll;
 use crate::codec::*;
 use crate::Dictionary;
 use serde_json::json;
