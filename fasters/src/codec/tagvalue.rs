@@ -4,8 +4,9 @@
 //! currently used by the FIX session layer.
 
 use crate::app::{slr, Version};
+use crate::codec::{Decoder, Encoder, Poll};
 use crate::dictionary::{BaseType, Dictionary};
-use crate::codec::{Codec, Encoding, Poll};
+use crate::utils::{Buffer, BufferWriter};
 use std::fmt;
 use std::fmt::Debug;
 use std::io;
@@ -49,46 +50,15 @@ impl Default for TagValue {
     }
 }
 
-impl<'s, Z> Codec<'s, &'s slr::Message> for (TagValue, Z)
-where
-    Z: Transmuter + 's,
-{
-    type DecodeError = DecodeError;
-    type EncodeError = EncodeError;
-
-    fn decode(&mut self, data: &[u8]) -> ResultDecode<Poll> {
-        self.0.buffer.extend_from_slice(data);
-        Ok(Poll::Ready)
-    }
-
-    fn get_item(&self) -> &slr::Message {
-        unimplemented!()
-    }
-
-    fn encode(&mut self, message: &slr::Message) -> ResultEncode<&[u8]> {
-        for (tag, value) in message.fields.iter() {
-            let field = slr::Field {
-                tag: *tag,
-                value: value.clone(),
-                checksum: 0,
-                len: 0,
-            };
-            field.encode(&mut &mut self.0.buffer[..])?;
-        }
-        Ok(&self.0.buffer[..])
-    }
-}
-
-impl<Z> Encoding<slr::Message> for (TagValue, Z)
+impl<'a, Z> Decoder<'a, slr::Message> for (TagValue, Z)
 where
     Z: Transmuter,
 {
-    type EncodeError = EncodeError;
-    type DecodeError = DecodeError;
+    type Error = DecodeError;
 
-    fn decode(&self, source: &mut impl io::BufRead) -> ResultDecode<slr::Message> {
+    fn decode(&'a mut self, mut data: &'a [u8]) -> Result<slr::Message, Self::Error> {
         let mut field_iter: FieldIter<_, Z> = FieldIter {
-            handle: source,
+            handle: &mut data,
             checksum: Z::ChecksumAlgo::default(),
             designator: Z::TagLookup::from_dict(&self.0.dict),
             is_last: false,
@@ -134,19 +104,28 @@ where
             Err(Error::InvalidStandardTrailer)
         }
     }
+}
 
-    fn encode(&mut self, message: slr::Message) -> ResultEncode<Vec<u8>> {
-        let mut target = Vec::new();
-        for (tag, value) in message.fields {
+impl Encoder<slr::Message> for TagValue {
+    type Error = EncodeError;
+
+    fn encode(
+        &mut self,
+        mut buffer: impl Buffer,
+        message: &slr::Message,
+    ) -> Result<usize, Self::Error> {
+        let mut writer = BufferWriter::new(&mut buffer);
+        for (tag, value) in message.fields.iter() {
             let field = slr::Field {
-                tag,
-                value,
+                tag: *tag,
+                value: value.clone(),
                 checksum: 0,
                 len: 0,
             };
-            field.encode(&mut target)?;
+
+            field.encode(&mut writer)?;
         }
-        Ok(target)
+        Ok(writer.len())
     }
 }
 
@@ -255,7 +234,7 @@ struct FieldIter<R, Z: Transmuter> {
 
 impl<'d, R, Z> Iterator for FieldIter<&'d mut R, Z>
 where
-    R: io::BufRead,
+    R: io::Read,
     Z: Transmuter,
 {
     type Item = Result<slr::Field, DecodeError>;
@@ -265,16 +244,22 @@ where
             return None;
         }
         let mut buffer: Vec<u8> = Vec::new();
-        self.handle.read_until(b'=', &mut buffer).unwrap();
-        if let None = buffer.pop() {
-            return None;
+        let mut tag: u32 = 0;
+        let mut buf = [0];
+        loop {
+            if self.handle.read(&mut buf).unwrap() == 0 {
+                break;
+            }
+            let byte = buf[0];
+            if byte == b'=' {
+                break;
+            }
+            tag = tag * 10 + (byte as char).to_digit(10).unwrap();
         }
-        let tag = std::str::from_utf8(&buffer[..])
-            .unwrap()
-            .parse::<i64>()
-            .unwrap();
         if tag == 10 {
             self.is_last = true;
+        } else if tag == 0 {
+            return None;
         }
         let datatype = self.designator.lookup(tag as u32);
         match datatype {
@@ -287,13 +272,17 @@ where
             }
             Ok(basetype) => {
                 buffer = vec![];
-                self.handle
-                    .read_until(Z::SOH_SEPARATOR, &mut buffer)
-                    .unwrap();
-                match buffer.last() {
-                    Some(b) if *b == Z::SOH_SEPARATOR => buffer.pop(),
-                    _ => return Some(Err(Error::Eof)),
-                };
+                loop {
+                    if self.handle.read(&mut buf).unwrap() == 0 {
+                        return Some(Err(Error::Eof));
+                    }
+                    let byte = buf[0];
+                    if byte == Z::SOH_SEPARATOR {
+                        break;
+                    } else {
+                        buffer.push(byte);
+                    }
+                }
                 self.checksum.roll(&buffer[..]);
             }
             Err(ref e) => (),
@@ -304,7 +293,7 @@ where
             self.data_length = l as u32;
         }
         Some(Ok(slr::Field {
-            tag,
+            tag: tag.into(),
             value: field_value,
             checksum: self.checksum.clone().result(),
             len: self.checksum.window_length(),
