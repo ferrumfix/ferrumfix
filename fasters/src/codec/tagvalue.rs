@@ -31,7 +31,7 @@ pub struct Codec {
 impl Codec {
     /// Builds a new `Codec` encoding device with a FIX 4.4 dictionary.
     pub fn new() -> Self {
-        Self::default()
+        Self::with_dict(Dictionary::from_version(Version::Fix44))
     }
 
     /// Creates a new codec for the tag-value format. `dict` is used to parse messages.
@@ -40,13 +40,6 @@ impl Codec {
             dict,
             buffer: Vec::new(),
         }
-    }
-}
-
-impl Default for Codec {
-    /// New [`Codec`] codecs with use FIX 4.4 by default.
-    fn default() -> Self {
-        Self::with_dict(Dictionary::from_version(Version::Fix44))
     }
 }
 
