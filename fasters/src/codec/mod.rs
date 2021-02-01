@@ -1,11 +1,13 @@
 //! Support for FIX-related encoding types (OSI Layer 6).
 //!
-//! Encoders (*aka* codecs) must implement [`Encoding`](Encoding) or
-//! [`Codec`](Codec).
+//! Encoders need to implement [`Encoder`], while decoders can choose to
+//! implement [`Decoder`] or [`FramelessDecoder`] (or both). Implementors of
+//! [`Decoder`] decode messages with a pre-defined length. Implementors of
+//! [`FramelessDecoder`] decode *streams* of messages, without delimiters.
 //!
 //! - FIX tag-value: [`tagvalue::Codec`].
 //! - FAST: [`fast::Fast`].
-//! - JSON: [`json::Json`].
+//! - JSON: [`json::Codec`].
 //! - SOFH: [`sofh::Codec`].
 //!
 //! Most encoding types support configuration options via the *transmuter
@@ -20,110 +22,6 @@ pub mod fast;
 pub mod json;
 pub mod sofh;
 pub mod tagvalue;
-
-/// Capabilities to decode and encode FIX messages according to a FIX dictionary.
-pub trait Encoding<M> {
-    /// The type of any error that can arise during message decoding.
-    type DecodeError;
-    /// The type of any error that can arise during message encoding.
-    type EncodeError;
-
-    /// Reads a single message from `source` and then returns it if successful.
-    ///
-    /// When called successfully, this method will most likely result in one or
-    /// more allocations.
-    fn decode(&self, source: &mut impl io::BufRead) -> Result<M, Self::DecodeError>;
-
-    /// Serializes `message` into a [`Vec<u8>`](Vec) and then returns it if
-    /// successful.
-    ///
-    /// When called successfully, this method requires at minimum one allocation
-    /// for the returned [`Vec<u8>`](Vec).
-    fn encode(&mut self, message: M) -> Result<Vec<u8>, Self::EncodeError>;
-}
-
-/// A decoder and encoder device with an internal buffer to minimize allocations.
-///
-/// # Type parameters and generics
-/// This trait requires one lifetime generic and one type parameter, `M`,
-/// which represents the message type. The lifetime generic always refers to
-/// `Self` and allows `M` to hold references to the internal buffer, e.g.:
-///
-/// ```
-/// impl<'a, 's> Codec<'a, 's, MessageType<'s>>
-/// ```
-///
-/// There are several cases which require this specific pattern and thus it is
-/// supported; in other cases `'s` will be mostly useless, notably codecs that give
-/// away ownership of messages.
-pub trait Codec<'s, M>
-where
-    Self: Sized + 's,
-{
-    /// The type of any error that can arise during message decoding.
-    type DecodeError;
-    /// The type of any error that can arise during message encoding.
-    type EncodeError;
-
-    /// Returns a mutable slice of bytes to accomodate for new input.
-    ///
-    /// The slice
-    /// can have any non-zero length, depending on how many bytes `self` believes
-    /// is a good guess. All bytes should be set to 0.
-    fn supply_buffer(&mut self) -> &mut [u8] {
-        unimplemented!();
-    }
-
-    /// Validates the contents of the internal buffer and possibly caches the
-    /// resulting message. When successful, this method will return a [`Poll`] to
-    /// let the caller know whether more bytes are needed or not.
-    fn poll_decoding(&mut self) -> Result<Poll, Self::DecodeError> {
-        unimplemented!();
-    }
-
-    fn decode_next_item(&'s mut self) -> Result<Option<M>, Self::DecodeError> {
-        self.poll_decoding().map(move |t| match t {
-            Poll::Ready => Some(self.get_item()),
-            Poll::Incomplete => None,
-        })
-    }
-
-    /// Returns the last message.
-    fn get_item(&'s self) -> M;
-
-    /// Writes a slice of bytes into the internal buffer and attempts
-    /// decoding. Three scenarios are then possible:
-    ///
-    /// 1. Decoding is complete, and the user can fetch the item:
-    ///    `Ok(Poll::Ready)`.
-    /// 2. No errors are detected so far, but the message is complete. The
-    ///    message is not yet available for reading: `Ok(Poll::Incomplete)`.
-    /// 3. An error in the data has been detected: `Err(Self::DecodeError)`.
-    fn decode(&mut self, data: &[u8]) -> Result<Poll, Self::DecodeError>;
-
-    fn encode_to_buffer(&self, data: M, buffer: &mut [u8]) -> Result<usize, Self::EncodeError> {
-        unimplemented!()
-    }
-
-    /// Encodes `data` into the internal buffer and finally returns an
-    /// immutable reference to the internal buffer.
-    ///
-    /// Please note that even though encoding errors are way less common
-    /// than decoding errors, one should still be careful to manage them
-    /// when they arise.
-    fn encode(&mut self, data: M) -> Result<&[u8], Self::EncodeError>;
-
-    fn items<R>(self, source: R) -> ItemsIter<Self, R, M>
-    where
-        R: io::Read,
-    {
-        ItemsIter {
-            codec: self,
-            source,
-            phantom: PhantomData::default(),
-        }
-    }
-}
 
 pub trait FramelessDecoder<'s, M> where Self: Sized {
     type Error: 's;
@@ -165,10 +63,10 @@ pub trait FramelessDecoder<'s, M> where Self: Sized {
     }
 }
 
-pub trait Decoder<'s, M> {
+pub trait Decoder<'a, M> {
     type Error;
 
-    fn decode(&'s mut self, data: &'s [u8]) -> Result<M, Self::Error>;
+    fn decode(&'a mut self, data: &'a [u8]) -> Result<M, Self::Error>;
 }
 
 pub trait Encoder<M> {
@@ -239,30 +137,6 @@ where
             }
             None => Some(Ok(self.codec.get_item())),
         }
-    }
-}
-
-impl<'s, M, C, R> StreamIterator<'s> for ItemsIter<C, R, M>
-where
-    C: Codec<'s, M>,
-    R: io::Read,
-{
-    type Item = M;
-
-    fn advance(&mut self) {
-        loop {
-            let buffer = self.codec.supply_buffer();
-            self.source.read(buffer).unwrap();
-            let status = self.codec.poll_decoding().ok().unwrap();
-            match status {
-                Poll::Incomplete => (),
-                Poll::Ready => break,
-            }
-        }
-    }
-
-    fn get(&'s self) -> Option<Self::Item> {
-        Some(self.codec.get_item())
     }
 }
 

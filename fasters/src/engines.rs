@@ -1,61 +1,65 @@
 use crate::app::slr;
+use crate::codec::*;
 use crate::dictionary::Dictionary;
-use crate::codec::Encoding;
 use crate::session;
 use crate::session::EventOutbound;
 use std::marker::PhantomData;
 use std::net::TcpListener;
 use uuid::Uuid;
 
-struct Acceptor<M, E: Encoding<M>> {
-    id: Uuid,
-    dictionary: Dictionary,
-    encoder: E,
-    phantom: PhantomData<M>,
-}
-
-impl<E: Encoding<slr::Message>> Acceptor<slr::Message, E> {
-    pub fn new(dict: Dictionary, encoder: E) -> Self {
-        Acceptor {
-            id: Uuid::new_v4(),
-            dictionary: dict,
-            encoder,
-            phantom: PhantomData,
-        }
-    }
-
-    pub async fn listen(mut self, listener: TcpListener) {
-        self.handle_connection(listener.incoming().map(|stream| stream.unwrap()))
-            .await;
-    }
-
-    async fn handle_connection<T: std::io::Read + std::io::Write>(
-        &mut self,
-        listener: impl Iterator<Item = T>,
-    ) {
-        let mut payload = Vec::with_capacity(8192);
-        let mut offset = 0;
-        let config = session::Configuration::new();
-        let mut session_layer = session::Acceptor::new(config);
-        for mut socket in listener {
-            let payload_size = socket.read(&mut payload).unwrap();
-            offset += payload_size;
-            let msg = self.encoder.decode(&mut &payload[offset..]).ok().unwrap();
-            let event = session::EventInbound::IncomingMessage(msg);
-            for pending_event in session_layer.notify(event) {
-                match pending_event {
-                    EventOutbound::Message(msg) => {
-                        let payload: Vec<u8> = self.encoder.encode(msg).ok().unwrap();
-                        socket.write(&payload).unwrap();
-                    }
-                    EventOutbound::Terminate => {
-                        break;
-                    }
-                }
-            }
-        }
-    }
-}
+//struct Acceptor<M, E> {
+//    id: Uuid,
+//    dictionary: Dictionary,
+//    encoder: E,
+//    phantom: PhantomData<M>,
+//}
+//
+//impl<'a, E> Acceptor<slr::Message, E>
+//where
+//    E: Decoder<'a, slr::Message> + Encoder<slr::Message> + 'a,
+//{
+//    pub fn new(dict: Dictionary, encoder: E) -> Self {
+//        Acceptor {
+//            id: Uuid::new_v4(),
+//            dictionary: dict,
+//            encoder,
+//            phantom: PhantomData,
+//        }
+//    }
+//
+//    pub async fn listen(mut self, listener: TcpListener) {
+//        self.handle_connection(listener.incoming().map(|stream| stream.unwrap()))
+//            .await;
+//    }
+//
+//    async fn handle_connection<T>(
+//        self,
+//        listener: impl Iterator<Item = T>,
+//    ) where T: std::io::Read + std::io::Write {
+//        let mut payload = Vec::with_capacity(8192);
+//        let mut offset = 0;
+//        let config = session::Configuration::new();
+//        let mut session_layer = session::Acceptor::new(config);
+//        for mut socket in listener {
+//            let payload_size = socket.read(&mut payload).unwrap();
+//            offset += payload_size;
+//            let msg = self.encoder.decode(&mut &payload[offset..]).ok().unwrap();
+//            let event = session::EventInbound::IncomingMessage(msg);
+//            for pending_event in session_layer.notify(event) {
+//                match pending_event {
+//                    EventOutbound::Message(msg) => {
+//                        let mut payload = Vec::<u8>::new();
+//                        self.encoder.encode(&mut payload, &msg).ok().unwrap();
+//                        socket.write(&payload).unwrap();
+//                    }
+//                    EventOutbound::Terminate => {
+//                        break;
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
 
 #[cfg(test)]
 mod test {
