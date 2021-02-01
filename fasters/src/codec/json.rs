@@ -8,7 +8,7 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::fmt;
 
-/// Transmuter configuration for the [`Json`] encoding.
+/// Transmuter configuration for the [`Codec`] encoding.
 pub trait Transmuter: Clone {
     /// This setting indicates that all encoded messages should be "prettified",
     /// i.e. the JSON code will not be compressed and instead it will have
@@ -29,15 +29,15 @@ impl Transmuter for TransPrettyPrint {
 
 impl<T> TransmuterPattern for T where T: Transmuter {}
 
-pub struct Json {
+pub struct Codec {
     dictionaries: HashMap<String, Dictionary>,
 }
 
-impl Json {
+impl Codec {
     pub fn new(dict: Dictionary) -> Self {
         let mut dictionaries = HashMap::new();
         dictionaries.insert(dict.get_version().to_string(), dict);
-        Json {
+        Codec {
             dictionaries,
         }
     }
@@ -104,7 +104,7 @@ impl Json {
     }
 }
 
-impl<'s, Z> Decoder<'s, slr::Message> for (Json, Z)
+impl<'s, Z> Decoder<'s, slr::Message> for (Codec, Z)
 where
     Z: Transmuter,
 {
@@ -140,14 +140,14 @@ where
             .ok_or(Self::Error::InvalidMsgType)?;
         let mut message = slr::Message::new();
         for item in header.iter().chain(body).chain(trailer) {
-            let (tag, field) = Json::decode_field(dictionary, item.0, item.1)?;
+            let (tag, field) = Codec::decode_field(dictionary, item.0, item.1)?;
             message.add_field(tag, field);
         }
         Ok(message)
     }
 }
 
-impl<Z> Encoder<slr::Message> for (Json, Z)
+impl<Z> Encoder<slr::Message> for (Codec, Z)
 where
     Z: Transmuter,
 {
@@ -182,7 +182,7 @@ where
                 .get_field(*field_tag as u32)
                 .ok_or(Self::Error::Dictionary)?;
             let field_name = field.name().to_string();
-            let field_value = Json::translate(dictionary, field_value);
+            let field_value = Codec::translate(dictionary, field_value);
             if component_std_header.contains_field(&field) {
                 map_header
                     .as_object_mut()
@@ -283,8 +283,8 @@ mod test {
         Dictionary::from_version(crate::app::Version::Fix44)
     }
 
-    fn encoder_fix44() -> (Json, impl Transmuter) {
-        (Json::new(dict_fix44()), TransPrettyPrint)
+    fn encoder_fix44() -> (Codec, impl Transmuter) {
+        (Codec::new(dict_fix44()), TransPrettyPrint)
     }
 
     #[test]

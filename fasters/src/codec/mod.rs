@@ -6,7 +6,7 @@
 //! - FIX tag-value: [`tagvalue::TagValue`].
 //! - FAST: [`fast::Fast`].
 //! - JSON: [`json::Json`].
-//! - SOFH: [`sofh::SofhParser`].
+//! - SOFH: [`sofh::Codec`].
 //!
 //! Most encoding types support configuration options via the *transmuter
 //! pattern*. Transmuters are traits that define all configurable options for a

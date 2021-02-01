@@ -43,35 +43,35 @@ impl From<&[u8; 6]> for Header {
 }
 
 /// A parser for Simple Open Framing Header (SOFH) -encoded messages.
-pub struct SofhParser {
+pub struct Codec {
     buffer: Vec<u8>,
     header: Option<(usize, u16)>,
 }
 
-impl SofhParser {
+impl Codec {
     /// Creates a new SOFH parser with default buffer size.
     pub fn new() -> Self {
         Self::with_capacity(1024)
     }
 
-    /// Creates a new [`SofhParser`](SofhParser) with a buffer large enough to
+    /// Creates a new [`Codec`](Codec) with a buffer large enough to
     /// hold `capacity` amounts of bytes without reallocating.
     pub fn with_capacity(capacity: usize) -> Self {
-        SofhParser {
+        Codec {
             buffer: Vec::with_capacity(capacity),
             header: None,
         }
     }
 
-    /// Returns the current buffer capacity of this [`SofhParser`]. This value is
+    /// Returns the current buffer capacity of this [`Codec`]. This value is
     /// subject to change after every incoming message.
     ///
     /// # Examples
     ///
     /// ```
-    /// use fasters::codec::sofh::SofhParser;
+    /// use fasters::codec::sofh::Codec;
     ///
-    /// let parser = SofhParser::with_capacity(8192);
+    /// let parser = Codec::with_capacity(8192);
     /// assert_eq!(parser.capacity(), 8192);
     /// ```
     pub fn capacity(&self) -> usize {
@@ -79,7 +79,7 @@ impl SofhParser {
     }
 }
 
-impl<'a> FramelessDecoder<'a, Frame<'a>> for SofhParser {
+impl<'a> FramelessDecoder<'a, Frame<'a>> for Codec {
     type Error = DecodeError;
 
     fn supply_buffer(&mut self) -> &mut [u8] {
@@ -126,7 +126,7 @@ fn get_encoding_type(data: &[u8]) -> u16 {
     u16::from_be_bytes(data[4..HEADER_LENGTH].try_into().unwrap())
 }
 
-impl<'a> Decoder<'a, Frame<'a>> for SofhParser {
+impl<'a> Decoder<'a, Frame<'a>> for Codec {
     type Error = DecodeError;
 
     fn decode(&'a mut self, data: &'a [u8]) -> Result<Frame<'a>, Self::Error> {
@@ -143,7 +143,7 @@ impl<'a> Decoder<'a, Frame<'a>> for SofhParser {
     }
 }
 
-impl Encoder<(u16, &[u8])> for SofhParser {
+impl Encoder<(u16, &[u8])> for Codec {
     type Error = EncodeError;
 
     fn encode(
@@ -165,7 +165,7 @@ impl Encoder<(u16, &[u8])> for SofhParser {
     }
 }
 
-impl<'a> Encoder<Frame<'a>> for SofhParser {
+impl<'a> Encoder<Frame<'a>> for Codec {
     type Error = EncodeError;
 
     fn encode(
@@ -429,7 +429,7 @@ mod test {
     #[test]
     fn frame_too_short() {
         let bytes = vec![0u8, 0, 0, 4, 13, 37, 42];
-        let parser = SofhParser::new();
+        let parser = Codec::new();
         let mut frames = parser.frames_streamiter(&bytes[..]);
         let frame = frames.next();
         match frame {
@@ -441,7 +441,7 @@ mod test {
     #[test]
     fn frame_with_only_header_is_valid() {
         let bytes = vec![0u8, 0, 0, 6, 13, 37];
-        let parser = SofhParser::new();
+        let parser = Codec::new();
         let mut frames = parser.frames_streamiter(&bytes[..]);
         let frame = frames.next();
         match frame {

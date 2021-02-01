@@ -12,7 +12,7 @@ fn print_listening(addr: net::SocketAddr) {
 
 fn main() -> io::Result<()> {
     let fix_v44 = Dictionary::from_version(Version::Fix44);
-    let mut codec = (json::Json::new(fix_v44), TransPrettyPrint);
+    let mut codec = (json::Codec::new(fix_v44), TransPrettyPrint);
     let listener = net::TcpListener::bind("0.0.0.0:0")?;
     print_listening(listener.local_addr()?);
     let mut payload = vec![0u8; 8192];
