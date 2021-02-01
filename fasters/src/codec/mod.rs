@@ -3,7 +3,7 @@
 //! Encoders (*aka* codecs) must implement [`Encoding`](Encoding) or
 //! [`Codec`](Codec).
 //!
-//! - FIX tag-value: [`tagvalue::TagValue`].
+//! - FIX tag-value: [`tagvalue::Codec`].
 //! - FAST: [`fast::Fast`].
 //! - JSON: [`json::Json`].
 //! - SOFH: [`sofh::Codec`].

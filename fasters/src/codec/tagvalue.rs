@@ -23,34 +23,34 @@ use std::str;
 /// [^1]: [FIX TagValue Encoding: Online reference.](https://www.fixtrading.org/standards/tagvalue-online)
 ///
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
-pub struct TagValue {
+pub struct Codec {
     dict: Dictionary,
     buffer: Vec<u8>,
 }
 
-impl TagValue {
-    /// Builds a new `TagValue` encoding device with a FIX 4.4 dictionary.
+impl Codec {
+    /// Builds a new `Codec` encoding device with a FIX 4.4 dictionary.
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Creates a new codec for the tag-value format. `dict` is used to parse messages.
     pub fn with_dict(dict: Dictionary) -> Self {
-        TagValue {
+        Codec {
             dict,
             buffer: Vec::new(),
         }
     }
 }
 
-impl Default for TagValue {
-    /// New [`TagValue`] codecs with use FIX 4.4 by default.
+impl Default for Codec {
+    /// New [`Codec`] codecs with use FIX 4.4 by default.
     fn default() -> Self {
         Self::with_dict(Dictionary::from_version(Version::Fix44))
     }
 }
 
-impl<'a, Z> Decoder<'a, slr::Message> for (TagValue, Z)
+impl<'a, Z> Decoder<'a, slr::Message> for (Codec, Z)
 where
     Z: Transmuter,
 {
@@ -106,7 +106,7 @@ where
     }
 }
 
-impl Encoder<slr::Message> for TagValue {
+impl Encoder<slr::Message> for Codec {
     type Error = EncodeError;
 
     fn encode(
@@ -341,7 +341,7 @@ pub trait Transmuter: Clone {
     const SOH_SEPARATOR: u8 = 0x1;
 }
 
-/// A [`Transmuter`](Transmuter) for [`TagValue`] with default configuration
+/// A [`Transmuter`](Transmuter) for [`Codec`] with default configuration
 /// options.
 ///
 /// This transmuter uses [`ChecksumAlgoStd`] as a checksum algorithm and
@@ -354,7 +354,7 @@ impl Transmuter for TransStd {
     type TagLookup = TagLookupPredetermined;
 }
 
-/// A [`Transmuter`](Transmuter) for [`TagValue`] with `|` (ASCII 0x7C)
+/// A [`Transmuter`](Transmuter) for [`Codec`] with `|` (ASCII 0x7C)
 /// as a field separator.
 #[derive(Clone)]
 pub struct TransVerticalSlash;
@@ -366,7 +366,7 @@ impl Transmuter for TransVerticalSlash {
     const SOH_SEPARATOR: u8 = '|' as u8;
 }
 
-/// A [`Transmuter`](Transmuter) for [`TagValue`] with `^` (ASCII 0x5F)
+/// A [`Transmuter`](Transmuter) for [`Codec`] with `^` (ASCII 0x5F)
 /// as a field separator.
 #[derive(Clone)]
 pub struct TransCaret;
@@ -499,8 +499,8 @@ mod test {
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
-    fn encoder() -> (TagValue, impl Transmuter) {
-        (TagValue::new(), TransVerticalSlash)
+    fn encoder() -> (Codec, impl Transmuter) {
+        (Codec::new(), TransVerticalSlash)
     }
 
     #[test]
