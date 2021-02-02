@@ -1,5 +1,7 @@
 //! Code generation for Fasters.
 
+#![deny(missing_debug_implementations, clippy::useless_conversion)]
+
 use darling::{FromDeriveInput, FromField};
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
@@ -74,7 +76,7 @@ impl GeneratorContext {
                 }
             }
         };
-        gen.into()
+        gen
     }
 
     fn gen_set_field(&self) -> TokenStream2 {
@@ -89,7 +91,7 @@ impl GeneratorContext {
                 }
             }
         };
-        gen.into()
+        gen
     }
 
     fn gen_get_field(&self) -> TokenStream2 {
@@ -125,7 +127,7 @@ impl GeneratorContext {
                 }
             }
         };
-        gen.into()
+        gen
     }
 }
 
