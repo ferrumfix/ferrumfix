@@ -41,15 +41,15 @@ where
     /// let the caller know whether more bytes are needed or not.
     fn attempt_decoding(&mut self) -> Result<Poll, Self::Error>;
 
+    /// Returns the last message.
+    fn get_item(&'s self) -> M;
+
     fn decode_next_item(&'s mut self) -> Result<Option<M>, Self::Error> {
         self.attempt_decoding().map(move |t| match t {
             Poll::Ready => Some(self.get_item()),
             Poll::Incomplete => None,
         })
     }
-
-    /// Returns the last message.
-    fn get_item(&'s self) -> M;
 
     /// Returns a [`StreamIterator`] over the message frames
     /// produced by `source`.
