@@ -15,42 +15,14 @@
 //! specific encoding.
 use crate::utils::*;
 use std::io;
+use std::marker::PhantomData;
 
 pub mod fast;
 pub mod json;
 pub mod sofh;
 pub mod tagvalue;
 
-pub trait FramelessDecoder<'s, M>
-where
-    Self: Sized,
-{
-    type Error: 's;
-
-    /// Returns a mutable slice of bytes to accomodate for new input.
-    ///
-    /// The slice
-    /// can have any non-zero length, depending on how many bytes `self` believes
-    /// is a good guess. All bytes should be set to 0.
-    fn supply_buffer(&mut self) -> &mut [u8];
-
-    /// Validates the contents of the internal buffer and possibly caches the
-    /// resulting message. When successful, this method will return a [`Poll`] to
-    /// let the caller know whether more bytes are needed or not.
-    fn attempt_decoding(&mut self) -> Result<Poll, Self::Error>;
-
-    /// Returns the last message.
-    fn get_item(&'s self) -> M;
-
-    fn decode_next_item(&'s mut self) -> Result<Option<M>, Self::Error> {
-        self.attempt_decoding().map(move |t| match t {
-            Poll::Ready => Some(self.get_item()),
-            Poll::Incomplete => None,
-        })
-    }
-}
-
-pub trait FramelessRefDecoder<M>
+pub trait FramelessDecoder<M>
 where
     Self: Sized,
 {
@@ -67,6 +39,22 @@ where
     /// resulting message. When successful, this method will return a [`Poll`] to
     /// let the caller know whether more bytes are needed or not.
     fn attempt_decoding(&mut self) -> Result<Option<&M>, Self::Error>;
+
+    fn get(&self) -> &M {
+        unimplemented!()
+    }
+
+    fn frames_streamiter<R>(self, reader: R) -> Frames<Self, R, M, Self::Error>
+    where
+        R: io::Read,
+    {
+        Frames {
+            decoder: self,
+            source: reader,
+            message: PhantomData::default(),
+            err: None,
+        }
+    }
 }
 
 pub trait Decoder<M> {
@@ -96,17 +84,52 @@ pub trait Encoder<M> {
 /// on [`FramelessDecoder`].
 /// See its documentation for more.
 #[derive(Debug)]
-pub struct Frames<C, R, M, T> {
-    codec: C,
+pub struct Frames<D, R, M, E> {
+    decoder: D,
     source: R,
-    message: Option<M>,
-    err: Option<FramelessError<T>>,
+    message: PhantomData<M>,
+    err: Option<FramelessError<E>>,
+}
+
+impl<D, R, M, E> Frames<D, R, M, E>
+where
+    M: Sized,
+    D: FramelessDecoder<M, Error = E>,
+    R: io::Read,
+{
+    pub fn next(&mut self) -> Result<Option<&M>, &FramelessError<E>> {
+        loop {
+            let mut buffer = self.decoder.supply_buffer();
+            if let Err(e) = self.source.read(&mut buffer) {
+                self.err = Some(e.into());
+                break;
+            }
+            match self.decoder.attempt_decoding() {
+                Ok(Some(_)) => break,
+                Ok(None) => (),
+                Err(e) => {
+                    self.err = Some(FramelessError::Decoder(e));
+                    break;
+                }
+            }
+        }
+        match self.err {
+            Some(ref err) => Err(err),
+            None => Ok(Some(self.decoder.get())),
+        }
+    }
 }
 
 #[derive(Debug)]
 pub enum FramelessError<E> {
     Decoder(E),
     Io(io::Error),
+}
+
+impl<T> From<io::Error> for FramelessError<T> {
+    fn from(err: io::Error) -> Self {
+        FramelessError::Io(err)
+    }
 }
 
 /// Represents the progress that a codec device has made in regard to the current

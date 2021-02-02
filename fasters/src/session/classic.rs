@@ -295,7 +295,7 @@ mod acceptor {
                     msg.add_str(58, errs::production_env());
                     to.push(EventOutbound::Message(add_time_to_msg(msg)));
                     return;
-                },
+                }
                 _ => (),
             };
             // Compare seq. numbers.
@@ -385,7 +385,6 @@ mod acceptor {
         msg.add_str(52, timestamp.to_string());
         msg
     }
-
 
     #[derive(Clone, Debug, PartialEq, Eq)]
     enum State {
@@ -695,7 +694,8 @@ pub mod errs {
     }
 
     pub fn production_env() -> String {
-        "TestMessageIndicator(464) was set to 'Y' but the environment is a production environment".to_string()
+        "TestMessageIndicator(464) was set to 'Y' but the environment is a production environment"
+            .to_string()
     }
 
     pub fn missing_field(name: &str, tag: u32) -> String {

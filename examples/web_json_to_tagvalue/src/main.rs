@@ -106,6 +106,9 @@ mod test {
         req.set_body(EXAMPLE_JSON_MESSAGE);
         let mut response: Response = server.respond(req).await.unwrap();
         assert_eq!(response.status(), 200);
-        assert_eq!(response.body_string().await.unwrap(), EXAMPLE_TAGVALUE_MESSAGE);
+        assert_eq!(
+            response.body_string().await.unwrap(),
+            EXAMPLE_TAGVALUE_MESSAGE
+        );
     }
 }

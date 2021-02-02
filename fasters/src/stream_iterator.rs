@@ -46,11 +46,7 @@
 //! just a required `next` method, operations like `filter` would be impossible to define.
 #![doc(html_root_url = "https://docs.rs/streaming-iterator/0.1")]
 #![warn(missing_docs)]
-#![allow(
-    unused,
-    missing_debug_implementations,
-    clippy::useless_conversion
-)]
+#![allow(unused, missing_debug_implementations, clippy::useless_conversion)]
 
 use core::cmp;
 use core::marker::PhantomData;
@@ -222,9 +218,11 @@ pub trait StreamIterator {
         loop {
             self.advance();
             match self.get() {
-                Some(i) => if f(i) {
-                    break;
-                },
+                Some(i) => {
+                    if f(i) {
+                        break;
+                    }
+                }
                 None => break,
             }
         }
@@ -531,7 +529,10 @@ pub fn convert<I>(it: I) -> Convert<I::IntoIter>
 where
     I: IntoIterator,
 {
-    Convert { it: it.into_iter(), item: None }
+    Convert {
+        it: it.into_iter(),
+        item: None,
+    }
 }
 
 /// Turns an iterator of references into a streaming iterator.
@@ -973,10 +974,12 @@ where
     fn advance(&mut self) {
         loop {
             match self.it.next() {
-                Some(i) => if let Some(i) = (self.f)(i) {
-                    self.item = Some(i);
-                    break;
-                },
+                Some(i) => {
+                    if let Some(i) = (self.f)(i) {
+                        self.item = Some(i);
+                        break;
+                    }
+                }
                 None => {
                     self.item = None;
                     break;
@@ -1018,10 +1021,12 @@ where
     fn advance_back(&mut self) {
         loop {
             match self.it.next_back() {
-                Some(i) => if let Some(i) = (self.f)(i) {
-                    self.item = Some(i);
-                    break;
-                },
+                Some(i) => {
+                    if let Some(i) = (self.f)(i) {
+                        self.item = Some(i);
+                        break;
+                    }
+                }
                 None => {
                     self.item = None;
                     break;
@@ -1697,12 +1702,14 @@ where
             None
         } else {
             match self.it.next() {
-                Some(i) => if (self.f)(i) {
-                    Some(i)
-                } else {
-                    self.done = true;
-                    None
-                },
+                Some(i) => {
+                    if (self.f)(i) {
+                        Some(i)
+                    } else {
+                        self.done = true;
+                        None
+                    }
+                }
                 None => None,
             }
         }
@@ -2105,7 +2112,7 @@ mod test {
         test(it.clone().take_while(|&i| i < 5), &[0, 1, 2, 3]);
     }
 
-    fn _is_object_safe(_: &StreamIterator<Item = ()>) {}
+    fn _is_object_safe(_: &dyn StreamIterator<Item = ()>) {}
 
     #[test]
     fn empty_iterator() {

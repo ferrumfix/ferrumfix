@@ -22,11 +22,7 @@
 //! Please check out the [README](https://github.com/neysofu/fasters/) for more
 //! general information regarding Fasters.
 
-#![deny(
-    unused,
-    missing_debug_implementations,
-    clippy::useless_conversion
-)]
+#![deny(unused, missing_debug_implementations, clippy::useless_conversion)]
 
 pub mod app;
 pub mod codec;

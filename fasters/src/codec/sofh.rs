@@ -9,7 +9,7 @@
 //! Please refer to https://www.fixtrading.org/standards/fix-sofh/ for more
 //! information.
 
-use super::{Encoder, FramelessRefDecoder, Decoder};
+use super::{Decoder, Encoder, FramelessDecoder};
 use crate::utils::Buffer;
 use std::convert::TryInto;
 use std::default::Default;
@@ -58,46 +58,7 @@ impl BufCodec {
     }
 }
 
-//impl<'a> FramelessDecoder<'a, Frame<'a>> for BufCodec {
-//    type Error = DecodeError;
-//
-//    fn supply_buffer(&mut self) -> &mut [u8] {
-//        let buffer_len = self.buffer.len();
-//        let additional_capacity = match self.header {
-//            None => 6,
-//            Some((len, _)) => (len as i64 - buffer_len as i64).max(0),
-//        };
-//        for _ in 0..additional_capacity {
-//            self.buffer.push(0);
-//        }
-//        &mut self.buffer[buffer_len..]
-//    }
-//
-//    fn attempt_decoding(&mut self) -> Result<Poll, Self::Error> {
-//        match self.header {
-//            None => {
-//                if self.buffer.len() >= 6 {
-//                    self.header = Some((
-//                        get_message_length(&self.buffer[..]) as usize,
-//                        get_encoding_type(&self.buffer[..]),
-//                    ));
-//                }
-//                Ok(Poll::Incomplete)
-//            }
-//            Some((len, _)) if len < HEADER_LENGTH => {
-//                Err(DecodeError::InvalidMessageLength(len.try_into().unwrap()))
-//            }
-//            Some((len, _)) if len < self.buffer.len() => Ok(Poll::Incomplete),
-//            Some((_, _)) => Ok(Poll::Ready),
-//        }
-//    }
-//
-//    fn get_item(&'a self) -> Frame<'a> {
-//        Frame::new(self.header.unwrap().1, &self.buffer[..])
-//    }
-//}
-
-impl FramelessRefDecoder<Frame> for BufCodec {
+impl FramelessDecoder<Frame> for BufCodec {
     type Error = DecodeError;
 
     fn supply_buffer(&mut self) -> &mut [u8] {
@@ -132,6 +93,10 @@ impl FramelessRefDecoder<Frame> for BufCodec {
                 Ok(Some(&self.frameref))
             }
         }
+    }
+
+    fn get(&self) -> &Frame {
+        &self.frameref
     }
 }
 
@@ -378,6 +343,8 @@ impl std::cmp::Eq for EncodingType {}
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::codec::FramelessDecoder;
+    use crate::codec::FramelessError;
 
     fn _frames_with_increasing_length() -> impl Iterator<Item = Vec<u8>> {
         std::iter::once(()).enumerate().map(|(i, ())| {
@@ -468,19 +435,19 @@ mod test {
         }
     }
 
-    //#[test]
-    //fn frameless_decoder_returns_error_when_frame_has_len_lt_6() {
-    //    for len in 0..6 {
-    //        let header = encode_header(len, 0x4324);
-    //        let parser = BufCodec::new();
-    //        let mut frames = parser.frames_streamiter(&header[..]);
-    //        let frame = frames.next();
-    //        match frame {
-    //            Some(Err(FramelessError::Decoder(DecodeError::InvalidMessageLength(_)))) => (),
-    //            _ => panic!(),
-    //        }
-    //    }
-    //}
+    #[test]
+    fn frameless_decoder_returns_error_when_frame_has_len_lt_6() {
+        for len in 0..6 {
+            let header = encode_header(len, 0x4324);
+            let parser = BufCodec::new();
+            let mut frames = parser.frames_streamiter(&header[..]);
+            let frame = frames.next();
+            match frame {
+                Err(FramelessError::Decoder(DecodeError::InvalidMessageLength(_))) => (),
+                _ => panic!(),
+            }
+        }
+    }
 
     #[test]
     fn decoder_returns_error_when_frame_has_len_lt_6() {

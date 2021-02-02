@@ -4,7 +4,7 @@
 //! currently used by the FIX session layer.
 
 use crate::app::{slr, Version};
-use crate::codec::{Encoder, FramelessDecoder, Poll, Decoder};
+use crate::codec::{Decoder, Encoder, FramelessDecoder};
 use crate::dictionary::{BaseType, Dictionary};
 use crate::utils::{Buffer, BufferWriter};
 use std::fmt;
@@ -29,6 +29,7 @@ pub struct Codec {
     buffer: Vec<u8>,
     state: DecoderState,
     message: slr::Message,
+    body: Body,
 }
 
 impl Codec {
@@ -44,6 +45,7 @@ impl Codec {
             buffer: Vec::new(),
             state: DecoderState::Header,
             message: slr::Message::new(),
+            body: Body::new(&[]),
         }
     }
 }
@@ -55,7 +57,22 @@ enum DecoderState {
     Trailer,
 }
 
-impl<'a, Z> FramelessDecoder<'a, &'a [u8]> for (Codec, Z)
+#[derive(Debug)]
+pub struct Body {
+    len: usize,
+    data: *const u8,
+}
+
+impl Body {
+    fn new(data: &[u8]) -> Self {
+        Self {
+            len: data.len(),
+            data: data.as_ptr(),
+        }
+    }
+}
+
+impl<Z> FramelessDecoder<Body> for (Codec, Z)
 where
     Z: Transmuter,
 {
@@ -74,7 +91,7 @@ where
         &mut self.0.buffer[buffer_len..]
     }
 
-    fn attempt_decoding(&mut self) -> Result<Poll, Self::Error> {
+    fn attempt_decoding(&mut self) -> Result<Option<&Body>, Self::Error> {
         let mut field_iter: FieldIter<_, Z> = FieldIter {
             handle: &mut &self.0.buffer[..],
             checksum: Z::ChecksumAlgo::default(),
@@ -112,69 +129,13 @@ where
         };
         self.0.state = DecoderState::Body(0);
         self.0.state = DecoderState::Trailer;
-        unimplemented!()
+        Ok(Some(&self.0.body))
     }
 
-    fn get_item(&'a self) -> &'a [u8] {
-        unimplemented!()
+    fn get(&self) -> &Body {
+        &self.0.body
     }
 }
-
-//impl<'a, Z> Decoder<'a, slr::Message> for (Codec, Z)
-//where
-//    Z: Transmuter,
-//{
-//    type Error = DecodeError;
-//
-//    fn decode(&mut self, mut data: &'a [u8]) -> Result<slr::Message, Self::Error> {
-//        let mut field_iter: FieldIter<_, Z> = FieldIter {
-//            handle: &mut data,
-//            checksum: Z::ChecksumAlgo::default(),
-//            designator: Z::TagLookup::from_dict(&self.0.dict),
-//            is_last: false,
-//            data_length: 0,
-//        };
-//        let mut message = slr::Message::new();
-//        {
-//            // `BeginString(8)`.
-//            let f = field_iter.next().ok_or(Error::Eof)??;
-//            if f.tag == 8 {
-//                message.fields.insert(f.tag, f.value);
-//            } else {
-//                return Err(Error::InvalidStandardHeader);
-//            }
-//        };
-//        {
-//            // `BodyLength(9)`.
-//            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
-//            if f.tag == 9 {
-//                message.fields.insert(f.tag, f.value);
-//            } else {
-//                return Err(Error::InvalidStandardHeader);
-//            }
-//        };
-//        {
-//            // `MsgType(35)`.
-//            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
-//            if f.tag == 35 {
-//                message.fields.insert(f.tag, f.value);
-//            } else {
-//                return Err(Error::InvalidStandardHeader);
-//            }
-//        };
-//        let mut last_tag = 35;
-//        for f_result in field_iter {
-//            let f = f_result?;
-//            message.fields.insert(f.tag, f.value);
-//            last_tag = f.tag;
-//        }
-//        if last_tag == 10 {
-//            Ok(message)
-//        } else {
-//            Err(Error::InvalidStandardTrailer)
-//        }
-//    }
-//}
 
 impl<Z> Decoder<slr::Message> for (Codec, Z)
 where
