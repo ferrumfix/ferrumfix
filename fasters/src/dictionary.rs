@@ -757,10 +757,10 @@ mod quickfix {
             let field = FieldData::definition_from_node(&mut self.dict, node);
             self.dict
                 .symbol_table
-                .insert(PKey::FieldByName(field.name.clone()).into(), iid);
+                .insert(PKey::FieldByName(field.name.clone()), iid);
             self.dict
                 .symbol_table
-                .insert(PKey::FieldByTag(field.tag as u32).into(), iid);
+                .insert(PKey::FieldByTag(field.tag as u32), iid);
             self.dict.fields.push(field);
         }
 
