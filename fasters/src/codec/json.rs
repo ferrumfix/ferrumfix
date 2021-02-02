@@ -1,6 +1,5 @@
 //! JSON encoding for FIX support.
 
-use super::TransmuterPattern;
 use crate::app::slr;
 use crate::codec::*;
 use crate::Dictionary;
@@ -16,7 +15,10 @@ pub trait Transmuter: Clone {
     /// performance loss is expected.
     ///
     /// This is turned off be default.
-    const PRETTY_PRINT: bool = false;
+    #[inline(always)]
+    fn pretty_print(&self) -> bool {
+        false
+    }
 }
 
 /// A pretty-printer [`Transmuter`].
@@ -24,10 +26,10 @@ pub trait Transmuter: Clone {
 pub struct TransPrettyPrint;
 
 impl Transmuter for TransPrettyPrint {
-    const PRETTY_PRINT: bool = true;
+    fn pretty_print(&self) -> bool {
+        true
+    }
 }
-
-impl<T> TransmuterPattern for T where T: Transmuter {}
 
 pub struct Codec {
     dictionaries: HashMap<String, Dictionary>,
@@ -37,9 +39,7 @@ impl Codec {
     pub fn new(dict: Dictionary) -> Self {
         let mut dictionaries = HashMap::new();
         dictionaries.insert(dict.get_version().to_string(), dict);
-        Codec {
-            dictionaries,
-        }
+        Codec { dictionaries }
     }
 
     fn decode_field(
@@ -206,7 +206,7 @@ where
             "Trailer": map_trailer,
         });
         let mut writer = BufferWriter::new(buffer);
-        if Z::PRETTY_PRINT {
+        if self.1.pretty_print() {
             serde_json::to_writer_pretty(&mut writer, &value).unwrap();
         } else {
             serde_json::to_writer(&mut writer, &value).unwrap();

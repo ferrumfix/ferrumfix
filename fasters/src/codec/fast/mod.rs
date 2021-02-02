@@ -1,10 +1,10 @@
 //! FIX Adapted for Streaming (FAST) support.
 
 use crate::app::slr;
+use crate::codec::{Decoder, Encoder};
 use crate::dictionary::Dictionary;
-use bitvec::vec::BitVec;
-use crate::codec::{Encoder, Decoder};
 use crate::utils::Buffer;
+use bitvec::vec::BitVec;
 use codec::decode_stop_bit_bitvec;
 use errors::Error;
 use std::collections::HashMap;

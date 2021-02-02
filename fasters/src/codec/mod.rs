@@ -23,7 +23,10 @@ pub mod json;
 pub mod sofh;
 pub mod tagvalue;
 
-pub trait FramelessDecoder<'s, M> where Self: Sized {
+pub trait FramelessDecoder<'s, M>
+where
+    Self: Sized,
+{
     type Error: 's;
 
     /// Returns a mutable slice of bytes to accomodate for new input.
@@ -120,7 +123,7 @@ where
                 Err(e) => {
                     self.err = Some(FramelessError::Decoder(e));
                     break;
-                },
+                }
                 Ok(Poll::Incomplete) => (),
                 Ok(Poll::Ready) => break,
             }
@@ -129,9 +132,7 @@ where
 
     fn get(&'s self) -> Option<Self::Item> {
         match &self.err {
-            Some(e) => {
-                Some(Err(&e))
-            }
+            Some(e) => Some(Err(&e)),
             None => Some(Ok(self.codec.get_item())),
         }
     }
@@ -147,5 +148,3 @@ pub enum Poll {
     /// decoding.
     Incomplete,
 }
-
-pub trait TransmuterPattern: Clone {}
