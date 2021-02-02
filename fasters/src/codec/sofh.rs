@@ -105,7 +105,7 @@ fn get_encoding_type(data: &[u8]) -> u16 {
 impl<'a> Decoder<'a, Frame<'a>> for Codec {
     type Error = DecodeError;
 
-    fn decode(&'a mut self, data: &'a [u8]) -> Result<Frame<'a>, Self::Error> {
+    fn decode(&mut self, data: &'a [u8]) -> Result<Frame<'a>, Self::Error> {
         let err = || DecodeError::InvalidMessageLength(data.len() as u32);
         if data.len() < HEADER_LENGTH {
             return Err(err());

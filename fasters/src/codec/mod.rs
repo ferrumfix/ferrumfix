@@ -66,14 +66,16 @@ pub trait FramelessDecoder<'s, M> where Self: Sized {
 pub trait Decoder<'a, M> {
     type Error;
 
-    fn decode(&'a mut self, data: &'a [u8]) -> Result<M, Self::Error>;
+    fn decode(&mut self, data: &'a [u8]) -> Result<M, Self::Error>;
 }
 
 pub trait Encoder<M> {
     type Error;
 
+    /// Encodes `message` on `buffer`.
     fn encode(&mut self, buffer: impl Buffer, message: &M) -> Result<usize, Self::Error>;
 
+    /// Allocates a buffer on the heap and encodes `message` to it.
     fn encode_to_vec(&mut self, message: &M) -> Result<Vec<u8>, Self::Error> {
         let mut buffer = Vec::<u8>::new();
         self.encode(&mut buffer, message)?;
@@ -84,14 +86,9 @@ pub trait Encoder<M> {
 /// A [`StreamIterator`] that iterates over all the messages that come from a
 /// [reader](std::io::Read).
 ///
-/// This `struct` is created by the [`items`](Codec::items) method on [`Codec`].
+/// This `struct` is created by the [`frames`](FramelessDecoder::frames) method
+/// on [`FramelessDecoder`].
 /// See its documentation for more.
-pub struct ItemsIter<C, R, M> {
-    codec: C,
-    source: R,
-    phantom: PhantomData<M>,
-}
-
 pub struct Frames<C, R, M, T> {
     codec: C,
     source: R,

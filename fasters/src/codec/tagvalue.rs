@@ -120,7 +120,7 @@ where
 {
     type Error = DecodeError;
 
-    fn decode(&'a mut self, mut data: &'a [u8]) -> Result<slr::Message, Self::Error> {
+    fn decode(&mut self, mut data: &'a [u8]) -> Result<slr::Message, Self::Error> {
         let mut field_iter: FieldIter<_, Z> = FieldIter {
             handle: &mut data,
             checksum: Z::ChecksumAlgo::default(),

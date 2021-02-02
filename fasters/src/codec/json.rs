@@ -110,7 +110,7 @@ where
 {
     type Error = DecodeError;
 
-    fn decode(&'s mut self, data: &'s [u8]) -> Result<slr::Message, Self::Error> {
+    fn decode(&mut self, data: &'s [u8]) -> Result<slr::Message, Self::Error> {
         let value: serde_json::Value =
             serde_json::from_reader(data).map_err(|_| Self::Error::Syntax)?;
         let header = value
