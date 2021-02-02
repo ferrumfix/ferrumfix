@@ -1,0 +1,9 @@
+[package]
+name = "web_json_to_tagvalue"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+fasters = { path = "../../fasters" }
+tide = "0.16"
+tokio = "1"

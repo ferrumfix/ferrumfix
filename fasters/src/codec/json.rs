@@ -31,7 +31,7 @@ impl Transmuter for TransPrettyPrint {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Codec {
     dictionaries: HashMap<String, Dictionary>,
 }
