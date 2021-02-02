@@ -1,6 +1,6 @@
 //! Starts an HTTP server on any open port and listens for JSON FIX messages.
 
-use fasters::app::Version;
+use fasters::app::{self, Version};
 use fasters::codec::json;
 use fasters::codec::tagvalue;
 use fasters::codec::{Decoder, Encoder};
@@ -24,7 +24,7 @@ fn server() -> tide::Server<State> {
 /// case, JSON (en/de)coding devices.
 #[derive(Clone)]
 struct State {
-    codec: json::Codec,
+    codec: json::Codec<app::slr::Message>,
     transmuter: json::TransPrettyPrint,
 }
 

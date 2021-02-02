@@ -6,9 +6,21 @@ use std::fmt;
 pub mod fix42;
 pub mod slr;
 
+pub trait FieldsIterator {
+    fn next(&mut self) -> Option<(u32, &slr::FixFieldValue)>;
+}
+
 pub trait TsrMessage {
     fn get_field(&self, msg_type: i32) -> slr::FixFieldValue;
     fn set_field(&mut self, msg_type: i32, val: slr::FixFieldValue);
+}
+
+pub trait TsrMessageRef: Default
+//where
+//    for<'a> &'a Self: Iterator<Item = slr::FixFieldValue>,
+{
+    fn get_field(&self, msg_type: u32) -> Option<&slr::FixFieldValue>;
+    fn set_field(&mut self, msg_type: u32, val: slr::FixFieldValue);
 }
 
 /// Enumeration type for all existing revisions of FIX.

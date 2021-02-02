@@ -1,6 +1,7 @@
 //! JSON encoding for FIX support.
 
 use crate::app::slr;
+use crate::app::TsrMessageRef;
 use crate::codec::*;
 use crate::Dictionary;
 use serde_json::json;
@@ -32,22 +33,26 @@ impl Transmuter for TransPrettyPrint {
 }
 
 #[derive(Debug, Clone)]
-pub struct Codec {
+pub struct Codec<T> {
     dictionaries: HashMap<String, Dictionary>,
-    message: slr::Message,
+    message: T,
 }
 
-impl Codec {
+impl<T> Codec<T>
+where
+    T: TsrMessageRef,
+{
     pub fn new(dict: Dictionary) -> Self {
         let mut dictionaries = HashMap::new();
         dictionaries.insert(dict.get_version().to_string(), dict);
         Self {
             dictionaries,
-            message: slr::Message::new(),
+            message: T::default(),
         }
     }
 
     fn decode_field(
+        &self,
         dictionary: &Dictionary,
         key: &str,
         value: &serde_json::Value,
@@ -61,7 +66,7 @@ impl Codec {
                 serde_json::Value::Array(values) => {
                     let mut group = Vec::new();
                     for item in values {
-                        group.push(Self::decode_component_block(dictionary, item)?);
+                        group.push(self.decode_component_block(dictionary, item)?);
                     }
                     Ok((field.tag() as u32, slr::FixFieldValue::Group(group)))
                 }
@@ -73,18 +78,19 @@ impl Codec {
     }
 
     fn decode_component_block(
+        &self,
         dictionary: &Dictionary,
         value: &serde_json::Value,
     ) -> Result<HashMap<i64, slr::FixFieldValue>, DecodeError> {
         let mut group = HashMap::new();
         for item in value.as_object().unwrap() {
-            let (tag, field) = Self::decode_field(dictionary, item.0, item.1)?;
+            let (tag, field) = self.decode_field(dictionary, item.0, item.1)?;
             group.insert(tag as i64, field);
         }
         Ok(group)
     }
 
-    fn translate(dict: &Dictionary, field: &slr::FixFieldValue) -> serde_json::Value {
+    fn translate(&self, dict: &Dictionary, field: &slr::FixFieldValue) -> serde_json::Value {
         match field {
             slr::FixFieldValue::String(c) => serde_json::Value::String(c.to_string()),
             slr::FixFieldValue::Group(array) => {
@@ -97,7 +103,7 @@ impl Codec {
                             .ok_or(DecodeError::InvalidData)
                             .unwrap();
                         let field_name = field.name().to_string();
-                        let field_value = Self::translate(dict, item.1);
+                        let field_value = self.translate(dict, item.1);
                         map.insert(field_name, field_value);
                     }
                     values.push(serde_json::Value::Object(map));
@@ -109,13 +115,14 @@ impl Codec {
     }
 }
 
-impl<Z> Decoder<slr::Message> for (Codec, Z)
+impl<Z, T> Decoder<T> for (Codec<T>, Z)
 where
+    T: TsrMessageRef,
     Z: Transmuter,
 {
     type Error = DecodeError;
 
-    fn decode(&mut self, data: &[u8]) -> Result<&slr::Message, Self::Error> {
+    fn decode(&mut self, data: &[u8]) -> Result<&T, Self::Error> {
         let value: serde_json::Value =
             serde_json::from_reader(data).map_err(|_| Self::Error::Syntax)?;
         let header = value
@@ -143,17 +150,17 @@ where
             .dictionaries
             .get(field_begin_string)
             .ok_or(Self::Error::InvalidMsgType)?;
-        let mut message = slr::Message::new();
+        let mut message = T::default();
         for item in header.iter().chain(body).chain(trailer) {
-            let (tag, field) = Codec::decode_field(dictionary, item.0, item.1)?;
-            message.add_field(tag, field);
+            let (tag, field) = self.0.decode_field(dictionary, item.0, item.1)?;
+            message.set_field(tag, field);
         }
         self.0.message = message;
         Ok(&self.0.message)
     }
 }
 
-impl<Z> Encoder<slr::Message> for (Codec, Z)
+impl<Z> Encoder<slr::Message> for (Codec<slr::Message>, Z)
 where
     Z: Transmuter,
 {
@@ -175,7 +182,7 @@ where
             };
         let component_std_header = dictionary.get_component("StandardHeader").unwrap();
         let component_std_traler = dictionary.get_component("StandardTrailer").unwrap();
-        let msg_type = if let Some(slr::FixFieldValue::String(s)) = message.fields.get(&35) {
+        let msg_type = if let Some(slr::FixFieldValue::String(s)) = message.get_field(35) {
             s
         } else {
             return Err(Self::Error::Dictionary);
@@ -188,7 +195,7 @@ where
                 .get_field(*field_tag as u32)
                 .ok_or(Self::Error::Dictionary)?;
             let field_name = field.name().to_string();
-            let field_value = Codec::translate(dictionary, field_value);
+            let field_value = self.0.translate(dictionary, field_value);
             if component_std_header.contains_field(&field) {
                 map_header
                     .as_object_mut()
@@ -289,7 +296,7 @@ mod test {
         Dictionary::from_version(crate::app::Version::Fix44)
     }
 
-    fn encoder_fix44() -> (Codec, impl Transmuter) {
+    fn encoder_fix44() -> (Codec<slr::Message>, impl Transmuter) {
         (Codec::new(dict_fix44()), TransPrettyPrint)
     }
 

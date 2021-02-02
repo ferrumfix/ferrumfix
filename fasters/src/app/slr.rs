@@ -1,6 +1,7 @@
 //! A schema-less, [`HashMap`]-backed internal representation for FIX messages.
 
 use crate::app::slr;
+use crate::app::TsrMessageRef;
 use std::collections::HashMap;
 use std::io;
 use std::time::SystemTime;
@@ -100,9 +101,27 @@ impl Field {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Message {
     pub fields: HashMap<i64, FixFieldValue>,
+}
+
+impl TsrMessageRef for Message {
+    fn get_field(&self, msg_type: u32) -> Option<&slr::FixFieldValue> {
+        self.fields.get(&(msg_type as i64))
+    }
+
+    fn set_field(&mut self, msg_type: u32, val: slr::FixFieldValue) {
+        self.fields.insert(msg_type as i64, val);
+    }
+}
+
+impl<'a> Iterator for &'a Message {
+    type Item = slr::FixFieldValue;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        None
+    }
 }
 
 impl Message {
