@@ -109,50 +109,7 @@ impl Codec {
     }
 }
 
-impl<'s, Z> Decoder<'s, slr::Message> for (Codec, Z)
-where
-    Z: Transmuter,
-{
-    type Error = DecodeError;
-
-    fn decode(&mut self, data: &'s [u8]) -> Result<slr::Message, Self::Error> {
-        let value: serde_json::Value =
-            serde_json::from_reader(data).map_err(|_| Self::Error::Syntax)?;
-        let header = value
-            .get("Header")
-            .and_then(|v| v.as_object())
-            .ok_or(Self::Error::Schema)?;
-        let body = value
-            .get("Body")
-            .and_then(|v| v.as_object())
-            .ok_or(Self::Error::Schema)?;
-        let trailer = value
-            .get("Trailer")
-            .and_then(|v| v.as_object())
-            .ok_or(Self::Error::Schema)?;
-        let _field_msg_type = header // TODO: field presence checks.
-            .get("MsgType")
-            .and_then(|v| v.as_str())
-            .ok_or(Self::Error::Schema)?;
-        let field_begin_string = header
-            .get("BeginString")
-            .and_then(|v| v.as_str())
-            .ok_or(Self::Error::Schema)?;
-        let dictionary = self
-            .0
-            .dictionaries
-            .get(field_begin_string)
-            .ok_or(Self::Error::InvalidMsgType)?;
-        let mut message = slr::Message::new();
-        for item in header.iter().chain(body).chain(trailer) {
-            let (tag, field) = Codec::decode_field(dictionary, item.0, item.1)?;
-            message.add_field(tag, field);
-        }
-        Ok(message)
-    }
-}
-
-impl<Z> RefDecoder<slr::Message> for (Codec, Z)
+impl<Z> Decoder<slr::Message> for (Codec, Z)
 where
     Z: Transmuter,
 {
@@ -338,11 +295,12 @@ mod test {
 
     #[test]
     fn decode_then_decode() {
+        let mut decoder = encoder_fix44();
         let mut encoder = encoder_fix44();
         let json_value_before: Value = from_str(MESSAGE_SIMPLE).unwrap();
-        let message = Decoder::decode(&mut encoder, &mut MESSAGE_SIMPLE.as_bytes()).unwrap();
+        let message = Decoder::decode(&mut decoder, &mut MESSAGE_SIMPLE.as_bytes()).unwrap();
         let mut buffer = Vec::<u8>::new();
-        Encoder::encode(&mut encoder, &mut buffer, &message).unwrap();
+        Encoder::encode(&mut encoder, &mut buffer, message).unwrap();
         let json_value_after: Value = from_slice(&buffer[..]).unwrap();
         assert_eq!(json_value_before, json_value_after);
     }

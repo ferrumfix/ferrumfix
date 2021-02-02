@@ -69,13 +69,7 @@ where
     fn attempt_decoding(&mut self) -> Result<Option<&M>, Self::Error>;
 }
 
-pub trait Decoder<'a, M> {
-    type Error;
-
-    fn decode(&mut self, data: &'a [u8]) -> Result<M, Self::Error>;
-}
-
-pub trait RefDecoder<M> {
+pub trait Decoder<M> {
     type Error;
 
     fn decode(&mut self, data: &[u8]) -> Result<&M, Self::Error>;

@@ -49,9 +49,9 @@ async fn serve_hello_world(_req: tide::Request<State>) -> tide::Result {
 }
 
 async fn serve_json_relay(mut req: tide::Request<State>) -> tide::Result {
+    let mut decoder = (req.state().codec.clone(), req.state().transmuter.clone());
     let message = {
         let body: Vec<u8> = req.body_bytes().await?;
-        let mut decoder = (req.state().codec.clone(), req.state().transmuter.clone());
         decoder.decode(&body[..]).unwrap()
     };
     let mut buffer = Vec::new();

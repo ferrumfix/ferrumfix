@@ -4,8 +4,7 @@
 //! currently used by the FIX session layer.
 
 use crate::app::{slr, Version};
-use crate::codec::{Decoder, Encoder, FramelessDecoder, Poll};
-use crate::codec;
+use crate::codec::{Encoder, FramelessDecoder, Poll, Decoder};
 use crate::dictionary::{BaseType, Dictionary};
 use crate::utils::{Buffer, BufferWriter};
 use std::fmt;
@@ -121,63 +120,63 @@ where
     }
 }
 
-impl<'a, Z> Decoder<'a, slr::Message> for (Codec, Z)
-where
-    Z: Transmuter,
-{
-    type Error = DecodeError;
+//impl<'a, Z> Decoder<'a, slr::Message> for (Codec, Z)
+//where
+//    Z: Transmuter,
+//{
+//    type Error = DecodeError;
+//
+//    fn decode(&mut self, mut data: &'a [u8]) -> Result<slr::Message, Self::Error> {
+//        let mut field_iter: FieldIter<_, Z> = FieldIter {
+//            handle: &mut data,
+//            checksum: Z::ChecksumAlgo::default(),
+//            designator: Z::TagLookup::from_dict(&self.0.dict),
+//            is_last: false,
+//            data_length: 0,
+//        };
+//        let mut message = slr::Message::new();
+//        {
+//            // `BeginString(8)`.
+//            let f = field_iter.next().ok_or(Error::Eof)??;
+//            if f.tag == 8 {
+//                message.fields.insert(f.tag, f.value);
+//            } else {
+//                return Err(Error::InvalidStandardHeader);
+//            }
+//        };
+//        {
+//            // `BodyLength(9)`.
+//            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+//            if f.tag == 9 {
+//                message.fields.insert(f.tag, f.value);
+//            } else {
+//                return Err(Error::InvalidStandardHeader);
+//            }
+//        };
+//        {
+//            // `MsgType(35)`.
+//            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+//            if f.tag == 35 {
+//                message.fields.insert(f.tag, f.value);
+//            } else {
+//                return Err(Error::InvalidStandardHeader);
+//            }
+//        };
+//        let mut last_tag = 35;
+//        for f_result in field_iter {
+//            let f = f_result?;
+//            message.fields.insert(f.tag, f.value);
+//            last_tag = f.tag;
+//        }
+//        if last_tag == 10 {
+//            Ok(message)
+//        } else {
+//            Err(Error::InvalidStandardTrailer)
+//        }
+//    }
+//}
 
-    fn decode(&mut self, mut data: &'a [u8]) -> Result<slr::Message, Self::Error> {
-        let mut field_iter: FieldIter<_, Z> = FieldIter {
-            handle: &mut data,
-            checksum: Z::ChecksumAlgo::default(),
-            designator: Z::TagLookup::from_dict(&self.0.dict),
-            is_last: false,
-            data_length: 0,
-        };
-        let mut message = slr::Message::new();
-        {
-            // `BeginString(8)`.
-            let f = field_iter.next().ok_or(Error::Eof)??;
-            if f.tag == 8 {
-                message.fields.insert(f.tag, f.value);
-            } else {
-                return Err(Error::InvalidStandardHeader);
-            }
-        };
-        {
-            // `BodyLength(9)`.
-            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
-            if f.tag == 9 {
-                message.fields.insert(f.tag, f.value);
-            } else {
-                return Err(Error::InvalidStandardHeader);
-            }
-        };
-        {
-            // `MsgType(35)`.
-            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
-            if f.tag == 35 {
-                message.fields.insert(f.tag, f.value);
-            } else {
-                return Err(Error::InvalidStandardHeader);
-            }
-        };
-        let mut last_tag = 35;
-        for f_result in field_iter {
-            let f = f_result?;
-            message.fields.insert(f.tag, f.value);
-            last_tag = f.tag;
-        }
-        if last_tag == 10 {
-            Ok(message)
-        } else {
-            Err(Error::InvalidStandardTrailer)
-        }
-    }
-}
-
-impl<Z> codec::RefDecoder<slr::Message> for (Codec, Z)
+impl<Z> Decoder<slr::Message> for (Codec, Z)
 where
     Z: Transmuter,
 {
@@ -633,7 +632,8 @@ mod test {
     #[test]
     fn can_parse_simple_message() {
         let msg = "8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127|";
-        let result = encoder().decode(&mut msg.as_bytes());
+        let mut codec = encoder();
+        let result = codec.decode(&mut msg.as_bytes());
         assert!(result.is_ok());
     }
 
@@ -651,7 +651,8 @@ mod test {
     #[test]
     fn assortment_of_random_messages_is_ok() {
         for msg in RANDOM_MESSAGES {
-            let result = encoder().decode(&mut msg.as_bytes());
+            let mut codec = encoder();
+            let result = codec.decode(&mut msg.as_bytes());
             assert!(result.is_ok());
         }
     }
@@ -659,28 +660,32 @@ mod test {
     #[test]
     fn new_order_single_without_final_separator() {
         let msg = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
-        let result = encoder().decode(&mut msg.as_bytes());
+        let mut codec = encoder();
+        let result = codec.decode(&mut msg.as_bytes());
         assert_eq!(result, Err(Error::Eof));
     }
 
     #[test]
     fn message_must_end_with_separator() {
         let msg = "8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127";
-        let result = encoder().decode(&mut msg.as_bytes());
+        let mut codec = encoder();
+        let result = codec.decode(&mut msg.as_bytes());
         assert_eq!(result, Err(Error::Eof));
     }
 
     #[test]
     fn message_without_checksum() {
         let msg = "8=FIX.4.4|9=251|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|";
-        let result = encoder().decode(&mut msg.as_bytes());
+        let mut codec = encoder();
+        let result = codec.decode(&mut msg.as_bytes());
         assert_eq!(result, Err(Error::InvalidStandardTrailer));
     }
 
     #[test]
     fn message_without_standard_header() {
         let msg = "35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=000|";
-        let result = encoder().decode(&mut msg.as_bytes());
+        let mut codec = encoder();
+        let result = codec.decode(&mut msg.as_bytes());
         assert_eq!(result, Err(Error::InvalidStandardHeader));
     }
 

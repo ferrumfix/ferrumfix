@@ -9,7 +9,7 @@
 //! Please refer to https://www.fixtrading.org/standards/fix-sofh/ for more
 //! information.
 
-use super::{Encoder, FramelessRefDecoder, RefDecoder};
+use super::{Encoder, FramelessRefDecoder, Decoder};
 use crate::utils::Buffer;
 use std::convert::TryInto;
 use std::default::Default;
@@ -187,7 +187,7 @@ impl Frame {
     }
 }
 
-impl RefDecoder<Frame> for Codec {
+impl Decoder<Frame> for Codec {
     type Error = DecodeError;
 
     fn decode(&mut self, data: &[u8]) -> Result<&Frame, Self::Error> {
