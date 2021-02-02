@@ -95,7 +95,7 @@ pub struct Template {
 }
 
 impl Template {
-    fn new(xml_document: &str) -> Result<Template, StaticError> {
+    pub fn new(xml_document: &str) -> Result<Template, StaticError> {
         let document = roxmltree::Document::parse(xml_document).unwrap();
         let container = document.root().first_element_child().unwrap();
         let root = container.first_element_child().unwrap();
@@ -167,7 +167,7 @@ impl Template {
         })
     }
 
-    fn xml_presence_attribute_to_bool(attribute: &str) -> bool {
+    fn _xml_presence_attribute_to_bool(attribute: &str) -> bool {
         match attribute {
             "true" => true,
             "false" => false,

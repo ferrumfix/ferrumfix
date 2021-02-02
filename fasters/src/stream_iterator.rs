@@ -46,7 +46,6 @@
 //! just a required `next` method, operations like `filter` would be impossible to define.
 #![doc(html_root_url = "https://docs.rs/streaming-iterator/0.1")]
 #![warn(missing_docs)]
-#![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "std")]
 extern crate core;
@@ -56,6 +55,7 @@ pub trait StreamIterator<'a> {
     /// The type of the elements being iterated over.
     type Item;
 
+    /// Advances `self` to the next element.
     fn advance(&mut self);
 
     /// Returns a reference to the current element of the iterator.

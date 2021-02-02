@@ -92,6 +92,7 @@ pub trait Encoder<M> {
 /// This `struct` is created by the [`frames`](FramelessDecoder::frames) method
 /// on [`FramelessDecoder`].
 /// See its documentation for more.
+#[derive(Debug)]
 pub struct Frames<C, R, M, T> {
     codec: C,
     source: R,
@@ -140,7 +141,7 @@ where
 
 /// Represents the progress that a codec device has made in regard to the current
 /// message.
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Poll {
     /// The message has been fully decoded and is available in the internal buffer.
     Ready,

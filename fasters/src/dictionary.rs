@@ -35,6 +35,7 @@ type InternalId = u32;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum PKey {
+    #[allow(dead_code)]
     Abbreviation(String),
     CategoryByName(String),
     ComponentByName(String),
@@ -322,6 +323,7 @@ struct AbbreviatonData {
 /// pattern, or name. Abbreviation data is mostly meant for documentation
 /// purposes, but in general it can have other uses as well, e.g. FIXML field
 /// naming.
+#[derive(Debug)]
 pub struct Abbreviation<'a>(&'a Dictionary, &'a AbbreviatonData);
 
 impl<'a> Abbreviation<'a> {
@@ -396,6 +398,7 @@ impl<'a> Component<'a> {
 
 // FIXME: this is FIXML-specific stuff.
 #[derive(Clone, Debug, PartialEq)]
+#[allow(dead_code)]
 pub enum ComponentType {
     BlockRepeating,
     Block,
@@ -420,6 +423,7 @@ struct DatatypeData {
     // TODO: 'XML'.
 }
 
+#[derive(Debug)]
 pub struct Datatype<'a>(&'a Dictionary, &'a DatatypeData);
 
 impl<'a> Datatype<'a> {
@@ -467,6 +471,7 @@ struct FieldData {
 /// specific business meaning as described by the FIX specifications. The data
 /// domain of a [`Field`] is either a [`Datatype`] or a "code set", i.e.
 /// enumeration.
+#[derive(Debug)]
 pub struct Field<'a>(&'a Dictionary, &'a FieldData);
 
 fn str_to_basetype(s: &str) -> BaseType {
@@ -558,6 +563,7 @@ struct LayoutItemData {
 pub struct LayoutItem<'a>(&'a Dictionary, &'a LayoutItemData);
 
 /// The kind of element contained in a [`Message`].
+#[derive(Debug)]
 pub enum LayoutItemKind<'a> {
     Component(Component<'a>),
     Group(),
@@ -622,6 +628,7 @@ struct MessageData {
 
 /// A [`Message`] is a unit of information sent on the wire between
 /// counterparties. Every [`Message`] is composed of fields and/or components.
+#[derive(Debug)]
 pub struct Message<'a>(&'a Dictionary, &'a MessageData);
 
 impl<'a> Message<'a> {

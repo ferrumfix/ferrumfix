@@ -23,6 +23,7 @@ use std::str;
 /// [^1]: [FIX TagValue Encoding: Online reference.](https://www.fixtrading.org/standards/tagvalue-online)
 ///
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
+#[derive(Debug)]
 pub struct Codec {
     dict: Dictionary,
     buffer: Vec<u8>,
@@ -45,6 +46,7 @@ impl Codec {
     }
 }
 
+#[derive(Debug)]
 enum DecoderState {
     Header,
     Body(usize),
@@ -106,6 +108,8 @@ where
                 return Err(Error::InvalidStandardHeader);
             }
         };
+        self.0.state = DecoderState::Body(0);
+        self.0.state = DecoderState::Trailer;
         unimplemented!()
     }
 
@@ -225,6 +229,7 @@ pub trait TagLookup {
 
 /// A [`TagLookup`] that only allows a specific revision of the standard, like
 /// most venues do.
+#[derive(Debug)]
 pub struct TagLookupPredetermined {
     current_dict: Rc<Dictionary>,
 }
@@ -280,6 +285,7 @@ pub enum TagLookupPredeterminedError {
     InvalidCstmApplVerID,
 }
 
+#[derive(Debug)]
 pub enum TypeInfo {
     Int,
     Float,
@@ -334,7 +340,7 @@ where
                 self.checksum.roll(&[Z::SOH_SEPARATOR]);
                 self.handle.read_exact(&mut buffer[0..1]).unwrap();
             }
-            Ok(basetype) => {
+            Ok(_basetype) => {
                 buffer = vec![];
                 loop {
                     if self.handle.read(&mut buf).unwrap() == 0 {
@@ -349,7 +355,7 @@ where
                 }
                 self.checksum.roll(&buffer[..]);
             }
-            Err(ref e) => (),
+            Err(_) => (),
         };
         let datatype = datatype.unwrap();
         let field_value = field_value(datatype, &buffer[..]).unwrap();
@@ -405,12 +411,12 @@ pub trait Transmuter: Clone {
     const SOH_SEPARATOR: u8 = 0x1;
 }
 
-/// A [`Transmuter`](Transmuter) for [`Codec`] with default configuration
+/// A [`Transmuter`] for [`Codec`] with default configuration
 /// options.
 ///
 /// This transmuter uses [`ChecksumAlgoStd`] as a checksum algorithm and
 /// [`TagLookupPredetermined`] for its dynamic tag lookup logic.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TransStd;
 
 impl Transmuter for TransStd {
@@ -420,7 +426,7 @@ impl Transmuter for TransStd {
 
 /// A [`Transmuter`](Transmuter) for [`Codec`] with `|` (ASCII 0x7C)
 /// as a field separator.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TransVerticalSlash;
 
 impl Transmuter for TransVerticalSlash {
@@ -432,7 +438,7 @@ impl Transmuter for TransVerticalSlash {
 
 /// A [`Transmuter`](Transmuter) for [`Codec`] with `^` (ASCII 0x5F)
 /// as a field separator.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TransCaret;
 
 impl Transmuter for TransCaret {
@@ -518,9 +524,6 @@ impl ChecksumAlgo for ChecksumAlgoTrusting {
 
 type DecodeError = Error;
 type EncodeError = Error;
-
-type ResultDecode<T> = Result<T, DecodeError>;
-type ResultEncode<T> = Result<T, EncodeError>;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {

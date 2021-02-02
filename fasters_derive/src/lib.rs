@@ -4,7 +4,6 @@ use darling::{FromDeriveInput, FromField};
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use std::convert::TryFrom;
 
 #[proc_macro_derive(TsrMessage, attributes(fasters))]
 pub fn derive_tsr_message(input: TokenStream) -> TokenStream {

@@ -37,6 +37,7 @@ const V1_DRAFT_RECOMMENDED_CIPHERSUITES_PSK_ONLY: &[&str] = &[
     "TLS_DHE_PSK_WITH_AES_256_CBC_SHA384",
 ];
 
+#[derive(Debug, Copy, Clone)]
 pub enum Version {
     V1Draft,
 }
@@ -134,6 +135,7 @@ impl Version {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct FixuaConfig<'a> {
     pub cert: &'a Path,
     pub key: &'a Path,

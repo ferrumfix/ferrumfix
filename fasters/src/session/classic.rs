@@ -124,6 +124,7 @@ impl Default for SeqNumbers {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum SeqNumberError {
     Recover,
     TooLow,
@@ -245,7 +246,7 @@ mod acceptor {
             self.seq_numbers
         }
 
-        async fn feed_incoming_message(&mut self, message: slr::Message) {
+        pub async fn feed_incoming_message(&mut self, message: slr::Message) {
             let msg_type = message.msg_type();
             match (self.config.environment, message.test_indicator()) {
                 (Environment::ProductionAllowTest, Some(true)) => (),
@@ -347,6 +348,7 @@ mod acceptor {
         Disconnected,
         /// The FIX Session is over, we just need to terminate the transport layer
         /// connection.
+        #[allow(dead_code)]
         Terminate,
         /// The FIX Session is completely over. Nothing left to do.
         Terminated,
@@ -376,18 +378,9 @@ mod acceptor {
 
 mod initiator {
     use super::*;
-    use futures::select;
     use futures::FutureExt;
     use futures::StreamExt;
     use std::time::Instant;
-
-    enum State {
-        NoActiveSession,
-        LogonInitiated,
-        ActiveSession,
-        LogoffReceived,
-        Retransmit,
-    }
 
     #[derive(Debug, Clone)]
     pub struct Configuration {
@@ -397,6 +390,7 @@ mod initiator {
         acceptable_heartbeat: HeartbeatRule,
     }
 
+    #[derive(Debug, Clone)]
     pub enum ConfigurationError {
         CompIDNotAlphanumeric,
     }
@@ -431,13 +425,6 @@ mod initiator {
             self.acceptable_heartbeat = rule;
             self
         }
-    }
-
-    struct Session<S: Stream<Item = slr::Message>> {
-        initiator: Initiator,
-        next_heartbeat: tokio::time::Sleep,
-        end_of_trading_hours: tokio::time::Sleep,
-        events: S,
     }
 
     //impl<S: Stream<Item = slr::Message> + Unpin> Stream for Session<S> {
@@ -483,15 +470,15 @@ mod initiator {
             self,
             events: impl Stream<Item = slr::Message> + Unpin,
         ) -> impl Stream<Item = slr::Message> {
-            let mut events = events.into_future();
+            let _events = events.into_future();
             let heartbeat_sleep = tokio::time::sleep(Duration::from_secs(1)).fuse();
             tokio::pin!(heartbeat_sleep);
-            loop {
-                select! {
-                    () = heartbeat_sleep => (),
-                    _event = events => (),
-                }
-            }
+            //loop {
+            //    select! {
+            //        () = heartbeat_sleep => (),
+            //        _event = events => (),
+            //    }
+            //}
             futures::stream::empty()
             //Session {
             //    events,
@@ -507,7 +494,7 @@ mod initiator {
             Instant::now()
         }
 
-        fn initiate(&mut self) -> slr::Message {
+        pub fn initiate(&mut self) -> slr::Message {
             let mut msg = slr::Message::new();
             msg.add_str(35, "A".to_string());
             msg.add_str(49, self.config.company_id_from.clone());
@@ -558,7 +545,7 @@ mod initiator {
             unimplemented!()
         }
 
-        async fn feed_event(&mut self, event: slr::Message) {
+        pub fn feed_event(&mut self, event: slr::Message) {
             match event.msg_type() {
                 Some("A") => (),
                 Some("0") => (),
@@ -577,7 +564,7 @@ mod initiator {
             futures_lite::stream::empty()
         }
 
-        fn notify<'a>(
+        pub fn notify<'a>(
             &'a mut self,
             _event: slr::Message,
         ) -> impl Iterator<Item = EventOutbound> + 'a {
@@ -586,6 +573,7 @@ mod initiator {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum SessionRejectReason {
     InvalidTagNumber,
     RequiredTagMissing,
@@ -637,7 +625,7 @@ impl From<u32> for SessionRejectReason {
 }
 
 /// Error messages generation.
-mod errs {
+pub mod errs {
     pub fn heartbeat_exact(secs: u64) -> String {
         format!("Invalid HeartBtInt(108), expected value {} seconds", secs)
     }

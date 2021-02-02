@@ -22,7 +22,7 @@ pub trait Transmuter: Clone {
 }
 
 /// A pretty-printer [`Transmuter`].
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TransPrettyPrint;
 
 impl Transmuter for TransPrettyPrint {
@@ -31,6 +31,7 @@ impl Transmuter for TransPrettyPrint {
     }
 }
 
+#[derive(Debug)]
 pub struct Codec {
     dictionaries: HashMap<String, Dictionary>,
 }

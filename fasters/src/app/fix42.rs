@@ -7,7 +7,7 @@ pub mod components {
 
     /// Component information: StandardHeader
     #[fasters(msg_type = "TODO")]
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     pub struct StandardHeader {
         #[fasters(tag = 8, rust_type = "", opt = false)]
         pub begin_string: String,
@@ -67,7 +67,7 @@ pub mod components {
 
     /// Component information: StandardTrailer
     #[fasters(msg_type = "TODO")]
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     pub struct StandardTrailer {
         #[fasters(tag = 93, rust_type = "", opt = true)]
         pub signature_length: ::std::option::Option<usize>,
@@ -82,7 +82,7 @@ pub mod messages {
     use super::*;
 
     /// Message information: Heartbeat
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "0")]
     pub struct Heartbeat {
         #[fasters(tag = 112, rust_type = "", opt = true)]
@@ -90,7 +90,7 @@ pub mod messages {
     }
 
     /// Message information: TestRequest
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "1")]
     pub struct TestRequest {
         #[fasters(tag = 112, rust_type = "", opt = false)]
@@ -98,7 +98,7 @@ pub mod messages {
     }
 
     /// Message information: ResendRequest
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "2")]
     pub struct ResendRequest {
         #[fasters(tag = 7, rust_type = "", opt = false)]
@@ -108,7 +108,7 @@ pub mod messages {
     }
 
     /// Message information: Reject
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "3")]
     pub struct Reject {
         #[fasters(tag = 45, rust_type = "", opt = false)]
@@ -128,7 +128,7 @@ pub mod messages {
     }
 
     /// Message information: SequenceReset
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "4")]
     pub struct SequenceReset {
         #[fasters(tag = 123, rust_type = "", opt = true)]
@@ -138,7 +138,7 @@ pub mod messages {
     }
 
     /// Message information: Logout
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "5")]
     pub struct Logout {
         #[fasters(tag = 58, rust_type = "", opt = true)]
@@ -150,7 +150,7 @@ pub mod messages {
     }
 
     /// Message information: IOI
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "6")]
     pub struct IOI {
         #[fasters(tag = 23, rust_type = "", opt = false)]
@@ -228,7 +228,7 @@ pub mod messages {
     }
 
     /// Message information: Advertisement
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "7")]
     pub struct Advertisement {
         #[fasters(tag = 2, rust_type = "", opt = false)]
@@ -302,7 +302,7 @@ pub mod messages {
     }
 
     /// Message information: ExecutionReport
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "8")]
     pub struct ExecutionReport {
         #[fasters(tag = 37, rust_type = "", opt = false)]
@@ -490,7 +490,7 @@ pub mod messages {
     }
 
     /// Message information: OrderCancelReject
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "9")]
     pub struct OrderCancelReject {
         #[fasters(tag = 37, rust_type = "", opt = false)]
@@ -526,7 +526,7 @@ pub mod messages {
     }
 
     /// Message information: Logon
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "A")]
     pub struct Logon {
         #[fasters(tag = 98, rust_type = "", opt = false)]
@@ -544,7 +544,7 @@ pub mod messages {
     }
 
     /// Message information: News
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "B")]
     pub struct News {
         #[fasters(tag = 42, rust_type = "", opt = true)]
@@ -566,7 +566,7 @@ pub mod messages {
     }
 
     /// Message information: Email
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "C")]
     pub struct Email {
         #[fasters(tag = 164, rust_type = "", opt = false)]
@@ -592,7 +592,7 @@ pub mod messages {
     }
 
     /// Message information: NewOrderSingle
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "D")]
     pub struct NewOrderSingle {
         #[fasters(tag = 11, rust_type = "", opt = false)]
@@ -736,7 +736,7 @@ pub mod messages {
     }
 
     /// Message information: NewOrderList
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "E")]
     pub struct NewOrderList {
         #[fasters(tag = 66, rust_type = "", opt = false)]
@@ -764,7 +764,7 @@ pub mod messages {
     }
 
     /// Message information: OrderCancelRequest
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "F")]
     pub struct OrderCancelRequest {
         #[fasters(tag = 41, rust_type = "", opt = false)]
@@ -840,7 +840,7 @@ pub mod messages {
     }
 
     /// Message information: OrderCancelReplaceRequest
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "G")]
     pub struct OrderCancelReplaceRequest {
         #[fasters(tag = 37, rust_type = "", opt = true)]
@@ -982,7 +982,7 @@ pub mod messages {
     }
 
     /// Message information: OrderStatusRequest
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "H")]
     pub struct OrderStatusRequest {
         #[fasters(tag = 37, rust_type = "", opt = true)]
@@ -1038,7 +1038,7 @@ pub mod messages {
     }
 
     /// Message information: Allocation
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "J")]
     pub struct Allocation {
         #[fasters(tag = 70, rust_type = "", opt = false)]
@@ -1130,7 +1130,7 @@ pub mod messages {
     }
 
     /// Message information: ListCancelRequest
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "K")]
     pub struct ListCancelRequest {
         #[fasters(tag = 66, rust_type = "", opt = false)]
@@ -1146,7 +1146,7 @@ pub mod messages {
     }
 
     /// Message information: ListExecute
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "L")]
     pub struct ListExecute {
         #[fasters(tag = 66, rust_type = "", opt = false)]
@@ -1166,7 +1166,7 @@ pub mod messages {
     }
 
     /// Message information: ListStatusRequest
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "M")]
     pub struct ListStatusRequest {
         #[fasters(tag = 66, rust_type = "", opt = false)]
@@ -1180,7 +1180,7 @@ pub mod messages {
     }
 
     /// Message information: ListStatus
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "N")]
     pub struct ListStatus {
         #[fasters(tag = 66, rust_type = "", opt = false)]
@@ -1206,7 +1206,7 @@ pub mod messages {
     }
 
     /// Message information: AllocationInstructionAck
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "P")]
     pub struct AllocationInstructionAck {
         #[fasters(tag = 109, rust_type = "", opt = true)]
@@ -1232,7 +1232,7 @@ pub mod messages {
     }
 
     /// Message information: DontKnowTrade
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "Q")]
     pub struct DontKnowTrade {
         #[fasters(tag = 37, rust_type = "", opt = false)]
@@ -1298,7 +1298,7 @@ pub mod messages {
     }
 
     /// Message information: QuoteRequest
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "R")]
     pub struct QuoteRequest {
         #[fasters(tag = 131, rust_type = "", opt = false)]
@@ -1306,7 +1306,7 @@ pub mod messages {
     }
 
     /// Message information: Quote
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "S")]
     pub struct Quote {
         #[fasters(tag = 131, rust_type = "", opt = true)]
@@ -1388,7 +1388,7 @@ pub mod messages {
     }
 
     /// Message information: SettlementInstructions
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "T")]
     pub struct SettlementInstructions {
         #[fasters(tag = 162, rust_type = "", opt = false)]
@@ -1466,7 +1466,7 @@ pub mod messages {
     }
 
     /// Message information: MarketDataRequest
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "V")]
     pub struct MarketDataRequest {
         #[fasters(tag = 262, rust_type = "", opt = false)]
@@ -1482,7 +1482,7 @@ pub mod messages {
     }
 
     /// Message information: MarketDataSnapshotFullRefresh
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "W")]
     pub struct MarketDataSnapshotFullRefresh {
         #[fasters(tag = 262, rust_type = "", opt = true)]
@@ -1534,7 +1534,7 @@ pub mod messages {
     }
 
     /// Message information: MarketDataIncrementalRefresh
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "X")]
     pub struct MarketDataIncrementalRefresh {
         #[fasters(tag = 262, rust_type = "", opt = true)]
@@ -1542,7 +1542,7 @@ pub mod messages {
     }
 
     /// Message information: MarketDataRequestReject
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "Y")]
     pub struct MarketDataRequestReject {
         #[fasters(tag = 262, rust_type = "", opt = false)]
@@ -1558,7 +1558,7 @@ pub mod messages {
     }
 
     /// Message information: QuoteCancel
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "Z")]
     pub struct QuoteCancel {
         #[fasters(tag = 131, rust_type = "", opt = true)]
@@ -1574,7 +1574,7 @@ pub mod messages {
     }
 
     /// Message information: QuoteStatusRequest
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "a")]
     pub struct QuoteStatusRequest {
         #[fasters(tag = 117, rust_type = "", opt = true)]
@@ -1624,7 +1624,7 @@ pub mod messages {
     }
 
     /// Message information: QuoteAcknowledgement
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "b")]
     pub struct QuoteAcknowledgement {
         #[fasters(tag = 131, rust_type = "", opt = true)]
@@ -1644,7 +1644,7 @@ pub mod messages {
     }
 
     /// Message information: SecurityDefinitionRequest
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "c")]
     pub struct SecurityDefinitionRequest {
         #[fasters(tag = 320, rust_type = "", opt = false)]
@@ -1702,7 +1702,7 @@ pub mod messages {
     }
 
     /// Message information: SecurityDefinition
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "d")]
     pub struct SecurityDefinition {
         #[fasters(tag = 320, rust_type = "", opt = false)]
@@ -1764,7 +1764,7 @@ pub mod messages {
     }
 
     /// Message information: SecurityStatusRequest
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "e")]
     pub struct SecurityStatusRequest {
         #[fasters(tag = 324, rust_type = "", opt = false)]
@@ -1816,7 +1816,7 @@ pub mod messages {
     }
 
     /// Message information: SecurityStatus
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "f")]
     pub struct SecurityStatus {
         #[fasters(tag = 324, rust_type = "", opt = true)]
@@ -1894,7 +1894,7 @@ pub mod messages {
     }
 
     /// Message information: TradingSessionStatusRequest
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "g")]
     pub struct TradingSessionStatusRequest {
         #[fasters(tag = 335, rust_type = "", opt = false)]
@@ -1910,7 +1910,7 @@ pub mod messages {
     }
 
     /// Message information: TradingSessionStatus
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "h")]
     pub struct TradingSessionStatus {
         #[fasters(tag = 335, rust_type = "", opt = true)]
@@ -1946,7 +1946,7 @@ pub mod messages {
     }
 
     /// Message information: MassQuote
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "i")]
     pub struct MassQuote {
         #[fasters(tag = 131, rust_type = "", opt = true)]
@@ -1962,7 +1962,7 @@ pub mod messages {
     }
 
     /// Message information: BusinessMessageReject
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "j")]
     pub struct BusinessMessageReject {
         #[fasters(tag = 45, rust_type = "", opt = true)]
@@ -1982,7 +1982,7 @@ pub mod messages {
     }
 
     /// Message information: BidRequest
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "k")]
     pub struct BidRequest {
         #[fasters(tag = 390, rust_type = "", opt = true)]
@@ -2042,7 +2042,7 @@ pub mod messages {
     }
 
     /// Message information: BidResponse
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "l")]
     pub struct BidResponse {
         #[fasters(tag = 390, rust_type = "", opt = true)]
@@ -2052,7 +2052,7 @@ pub mod messages {
     }
 
     /// Message information: ListStrikePrice
-    #[derive(TsrMessage)]
+    #[derive(Debug, Clone, TsrMessage)]
     #[fasters(msg_type = "m")]
     pub struct ListStrikePrice {
         #[fasters(tag = 66, rust_type = "", opt = false)]

@@ -15,6 +15,7 @@ pub trait Buffer {
     fn len(&self) -> usize;
 }
 
+#[derive(Debug)]
 pub struct GrowableBuffer<'a> {
     pub bytes: &'a mut Vec<u8>,
 }
@@ -111,6 +112,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct BufferWriter<B: Buffer> {
     buffer: B,
 }

@@ -12,6 +12,7 @@ pub trait TsrMessage {
 }
 
 /// Enumeration type for all existing revisions of FIX.
+#[derive(Copy, Debug, Clone)]
 #[non_exhaustive]
 pub enum Version {
     Fix40,

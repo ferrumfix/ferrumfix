@@ -22,6 +22,11 @@
 //! Please check out the [README](https://github.com/neysofu/fasters/) for more
 //! general information regarding Fasters.
 
+#![deny(
+    unused,
+    missing_debug_implementations,
+)]
+
 pub mod app;
 pub mod codec;
 mod dictionary;
@@ -30,9 +35,9 @@ mod fix_codegen;
 pub mod session;
 mod stream_iterator;
 pub mod transport;
-pub(crate) mod utils;
+pub mod utils;
 
-pub use dictionary::Dictionary;
+pub use dictionary::{MsgType, Dictionary};
 pub use fasters_derive::*;
 pub use fix_codegen::codegen;
 pub use stream_iterator::StreamIterator;

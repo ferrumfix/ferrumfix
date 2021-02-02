@@ -1,10 +1,6 @@
 use crate::dictionary::{Component, Datatype, Dictionary, Field, LayoutItem, LayoutItemKind};
 use inflector::Inflector;
 
-fn crate_name() -> &'static str {
-    "crate"
-}
-
 pub fn codegen(dict: &Dictionary) -> String {
     let component_defs: Vec<String> = dict
         .components()
@@ -59,7 +55,7 @@ impl Dictionary {
         format!(
             r#"
             /// Message information: {msg_name}
-            #[derive(TsrMessage)]
+            #[derive(Debug, Clone, TsrMessage)]
             #[fasters(msg_type = "{msg_type}")]
             pub struct {msg_name} {{
                 {fields}
@@ -84,7 +80,7 @@ impl Dictionary {
             r#"
             /// Component information: {msg_name}
             #[fasters(msg_type = "TODO")]
-            #[derive(TsrMessage)]
+            #[derive(Debug, Clone, TsrMessage)]
             pub struct {msg_name} {{
                 {fields}
             }}
@@ -164,7 +160,7 @@ mod docs {
         )
     }
 
-    pub fn gen_message() -> String {
+    pub fn _gen_message() -> String {
         "# Message information\n\n".to_string()
     }
 }

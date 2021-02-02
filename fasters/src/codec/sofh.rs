@@ -19,6 +19,7 @@ use std::io;
 const HEADER_LENGTH: usize = 6;
 
 /// A parser for Simple Open Framing Header (SOFH) -encoded messages.
+#[derive(Debug)]
 pub struct BufCodec {
     buffer: Vec<u8>,
     header: Option<(usize, u16)>,
@@ -102,7 +103,7 @@ fn get_encoding_type(data: &[u8]) -> u16 {
     u16::from_be_bytes(data[4..HEADER_LENGTH].try_into().unwrap())
 }
 
-#[derive(Default, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Codec;
 
 impl<'a> Decoder<'a, Frame<'a>> for Codec {
@@ -141,6 +142,7 @@ impl<'a> Encoder<Frame<'a>> for Codec {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum EncodeError {
     TooLong(usize),
 }
@@ -323,7 +325,7 @@ mod test {
     use crate::codec::FramelessError;
     use crate::StreamIterator;
 
-    fn frames_with_increasing_length() -> impl Iterator<Item = Vec<u8>> {
+    fn _frames_with_increasing_length() -> impl Iterator<Item = Vec<u8>> {
         std::iter::once(()).enumerate().map(|(i, ())| {
             let header = encode_header(i as u32 + 6, 0);
             let mut buffer = Vec::new();
@@ -351,8 +353,8 @@ mod test {
         }
     }
 
-    fn increasing_frames_as_read() -> impl std::io::Read {
-        let stream = frames_with_increasing_length()
+    fn _increasing_frames_as_read() -> impl std::io::Read {
+        let stream = _frames_with_increasing_length()
             .map(|vec| vec.into_iter())
             .flatten();
         Reader { source: stream }

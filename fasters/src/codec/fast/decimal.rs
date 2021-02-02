@@ -31,6 +31,7 @@ pub struct Decimal {
     mantissa: i64,
 }
 
+#[derive(Debug)]
 pub enum Error {
     InvalidScale,
 }
@@ -245,10 +246,6 @@ impl Decimal {
         self.mantissa().is_positive()
     }
 
-    fn exp_is_safe(exp: i32) -> bool {
-        (-16..=16).contains(&exp)
-    }
-
     /// Raises `self` to the power of `exp`, using exponentiation by squaring.
     ///
     /// # Examples
@@ -443,7 +440,7 @@ impl fmt::Display for Decimal {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RoundingStrategy {
     BankersRounding,
     RoundHalfUp,

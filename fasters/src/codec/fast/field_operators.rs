@@ -29,6 +29,7 @@ pub trait FieldOperator {
 
 /// The constant operator specifies that the value of a field will always be the
 /// same, as initialized with `new`.
+#[derive(Debug)]
 pub struct Constant<T> {
     value: T,
 }
@@ -62,6 +63,7 @@ where
 /// the field has optional presence, the delta value can be NULL. In that case
 /// the value of the field is considered absent. Otherwise the field is obtained
 /// by combining the delta value with a base value.
+#[derive(Debug)]
 pub struct Delta<T, U> {
     prev: Option<T>,
     delta: U,
@@ -95,6 +97,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct Copy<T> {
     prev: Option<T>,
 }
@@ -127,6 +130,7 @@ where
 }
 
 /// No field operator at all.
+#[derive(Debug)]
 pub struct None<T>(PhantomData<T>);
 
 impl<T> Default for None<T> {

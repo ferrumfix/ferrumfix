@@ -8,7 +8,6 @@ use bitvec::vec::BitVec;
 use codec::decode_stop_bit_bitvec;
 use errors::Error;
 use std::collections::HashMap;
-use std::io;
 use template::Template;
 
 mod codec;
@@ -17,11 +16,12 @@ mod errors;
 mod field_operators;
 mod template;
 
-pub use codec::Codec;
+pub use codec::{Codec, PresenceMap};
 pub use decimal::Decimal;
 pub use field_operators::*;
 pub use template::*;
 
+#[derive(Clone, Debug)]
 pub struct Fast {
     dict: Dictionary,
     templates: HashMap<String, Template>,
@@ -105,7 +105,7 @@ impl<'a> Decoder<'a, slr::Message> for Fast {
 impl Encoder<slr::Message> for Fast {
     type Error = Error;
 
-    fn encode(&mut self, buffer: impl Buffer, message: &slr::Message) -> Result<usize, Error> {
+    fn encode(&mut self, buffer: impl Buffer, _message: &slr::Message) -> Result<usize, Error> {
         let _presence_by_field: BitVec = BitVec::new();
         Ok(buffer.len())
     }
