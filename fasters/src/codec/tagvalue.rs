@@ -3,7 +3,7 @@
 //! This is the original encoding used for FIX messages and also the encoding
 //! currently used by the FIX session layer.
 
-use crate::app::{slr, Version};
+use crate::app::{slr, Version, TsrMessageRef};
 use crate::codec::{Decoder, Encoder, FramelessDecoder};
 use crate::dictionary::{BaseType, Dictionary};
 use crate::utils::{Buffer, BufferWriter};
@@ -24,15 +24,15 @@ use std::str;
 ///
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
 #[derive(Debug)]
-pub struct Codec {
+pub struct Codec<T> {
     dict: Dictionary,
     buffer: Vec<u8>,
     state: DecoderState,
-    message: slr::Message,
+    message: T,
     body: Body,
 }
 
-impl Codec {
+impl<T> Codec<T> where T: TsrMessageRef {
     /// Builds a new `Codec` encoding device with a FIX 4.4 dictionary.
     pub fn new() -> Self {
         Self::with_dict(Dictionary::from_version(Version::Fix44))
@@ -44,7 +44,7 @@ impl Codec {
             dict,
             buffer: Vec::new(),
             state: DecoderState::Header,
-            message: slr::Message::new(),
+            message: T::default(),
             body: Body::new(&[]),
         }
     }
@@ -72,7 +72,7 @@ impl Body {
     }
 }
 
-impl<Z> FramelessDecoder<Body> for (Codec, Z)
+impl<Z> FramelessDecoder<Body> for (Codec<slr::Message>, Z)
 where
     Z: Transmuter,
 {
@@ -137,13 +137,14 @@ where
     }
 }
 
-impl<Z> Decoder<slr::Message> for (Codec, Z)
+impl<Z, T> Decoder<T> for (Codec<T>, Z)
 where
+    T: TsrMessageRef,
     Z: Transmuter,
 {
     type Error = DecodeError;
 
-    fn decode(&mut self, mut data: &[u8]) -> Result<&slr::Message, Self::Error> {
+    fn decode(&mut self, mut data: &[u8]) -> Result<&T, Self::Error> {
         let mut field_iter: FieldIter<_, Z> = FieldIter {
             handle: &mut data,
             checksum: Z::ChecksumAlgo::default(),
@@ -151,12 +152,12 @@ where
             is_last: false,
             data_length: 0,
         };
-        let mut message = slr::Message::new();
+        let mut message = T::default();
         {
             // `BeginString(8)`.
             let f = field_iter.next().ok_or(Error::Eof)??;
             if f.tag == 8 {
-                message.fields.insert(f.tag, f.value);
+                message.set_field(f.tag as u32, f.value);
             } else {
                 return Err(Error::InvalidStandardHeader);
             }
@@ -165,7 +166,7 @@ where
             // `BodyLength(9)`.
             let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
             if f.tag == 9 {
-                message.fields.insert(f.tag, f.value);
+                message.set_field(f.tag as u32, f.value);
             } else {
                 return Err(Error::InvalidStandardHeader);
             }
@@ -174,7 +175,7 @@ where
             // `MsgType(35)`.
             let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
             if f.tag == 35 {
-                message.fields.insert(f.tag, f.value);
+                message.set_field(f.tag as u32, f.value);
             } else {
                 return Err(Error::InvalidStandardHeader);
             }
@@ -182,7 +183,7 @@ where
         let mut last_tag = 35;
         for f_result in field_iter {
             let f = f_result?;
-            message.fields.insert(f.tag, f.value);
+            message.set_field(f.tag as u32, f.value);
             last_tag = f.tag;
         }
         if last_tag == 10 {
@@ -194,7 +195,7 @@ where
     }
 }
 
-impl Encoder<slr::Message> for Codec {
+impl Encoder<slr::Message> for Codec<slr::Message> {
     type Error = EncodeError;
 
     fn encode(
@@ -586,7 +587,7 @@ mod test {
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
-    fn encoder() -> (Codec, impl Transmuter) {
+    fn encoder() -> (Codec<slr::Message>, impl Transmuter) {
         (Codec::new(), TransVerticalSlash)
     }
 
