@@ -19,12 +19,12 @@ use std::io;
 const HEADER_LENGTH: usize = 6;
 
 /// A parser for Simple Open Framing Header (SOFH) -encoded messages.
-pub struct Codec {
+pub struct BufCodec {
     buffer: Vec<u8>,
     header: Option<(usize, u16)>,
 }
 
-impl Codec {
+impl BufCodec {
     /// Creates a new SOFH parser with default buffer size.
     pub fn new() -> Self {
         Self::with_capacity(1024)
@@ -33,7 +33,7 @@ impl Codec {
     /// Creates a new [`Codec`](Codec) with a buffer large enough to
     /// hold `capacity` amounts of bytes without reallocating.
     pub fn with_capacity(capacity: usize) -> Self {
-        Codec {
+        Self {
             buffer: Vec::with_capacity(capacity),
             header: None,
         }
@@ -55,7 +55,7 @@ impl Codec {
     }
 }
 
-impl<'a> FramelessDecoder<'a, Frame<'a>> for Codec {
+impl<'a> FramelessDecoder<'a, Frame<'a>> for BufCodec {
     type Error = DecodeError;
 
     fn supply_buffer(&mut self) -> &mut [u8] {
@@ -102,6 +102,9 @@ fn get_encoding_type(data: &[u8]) -> u16 {
     u16::from_be_bytes(data[4..HEADER_LENGTH].try_into().unwrap())
 }
 
+#[derive(Default, Clone)]
+pub struct Codec;
+
 impl<'a> Decoder<'a, Frame<'a>> for Codec {
     type Error = DecodeError;
 
@@ -119,38 +122,22 @@ impl<'a> Decoder<'a, Frame<'a>> for Codec {
     }
 }
 
-impl Encoder<(u16, &[u8])> for Codec {
-    type Error = EncodeError;
-
-    fn encode(
-        &mut self,
-        mut buffer: impl Buffer,
-        message: &(u16, &[u8]),
-    ) -> std::result::Result<usize, Self::Error> {
-        let body_len: u32 = message
-            .1
-            .len()
-            .try_into()
-            .map_err(|_| Self::Error::TooLong(message.1.len()))?;
-        let message_length = body_len.to_be_bytes();
-        let encoding_type = message.0.to_be_bytes();
-        buffer.extend_from_slice(&message_length[..]);
-        buffer.extend_from_slice(&encoding_type[..]);
-        buffer.extend_from_slice(message.1);
-        Ok(buffer.len())
-    }
-}
-
 impl<'a> Encoder<Frame<'a>> for Codec {
     type Error = EncodeError;
 
     fn encode(
         &mut self,
-        buffer: impl Buffer,
-        message: &Frame,
+        mut buffer: impl Buffer,
+        message: &Frame<'a>,
     ) -> std::result::Result<usize, Self::Error> {
-        let message = (message.encoding_type(), message.payload());
-        Encoder::encode(self, buffer, &message)
+        let len = message.payload().len();
+        let body_len: u32 = len.try_into().map_err(|_| Self::Error::TooLong(len))?;
+        let message_length = body_len.to_be_bytes();
+        let encoding_type = message.encoding_type().to_be_bytes();
+        buffer.extend_from_slice(&message_length[..]);
+        buffer.extend_from_slice(&encoding_type[..]);
+        buffer.extend_from_slice(message.payload());
+        Ok(buffer.len())
     }
 }
 
@@ -429,7 +416,7 @@ mod test {
     fn frameless_decoder_returns_error_when_frame_has_len_lt_6() {
         for len in 0..6 {
             let header = encode_header(len, 0x4324);
-            let parser = Codec::new();
+            let parser = BufCodec::new();
             let mut frames = parser.frames_streamiter(&header[..]);
             let frame = frames.next();
             match frame {
@@ -443,7 +430,7 @@ mod test {
     fn decoder_returns_error_when_frame_has_len_lt_6() {
         for len in 0..6 {
             let header = encode_header(len, 0x4324);
-            let mut parser = Codec::new();
+            let mut parser = Codec::default();
             let frame = parser.decode(&header[..]);
             match frame {
                 Err(DecodeError::InvalidMessageLength(_)) => (),
@@ -455,7 +442,7 @@ mod test {
     #[test]
     fn decoder_accepts_frame_with_len_6() {
         let header = encode_header(6, 0x4324);
-        let mut parser = Codec::new();
+        let mut parser = Codec::default();
         let frame = parser.decode(&header[..]);
         if frame.is_err() {
             panic!();

@@ -1,4 +1,4 @@
-use fasters::codec::sofh::Codec;
+use fasters::codec::sofh::BufCodec;
 
 use std::io;
 use std::net;
@@ -14,7 +14,7 @@ fn main() -> io::Result<()> {
     let listener = net::TcpListener::bind("0.0.0.0:0")?;
     print_listening(listener.local_addr()?);
     let _stream = listener.accept()?.0;
-    let _parser = Codec::new();
+    let _parser = BufCodec::new();
     //let mut frames = parser.read_frames(stream);
     //while let Some(frame_result) = frames.next() {
     //    let frame = frame_result.as_ref().unwrap();
