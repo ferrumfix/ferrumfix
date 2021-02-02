@@ -143,7 +143,7 @@ fn get_encoding_type(data: &[u8]) -> u16 {
     u16::from_be_bytes(data[4..HEADER_LENGTH].try_into().unwrap())
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Codec {
     frame: Frame,
 }
@@ -162,7 +162,7 @@ impl Default for Codec {
 
 /// A non-owning message frame, with an internal pointer to the buffer that
 /// contains the raw data.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Frame {
     encoding_type: u16,
     len: usize,
