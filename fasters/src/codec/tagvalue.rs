@@ -5,6 +5,7 @@
 
 use crate::app::{slr, Version};
 use crate::codec::{Decoder, Encoder, FramelessDecoder, Poll};
+use crate::codec;
 use crate::dictionary::{BaseType, Dictionary};
 use crate::utils::{Buffer, BufferWriter};
 use std::fmt;
@@ -28,6 +29,7 @@ pub struct Codec {
     dict: Dictionary,
     buffer: Vec<u8>,
     state: DecoderState,
+    message: slr::Message,
 }
 
 impl Codec {
@@ -38,10 +40,11 @@ impl Codec {
 
     /// Creates a new codec for the tag-value format. `dict` is used to parse messages.
     pub fn with_dict(dict: Dictionary) -> Self {
-        Codec {
+        Self {
             dict,
             buffer: Vec::new(),
             state: DecoderState::Header,
+            message: slr::Message::new(),
         }
     }
 }
@@ -168,6 +171,63 @@ where
         }
         if last_tag == 10 {
             Ok(message)
+        } else {
+            Err(Error::InvalidStandardTrailer)
+        }
+    }
+}
+
+impl<Z> codec::RefDecoder<slr::Message> for (Codec, Z)
+where
+    Z: Transmuter,
+{
+    type Error = DecodeError;
+
+    fn decode(&mut self, mut data: &[u8]) -> Result<&slr::Message, Self::Error> {
+        let mut field_iter: FieldIter<_, Z> = FieldIter {
+            handle: &mut data,
+            checksum: Z::ChecksumAlgo::default(),
+            designator: Z::TagLookup::from_dict(&self.0.dict),
+            is_last: false,
+            data_length: 0,
+        };
+        let mut message = slr::Message::new();
+        {
+            // `BeginString(8)`.
+            let f = field_iter.next().ok_or(Error::Eof)??;
+            if f.tag == 8 {
+                message.fields.insert(f.tag, f.value);
+            } else {
+                return Err(Error::InvalidStandardHeader);
+            }
+        };
+        {
+            // `BodyLength(9)`.
+            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+            if f.tag == 9 {
+                message.fields.insert(f.tag, f.value);
+            } else {
+                return Err(Error::InvalidStandardHeader);
+            }
+        };
+        {
+            // `MsgType(35)`.
+            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+            if f.tag == 35 {
+                message.fields.insert(f.tag, f.value);
+            } else {
+                return Err(Error::InvalidStandardHeader);
+            }
+        };
+        let mut last_tag = 35;
+        for f_result in field_iter {
+            let f = f_result?;
+            message.fields.insert(f.tag, f.value);
+            last_tag = f.tag;
+        }
+        if last_tag == 10 {
+            self.0.message = message;
+            Ok(&self.0.message)
         } else {
             Err(Error::InvalidStandardTrailer)
         }

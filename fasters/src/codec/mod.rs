@@ -14,9 +14,7 @@
 //! pattern*. Transmuters are traits that define all configurable options for a
 //! specific encoding.
 use crate::utils::*;
-use crate::StreamIterator;
 use std::io;
-use std::marker::PhantomData;
 
 pub mod fast;
 pub mod json;
@@ -50,26 +48,37 @@ where
             Poll::Incomplete => None,
         })
     }
+}
 
-    /// Returns a [`StreamIterator`] over the message frames
-    /// produced by `source`.
-    fn frames_streamiter<R>(self, reader: R) -> Frames<Self, R, M, Self::Error>
-    where
-        R: io::Read,
-    {
-        Frames {
-            codec: self,
-            source: reader,
-            phantom: PhantomData::default(),
-            err: None,
-        }
-    }
+pub trait FramelessRefDecoder<M>
+where
+    Self: Sized,
+{
+    type Error;
+
+    /// Returns a mutable slice of bytes to accomodate for new input.
+    ///
+    /// The slice
+    /// can have any non-zero length, depending on how many bytes `self` believes
+    /// is a good guess. All bytes should be set to 0.
+    fn supply_buffer(&mut self) -> &mut [u8];
+
+    /// Validates the contents of the internal buffer and possibly caches the
+    /// resulting message. When successful, this method will return a [`Poll`] to
+    /// let the caller know whether more bytes are needed or not.
+    fn attempt_decoding(&mut self) -> Result<Option<&M>, Self::Error>;
 }
 
 pub trait Decoder<'a, M> {
     type Error;
 
     fn decode(&mut self, data: &'a [u8]) -> Result<M, Self::Error>;
+}
+
+pub trait RefDecoder<M> {
+    type Error;
+
+    fn decode(&mut self, data: &[u8]) -> Result<&M, Self::Error>;
 }
 
 pub trait Encoder<M> {
@@ -96,7 +105,7 @@ pub trait Encoder<M> {
 pub struct Frames<C, R, M, T> {
     codec: C,
     source: R,
-    phantom: PhantomData<M>,
+    message: Option<M>,
     err: Option<FramelessError<T>>,
 }
 
@@ -104,39 +113,6 @@ pub struct Frames<C, R, M, T> {
 pub enum FramelessError<E> {
     Decoder(E),
     Io(io::Error),
-}
-
-impl<'s, M, C, R> StreamIterator<'s> for Frames<C, R, M, C::Error>
-where
-    C: FramelessDecoder<'s, M>,
-    R: io::Read,
-{
-    type Item = Result<M, &'s FramelessError<C::Error>>;
-
-    fn advance(&mut self) {
-        loop {
-            let buffer = self.codec.supply_buffer();
-            if let Err(e) = self.source.read(buffer) {
-                self.err = Some(FramelessError::Io(e));
-                break;
-            }
-            match self.codec.attempt_decoding() {
-                Err(e) => {
-                    self.err = Some(FramelessError::Decoder(e));
-                    break;
-                }
-                Ok(Poll::Incomplete) => (),
-                Ok(Poll::Ready) => break,
-            }
-        }
-    }
-
-    fn get(&'s self) -> Option<Self::Item> {
-        match &self.err {
-            Some(e) => Some(Err(&e)),
-            None => Some(Ok(self.codec.get_item())),
-        }
-    }
 }
 
 /// Represents the progress that a codec device has made in regard to the current
