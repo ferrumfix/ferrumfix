@@ -25,6 +25,7 @@ expose_tokio = []
 [dependencies]
 bitvec = "0.18.3"
 boolinator = "2.4.0"
+chrono = "0.4"
 futures = "0.3.8"
 futures-lite = "1"
 Inflector = "0.11.4"

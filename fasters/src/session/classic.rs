@@ -76,6 +76,7 @@ impl HeartbeatRule {
     }
 }
 
+/// A tracker for seq. numbers inside a FIX session.
 #[derive(Debug, Copy, Clone)]
 pub struct SeqNumbers {
     next_inbound: u64,
@@ -83,6 +84,7 @@ pub struct SeqNumbers {
 }
 
 impl SeqNumbers {
+    /// Creates a new tracker starting from `inbound` and `outbound`.
     pub fn new(inbound: NonZeroU64, outbound: NonZeroU64) -> Self {
         Self {
             next_inbound: inbound.get(),
@@ -90,10 +92,12 @@ impl SeqNumbers {
         }
     }
 
+    /// Returns the expected seq. number of the next inbound message.
     pub fn next_inbound(&self) -> u64 {
         self.next_inbound
     }
 
+    /// Returns the expected seq. number of the next outbound message.
     pub fn next_outbound(&self) -> u64 {
         self.next_outbound
     }
@@ -153,21 +157,12 @@ mod acceptor {
         environment: Environment,
     }
 
-    /// An indicator for the kind of environment relative to a FIX Connection.
-    #[derive(Debug, Copy, Clone)]
-    #[non_exhaustive]
-    pub enum Environment {
-        ProductionDisallowTest,
-        ProductionAllowTest,
-        Testing,
-    }
-
     impl Configuration {
-        pub fn new() -> Self {
+        pub fn new(company_id: String) -> Self {
             Self {
                 heartbeat_rule: HeartbeatRule::Any,
                 delivery_threshold: Duration::from_secs(60),
-                company_id: "FOOBAR".to_string(),
+                company_id,
                 environment: Environment::ProductionDisallowTest,
             }
         }
@@ -195,6 +190,32 @@ mod acceptor {
         }
     }
 
+    /// An indicator for the kind of environment relative to a FIX Connection.
+    #[derive(Debug, Copy, Clone)]
+    #[non_exhaustive]
+    pub enum Environment {
+        /// Test messages will be refused under this environment setting.
+        ProductionDisallowTest,
+        /// Test messages will be ignored under this environment setting.
+        ProductionAllowTest,
+        /// Production messages will be refused under this environment setting.
+        Testing,
+    }
+
+    #[derive(Clone, Debug)]
+    #[non_exhaustive]
+    pub enum EventInbound {
+        HeartbeatIsDue,
+        IncomingMessage(slr::Message),
+        Terminated,
+    }
+
+    #[derive(Clone, Debug)]
+    pub enum EventOutbound {
+        Terminate,
+        Message(slr::Message),
+    }
+
     /// A FIX Session acceptor.
     #[derive(Debug, Clone)]
     pub struct Acceptor {
@@ -202,19 +223,6 @@ mod acceptor {
         state: State,
         heartbeat: Duration,
         seq_numbers: SeqNumbers,
-    }
-
-    #[derive(Clone, Debug)]
-    #[non_exhaustive]
-    pub enum EventInbound {
-        Terminated,
-        IncomingMessage(slr::Message),
-    }
-
-    #[derive(Clone, Debug)]
-    pub enum EventOutbound {
-        Terminate,
-        Message(slr::Message),
     }
 
     pub trait Session {
@@ -238,7 +246,10 @@ mod acceptor {
 
         /// Get the expected heartbeat interval on the underlying FIX connection.
         pub fn heartbeat(&self) -> Option<Duration> {
-            Some(self.heartbeat)
+            match self.state {
+                State::Active => Some(self.heartbeat),
+                _ => None,
+            }
         }
 
         /// Returns the internal seq. numbers state.
@@ -246,12 +257,48 @@ mod acceptor {
             self.seq_numbers
         }
 
-        pub async fn feed_incoming_message(&mut self, message: slr::Message) {
+        /// Notifies `self` about an event on the underlying FIX session and
+        /// returns an [`Iterator`] of the ountbound response events.
+        pub fn notify(&mut self, event: EventInbound) -> impl Iterator<Item = EventOutbound> {
+            self.notify_to_vec(event).into_iter()
+        }
+
+        pub fn notify_to_vec(&mut self, event: EventInbound) -> Vec<EventOutbound> {
+            let mut outbound_events = Vec::default();
+            match event {
+                EventInbound::Terminated => {
+                    // We also disconnect then.
+                    outbound_events.push(EventOutbound::Terminate);
+                }
+                EventInbound::IncomingMessage(msg) => {
+                    self.feed_incoming_message(msg, &mut outbound_events);
+                }
+                EventInbound::HeartbeatIsDue => {
+                    let heartbeat = self.generate_heartbeat_message();
+                    outbound_events.push(EventOutbound::Message(heartbeat));
+                }
+            };
+            outbound_events
+        }
+
+        fn feed_incoming_message(&mut self, message: slr::Message, to: &mut Vec<EventOutbound>) {
             let msg_type = message.msg_type();
+            // Check `TestMessageIndicator(464)`.
             match (self.config.environment, message.test_indicator()) {
-                (Environment::ProductionAllowTest, Some(true)) => (),
+                (Environment::ProductionDisallowTest, Some(true)) => {
+                    // Generate Logout!
+                    let mut msg = slr::Message::new();
+                    msg.add_str(35, "5");
+                    msg.add_str(49, self.config.company_id.as_str());
+                    msg.add_int(7, self.seq_numbers().next_inbound() as i64);
+                    msg.add_int(16, message.seq_num().unwrap() as i64);
+                    msg.add_str(58, errs::production_env());
+                    to.push(EventOutbound::Message(add_time_to_msg(msg)));
+                    return;
+                },
                 _ => (),
             };
+            // Compare seq. numbers.
             let seqnum_state = message
                 .seq_num()
                 .map(|seqnum| self.seq_numbers().validate_inbound(seqnum))
@@ -260,27 +307,41 @@ mod acceptor {
             // accordingly.
             match seqnum_state {
                 Ok(()) => {}
-                Err(SeqNumberError::NoSeqNum) => {}
+                // See §4.5.3.
+                Err(SeqNumberError::NoSeqNum) => {
+                    // Generate Logout!
+                    let mut msg = slr::Message::new();
+                    msg.add_str(35, "5");
+                    msg.add_str(49, self.config.company_id.as_str());
+                    msg.add_int(7, self.seq_numbers().next_inbound() as i64);
+                    msg.add_int(16, message.seq_num().unwrap() as i64);
+                    msg.add_str(58, errs::missing_field("MsgSeqNum", 34));
+                    to.push(EventOutbound::Message(add_time_to_msg(msg)));
+                    return;
+                }
+                // Refer to specs. §4.8 for more information.
                 Err(SeqNumberError::Recover) => {
-                    // Refer to specs. §4.8 for more information.
+                    // Begin message recovery.
                     let mut response = slr::Message::new();
-                    // TODO: add other details to response message.
                     response.add_str(35, "2");
                     response.add_str(49, self.config.company_id.as_str());
                     response.add_int(7, self.seq_numbers().next_inbound() as i64);
                     response.add_int(16, message.seq_num().unwrap() as i64);
                     self.seq_numbers.incr_outbound();
-                    self.send_message(response).await;
+                    // TODO: add other details to response message.
+                    to.push(EventOutbound::Message(add_time_to_msg(response)));
                     return;
                 }
                 Err(SeqNumberError::TooLow) => {
-                    self.send_error_seqnum_too_low().await;
+                    let msg = self.generate_error_seqnum_too_low();
+                    to.push(EventOutbound::Message(add_time_to_msg(msg)));
                 }
             };
-            if msg_type != Some("A") && self.state == State::Terminated {
-                self.send_terminate_signal().await;
+            if self.state == State::Terminated && msg_type != Some("A") {
+                to.push(EventOutbound::Terminate);
                 return;
             }
+            // Logon <A>
             if let Some("A") = msg_type {
                 if self.state == State::Active {
                     return;
@@ -293,54 +354,38 @@ mod acceptor {
                     slr::FixFieldValue::String(self.config.company_id.clone()),
                 );
                 self.seq_numbers.incr_outbound();
-                self.send_message(response).await;
+                to.push(EventOutbound::Message(add_time_to_msg(response)));
                 self.state = State::Active;
             }
         }
 
-        async fn send_error_seqnum_too_low(&mut self) -> EventOutbound {
+        fn generate_error_seqnum_too_low(&mut self) -> slr::Message {
             let error_message = errs::msg_seq_num(self.seq_numbers().next_inbound());
             let mut response = slr::Message::new();
             response.add_str(35, "5");
             response.add_str(49, self.config.company_id.as_str());
             response.add_int(7, self.seq_numbers().next_outbound() as i64);
             response.add_str(58, error_message);
-            self.send_message(response).await
+            add_time_to_msg(response)
         }
 
-        async fn send_message(&mut self, message: slr::Message) -> EventOutbound {
-            EventOutbound::Message(message)
-        }
-
-        async fn send_terminate_signal(&mut self) -> EventOutbound {
-            EventOutbound::Terminate
-        }
-
-        pub async fn session_loop(
-            &mut self,
-            mut events: impl Stream<Item = EventInbound> + Unpin,
-        ) -> impl Stream<Item = EventOutbound> {
-            while let Some(event) = events.next().await {
-                match event {
-                    EventInbound::Terminated => {}
-                    EventInbound::IncomingMessage(_msg) => {}
-                };
-            }
-            futures_lite::stream::empty()
-        }
-
-        pub fn notify<'a>(
-            &'a mut self,
-            event: EventInbound,
-        ) -> impl Iterator<Item = EventOutbound> + 'a {
-            match event {
-                EventInbound::Terminated => {}
-                EventInbound::IncomingMessage(_msg) => {}
-            };
-            // TODO...
-            AcceptorPendingEvents { acceptor: self }
+        fn generate_heartbeat_message(&mut self) -> slr::Message {
+            let mut heartbeat = slr::Message::new();
+            heartbeat.add_str(35, "0");
+            heartbeat.add_str(49, self.config.company_id.as_str());
+            heartbeat.add_int(7, self.seq_numbers().next_outbound() as i64);
+            add_time_to_msg(heartbeat)
         }
     }
+
+    fn add_time_to_msg(mut msg: slr::Message) -> slr::Message {
+        // https://www.onixs.biz/fix-dictionary/4.4/index.html#UTCTimestamp.
+        let time = chrono::Utc::now();
+        let timestamp = time.format("%Y%m%d-%H:%M:%S.%.3f");
+        msg.add_str(52, timestamp.to_string());
+        msg
+    }
+
 
     #[derive(Clone, Debug, PartialEq, Eq)]
     enum State {
@@ -648,6 +693,14 @@ pub mod errs {
     pub fn msg_seq_num(seq_number: u64) -> String {
         format!("Invalid MsgSeqNum <34>, expected value {}", seq_number)
     }
+
+    pub fn production_env() -> String {
+        "TestMessageIndicator(464) was set to 'Y' but the environment is a production environment".to_string()
+    }
+
+    pub fn missing_field(name: &str, tag: u32) -> String {
+        format!("Missing mandatory field {}({})", name, tag)
+    }
 }
 
 #[cfg(test)]
@@ -657,7 +710,7 @@ mod test {
     const COMPANY_ID: &str = "FOOBAR-INC";
 
     fn acceptor() -> Acceptor {
-        let mut config = Configuration::new();
+        let mut config = Configuration::new(COMPANY_ID.to_string());
         config.with_hb_rule(HeartbeatRule::Any);
         config.with_environment(Environment::ProductionDisallowTest);
         config.acceptor()
