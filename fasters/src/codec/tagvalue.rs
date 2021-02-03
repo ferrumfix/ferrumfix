@@ -3,7 +3,7 @@
 //! This is the original encoding used for FIX messages and also the encoding
 //! currently used by the FIX session layer.
 
-use crate::app::{slr, Version, TsrMessageRef};
+use crate::app::{slr, TsrMessageRef, Version};
 use crate::codec::{Decoder, Encoder, FramelessDecoder};
 use crate::dictionary::{BaseType, Dictionary};
 use crate::utils::{Buffer, BufferWriter};
@@ -32,7 +32,10 @@ pub struct Codec<T> {
     body: Body,
 }
 
-impl<T> Codec<T> where T: TsrMessageRef {
+impl<T> Codec<T>
+where
+    T: TsrMessageRef,
+{
     /// Builds a new `Codec` encoding device with a FIX 4.4 dictionary.
     pub fn new() -> Self {
         Self::with_dict(Dictionary::from_version(Version::Fix44))
@@ -102,27 +105,27 @@ where
         let mut message = slr::Message::new();
         {
             // `BeginString(8)`.
-            let f = field_iter.next().ok_or(Error::Eof)??;
-            if f.tag == 8 {
-                message.fields.insert(f.tag, f.value);
+            let (_, _, f) = field_iter.next().ok_or(Error::Eof)??;
+            if f.tag() == 8 {
+                message.set_field(f.tag() as u32, f.value().clone());
             } else {
                 return Err(Error::InvalidStandardHeader);
             }
         };
         {
             // `BodyLength(9)`.
-            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
-            if f.tag == 9 {
-                message.fields.insert(f.tag, f.value);
+            let (_, _, f) = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+            if f.tag() == 9 {
+                message.set_field(f.tag() as u32, f.value().clone());
             } else {
                 return Err(Error::InvalidStandardHeader);
             }
         };
         {
             // `MsgType(35)`.
-            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
-            if f.tag == 35 {
-                message.fields.insert(f.tag, f.value);
+            let (_, _, f) = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+            if f.tag() == 35 {
+                message.set_field(f.tag() as u32, f.value().clone());
             } else {
                 return Err(Error::InvalidStandardHeader);
             }
@@ -155,36 +158,36 @@ where
         let mut message = T::default();
         {
             // `BeginString(8)`.
-            let f = field_iter.next().ok_or(Error::Eof)??;
-            if f.tag == 8 {
-                message.set_field(f.tag as u32, f.value);
+            let (_, _, f) = field_iter.next().ok_or(Error::Eof)??;
+            if f.tag() == 8 {
+                message.set_field(f.tag() as u32, f.value().clone());
             } else {
                 return Err(Error::InvalidStandardHeader);
             }
         };
         {
             // `BodyLength(9)`.
-            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
-            if f.tag == 9 {
-                message.set_field(f.tag as u32, f.value);
+            let (_, _, f) = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+            if f.tag() == 9 {
+                message.set_field(f.tag() as u32, f.value().clone());
             } else {
                 return Err(Error::InvalidStandardHeader);
             }
         };
         {
             // `MsgType(35)`.
-            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
-            if f.tag == 35 {
-                message.set_field(f.tag as u32, f.value);
+            let (_, _, f) = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+            if f.tag() == 35 {
+                message.set_field(f.tag() as u32, f.value().clone());
             } else {
                 return Err(Error::InvalidStandardHeader);
             }
         };
         let mut last_tag = 35;
         for f_result in field_iter {
-            let f = f_result?;
-            message.set_field(f.tag as u32, f.value);
-            last_tag = f.tag;
+            let (_, _, f) = f_result?;
+            message.set_field(f.tag() as u32, f.value().clone());
+            last_tag = f.tag();
         }
         if last_tag == 10 {
             self.0.message = message;
@@ -205,17 +208,26 @@ impl Encoder<slr::Message> for Codec<slr::Message> {
     ) -> Result<usize, Self::Error> {
         let mut writer = BufferWriter::new(&mut buffer);
         for (tag, value) in message.fields.iter() {
-            let field = slr::Field {
-                tag: *tag,
-                value: value.clone(),
-                checksum: 0,
-                len: 0,
-            };
-
-            field.encode(&mut writer)?;
+            let field = slr::Field::new(*tag as u32, value.clone());
+            encode_field(&field, &mut writer)?;
         }
         Ok(writer.len())
     }
+}
+
+fn encode_field(field: &slr::Field, write: &mut impl io::Write) -> io::Result<usize> {
+    let mut length = write.write(field.tag().to_string().as_bytes())? + 2;
+    write.write_all(&[b'='])?;
+    length += match &field.value() {
+        slr::FixFieldValue::Char(c) => write.write(&[*c as u8]),
+        slr::FixFieldValue::String(s) => write.write(s.as_bytes()),
+        slr::FixFieldValue::Int(int) => write.write(int.to_string().as_bytes()),
+        slr::FixFieldValue::Float(float) => write.write(float.to_string().as_bytes()),
+        slr::FixFieldValue::Data(raw_data) => write.write(&raw_data),
+        slr::FixFieldValue::Group(_) => panic!("Can't encode a group!"),
+    }?;
+    write.write_all(&[1u8])?;
+    Ok(length)
 }
 
 /// This trait describes dynamic tag lookup logic.
@@ -244,7 +256,7 @@ pub trait TagLookup {
 
     fn from_dict(dict: &Dictionary) -> Self;
 
-    /// Returns the [`BaseType`](BaseType) of the tag number `tag`.
+    /// Returns the [`BaseType`] of the tag number `tag`.
     fn lookup(&mut self, tag: u32) -> Result<BaseType, Self::Error>;
 }
 
@@ -328,7 +340,7 @@ where
     R: io::Read,
     Z: Transmuter,
 {
-    type Item = Result<slr::Field, DecodeError>;
+    type Item = Result<(u8, usize, slr::Field), DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.is_last {
@@ -383,12 +395,11 @@ where
         if let slr::FixFieldValue::Int(l) = field_value {
             self.data_length = l as u32;
         }
-        Some(Ok(slr::Field {
-            tag: tag.into(),
-            value: field_value,
-            checksum: self.checksum.clone().result(),
-            len: self.checksum.window_length(),
-        }))
+        Some(Ok((
+            self.checksum.clone().result(),
+            self.checksum.window_length(),
+            slr::Field::new(tag, field_value),
+        )))
     }
 }
 

@@ -3,9 +3,9 @@
 use crate::app::slr;
 use crate::app::TsrMessageRef;
 use std::collections::HashMap;
-use std::io;
 use std::time::SystemTime;
 
+/// An owned value of a FIX field.
 #[derive(Clone, Debug, PartialEq)]
 pub enum FixFieldValue {
     Int(i64),
@@ -78,29 +78,28 @@ impl From<SystemTime> for FixFieldValue {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Field {
-    pub tag: i64,
-    pub value: FixFieldValue,
-    pub checksum: u8,
-    pub len: usize,
+    tag: i64,
+    value: FixFieldValue,
 }
 
 impl Field {
-    pub fn encode(&self, write: &mut impl io::Write) -> io::Result<usize> {
-        let mut length = write.write(self.tag.to_string().as_bytes())? + 2;
-        write.write_all(&[b'='])?;
-        length += match &self.value {
-            FixFieldValue::Char(c) => write.write(&[*c as u8]),
-            FixFieldValue::String(s) => write.write(s.as_bytes()),
-            FixFieldValue::Int(int) => write.write(int.to_string().as_bytes()),
-            FixFieldValue::Float(float) => write.write(float.to_string().as_bytes()),
-            FixFieldValue::Data(raw_data) => write.write(&raw_data),
-            FixFieldValue::Group(_) => panic!("Can't encode a group!"),
-        }?;
-        write.write_all(&[1u8])?;
-        Ok(length)
+    /// Creates a new [`Field`] value with `tag` and `value`.
+    pub fn new(tag: u32, value: FixFieldValue) -> Self {
+        Self { tag: tag as i64, value }
+    }
+
+    /// Returns the field tag of `self`.
+    pub fn tag(&self) -> i64 {
+        self.tag
+    }
+
+    /// Returns an immutable reference to the value of `self`.
+    pub fn value(&self) -> &FixFieldValue {
+        &self.value
     }
 }
 
+/// FIX message, backed by an associative array.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Message {
     pub fields: HashMap<i64, FixFieldValue>,
@@ -125,20 +124,24 @@ impl<'a> Iterator for &'a Message {
 }
 
 impl Message {
+    /// Creates a new [`Message`] without any fields.
     pub fn new() -> Self {
         Message {
             fields: HashMap::new(),
         }
     }
 
+    /// Adds a field to `self`.
     pub fn add_field<K: Into<i64>>(&mut self, tag: K, value: slr::FixFieldValue) {
         self.fields.insert(tag.into(), value);
     }
 
+    /// Adds a string field to `self`.
     pub fn add_str<K: Into<i64>, S: Into<String>>(&mut self, tag: K, value: S) {
         self.add_field(tag, slr::FixFieldValue::String(value.into()))
     }
 
+    /// Adds an integer field to `self`.
     pub fn add_int<K: Into<i64>>(&mut self, tag: K, value: i64) {
         self.add_field(tag, slr::FixFieldValue::Int(value))
     }
