@@ -432,7 +432,7 @@ impl<'a> Datatype<'a> {
     }
 
     pub fn basetype(&self) -> BaseType {
-        str_to_basetype(self.1.base_type.as_ref().unwrap().as_str())
+        str_to_basetype(self.1.name.as_str())
     }
 }
 
@@ -476,11 +476,14 @@ pub struct Field<'a>(&'a Dictionary, &'a FieldData);
 
 fn str_to_basetype(s: &str) -> BaseType {
     match s {
-        "string" => BaseType::String,
-        "char" => BaseType::Char,
-        "int" => BaseType::Int,
-        "float" => BaseType::Float,
-        "data" => BaseType::Data,
+        "STRING" => BaseType::String,
+        "UTCTIMESTAMP" => BaseType::String,
+        "CHAR" => BaseType::Char,
+        "INT" => BaseType::Int,
+        "LENGTH" => BaseType::Int,
+        "SEQNUM" => BaseType::Int,
+        "FLOAT" => BaseType::Float,
+        "DATA" => BaseType::Data,
         _ => BaseType::Char, // FIXME
     }
 }
@@ -509,12 +512,7 @@ impl<'a> Field<'a> {
 
     /// Returns the [`BaseType`] of `self`.
     pub fn basetype(&self) -> BaseType {
-        str_to_basetype(
-            (&self.data_type().1.base_type)
-                .as_ref()
-                .unwrap_or(&"char".to_string())
-                .as_str(),
-        )
+        self.data_type().basetype()
     }
 
     /// Returns the name of `self`. Field names are unique across each FIX
@@ -683,6 +681,46 @@ pub struct Value {
 mod quickfix {
     use super::*;
 
+    fn add_datatype(dict: &mut Dictionary, datatype: DatatypeData) {
+        let iid = dict.data_types.len();
+        let name = datatype.name.clone();
+        dict.data_types.push(datatype);
+        dict.symbol_table
+            .insert(PKey::DatatypeByName(name), iid as u32);
+    }
+
+    fn add_all_datatypes(dict: &mut Dictionary) {
+        // Add all datatypes to the dictionary. QuickFix definition files
+        // don't have datatypes.
+        add_datatype(
+            dict,
+            DatatypeData {
+                name: "STRING".to_string(),
+                base_type: Some("string".to_string()),
+                description: String::new(),
+                examples: vec![],
+            },
+        );
+        add_datatype(
+            dict,
+            DatatypeData {
+                name: "INT".to_string(),
+                base_type: Some("int".to_string()),
+                description: String::new(),
+                examples: vec![],
+            },
+        );
+        add_datatype(
+            dict,
+            DatatypeData {
+                name: "CHAR".to_string(),
+                base_type: Some("char".to_string()),
+                description: String::new(),
+                examples: vec![],
+            },
+        );
+    }
+
     pub(crate) struct QuickFixReader<'a> {
         node_with_header: roxmltree::Node<'a, 'a>,
         node_with_trailer: roxmltree::Node<'a, 'a>,
@@ -697,6 +735,7 @@ mod quickfix {
             xml_document: &'a roxmltree::Document<'a>,
         ) -> Result<Dictionary, ParseDictionaryError> {
             let mut reader = Self::empty(&xml_document)?;
+            add_all_datatypes(&mut reader.dict);
             for child in reader.node_with_fields.children() {
                 if child.is_element() {
                     reader.add_field(child);

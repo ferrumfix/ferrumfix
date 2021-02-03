@@ -103,6 +103,7 @@ where
             data_length: 0,
         };
         let mut message = slr::Message::new();
+        println!("begin");
         {
             // `BeginString(8)`.
             let (_, _, f) = field_iter.next().ok_or(Error::Eof)??;
@@ -112,6 +113,7 @@ where
                 return Err(Error::InvalidStandardHeader);
             }
         };
+        println!("beginstring done");
         {
             // `BodyLength(9)`.
             let (_, _, f) = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
@@ -121,6 +123,7 @@ where
                 return Err(Error::InvalidStandardHeader);
             }
         };
+        println!("bodylength done");
         {
             // `MsgType(35)`.
             let (_, _, f) = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
@@ -130,6 +133,7 @@ where
                 return Err(Error::InvalidStandardHeader);
             }
         };
+        println!("msgtype done");
         self.0.state = DecoderState::Body(0);
         self.0.state = DecoderState::Trailer;
         Ok(Some(&self.0.body))
@@ -207,18 +211,53 @@ impl Encoder<slr::Message> for Codec<slr::Message> {
         message: &slr::Message,
     ) -> Result<usize, Self::Error> {
         let mut writer = BufferWriter::new(&mut buffer);
+        // First, write `BeginString(8)`.
+        encode_field(8, message.get_field(8).unwrap(), &mut writer)?;
+        // The second field is supposed to be `BodyLength(9)`, but obviously
+        // the length of the message is unknow until later in the
+        // serialization phase. This alone would usually require to
+        //
+        //  1. Serialize the rest of the message into an external buffer.
+        //  2. Calculate the length of the message.
+        //  3. Serialize `BodyLength(9)`.
+        //  4. Copy the contents of the external buffer into `buffer`.
+        //  5. ... go on with the serialization process.
+        //
+        // Luckily, FIX allows for zero-padded integer values and we can
+        // leverage this to reserve some space for the value. We might waste
+        // some bytes but the benefits largely outweight the costs.
+        //
+        // Six digits (~1MB) ought to be enough for every message.
+        writer.extend_from_slice(b"9=000000|");
+        let body_length_range = writer.len() - 7..writer.len();
+        // We now must start to calculate the message length.
+        let mut len = 0;
+        // Third field: `MsgType(35)`.
+        encode_field(35, message.get_field(35).unwrap(), &mut writer)?;
+        // Now all the other fields.
         for (tag, value) in message.fields.iter() {
-            let field = slr::Field::new(*tag as u32, value.clone());
-            encode_field(&field, &mut writer)?;
+            if *tag != 35 {
+                len += encode_field(*tag as u32, value, &mut writer)?;
+            }
         }
+        // Finally, we need to serialize the `Checksum(10)` field.
+        //encode_field(9, &slr::FixFieldValue::Int(len as i64), &mut writer)?;
+        let body_length_slice = &mut writer.as_mut_slice()[body_length_range];
+        body_length_slice[3] = len as u8;
+        let checksum = 42; // FIXME
+        encode_field(10, &slr::FixFieldValue::Int(checksum), &mut writer)?;
         Ok(writer.len())
     }
 }
 
-fn encode_field(field: &slr::Field, write: &mut impl io::Write) -> io::Result<usize> {
-    let mut length = write.write(field.tag().to_string().as_bytes())? + 2;
+fn encode_field(
+    tag: u32,
+    value: &slr::FixFieldValue,
+    write: &mut impl io::Write,
+) -> io::Result<usize> {
+    let mut length = write.write(tag.to_string().as_bytes())? + 2;
     write.write_all(&[b'='])?;
-    length += match &field.value() {
+    length += match &value {
         slr::FixFieldValue::Char(c) => write.write(&[*c as u8]),
         slr::FixFieldValue::String(s) => write.write(s.as_bytes()),
         slr::FixFieldValue::Int(int) => write.write(int.to_string().as_bytes()),
@@ -226,7 +265,7 @@ fn encode_field(field: &slr::Field, write: &mut impl io::Write) -> io::Result<us
         slr::FixFieldValue::Data(raw_data) => write.write(&raw_data),
         slr::FixFieldValue::Group(_) => panic!("Can't encode a group!"),
     }?;
-    write.write_all(&[1u8])?;
+    write.write_all(&['|' as u8])?;
     Ok(length)
 }
 
@@ -532,11 +571,11 @@ impl ChecksumAlgo for ChecksumAlgoStd {
 
 /// A non-verifying checksum calculator.
 #[derive(Copy, Clone, Debug, Default)]
-pub struct ChecksumAlgoTrusting {
+pub struct ChecksumAlgoLazy {
     len: usize,
 }
 
-impl ChecksumAlgo for ChecksumAlgoTrusting {
+impl ChecksumAlgo for ChecksumAlgoLazy {
     fn roll(&mut self, window: &[u8]) {
         self.len += window.len();
     }
@@ -628,6 +667,21 @@ mod test {
             let result = codec.decode(&mut msg.as_bytes());
             assert!(result.is_ok());
         }
+    }
+
+    #[test]
+    fn heartbeat_message_fields_are_ok() {
+        let mut codec = encoder();
+        let message = codec.decode(&mut RANDOM_MESSAGES[0].as_bytes()).unwrap();
+        assert_eq!(
+            message.get_field(8),
+            Some(&slr::FixFieldValue::String("FIX.4.2".to_string()))
+        );
+        assert_eq!(message.get_field(9), Some(&slr::FixFieldValue::Int(42)));
+        assert_eq!(
+            message.get_field(35),
+            Some(&slr::FixFieldValue::String("0".to_string()))
+        );
     }
 
     #[test]
