@@ -224,7 +224,7 @@ where
         } else {
             serde_json::to_writer(&mut writer, &value).unwrap();
         }
-        Ok(writer.len())
+        Ok(writer.as_slice().len())
     }
 }
 

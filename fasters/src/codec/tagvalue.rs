@@ -4,7 +4,7 @@
 //! currently used by the FIX session layer.
 
 use crate::app::{slr, TsrMessageRef, Version};
-use crate::codec::{Decoder, Encoder, FramelessDecoder};
+use crate::codec::{Decoder, Encoder, StreamingDecoder};
 use crate::dictionary::{BaseType, Dictionary};
 use crate::utils::{Buffer, BufferWriter};
 use std::fmt;
@@ -75,7 +75,7 @@ impl Body {
     }
 }
 
-impl<Z> FramelessDecoder<Body> for (Codec<slr::Message>, Z)
+impl<Z> StreamingDecoder<Body> for (Codec<slr::Message>, Z)
 where
     Z: Transmuter,
 {
@@ -229,7 +229,7 @@ impl Encoder<slr::Message> for Codec<slr::Message> {
         //
         // Six digits (~1MB) ought to be enough for every message.
         writer.extend_from_slice(b"9=000000|");
-        let body_length_range = writer.len() - 7..writer.len();
+        let body_length_range = writer.as_slice().len() - 7..writer.as_slice().len();
         // We now must start to calculate the message length.
         let mut len = 0;
         // Third field: `MsgType(35)`.
@@ -246,7 +246,7 @@ impl Encoder<slr::Message> for Codec<slr::Message> {
         body_length_slice[3] = len as u8;
         let checksum = 42; // FIXME
         encode_field(10, &slr::FixFieldValue::Int(checksum), &mut writer)?;
-        Ok(writer.len())
+        Ok(writer.as_slice().len())
     }
 }
 

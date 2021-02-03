@@ -1,5 +1,5 @@
 use fasters::codec::sofh::BufCodec;
-use fasters::codec::FramelessDecoder;
+use fasters::codec::StreamingDecoder;
 
 use std::io;
 use std::net;

@@ -9,7 +9,7 @@
 //! Please refer to https://www.fixtrading.org/standards/fix-sofh/ for more
 //! information.
 
-use super::{Decoder, Encoder, FramelessDecoder};
+use super::{Decoder, Encoder, StreamingDecoder};
 use crate::utils::Buffer;
 use std::convert::TryInto;
 use std::default::Default;
@@ -18,7 +18,12 @@ use std::io;
 
 const HEADER_LENGTH: usize = 6;
 
-/// A parser for Simple Open Framing Header (SOFH) -encoded messages.
+/// A parser for SOFH-enclosed messages.
+///
+/// SOFH stands for Simple Open Framing Header and it's an encoding-agnostic
+/// framing mechanism for variable-length messages. It was developed by the FIX
+/// High Performance Group to allow message processors and communication gateways
+/// to determine the length and the data format of incoming messages.
 #[derive(Debug)]
 pub struct BufCodec {
     buffer: Vec<u8>,
@@ -35,10 +40,12 @@ impl BufCodec {
     /// Creates a new [`Codec`](Codec) with a buffer large enough to
     /// hold `capacity` amounts of bytes without reallocating.
     pub fn with_capacity(capacity: usize) -> Self {
-        Self {
-            buffer: Vec::with_capacity(capacity),
-            header: None,
-            frameref: Frame::new(0, &[]),
+        unsafe {
+            Self {
+                buffer: Vec::with_capacity(capacity),
+                header: None,
+                frameref: Frame::new(0, &[]),
+            }
         }
     }
 
@@ -58,7 +65,7 @@ impl BufCodec {
     }
 }
 
-impl FramelessDecoder<Frame> for BufCodec {
+impl StreamingDecoder<Frame> for BufCodec {
     type Error = DecodeError;
 
     fn supply_buffer(&mut self) -> &mut [u8] {
@@ -89,7 +96,7 @@ impl FramelessDecoder<Frame> for BufCodec {
             }
             Some((len, _)) if len < self.buffer.len() => Ok(None),
             Some((_, encoding_type)) => {
-                self.frameref = Frame::new(encoding_type, &self.buffer[HEADER_LENGTH..]);
+                self.frameref = unsafe { Frame::new(encoding_type, &self.buffer[HEADER_LENGTH..]) };
                 Ok(Some(&self.frameref))
             }
         }
@@ -110,23 +117,21 @@ fn get_encoding_type(data: &[u8]) -> u16 {
 
 #[derive(Debug)]
 pub struct Codec {
-    frame: Frame,
+    last_frame: Frame,
 }
 
 impl Default for Codec {
     fn default() -> Self {
         Self {
-            frame: Frame {
-                len: 0,
-                encoding_type: 0,
-                buffer: std::ptr::null(),
-            },
+            last_frame: unsafe { Frame::new(0, &[]) },
         }
     }
 }
 
-/// A non-owning message frame, with an internal pointer to the buffer that
-/// contains the raw data.
+/// An immutable view into a SOFH-enclosed message, complete with encoding type
+/// and payload.
+///
+/// This type is returned in a borrowed form from [`sofh::Codec::decode`].
 #[derive(Debug)]
 pub struct Frame {
     encoding_type: u16,
@@ -135,7 +140,13 @@ pub struct Frame {
 }
 
 impl Frame {
-    fn new(encoding_type: u16, data: &[u8]) -> Self {
+    /// Creates a new [`Frame`] that points to `data`.
+    ///
+    /// # Safety
+    /// This function is marked `unsafe` because it returns an owned `Frame`,
+    /// which should **never** be possible to an end user ([`Frame`]s should only
+    /// be borrowed for as long as the underlying buffer lives).
+    unsafe fn new(encoding_type: u16, data: &[u8]) -> Self {
         Self {
             encoding_type,
             len: data.len(),
@@ -143,10 +154,15 @@ impl Frame {
         }
     }
 
+    /// Returns the 16-bits encoding type of this [`Frame`]. You may want to
+    /// convert this value to an [`EncodingType`], which facilites validation via
+    /// pattern matching.
     pub fn encoding_type(&self) -> u16 {
         self.encoding_type
     }
 
+    /// Returns an immutable reference to the actual contents of `self`, i.e.
+    /// without its header.
     pub fn payload(&self) -> &[u8] {
         unsafe { std::slice::from_raw_parts(self.buffer, self.len) }
     }
@@ -165,12 +181,12 @@ impl Decoder<Frame> for Codec {
             return Err(err());
         }
         let encoding_type = get_encoding_type(data);
-        self.frame = Frame {
+        self.last_frame = Frame {
             len: get_message_length(data) as usize,
             encoding_type,
             buffer: data.as_ptr(),
         };
-        Ok(&self.frame)
+        Ok(&self.last_frame)
     }
 }
 
@@ -189,18 +205,23 @@ impl<'a> Encoder<Frame> for Codec {
         buffer.extend_from_slice(&message_length[..]);
         buffer.extend_from_slice(&encoding_type[..]);
         buffer.extend_from_slice(message.payload());
-        Ok(buffer.len())
+        Ok(buffer.as_slice().len())
     }
 }
 
+/// The error type that can arise when attempting to serialize a SOFH-enclosed
+/// payload.
 #[derive(Debug, Clone)]
 pub enum EncodeError {
+    /// The assigned payload is too big to fit in a single SOFH-enclosed
+    /// message.
     TooLong(usize),
 }
 
 /// The error type that can be returned if some error occurs during SOFH parsing.
 #[derive(Debug)]
 pub enum DecodeError {
+    /// The given message length is not valid because it's not in a valid range.
     InvalidMessageLength(u32),
     Io(io::Error),
 }
@@ -343,8 +364,8 @@ impl std::cmp::Eq for EncodingType {}
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::codec::FramelessDecoder;
     use crate::codec::FramelessError;
+    use crate::codec::StreamingDecoder;
 
     fn _frames_with_increasing_length() -> impl Iterator<Item = Vec<u8>> {
         std::iter::once(()).enumerate().map(|(i, ())| {

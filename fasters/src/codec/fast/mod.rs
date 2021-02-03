@@ -110,6 +110,6 @@ impl Encoder<slr::Message> for Fast {
 
     fn encode(&mut self, buffer: impl Buffer, _message: &slr::Message) -> Result<usize, Error> {
         let _presence_by_field: BitVec = BitVec::new();
-        Ok(buffer.len())
+        Ok(buffer.as_slice().len())
     }
 }

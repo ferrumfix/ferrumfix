@@ -1,20 +1,27 @@
 use std::io;
 
+/// Buffer operations.
+///
+/// [`Buffer`] differs from [`io::Write`] in several ways:
 pub trait Buffer {
+    /// Returns an immutable reference to the contents of the buffer.
     fn as_slice(&self) -> &[u8];
 
+    /// Returns a mutable reference to the contents of the buffer.
     fn as_mut_slice(&mut self) -> &mut [u8];
 
     /// Returns the number of bytes that `self` can hold without reallocating.
     fn capacity(&self) -> usize;
 
+    /// Erases the contents of `self`.
     fn clear(&mut self);
 
+    /// Appends the contents of `extend` onto `self`, growing the buffer if
+    /// necessary.
     fn extend_from_slice(&mut self, extend: &[u8]);
-
-    fn len(&self) -> usize;
 }
 
+/// A [`Vec`]-backed [`Buffer`] implementation.
 #[derive(Debug)]
 pub struct GrowableBuffer<'a> {
     pub bytes: &'a mut Vec<u8>,
@@ -51,10 +58,6 @@ impl<'a> Buffer for GrowableBuffer<'a> {
     fn extend_from_slice(&mut self, extend: &[u8]) {
         self.bytes.extend_from_slice(extend)
     }
-
-    fn len(&self) -> usize {
-        self.bytes.len()
-    }
 }
 
 impl Buffer for Vec<u8> {
@@ -76,10 +79,6 @@ impl Buffer for Vec<u8> {
 
     fn extend_from_slice(&mut self, extend: &[u8]) {
         self.extend_from_slice(extend)
-    }
-
-    fn len(&self) -> usize {
-        self.len()
     }
 }
 
@@ -105,10 +104,6 @@ where
 
     fn extend_from_slice(&mut self, extend: &[u8]) {
         Buffer::extend_from_slice(*self, extend)
-    }
-
-    fn len(&self) -> usize {
-        Buffer::len(*self)
     }
 }
 
@@ -162,10 +157,6 @@ where
 
     fn extend_from_slice(&mut self, extend: &[u8]) {
         self.buffer.extend_from_slice(extend)
-    }
-
-    fn len(&self) -> usize {
-        self.buffer.len()
     }
 }
 

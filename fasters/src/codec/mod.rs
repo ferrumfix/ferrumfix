@@ -1,9 +1,9 @@
 //! Support for FIX-related encoding types (OSI Layer 6).
 //!
 //! Encoders need to implement [`Encoder`], while decoders can choose to
-//! implement [`Decoder`] or [`FramelessDecoder`] (or both). Implementors of
+//! implement [`Decoder`] or [`StreamingDecoder`] (or both). Implementors of
 //! [`Decoder`] decode messages with a pre-defined length. Implementors of
-//! [`FramelessDecoder`] decode *streams* of messages, without delimiters.
+//! [`StreamingDecoder`] decode *streams* of messages, without delimiters.
 //!
 //! - FIX tag-value: [`tagvalue::Codec`].
 //! - FAST: [`fast::Fast`].
@@ -22,10 +22,14 @@ pub mod json;
 pub mod sofh;
 pub mod tagvalue;
 
-pub trait FramelessDecoder<M>
+/// A device that can parse a stream of bytes into messages.
+///
+/// A [`StreamingDecoder`]
+pub trait StreamingDecoder<M>
 where
     Self: Sized,
 {
+    /// The type returned in the event of a deserialization error.
     type Error;
 
     /// Returns a mutable slice of bytes to accomodate for new input.
@@ -57,16 +61,25 @@ where
     }
 }
 
+
+/// A device that can parse arbitrary sequences of bytes into messages.
 pub trait Decoder<M> {
+    /// The type returned in the event of a deserialization error.
     type Error;
 
+    /// Parses the contents of `data` into a message `M`, which is then returned
+    /// in the form of an immutable reference. In the event of failure, this
+    /// method will return `Self::Error`.
     fn decode(&mut self, data: &[u8]) -> Result<&M, Self::Error>;
 }
 
+/// A device that writes messages to a [`Buffer`].
 pub trait Encoder<M> {
+    /// The type returned in the event of a serialization error.
     type Error;
 
-    /// Encodes `message` on `buffer`.
+    /// Encodes `message` to `buffer`. It then returns the number of bytes
+    /// written to `buffer`.
     fn encode(&mut self, buffer: impl Buffer, message: &M) -> Result<usize, Self::Error>;
 
     /// Allocates a buffer on the heap and encodes `message` to it.
@@ -80,8 +93,8 @@ pub trait Encoder<M> {
 /// A [`StreamIterator`] that iterates over all the messages that come from a
 /// [reader](std::io::Read).
 ///
-/// This `struct` is created by the [`frames`](FramelessDecoder::frames) method
-/// on [`FramelessDecoder`].
+/// This `struct` is created by the [`frames`](StreamingDecoder::frames) method
+/// on [`StreamingDecoder`].
 /// See its documentation for more.
 #[derive(Debug)]
 pub struct Frames<D, R, M, E> {
@@ -94,7 +107,7 @@ pub struct Frames<D, R, M, E> {
 impl<D, R, M, E> Frames<D, R, M, E>
 where
     M: Sized,
-    D: FramelessDecoder<M, Error = E>,
+    D: StreamingDecoder<M, Error = E>,
     R: io::Read,
 {
     pub fn next(&mut self) -> Result<Option<&M>, &FramelessError<E>> {
