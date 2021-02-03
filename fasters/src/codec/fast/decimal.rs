@@ -36,22 +36,43 @@ pub enum Error {
     InvalidScale,
 }
 
-type Result<T> = std::result::Result<T, Error>;
-
 impl Decimal {
-    /// The greatest value that can be represented by a [`Decimal`](Decimal).
+    /// The greatest value that can be represented by a [`Decimal`].
+    ///
+    /// ```
+    /// use fasters::codec::fast::Decimal;
+    ///
+    /// assert!(Decimal::MAX > Decimal::ZERO);
+    /// ```
     pub const MAX: Decimal = Decimal {
         exp: 63,
         mantissa: i64::MAX,
     };
 
-    /// The smallest value that can be represented by a [`Decimal`](Decimal).
+    /// The smallest value that can be represented by a [`Decimal`].
+    ///
+    /// ```
+    /// use fasters::codec::fast::Decimal;
+    ///
+    /// assert!(Decimal::MIN < Decimal::ZERO);
+    /// ```
     pub const MIN: Decimal = Decimal {
         exp: 63,
         mantissa: i64::MIN,
     };
 
-    /// The unit value. It is the neutral element of multiplication.
+    /// The unit value of [`Decimal`]. It is the neutral element of
+    /// multiplication.
+    ///
+    /// ```
+    /// use fasters::codec::fast::Decimal;
+    ///
+    /// assert_eq!(Decimal::MAX * Decimal::ONE, Decimal::MAX);
+    /// assert_eq!(Decimal::MIN * Decimal::MIN, Decimal::MAX);
+    ///
+    /// let pi = Decimal::new(314, -2);
+    /// assert_eq!(pi * Decimal::MIN, pi);
+    /// ```
     pub const ONE: Decimal = Decimal {
         exp: 0,
         mantissa: 1,
@@ -69,31 +90,14 @@ impl Decimal {
         mantissa: 0,
     };
 
+    /// The [machine epsilon](https://en.wikipedia.org/wiki/Machine_epsilon) of
+    /// [`Decimal`].
     pub const MIN_POSITIVE: Decimal = Decimal {
-        exp: 0,
-        mantissa: 0,
+        exp: -63,
+        mantissa: 1,
     };
 
-    /// [Machine epsilon] value for [`Decimal`](Decimal).
-    ///
-    /// This is the difference between `1.0` and the next larger representable number.
-    ///
-    /// [Machine epsilon]: https://en.wikipedia.org/wiki/Machine_epsilon
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use fasters::codec::fast::decimal::Decimal;
-    ///
-    /// let epsilon = Decimal::EPSILON;
-    /// ```
-    pub const EPSILON: Decimal = Decimal {
-        // FIXME
-        exp: 0,
-        mantissa: 0,
-    };
-
-    /// Returns a `Decimal` with a 64 bit *m* representation and corresponding
+    /// Returns a [`Decimal`] with a 64 bit *m* representation and corresponding
     /// *e* scale.
     ///
     /// # Arguments
@@ -107,13 +111,32 @@ impl Decimal {
     /// # Example
     ///
     /// ```
-    /// use fasters::codec::fast::decimal::*;
+    /// use fasters::codec::fast::decimal::Decimal;
     ///
     /// let pi = Decimal::new(3141, -3);
-    /// assert_eq!(pi.to_string(), "3.141"); // FIXME
+    /// assert_eq!(pi.to_string(), "3.141");
     /// ```
-    pub fn new(mantissa: i64, mut exp: i32) -> Self {
-        exp = exp.max(-16).min(16);
+    pub fn new(mantissa: i64, exp: i32) -> Self {
+        Self::new_unchecked(mantissa, exp.max(-16).min(16))
+    }
+
+    /// Returns a [`Decimal`] with a 64 bit *m* representation and corresponding
+    /// *e* scale. *e* is assumed to already be in the valid interval.
+    ///
+    /// # Arguments
+    ///
+    /// * `exp` - An `i8` that represents the *e* portion of the decimal number
+    /// * `mantissa` - An `i64` that represents the *m* portion of the decimal number.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use fasters::codec::fast::decimal::Decimal;
+    ///
+    /// let pi = Decimal::new(3141, -3);
+    /// assert_eq!(pi.to_string(), "3.141");
+    /// ```
+    pub fn new_unchecked(mantissa: i64, exp: i32) -> Self {
         Self { exp, mantissa }.normalize()
     }
 
@@ -136,7 +159,7 @@ impl Decimal {
     /// # Example
     ///
     /// ```
-    /// use fasters::codec::fast::decimal::*;
+    /// use fasters::codec::fast::decimal::Decimal;
     ///
     /// let num = Decimal::new(1234, 3);
     /// assert_eq!(num.exp(), 3i32);
@@ -151,7 +174,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fasters::codec::fast::decimal::*;
+    /// use fasters::codec::fast::decimal::Decimal;
     ///
     /// let num = Decimal::new(314159, -5);
     /// assert_eq!(num.mantissa(), 314159);
@@ -160,27 +183,25 @@ impl Decimal {
         self.mantissa
     }
 
-    /// Returns a `Decimal` number representing the sign of `self`.
+    /// Returns a [`Decimal`] number representing the sign of `self`:
     ///
-    /// - `0` if it is zero.
-    /// - `1` if it is positive.
-    /// - `-1` if it is negative.
+    /// - 0 if it is zero.
+    /// - 1 if it is positive.
+    /// - -1 if it is negative.
     ///
     /// # Examples
     ///
     /// ```
-    /// use fasters::codec::fast::decimal::*;
+    /// use fasters::codec::fast::decimal::Decimal;
     ///
     /// let num = Decimal::new(314159, -5);
-    /// assert_eq!(num.signum(), ONE);
+    /// assert_eq!(num.signum(), Decimal::ONE);
+    /// assert_eq!((-num).signum(), Decimal::NEG_ONE);
     /// ```
     pub fn signum(&self) -> Self {
-        match self.mantissa().signum() {
-            0 => Self::ZERO,
-            1 => Self::ONE,
-            -1 => Self::NEG_ONE,
-            _ => panic!("You found a bug! Please file it immediately."),
-        }
+        const SIGNUMS: &[Decimal; 3] = &[Decimal::NEG_ONE, Decimal::ZERO, Decimal::ONE];
+        let index = (self.mantissa().signum() + 1) as usize;
+        SIGNUMS[index]
     }
 
     /// Computes the absolute value of `self`.
@@ -216,13 +237,13 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fasters::codec::fast::decimal::*;
+    /// use fasters::codec::fast::decimal::Decimal;
     ///
     /// let num = Decimal::new(-130, -4);
     /// assert!(num.is_negative());
     ///
-    /// assert!(!ZERO.is_negative());
-    /// assert!(!ONE.is_negative());
+    /// assert!(!Decimal::ZERO.is_negative());
+    /// assert!(!Decimal::ONE.is_negative());
     /// ```
     pub const fn is_negative(&self) -> bool {
         self.mantissa().is_negative()
@@ -234,13 +255,13 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fasters::codec::fast::decimal::*;
+    /// use fasters::codec::fast::decimal::Decimal;
     ///
     /// let num = Decimal::new(1, -8);
     /// assert!(num.is_positive());
     ///
-    /// assert!(!ZERO.is_positive());
-    /// assert!(!NEG_ONE.is_positive());
+    /// assert!(!Decimal::ZERO.is_positive());
+    /// assert!(!Decimal::NEG_ONE.is_positive());
     /// ```
     pub const fn is_positive(&self) -> bool {
         self.mantissa().is_positive()
@@ -251,7 +272,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fasters::codec::fast::decimal::*;
+    /// use fasters::codec::fast::decimal::Decimal;
     ///
     /// let num = Decimal::new(11, -1);
     /// assert_eq!(num.pow(2), Decimal::new(121, -2));
@@ -271,7 +292,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fasters::codec::fast::decimal::*;
+    /// use fasters::codec::fast::decimal::Decimal;
     ///
     /// let num = Decimal::new(314, -2);
     /// assert_eq!(num.truncate(), Decimal::new(3, 0));
@@ -287,7 +308,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fasters::codec::fast::decimal::*;
+    /// use fasters::codec::fast::decimal::Decimal;
     ///
     /// let num = Decimal::new(314, -2);
     /// assert_eq!(num.fract(), Decimal::new(14, -2));
@@ -301,7 +322,7 @@ impl Decimal {
     /// Returns the least integer greater than or equal to `self`.
     ///
     /// ```
-    /// use fasters::codec::fast::decimal::*;
+    /// use fasters::codec::fast::decimal::Decimal;
     ///
     /// let num = Decimal::new(100000001, -4);
     /// assert_eq!(num.ceil(), Decimal::new(2, 0));
@@ -326,7 +347,7 @@ impl Decimal {
     /// Returns the greatest integer less than or equal to `self`.
     ///
     /// ```
-    /// use fasters::codec::fast::decimal::*;
+    /// use fasters::codec::fast::decimal::Decimal;
     ///
     /// let num = Decimal::new(100000001, 4);
     /// assert_eq!(num.floor(), Decimal::new(1, 0));
@@ -352,7 +373,7 @@ impl Decimal {
     /// FIXME
     ///
     /// ```
-    /// use fasters::codec::fast::decimal::*;
+    /// use fasters::codec::fast::decimal::Decimal;
     ///
     /// let num = Decimal::new(100000001, -4);
     /// assert_eq!(num.floor(), Decimal::new(1, 0));
@@ -369,10 +390,12 @@ impl Decimal {
         me
     }
 
+    /// Returns the power of 10 of mantissa, i.e. 10<sup>*e*</sup>.
     pub fn pow_of_ten(&self) -> i64 {
         10i64.pow(self.exp().abs() as u32)
     }
 
+    /// Serializes `self` into a bytes array.
     pub fn to_be_bytes(self) -> [u8; 9] {
         let mut bytes = [0u8; 9];
         bytes[0] = (self.exp() + 16) as u8;
@@ -380,17 +403,19 @@ impl Decimal {
         bytes
     }
 
-    pub fn from_be_bytes(mut bytes: [u8; 9]) -> Result<Self> {
+    /// Deserializes `self` from a bytes array.
+    pub fn from_be_bytes(mut bytes: [u8; 9]) -> Self {
         let mut mantissa_bytes = [0u8; 8];
         mantissa_bytes.clone_from_slice(&mut bytes[1..]);
-        Ok(Self {
+        Self {
             exp: (bytes[0] as i32) - 16,
             mantissa: i64::from_be_bytes(mantissa_bytes),
-        })
+        }
     }
 }
 
 impl Default for Decimal {
+    /// The [`Default`] value for [`Decimal`] is [`Decimal::ZERO`].
     fn default() -> Self {
         Self::ZERO
     }
@@ -469,7 +494,7 @@ impl ops::Neg for Decimal {
 
     fn neg(self) -> Self::Output {
         Self {
-            exp: self.exp().into(),
+            exp: self.exp(),
             mantissa: -self.mantissa(),
         }
     }
