@@ -1,3 +1,17 @@
+//! FIX message processing between counterparties.
+//!
+//! To establish a reliable FIX connection, peers must adopt a session protocol.
+//! [`Initiator`] is used to connect to service offerers and [`Acceptor`] is used
+//! to accept incoming connections. This is akin to the client-server
+//! architecture.
+//!
+//! ![](https://www.fixtrading.org/wp-content/uploads/2020/06/fixsessionlayerconceptualsimple.png)
+//!
+//! The above is a conceptual view of the FIX Session layer, complete with its
+//! state machine and transitions between them. Both [`Initiator`] and
+//! [`Acceptor`] abstract over such details and present users with a single entry
+//! point, namely [`Initiator::feed`] and [`Acceptor::feed`].
+
 use crate::app::slr;
 use boolinator::Boolinator;
 use futures_lite::prelude::*;
