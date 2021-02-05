@@ -37,12 +37,23 @@ const V1_DRAFT_RECOMMENDED_CIPHERSUITES_PSK_ONLY: &[&str] = &[
     "TLS_DHE_PSK_WITH_AES_256_CBC_SHA384",
 ];
 
+/// A specific version of the FIXS protocol specification.
 #[derive(Debug, Copy, Clone)]
 pub enum Version {
     V1Draft,
 }
 
 impl Version {
+    /// Returns an [`Iterator`] over the suggested ciphersuites for TLS,
+    /// according to this version. The ciphersuites are specified in IANA format.
+    /// 
+    /// ```
+    /// use fasters::transport::fixs::Version;
+    /// 
+    /// let version = Version::V1Draft;
+    /// let mut ciphersuites_iana = version.recommended_cs_iana(false);
+    /// assert!(ciphersuites_iana.any(|cs| cs == "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"));
+    /// ```
     pub fn recommended_cs_iana(&self, psk: bool) -> impl Iterator<Item = &str> {
         match (self, psk) {
             (Version::V1Draft, false) => V1_DRAFT_RECOMMENDED_CIPHERSUITES.iter().chain(&[]),
@@ -53,6 +64,31 @@ impl Version {
         .copied()
     }
 
+    /// Returns an [`Iterator`] over the suggested ciphersuites for TLS,
+    /// according to this version. The ciphersuites are specified in OpenSSL's
+    /// format.
+    /// 
+    /// # Examples:
+    /// 
+    /// ```
+    /// use fasters::transport::fixs::Version;
+    /// 
+    /// let version = Version::V1Draft;
+    /// let mut ciphersuites_openssl = version.recommended_cs_openssl(false);
+    /// assert!(ciphersuites_openssl.any(|cs| cs == "DHE-RSA-AES128-GCM-SHA256"));
+    /// ```
+    /// 
+    /// List all ciphersuites in a colon-separated format, like required by
+    /// [`openssl-ciphers`](https://www.openssl.org/docs/manmaster/man1/openssl-ciphers.html).
+    /// 
+    /// ```
+    /// use fasters::transport::fixs::Version;
+    /// 
+    /// let version = Version::V1Draft;
+    /// let mut ciphersuites_openssl = version.recommended_cs_openssl(false);
+    /// let cipherlist = ciphersuites_openssl.collect::<Vec<&str>>().join(":");
+    /// println!("Supported ciphers: {}", cipherlist);
+    /// ```
     pub fn recommended_cs_openssl(&self, psk: bool) -> impl Iterator<Item = &str> {
         self.recommended_cs_iana(psk)
             .map(|s| *ciphersuites::IANA_TO_OPENSSL.get(s).unwrap())
