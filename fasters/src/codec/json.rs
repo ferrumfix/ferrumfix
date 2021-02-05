@@ -5,7 +5,7 @@ use crate::app::TsrMessageRef;
 use crate::codec::*;
 use crate::Dictionary;
 use serde_json::json;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 
 /// Transmuter configuration for the [`Codec`] encoding.
@@ -81,8 +81,8 @@ where
         &self,
         dictionary: &Dictionary,
         value: &serde_json::Value,
-    ) -> Result<HashMap<i64, slr::FixFieldValue>, DecodeError> {
-        let mut group = HashMap::new();
+    ) -> Result<BTreeMap<i64, slr::FixFieldValue>, DecodeError> {
+        let mut group = BTreeMap::new();
         for item in value.as_object().unwrap() {
             let (tag, field) = self.decode_field(dictionary, item.0, item.1)?;
             group.insert(tag as i64, field);

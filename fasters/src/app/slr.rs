@@ -2,7 +2,7 @@
 
 use crate::app::slr;
 use crate::app::TsrMessageRef;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::time::SystemTime;
 
 /// An owned value of a FIX field.
@@ -13,7 +13,7 @@ pub enum FixFieldValue {
     Char(char),
     String(String),
     Data(Vec<u8>),
-    Group(Vec<HashMap<i64, FixFieldValue>>),
+    Group(Vec<BTreeMap<i64, FixFieldValue>>),
 }
 
 impl From<i64> for FixFieldValue {
@@ -102,7 +102,7 @@ impl Field {
 /// FIX message, backed by an associative array.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Message {
-    pub fields: HashMap<i64, FixFieldValue>,
+    pub fields: BTreeMap<i64, FixFieldValue>,
 }
 
 impl TsrMessageRef for Message {
@@ -127,7 +127,7 @@ impl Message {
     /// Creates a new [`Message`] without any fields.
     pub fn new() -> Self {
         Message {
-            fields: HashMap::new(),
+            fields: BTreeMap::new(),
         }
     }
 
