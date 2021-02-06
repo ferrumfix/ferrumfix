@@ -453,6 +453,7 @@ struct FieldData {
     /// The associated data field. If given, this field represents the length of
     /// the referenced data field
     associated_data_tag: Option<usize>,
+    value_restrictions: Option<Vec<FieldEnumData>>,
     /// Abbreviated form of the Name, typically to specify the element name when
     /// the field is used in an XML message. Can be overridden by BaseCategory /
     /// BaseCategoryAbbrName.
@@ -465,6 +466,25 @@ struct FieldData {
     /// Indicates whether the field is required in an XML message.
     required: bool,
     description: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+struct FieldEnumData {
+    value: String,
+    description: String,
+}
+
+#[derive(Debug)]
+pub struct FieldEnum<'a>(&'a Dictionary, &'a FieldEnumData);
+
+impl<'a> FieldEnum<'a> {
+    pub fn value(&self) -> &str {
+        &self.1.value[..]
+    }
+
+    pub fn description(&self) -> &str {
+        &self.1.description[..]
+    }
 }
 
 /// A field is the most granular message structure abstraction. It carries a
@@ -525,6 +545,13 @@ impl<'a> Field<'a> {
     /// [`Dictionary`].
     pub fn tag(&self) -> u32 {
         self.1.tag
+    }
+
+    pub fn enums(&self) -> Option<impl Iterator<Item = FieldEnum>> {
+        self.1
+            .value_restrictions
+            .as_ref()
+            .map(move |v| v.iter().map(move |f| FieldEnum(self.0, f)))
     }
 
     /// Returns the [`Datatype`] of `self`.
@@ -891,15 +918,40 @@ mod quickfix {
         }
     }
 
+    fn value_restrictions_from_node(
+        node: roxmltree::Node,
+        _datatype: InternalId,
+    ) -> Option<Vec<FieldEnumData>> {
+        let mut values = Vec::new();
+        for child in node.children() {
+            if child.is_element() {
+                let variant = child.attribute("enum").unwrap().to_string();
+                let description = child.attribute("description").unwrap().to_string();
+                let enum_value = FieldEnumData {
+                    value: variant,
+                    description,
+                };
+                values.push(enum_value);
+            }
+        }
+        if values.len() == 0 {
+            None
+        } else {
+            Some(values)
+        }
+    }
+
     impl FieldData {
         fn definition_from_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
             debug_assert_eq!(node.tag_name().name(), "field");
             let data_type_iid = DatatypeData::get_or_create_iid_from_ref(dict, node);
+            let value_restrictions = value_restrictions_from_node(node, data_type_iid);
             FieldData {
                 name: node.attribute("name").unwrap().to_string(),
                 tag: node.attribute("number").unwrap().parse().unwrap(),
                 data_type_iid: data_type_iid,
                 associated_data_tag: None,
+                value_restrictions,
                 required: true,
                 abbr_name: None,
                 base_category_abbr_name: None,
@@ -1065,5 +1117,29 @@ mod test {
         for version in Version::all() {
             Dictionary::from_version(version);
         }
+    }
+
+    #[test]
+    fn fix44_field_28_has_three_variants() {
+        let dict = Dictionary::from_version(Version::Fix44);
+        let field_28 = dict.get_field(28).unwrap();
+        assert_eq!(field_28.name(), "IOITransType");
+        assert_eq!(field_28.enums().unwrap().count(), 3);
+    }
+
+    #[test]
+    fn fix44_field_36_has_no_variants() {
+        let dict = Dictionary::from_version(Version::Fix44);
+        let field_36 = dict.get_field(36).unwrap();
+        assert_eq!(field_36.name(), "NewSeqNo");
+        assert!(field_36.enums().is_none());
+    }
+
+    #[test]
+    fn fix44_field_167_has_eucorp_variant() {
+        let dict = Dictionary::from_version(Version::Fix44);
+        let field_167 = dict.get_field(167).unwrap();
+        assert_eq!(field_167.name(), "SecurityType");
+        assert!(field_167.enums().unwrap().any(|e| e.value() == "EUCORP"));
     }
 }
