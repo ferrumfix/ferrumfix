@@ -105,6 +105,73 @@ pub struct Message {
     pub fields: BTreeMap<i64, FixFieldValue>,
 }
 
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct PushyMessage {
+    fields: Vec<(u32, FixFieldValue)>,
+}
+
+impl TsrMessageRef for PushyMessage {
+    fn set_field(&mut self, msg_type: u32, val: slr::FixFieldValue) {
+        PushyMessage::add_field(self, msg_type, val)
+    }
+
+    fn get_field(&self, msg_type: u32) -> Option<&slr::FixFieldValue> {
+        PushyMessage::get_field(self, msg_type)
+    }
+}
+
+impl PushyMessage {
+    /// Creates a new [`Message`] without any fields.
+    pub fn new() -> Self {
+        Self {
+            fields: Vec::new(),
+        }
+    }
+
+    /// Adds a field to `self`.
+    pub fn add_field<K: Into<u32>>(&mut self, tag: K, value: slr::FixFieldValue) {
+        self.fields.push((tag.into(), value));
+    }
+
+    /// Adds a string field to `self`.
+    pub fn add_str<K: Into<u32>, S: Into<String>>(&mut self, tag: K, value: S) {
+        self.add_field(tag, slr::FixFieldValue::String(value.into()))
+    }
+
+    /// Adds an integer field to `self`.
+    pub fn add_int<K: Into<u32>>(&mut self, tag: K, value: i64) {
+        self.add_field(tag, slr::FixFieldValue::Int(value))
+    }
+
+    pub fn get_field<K: Into<u32>>(&self, tag: K) -> Option<&slr::FixFieldValue> {
+        let tag = tag.into();
+        let index = self.fields.iter().position(|(t, _)| *t == tag);
+        index.map(|i| &self.fields[i].1)
+    }
+
+    pub fn msg_type(&self) -> Option<&str> {
+        match self.get_field(35u32) {
+            Some(FixFieldValue::String(s)) => Some(s.as_str()),
+            _ => None,
+        }
+    }
+
+    pub fn seq_num(&self) -> Option<u64> {
+        match self.get_field(34u32) {
+            Some(FixFieldValue::Int(n)) => Some(*n as u64),
+            _ => None,
+        }
+    }
+
+    pub fn test_indicator(&self) -> Option<bool> {
+        match self.get_field(464u32) {
+            Some(FixFieldValue::Char('Y')) => Some(true),
+            Some(FixFieldValue::Char('N')) => Some(false),
+            _ => Some(false),
+        }
+    }
+}
+
 impl TsrMessageRef for Message {
     fn get_field(&self, msg_type: u32) -> Option<&slr::FixFieldValue> {
         self.fields.get(&(msg_type as i64))
