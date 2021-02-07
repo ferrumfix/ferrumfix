@@ -209,7 +209,10 @@ where
     }
 }
 
-impl Encoder<slr::Message> for Codec<slr::Message> {
+impl<Z> Encoder<slr::Message> for (Codec<slr::Message>, Z)
+where
+    Z: Transmuter,
+{
     type Error = EncodeError;
 
     fn encode(
@@ -217,10 +220,14 @@ impl Encoder<slr::Message> for Codec<slr::Message> {
         mut buffer: impl Buffer,
         message: &slr::Message,
     ) -> Result<usize, Self::Error> {
-        let separator = '|' as u8;
         let mut writer = BufferWriter::new(&mut buffer);
         // First, write `BeginString(8)`.
-        encode_field(8, message.get_field(8).unwrap(), &mut writer, separator)?;
+        encode_field(
+            8,
+            message.get_field(8).unwrap(),
+            &mut writer,
+            Z::SOH_SEPARATOR,
+        )?;
         // The second field is supposed to be `BodyLength(9)`, but obviously
         // the length of the message is unknow until later in the
         // serialization phase. This alone would usually require to
@@ -236,28 +243,37 @@ impl Encoder<slr::Message> for Codec<slr::Message> {
         // some bytes but the benefits largely outweight the costs.
         //
         // Six digits (~1MB) ought to be enough for every message.
-        writer.extend_from_slice(b"9=000000|");
-        let body_length_range = writer.as_slice().len() - 7..writer.as_slice().len();
+        writer.extend_from_slice(b"9=000000");
+        writer.extend_from_slice(&[Z::SOH_SEPARATOR]);
+        let body_length_range = writer.as_slice().len() - 7..writer.as_slice().len() - 2;
         // We now must start to calculate the message length.
         let mut len = 0;
         // Third field: `MsgType(35)`.
-        encode_field(35, message.get_field(35).unwrap(), &mut writer, separator)?;
+        encode_field(
+            35,
+            message.get_field(35).unwrap(),
+            &mut writer,
+            Z::SOH_SEPARATOR,
+        )?;
         // Now all the other fields.
         for (tag, value) in message.fields.iter() {
             if *tag != 35 {
-                len += encode_field(*tag as u32, value, &mut writer, separator)?;
+                len += encode_field(*tag as u32, value, &mut writer, Z::SOH_SEPARATOR)?;
             }
         }
         // Finally, we need to serialize the `Checksum(10)` field.
         //encode_field(9, &slr::FixFieldValue::Int(len as i64), &mut writer)?;
-        let body_length_slice = &mut writer.as_mut_slice()[body_length_range];
-        body_length_slice[3] = len as u8;
-        let checksum = 42; // FIXME
+        for i in body_length_range.rev() {
+            writer.as_mut_slice()[i] = (len % 10) as u8 + '0' as u8;
+            len /= 10;
+        }
+        let mut checksum = Z::ChecksumAlgo::default();
+        checksum.roll(writer.as_slice());
         encode_field(
             10,
-            &slr::FixFieldValue::Int(checksum),
+            &slr::FixFieldValue::Int(checksum.result() as i64),
             &mut writer,
-            separator,
+            Z::SOH_SEPARATOR,
         )?;
         Ok(writer.as_slice().len())
     }
@@ -449,6 +465,7 @@ where
 }
 
 fn field_value(datatype: BaseType, buf: &[u8]) -> Result<slr::FixFieldValue, Error> {
+    debug_assert!(!buf.is_empty());
     Ok(match datatype {
         BaseType::Char => slr::FixFieldValue::Char(buf[0] as char),
         BaseType::String => {
@@ -461,12 +478,20 @@ fn field_value(datatype: BaseType, buf: &[u8]) -> Result<slr::FixFieldValue, Err
                 .parse::<f64>()
                 .map_err(|_| Error::Syntax)?,
         ),
-        BaseType::Int => slr::FixFieldValue::Int(
-            str::from_utf8(buf)
-                .map_err(|_| Error::Syntax)?
-                .parse::<i64>()
-                .map_err(|_| Error::Syntax)?,
-        ),
+        BaseType::Int => {
+            let mut n: i64 = 0;
+            for byte in buf {
+                if *byte >= '0' as u8 && *byte <= '9' as u8 {
+                    let digit = byte - '0' as u8;
+                    n = n * 10 + digit as i64;
+                } else if *byte == '-' as u8 {
+                    n *= -1;
+                } else if *byte != '+' as u8 {
+                    return Err(Error::Syntax);
+                }
+            }
+            slr::FixFieldValue::Int(n)
+        }
     })
 }
 
