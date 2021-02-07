@@ -351,7 +351,7 @@ mod acceptor {
                     to.push(EventOutbound::Message(add_time_to_msg(msg)));
                 }
             };
-            if self.state == State::Terminated && msg_type != Some("A") {
+            if self.state == State::Disconnected && msg_type != Some("A") {
                 to.push(EventOutbound::Terminate);
                 return;
             }
@@ -749,12 +749,19 @@ mod test {
         assert!(!rule_any.validate(&Duration::from_secs(0)).is_ok());
     }
 
+    /// Condition:
+    ///
+    /// > Valid Logon(35=A) request message received.
+    ///
+    /// Expected behavior:
+    ///
+    /// > Respond with Logon(35=A) acknowledgement message.
     #[tokio::test]
     async fn testcase_1s_a_1() {
         let mut msg = slr::Message::new();
-        msg.add_field(35, slr::FixFieldValue::String("A".to_string()));
-        msg.add_field(108, slr::FixFieldValue::Int(30));
-        msg.add_field(34, slr::FixFieldValue::Int(1));
+        msg.add_str(35, "A".to_string());
+        msg.add_int(108, 30);
+        msg.add_int(34, 1);
         let mut acceptor = acceptor();
         let mut events = acceptor.notify(EventInbound::IncomingMessage(msg));
         match events.next().unwrap() {
@@ -774,12 +781,19 @@ mod test {
         assert!(events.next().is_none());
     }
 
+    /// Condition:
+    ///
+    /// > Valid Logon(35=A) request message received.
+    ///
+    /// Expected behavior:
+    ///
+    /// > If MsgSeqNum(34) > NextNumIn send ResendRequest(35=2).
     #[tokio::test]
     async fn testcase_1s_a_2() {
         let mut msg = slr::Message::new();
-        msg.add_field(35, slr::FixFieldValue::String("A".to_string()));
-        msg.add_field(108, slr::FixFieldValue::Int(30));
-        msg.add_field(34, slr::FixFieldValue::Int(42));
+        msg.add_str(35, "A".to_string());
+        msg.add_int(108, 30);
+        msg.add_int(34, 42);
         let mut acceptor = acceptor();
         let mut events = acceptor.notify(EventInbound::IncomingMessage(msg));
         match events.next().unwrap() {
@@ -799,12 +813,22 @@ mod test {
         assert!(events.next().is_none());
     }
 
+    /// Condition:
+    ///
+    /// > Logon(35=A) message received with duplicate identity (e.g. same IP,
+    /// port, SenderCompID(49), TargetCompID(56), etc. as existing connection).
+    ///
+    /// Expected behavior:
+    ///
+    /// > 1. Generate an error condition in test output.
+    /// > 2. Disconnect without sending a message (Note: sending a Reject or
+    /// Logout(35=5) would consume a MsgSeqNum(34)).
     #[tokio::test]
     async fn testcase_1s_b() {
         let mut msg = slr::Message::new();
-        msg.add_field(35, slr::FixFieldValue::String("A".to_string()));
-        msg.add_field(108, slr::FixFieldValue::Int(30));
-        msg.add_field(34, slr::FixFieldValue::Int(1));
+        msg.add_str(35, "A".to_string());
+        msg.add_int(108, 30);
+        msg.add_int(34, 1);
         let mut acceptor = acceptor();
         let mut events = acceptor.notify(EventInbound::IncomingMessage(msg.clone()));
         // First Logon message is fine.
@@ -826,12 +850,20 @@ mod test {
         assert!(events.next().is_none());
     }
 
+    /// Condition:
+    ///
+    /// > First message received is not a Logon(35=A) message.
+    ///
+    /// Expected behavior:
+    ///
+    /// > 1. Log an error “First message not a logon”.
+    /// > 2. Disconnect.
     #[test]
     fn testcase_2s() {
         let mut msg = slr::Message::new();
-        msg.add_field(35, slr::FixFieldValue::String("0".to_string()));
-        msg.add_field(108, slr::FixFieldValue::Int(30));
-        msg.add_field(34, slr::FixFieldValue::Int(1));
+        msg.add_str(35, "0".to_string());
+        msg.add_int(108, 30);
+        msg.add_int(34, 1);
         let mut acceptor = acceptor();
         let mut events = acceptor.notify(EventInbound::IncomingMessage(msg));
         // First Logon message is fine.
