@@ -95,45 +95,40 @@ where
     }
 
     fn attempt_decoding(&mut self) -> Result<Option<&Body>, Self::Error> {
-        let mut field_iter: FieldIter<_, Z> = FieldIter {
+        let mut field_iter: &mut FieldIter<_, Z> = &mut FieldIter {
             handle: &mut &self.0.buffer[..],
-            checksum: Z::ChecksumAlgo::default(),
             designator: Z::TagLookup::from_dict(&self.0.dict),
             is_last: false,
             data_length: 0,
         };
         let mut message = slr::Message::new();
-        println!("begin");
         {
             // `BeginString(8)`.
-            let (_, _, f) = field_iter.next().ok_or(Error::Eof)??;
+            let f = field_iter.next().ok_or(Error::Eof)??;
             if f.tag() == 8 {
                 message.set_field(f.tag() as u32, f.value().clone());
             } else {
                 return Err(Error::InvalidStandardHeader);
             }
         };
-        println!("beginstring done");
         {
             // `BodyLength(9)`.
-            let (_, _, f) = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
             if f.tag() == 9 {
                 message.set_field(f.tag() as u32, f.value().clone());
             } else {
                 return Err(Error::InvalidStandardHeader);
             }
         };
-        println!("bodylength done");
         {
             // `MsgType(35)`.
-            let (_, _, f) = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
             if f.tag() == 35 {
                 message.set_field(f.tag() as u32, f.value().clone());
             } else {
                 return Err(Error::InvalidStandardHeader);
             }
         };
-        println!("msgtype done");
         self.0.state = DecoderState::Body(0);
         self.0.state = DecoderState::Trailer;
         Ok(Some(&self.0.body))
@@ -152,9 +147,10 @@ where
     type Error = DecodeError;
 
     fn decode(&mut self, mut data: &[u8]) -> Result<&T, Self::Error> {
-        let mut field_iter: FieldIter<_, Z> = FieldIter {
+        let mut checksum = Z::ChecksumAlgo::default();
+        checksum.roll(&data[..data.len() - 7]);
+        let mut field_iter: &mut FieldIter<_, Z> = &mut FieldIter {
             handle: &mut data,
-            checksum: Z::ChecksumAlgo::default(),
             designator: Z::TagLookup::from_dict(&self.0.dict),
             is_last: false,
             data_length: 0,
@@ -162,7 +158,7 @@ where
         let mut message = T::default();
         {
             // `BeginString(8)`.
-            let (_, _, f) = field_iter.next().ok_or(Error::Eof)??;
+            let f = field_iter.next().ok_or(Error::Eof)??;
             if f.tag() == 8 {
                 message.set_field(f.tag() as u32, f.value().clone());
             } else {
@@ -171,7 +167,7 @@ where
         };
         {
             // `BodyLength(9)`.
-            let (_, _, f) = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
             if f.tag() == 9 {
                 message.set_field(f.tag() as u32, f.value().clone());
             } else {
@@ -180,7 +176,7 @@ where
         };
         {
             // `MsgType(35)`.
-            let (_, _, f) = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
+            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
             if f.tag() == 35 {
                 message.set_field(f.tag() as u32, f.value().clone());
             } else {
@@ -188,10 +184,21 @@ where
             }
         };
         let mut last_tag = 35;
-        for f_result in field_iter {
-            let (_, _, f) = f_result?;
+        for f_result in &mut field_iter {
+            let f = f_result?;
             message.set_field(f.tag() as u32, f.value().clone());
             last_tag = f.tag();
+        }
+        let chesksum_field = message.get_field(10);
+        if let Some(slr::FixFieldValue::String(s)) = chesksum_field {
+            let n = s.as_str().parse::<u8>().unwrap();
+            if !checksum.verify(n) {
+                let checksum_error = InvalidChecksum {
+                    actual: n,
+                    expected: checksum.result(),
+                };
+                return Err(Error::InvalidChecksum(checksum_error));
+            }
         }
         if last_tag == 10 {
             self.0.message = message;
@@ -210,9 +217,10 @@ impl Encoder<slr::Message> for Codec<slr::Message> {
         mut buffer: impl Buffer,
         message: &slr::Message,
     ) -> Result<usize, Self::Error> {
+        let separator = '|' as u8;
         let mut writer = BufferWriter::new(&mut buffer);
         // First, write `BeginString(8)`.
-        encode_field(8, message.get_field(8).unwrap(), &mut writer)?;
+        encode_field(8, message.get_field(8).unwrap(), &mut writer, separator)?;
         // The second field is supposed to be `BodyLength(9)`, but obviously
         // the length of the message is unknow until later in the
         // serialization phase. This alone would usually require to
@@ -233,11 +241,11 @@ impl Encoder<slr::Message> for Codec<slr::Message> {
         // We now must start to calculate the message length.
         let mut len = 0;
         // Third field: `MsgType(35)`.
-        encode_field(35, message.get_field(35).unwrap(), &mut writer)?;
+        encode_field(35, message.get_field(35).unwrap(), &mut writer, separator)?;
         // Now all the other fields.
         for (tag, value) in message.fields.iter() {
             if *tag != 35 {
-                len += encode_field(*tag as u32, value, &mut writer)?;
+                len += encode_field(*tag as u32, value, &mut writer, separator)?;
             }
         }
         // Finally, we need to serialize the `Checksum(10)` field.
@@ -245,7 +253,12 @@ impl Encoder<slr::Message> for Codec<slr::Message> {
         let body_length_slice = &mut writer.as_mut_slice()[body_length_range];
         body_length_slice[3] = len as u8;
         let checksum = 42; // FIXME
-        encode_field(10, &slr::FixFieldValue::Int(checksum), &mut writer)?;
+        encode_field(
+            10,
+            &slr::FixFieldValue::Int(checksum),
+            &mut writer,
+            separator,
+        )?;
         Ok(writer.as_slice().len())
     }
 }
@@ -254,6 +267,7 @@ fn encode_field(
     tag: u32,
     value: &slr::FixFieldValue,
     write: &mut impl io::Write,
+    separator: u8,
 ) -> io::Result<usize> {
     let mut length = write.write(tag.to_string().as_bytes())? + 2;
     write.write_all(&[b'='])?;
@@ -265,7 +279,7 @@ fn encode_field(
         slr::FixFieldValue::Data(raw_data) => write.write(&raw_data),
         slr::FixFieldValue::Group(_) => panic!("Can't encode a group!"),
     }?;
-    write.write_all(&['|' as u8])?;
+    write.write_all(&[separator])?;
     Ok(length)
 }
 
@@ -370,16 +384,15 @@ struct FieldIter<R, Z: Transmuter> {
     handle: R,
     is_last: bool,
     data_length: u32,
-    checksum: Z::ChecksumAlgo,
     designator: Z::TagLookup,
 }
 
-impl<'d, R, Z> Iterator for FieldIter<&'d mut R, Z>
+impl<'d, R, Z> Iterator for &mut FieldIter<&'d mut R, Z>
 where
     R: io::Read,
     Z: Transmuter,
 {
-    type Item = Result<(u8, usize, slr::Field), DecodeError>;
+    type Item = Result<slr::Field, DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.is_last {
@@ -408,8 +421,6 @@ where
             Ok(BaseType::Data) => {
                 buffer = vec![0u8; self.data_length as usize];
                 self.handle.read_exact(&mut buffer).unwrap();
-                self.checksum.roll(&buffer[..]);
-                self.checksum.roll(&[Z::SOH_SEPARATOR]);
                 self.handle.read_exact(&mut buffer[0..1]).unwrap();
             }
             Ok(_basetype) => {
@@ -425,7 +436,6 @@ where
                         buffer.push(byte);
                     }
                 }
-                self.checksum.roll(&buffer[..]);
             }
             Err(_) => (),
         };
@@ -434,11 +444,7 @@ where
         if let slr::FixFieldValue::Int(l) = field_value {
             self.data_length = l as u32;
         }
-        Some(Ok((
-            self.checksum.clone().result(),
-            self.checksum.window_length(),
-            slr::Field::new(tag, field_value),
-        )))
+        Some(Ok(slr::Field::new(tag, field_value)))
     }
 }
 
@@ -529,12 +535,15 @@ pub trait ChecksumAlgo: Default + Clone {
     /// Calculates the checksum of `window` and compounds it with `self`.
     fn roll(&mut self, window: &[u8]);
 
+    /// Adds a partial checksum to `self`.
+    fn add(&mut self, sum: u8);
+
     /// Returns the amount of bytes that were processed calculating for this
     /// checksum.
     fn window_length(&self) -> usize;
 
     /// Returns the final checksum value.
-    fn result(self) -> u8;
+    fn result(&self) -> u8;
 
     /// Checks that the calculated checksum of `self` matches `checksum`.
     fn verify(&self, checksum: u8) -> bool;
@@ -556,11 +565,15 @@ impl ChecksumAlgo for ChecksumAlgoStd {
         self.len += window.len();
     }
 
+    fn add(&mut self, sum: u8) {
+        self.checksum = self.checksum.wrapping_add(sum);
+    }
+
     fn window_length(&self) -> usize {
         self.len
     }
 
-    fn result(self) -> u8 {
+    fn result(&self) -> u8 {
         self.checksum
     }
 
@@ -580,11 +593,13 @@ impl ChecksumAlgo for ChecksumAlgoLazy {
         self.len += window.len();
     }
 
+    fn add(&mut self, _sum: u8) {}
+
     fn window_length(&self) -> usize {
         self.len
     }
 
-    fn result(self) -> u8 {
+    fn result(&self) -> u8 {
         0
     }
 
@@ -641,10 +656,32 @@ mod test {
         (Codec::new(), TransVerticalSlash)
     }
 
+    fn encoder_with_soh() -> (Codec<slr::Message>, impl Transmuter) {
+        (Codec::new(), TransStd)
+    }
+
+    #[derive(Clone, Debug)]
+    struct TransVerticalSlashNoVerify;
+
+    impl Transmuter for TransVerticalSlashNoVerify {
+        type ChecksumAlgo = ChecksumAlgoLazy;
+        type TagLookup = TagLookupPredetermined;
+
+        const SOH_SEPARATOR: u8 = '|' as u8;
+    }
+
+    fn encoder_slash_no_verify() -> (Codec<slr::Message>, impl Transmuter) {
+        (Codec::new(), TransVerticalSlashNoVerify)
+    }
+
+    fn with_soh(msg: &str) -> String {
+        msg.split("|").collect::<Vec<&str>>().join("\x01")
+    }
+
     #[test]
     fn can_parse_simple_message() {
-        let msg = "8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127|";
-        let mut codec = encoder();
+        let msg = with_soh("8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=050|");
+        let mut codec = encoder_with_soh();
         let result = codec.decode(&mut msg.as_bytes());
         assert!(result.is_ok());
     }
@@ -657,13 +694,13 @@ mod test {
         "8=FIX.4.4|9=70|35=4|49=A|56=XYZ|34=129|52=20100302-19:38:21|43=Y|57=LOL|123=Y|36=175|10=192|",
         "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072|",
         "8=FIX.4.2|9=196|35=X|49=A|56=B|34=12|52=20100318-03:21:11.364|262=A|268=2|279=0|269=0|278=BID|55=EUR/USD|270=1.37215|15=EUR|271=2500000|346=1|279=0|269=1|278=OFFER|55=EUR/USD|270=1.37224|15=EUR|271=2503200|346=1|10=171|",
-        "8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|",
     ];
 
     #[test]
     fn assortment_of_random_messages_is_ok() {
-        for msg in RANDOM_MESSAGES {
-            let mut codec = encoder();
+        for msg_with_vertical_bar in RANDOM_MESSAGES {
+            let msg = with_soh(msg_with_vertical_bar);
+            let mut codec = encoder_with_soh();
             let result = codec.decode(&mut msg.as_bytes());
             assert!(result.is_ok());
         }
@@ -671,7 +708,7 @@ mod test {
 
     #[test]
     fn heartbeat_message_fields_are_ok() {
-        let mut codec = encoder();
+        let mut codec = encoder_slash_no_verify();
         let message = codec.decode(&mut RANDOM_MESSAGES[0].as_bytes()).unwrap();
         assert_eq!(
             message.get_field(8),
@@ -718,7 +755,12 @@ mod test {
 
     #[test]
     fn detect_incorrect_checksum() {
-        let msg = "8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=126|";
-        let _result = encoder().decode(&mut msg.as_bytes());
+        let msg = "8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=146|";
+        let mut codec = encoder();
+        let result = codec.decode(&mut msg.as_bytes());
+        match result {
+            Err(DecodeError::InvalidChecksum(_)) => (),
+            _ => panic!(),
+        }
     }
 }
