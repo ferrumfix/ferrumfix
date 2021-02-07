@@ -2,7 +2,7 @@
 # Fasters
 
 [![Crates.io](https://img.shields.io/crates/v/fasters)](https://crates.io/crates/fasters)
-[![Docs.rs](https://img.shields.io/badge/docs.rs-v0.2.1-green)](https://docs.rs/fasters/0.2.1/fasters/)
+[![Docs.rs](https://img.shields.io/badge/docs.rs-v0.3.0-green)](https://docs.rs/fasters/0.3.0/fasters/)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat)](https://github.com/clap-rs/clap/blob/master/LICENSE-MIT)
 [![Open issues](https://img.shields.io/github/issues-raw/neysofu/fasters)](https://img.shields.io/github/issues-raw/neysofu/fasters)
 [![matrix.org](https://img.shields.io/badge/matrix.org-%23fasters-blue)](https://matrix.to/#/#fasters:matrix.org)
