@@ -70,21 +70,24 @@ impl Transmuter for TransPrettyPrint {
 
 /// A codec device for the JSON data format.
 #[derive(Debug, Clone)]
-pub struct Codec<T> {
+pub struct Codec<T, Z> {
     dictionaries: HashMap<String, Dictionary>,
     message: T,
+    transmuter: Z,
 }
 
-impl<T> Codec<T>
+impl<T, Z> Codec<T, Z>
 where
     T: TsrMessageRef,
+    Z: Transmuter,
 {
-    pub fn new(dict: Dictionary) -> Self {
+    pub fn new(dict: Dictionary, transmuter: Z) -> Self {
         let mut dictionaries = HashMap::new();
         dictionaries.insert(dict.get_version().to_string(), dict);
         Self {
             dictionaries,
             message: T::default(),
+            transmuter,
         }
     }
 
@@ -152,7 +155,7 @@ where
     }
 }
 
-impl<Z, T> Decoder<T> for (Codec<T>, Z)
+impl<Z, T> Decoder<T> for Codec<T, Z>
 where
     T: TsrMessageRef,
     Z: Transmuter,
@@ -183,21 +186,20 @@ where
             .and_then(|v| v.as_str())
             .ok_or(Self::Error::Schema)?;
         let dictionary = self
-            .0
             .dictionaries
             .get(field_begin_string)
             .ok_or(Self::Error::InvalidMsgType)?;
         let mut message = T::default();
         for item in header.iter().chain(body).chain(trailer) {
-            let (tag, field) = self.0.decode_field(dictionary, item.0, item.1)?;
+            let (tag, field) = self.decode_field(dictionary, item.0, item.1)?;
             message.set_field(tag, field);
         }
-        self.0.message = message;
-        Ok(&self.0.message)
+        self.message = message;
+        Ok(&self.message)
     }
 }
 
-impl<Z, T> Encoder<slr::Message> for (Codec<T>, Z)
+impl<Z, T> Encoder<slr::Message> for Codec<T, Z>
 where
     Z: Transmuter,
     T: TsrMessageRef,
@@ -211,7 +213,7 @@ where
     ) -> Result<usize, Self::Error> {
         let dictionary =
             if let Some(slr::FixFieldValue::String(fix_version)) = message.fields.get(&8) {
-                self.0
+                self
                     .dictionaries
                     .get(fix_version.as_str())
                     .ok_or(Self::Error::Dictionary)?
@@ -233,7 +235,7 @@ where
                 .get_field(*field_tag as u32)
                 .ok_or(Self::Error::Dictionary)?;
             let field_name = field.name().to_string();
-            let field_value = self.0.translate(dictionary, field_value);
+            let field_value = self.translate(dictionary, field_value);
             if component_std_header.contains_field(&field) {
                 map_header
                     .as_object_mut()
@@ -257,7 +259,7 @@ where
             "Trailer": map_trailer,
         });
         let mut writer = BufferWriter::new(buffer);
-        if self.1.pretty_print() {
+        if self.transmuter.pretty_print() {
             serde_json::to_writer_pretty(&mut writer, &value).unwrap();
         } else {
             serde_json::to_writer(&mut writer, &value).unwrap();
@@ -342,8 +344,8 @@ mod test {
         Dictionary::from_version(crate::app::Version::Fix44)
     }
 
-    fn encoder_fix44() -> (Codec<slr::Message>, impl Transmuter) {
-        (Codec::new(dict_fix44()), TransPrettyPrint)
+    fn encoder_fix44() -> Codec<slr::Message, impl Transmuter> {
+        Codec::new(dict_fix44(), TransPrettyPrint)
     }
 
     #[test]

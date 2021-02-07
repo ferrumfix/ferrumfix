@@ -24,8 +24,7 @@ fn server() -> tide::Server<State> {
 /// case, JSON (en/de)coding devices.
 #[derive(Clone)]
 struct State {
-    codec: json::Codec<app::slr::Message>,
-    transmuter: json::TransPrettyPrint,
+    codec: json::Codec<app::slr::Message, json::TransPrettyPrint>,
 }
 
 impl State {
@@ -38,8 +37,7 @@ impl Default for State {
     fn default() -> Self {
         let dictionary = Dictionary::from_version(Version::Fix42);
         Self {
-            codec: json::Codec::new(dictionary),
-            transmuter: json::TransPrettyPrint,
+            codec: json::Codec::new(dictionary, json::TransPrettyPrint),
         }
     }
 }
@@ -49,15 +47,17 @@ async fn serve_hello_world(_req: tide::Request<State>) -> tide::Result {
 }
 
 async fn serve_json_relay(mut req: tide::Request<State>) -> tide::Result {
-    let mut decoder = (req.state().codec.clone(), req.state().transmuter.clone());
+    let mut decoder = req.state().codec.clone();
     let message = {
         let body: Vec<u8> = req.body_bytes().await?;
         decoder.decode(&body[..]).unwrap()
     };
     let mut buffer = Vec::new();
     let body_response = {
-        let codec = tagvalue::Codec::with_dict(Dictionary::from_version(Version::Fix42));
-        let mut encoder = (codec, tagvalue::TransStd);
+        let mut encoder = tagvalue::Codec::with_dict(
+            Dictionary::from_version(Version::Fix42),
+            tagvalue::TransStd,
+        );
         encoder.encode(&mut buffer, &message).unwrap();
         let buffer_string = std::str::from_utf8(&buffer[..]).unwrap();
         buffer_string
@@ -106,12 +106,12 @@ mod test {
         let mut response: Response = server.respond(req).await.unwrap();
         let body_tagvalue = response.take_body().into_string().await.unwrap();
         println!("{}", body_tagvalue);
-        let mut decoder_json = (
-            json::Codec::<slr::Message>::new(Dictionary::from_version(Version::Fix42)),
+        let mut decoder_json = json::Codec::<slr::Message, json::TransPrettyPrint>::new(
+            Dictionary::from_version(Version::Fix42),
             json::TransPrettyPrint,
         );
-        let mut decoder_tagvalue = (
-            tagvalue::Codec::<slr::Message>::with_dict(Dictionary::from_version(Version::Fix42)),
+        let mut decoder_tagvalue = tagvalue::Codec::<slr::Message, tagvalue::TransStd>::with_dict(
+            Dictionary::from_version(Version::Fix42),
             tagvalue::TransStd,
         );
         let msg_json = decoder_json.decode(body_json.as_bytes()).unwrap();

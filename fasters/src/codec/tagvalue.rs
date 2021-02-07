@@ -24,31 +24,34 @@ use std::str;
 ///
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
 #[derive(Debug)]
-pub struct Codec<T> {
+pub struct Codec<T, Z> {
     dict: Dictionary,
     buffer: Vec<u8>,
     state: DecoderState,
     message: T,
     body: Body,
+    transmuter: Z,
 }
 
-impl<T> Codec<T>
+impl<T, Z> Codec<T, Z>
 where
     T: TsrMessageRef,
+    Z: Transmuter,
 {
     /// Builds a new `Codec` encoding device with a FIX 4.4 dictionary.
-    pub fn new() -> Self {
-        Self::with_dict(Dictionary::from_version(Version::Fix44))
+    pub fn new(transmuter: Z) -> Self {
+        Self::with_dict(Dictionary::from_version(Version::Fix44), transmuter)
     }
 
     /// Creates a new codec for the tag-value format. `dict` is used to parse messages.
-    pub fn with_dict(dict: Dictionary) -> Self {
+    pub fn with_dict(dict: Dictionary, transmuter: Z) -> Self {
         Self {
             dict,
             buffer: Vec::new(),
             state: DecoderState::Header,
             message: T::default(),
             body: Body::new(&[]),
+            transmuter,
         }
     }
 }
@@ -75,29 +78,29 @@ impl Body {
     }
 }
 
-impl<Z> StreamingDecoder<Body> for (Codec<slr::Message>, Z)
+impl<Z> StreamingDecoder<Body> for Codec<slr::Message, Z>
 where
     Z: Transmuter,
 {
     type Error = DecodeError;
 
     fn supply_buffer(&mut self) -> &mut [u8] {
-        let buffer_len = self.0.buffer.len();
-        let additional_capacity = match self.0.state {
+        let buffer_len = self.buffer.len();
+        let additional_capacity = match self.state {
             DecoderState::Header => 50,
             DecoderState::Body(n) => n,
             DecoderState::Trailer => 7,
         };
         for _ in 0..additional_capacity {
-            self.0.buffer.push(0);
+            self.buffer.push(0);
         }
-        &mut self.0.buffer[buffer_len..]
+        &mut self.buffer[buffer_len..]
     }
 
     fn attempt_decoding(&mut self) -> Result<Option<&Body>, Self::Error> {
         let mut field_iter: &mut FieldIter<_, Z> = &mut FieldIter {
-            handle: &mut &self.0.buffer[..],
-            designator: Z::TagLookup::from_dict(&self.0.dict),
+            handle: &mut &self.buffer[..],
+            designator: Z::TagLookup::from_dict(&self.dict),
             is_last: false,
             data_length: 0,
         };
@@ -129,17 +132,17 @@ where
                 return Err(Error::InvalidStandardHeader);
             }
         };
-        self.0.state = DecoderState::Body(0);
-        self.0.state = DecoderState::Trailer;
-        Ok(Some(&self.0.body))
+        self.state = DecoderState::Body(0);
+        self.state = DecoderState::Trailer;
+        Ok(Some(&self.body))
     }
 
     fn get(&self) -> &Body {
-        &self.0.body
+        &self.body
     }
 }
 
-impl<Z, T> Decoder<T> for (Codec<T>, Z)
+impl<Z, T> Decoder<T> for Codec<T, Z>
 where
     T: TsrMessageRef,
     Z: Transmuter,
@@ -151,7 +154,7 @@ where
         checksum.roll(&data[..data.len() - 7]);
         let mut field_iter: &mut FieldIter<_, Z> = &mut FieldIter {
             handle: &mut data,
-            designator: Z::TagLookup::from_dict(&self.0.dict),
+            designator: Z::TagLookup::from_dict(&self.dict),
             is_last: false,
             data_length: 0,
         };
@@ -201,15 +204,15 @@ where
             }
         }
         if last_tag == 10 {
-            self.0.message = message;
-            Ok(&self.0.message)
+            self.message = message;
+            Ok(&self.message)
         } else {
             Err(Error::InvalidStandardTrailer)
         }
     }
 }
 
-impl<Z> Encoder<slr::Message> for (Codec<slr::Message>, Z)
+impl<Z> Encoder<slr::Message> for Codec<slr::Message, Z>
 where
     Z: Transmuter,
 {
@@ -677,12 +680,12 @@ mod test {
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
-    fn encoder() -> (Codec<slr::Message>, impl Transmuter) {
-        (Codec::new(), TransVerticalSlash)
+    fn encoder() -> Codec<slr::Message, impl Transmuter> {
+        Codec::new(TransVerticalSlash)
     }
 
-    fn encoder_with_soh() -> (Codec<slr::Message>, impl Transmuter) {
-        (Codec::new(), TransStd)
+    fn encoder_with_soh() -> Codec<slr::Message, impl Transmuter> {
+        Codec::new(TransStd)
     }
 
     #[derive(Clone, Debug)]
@@ -695,8 +698,8 @@ mod test {
         const SOH_SEPARATOR: u8 = '|' as u8;
     }
 
-    fn encoder_slash_no_verify() -> (Codec<slr::Message>, impl Transmuter) {
-        (Codec::new(), TransVerticalSlashNoVerify)
+    fn encoder_slash_no_verify() -> Codec<slr::Message, impl Transmuter> {
+        Codec::new(TransVerticalSlashNoVerify)
     }
 
     fn with_soh(msg: &str) -> String {
