@@ -1,6 +1,6 @@
 [package]
 name = "fasters_derive"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2018"
 authors = ["Filippo Costa @neysofu"]
 homepage = "https://github.com/neysofu/fasters"

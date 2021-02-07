@@ -734,7 +734,7 @@ dependencies = [
 
 [[package]]
 name = "fasters_derive"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "darling",
  "proc-macro2 1.0.24",
