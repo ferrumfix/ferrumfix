@@ -149,14 +149,6 @@ pub enum SeqNumberError {
     NoSeqNum,
 }
 
-pub trait Session {
-    type Inbound;
-    type Outbound;
-
-    fn feed(&mut self, event: Self::Inbound);
-    fn notifications(&mut self) -> Vec<Self::Outbound>;
-}
-
 type CompID = String;
 
 mod acceptor {
