@@ -18,6 +18,46 @@ use std::io;
 
 const HEADER_LENGTH: usize = 6;
 
+/// An immutable view into a SOFH-enclosed message, complete with encoding type
+/// and payload.
+///
+/// This type is returned in a borrowed form from [`sofh::Codec::decode`].
+#[derive(Debug)]
+pub struct Frame {
+    encoding_type: u16,
+    len: usize,
+    buffer: *const u8,
+}
+
+impl Frame {
+    /// Creates a new [`Frame`] that points to `data`.
+    ///
+    /// # Safety
+    /// This function is marked `unsafe` because it returns an owned `Frame`,
+    /// which should **never** be possible to an end user ([`Frame`]s should only
+    /// be borrowed for as long as the underlying buffer lives).
+    unsafe fn new(encoding_type: u16, data: &[u8]) -> Self {
+        Self {
+            encoding_type,
+            len: data.len(),
+            buffer: data.as_ptr(),
+        }
+    }
+
+    /// Returns the 16-bits encoding type of this [`Frame`]. You may want to
+    /// convert this value to an [`EncodingType`], which facilites validation via
+    /// pattern matching.
+    pub fn encoding_type(&self) -> u16 {
+        self.encoding_type
+    }
+
+    /// Returns an immutable reference to the actual contents of `self`, i.e.
+    /// without its header.
+    pub fn payload(&self) -> &[u8] {
+        unsafe { std::slice::from_raw_parts(self.buffer, self.len) }
+    }
+}
+
 /// A parser for SOFH-enclosed messages.
 ///
 /// SOFH stands for Simple Open Framing Header and it's an encoding-agnostic
@@ -107,14 +147,6 @@ impl StreamingDecoder<Frame> for BufCodec {
     }
 }
 
-fn get_message_length(data: &[u8]) -> u32 {
-    u32::from_be_bytes(data[0..4].try_into().unwrap())
-}
-
-fn get_encoding_type(data: &[u8]) -> u16 {
-    u16::from_be_bytes(data[4..HEADER_LENGTH].try_into().unwrap())
-}
-
 #[derive(Debug)]
 pub struct Codec {
     last_frame: Frame,
@@ -125,46 +157,6 @@ impl Default for Codec {
         Self {
             last_frame: unsafe { Frame::new(0, &[]) },
         }
-    }
-}
-
-/// An immutable view into a SOFH-enclosed message, complete with encoding type
-/// and payload.
-///
-/// This type is returned in a borrowed form from [`sofh::Codec::decode`].
-#[derive(Debug)]
-pub struct Frame {
-    encoding_type: u16,
-    len: usize,
-    buffer: *const u8,
-}
-
-impl Frame {
-    /// Creates a new [`Frame`] that points to `data`.
-    ///
-    /// # Safety
-    /// This function is marked `unsafe` because it returns an owned `Frame`,
-    /// which should **never** be possible to an end user ([`Frame`]s should only
-    /// be borrowed for as long as the underlying buffer lives).
-    unsafe fn new(encoding_type: u16, data: &[u8]) -> Self {
-        Self {
-            encoding_type,
-            len: data.len(),
-            buffer: data.as_ptr(),
-        }
-    }
-
-    /// Returns the 16-bits encoding type of this [`Frame`]. You may want to
-    /// convert this value to an [`EncodingType`], which facilites validation via
-    /// pattern matching.
-    pub fn encoding_type(&self) -> u16 {
-        self.encoding_type
-    }
-
-    /// Returns an immutable reference to the actual contents of `self`, i.e.
-    /// without its header.
-    pub fn payload(&self) -> &[u8] {
-        unsafe { std::slice::from_raw_parts(self.buffer, self.len) }
     }
 }
 
@@ -250,6 +242,14 @@ impl From<io::Error> for DecodeError {
     }
 }
 
+fn get_message_length(data: &[u8]) -> u32 {
+    u32::from_be_bytes(data[0..4].try_into().unwrap())
+}
+
+fn get_encoding_type(data: &[u8]) -> u16 {
+    u16::from_be_bytes(data[4..HEADER_LENGTH].try_into().unwrap())
+}
+
 /// Enumeration type mapped from the 16-bit raw space.
 ///
 /// One should always prefer to deal with raw 16-bit values and only convert to
@@ -263,49 +263,49 @@ pub enum EncodingType {
     /// Please note that `0x0` is *not* a valid [`EncodingType::Private`] value.
     Private(u8),
     /// Simple Binary Encoding (SBE) v1.0, big-endian mode.
-    /// Please refer to https://www.fixtrading.org/standards/sbe/ for more
+    /// Please refer to <https://www.fixtrading.org/standards/sbe/> for more
     /// information.
     SimpleBinaryEncodingV10BE,
     /// Simple Binary Encoding (SBE) v1.0, little-endian mode.
-    /// Please refer to https://www.fixtrading.org/standards/sbe/ for more
+    /// Please refer to <https://www.fixtrading.org/standards/sbe/> for more
     /// information.
     SimpleBinaryEncodingV10LE,
     /// Google's "Protobuf".
-    /// Please refer to https://www.fixtrading.org/standards/gpb/ for more
+    /// Please refer to <https://www.fixtrading.org/standards/gpb/> for more
     /// information.
     Protobuf,
     /// ASN.1 with Packed Encoding Rules (PER).
-    /// Please refer to https://www.fixtrading.org/standards/asn1/ for more
+    /// Please refer to <https://www.fixtrading.org/standards/asn1/> for more
     /// information.
     Asn1PER,
     /// ASN.1 with Basic Encoding Rules (BER).
-    /// Please refer to https://www.fixtrading.org/standards/asn1/ for more
+    /// Please refer to <https://www.fixtrading.org/standards/asn1/> for more
     /// information.
     Asn1BER,
     /// ASN.1 with Octet Encoding Rules (OER).
-    /// Please refer to https://www.fixtrading.org/standards/asn1/ for more
+    /// Please refer to <https://www.fixtrading.org/standards/asn1/> for more
     /// information.
     Asn1OER,
     /// Tag-value (classic) encoding.
-    /// Please refer to https://www.fixtrading.org/standards/tagvalue/ for more
+    /// Please refer to <https://www.fixtrading.org/standards/tagvalue/> for more
     /// information.
     TagValue,
     /// FIXML encoding.
-    /// Please refer to https://www.fixtrading.org/standards/fixml/ for more
+    /// Please refer to <https://www.fixtrading.org/standards/fixml/> for more
     /// information.
     FixmlSchema,
     /// FAST encoding.
-    /// Please refer to https://www.fixtrading.org/standards/fast/ for more
+    /// Please refer to <https://www.fixtrading.org/standards/fast/> for more
     /// information.
     ///
     /// Please note that `0xFA00` is *not* a valid [`EncodingType::Fast`] value.
     Fast(u8),
     /// JSON encoding.
-    /// Please refer to https://www.fixtrading.org/standards/json/ for more
+    /// Please refer to <https://www.fixtrading.org/standards/json/> for more
     /// information.
     Json,
     /// BSON encoding.
-    /// Please refer to https://www.fixtrading.org/standards/bson/ for more
+    /// Please refer to <https://www.fixtrading.org/standards/bson/> for more
     /// information.
     Bson,
     /// Unknown value.

@@ -8,7 +8,7 @@ use serde_json::json;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 
-/// Transmuter configuration for the [`Codec`] encoding.
+/// Transmuter configuration for [`json::Codec`](Codec).
 pub trait Transmuter: Clone {
     /// This setting indicates that all encoded messages should be "prettified",
     /// i.e. the JSON code will not be compressed and instead it will have
@@ -23,6 +23,42 @@ pub trait Transmuter: Clone {
 }
 
 /// A pretty-printer [`Transmuter`].
+/// 
+/// Indentation details are not specified.
+/// 
+/// # Output examples
+/// 
+/// With [`TransPrettyPrint`]:
+/// 
+/// ```
+/// {
+///     "Header": {
+///         "BeginString": "FIX.4.4",
+///         "MsgType": "W",
+///         "MsgSeqNum": "4567",
+///         "SenderCompID": "SENDER",
+///         "TargetCompID": "TARGET",
+///         "SendingTime": "20160802-21:14:38.717"
+///     },
+///     "Body": {
+///         "SecurityIDSource": "8",
+///         "SecurityID": "ESU6",
+///         "MDReqID": "789",
+///         "NoMDEntries": [
+///             { "MDEntryType": "0", "MDEntryPx": "1.50", "MDEntrySize": "75", "MDEntryTime": "21:14:38.688" },
+///             { "MDEntryType": "1", "MDEntryPx": "1.75", "MDEntrySize": "25", "MDEntryTime": "21:14:38.688" }
+///         ]
+///     },
+///     "Trailer": {
+///     }
+/// }
+/// ```
+/// 
+/// Without [`TransPrettyPrint`]:
+/// 
+/// ```
+/// {"Header":{"BeginString":"FIX.4.4","MsgType":"W","MsgSeqNum":"4567","SenderCompID":"SENDER","TargetCompID":"TARGET","SendingTime":"20160802-21:14:38.717"},"Body":{"SecurityIDSource":"8","SecurityID":"ESU6","MDReqID":"789","NoMDEntries":[{"MDEntryType":"0","MDEntryPx":"1.50","MDEntrySize":"75","MDEntryTime":"21:14:38.688"},{"MDEntryType":"1","MDEntryPx":"1.75","MDEntrySize":"25","MDEntryTime":"21:14:38.688"}]},"Trailer":{}}
+/// ```
 #[derive(Debug, Clone)]
 pub struct TransPrettyPrint;
 
@@ -32,6 +68,7 @@ impl Transmuter for TransPrettyPrint {
     }
 }
 
+/// A codec device for the JSON data format.
 #[derive(Debug, Clone)]
 pub struct Codec<T> {
     dictionaries: HashMap<String, Dictionary>,
@@ -160,9 +197,10 @@ where
     }
 }
 
-impl<Z> Encoder<slr::Message> for (Codec<slr::Message>, Z)
+impl<Z, T> Encoder<slr::Message> for (Codec<T>, Z)
 where
     Z: Transmuter,
+    T: TsrMessageRef,
 {
     type Error = EncoderError;
 
@@ -228,16 +266,24 @@ where
     }
 }
 
+/// The error type that can be returned if some error occurs when encoding JSON
+/// messages.
 #[derive(Copy, Clone, Debug)]
 pub enum EncoderError {
     Dictionary,
 }
 
+/// The error type that can be returned if some error is detected when decoding
+/// JSON messages.
 #[derive(Copy, Clone, Debug)]
 pub enum DecodeError {
+    /// Bad JSON syntax.
     Syntax,
+    /// The message is valid JSON, but not a valid FIX message.
     Schema,
+    /// Unrecognized message type.
     InvalidMsgType,
+    /// The data does not conform to the specified message type.
     InvalidData,
 }
 
