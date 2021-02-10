@@ -1,6 +1,7 @@
 //! Access to FIX Dictionary reference and message specifications.
 
 use crate::app::Version;
+use crate::datatypes;
 use quickfix::{ParseDictionaryError, QuickFixReader};
 use std::collections::HashMap;
 use std::io;
@@ -18,23 +19,24 @@ impl MsgType {
         }
         Ok(())
     }
-}
 
-impl From<&[u8]> for MsgType {
-    fn from(bytes: &[u8]) -> Self {
-        debug_assert!(bytes.len() <= std::mem::size_of::<u16>());
-        let mut value: u16 = 0;
-        for byte in bytes {
-            value = (value << 8) + (*byte as u16);
+    pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
+        if bytes.is_empty() || bytes.len() >= 3 {
+            None
+        } else {
+            let mut value: u16 = 0;
+            for byte in bytes {
+                value = (value << 8) + (*byte as u16);
+            }
+            Some(Self(value))
         }
-        MsgType(value)
     }
 }
 
 type InternalId = u32;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-enum PKey {
+enum Key {
     #[allow(dead_code)]
     Abbreviation(String),
     CategoryByName(String),
@@ -47,7 +49,7 @@ enum PKey {
 }
 
 #[derive(Copy, Debug, Clone, PartialEq, Eq, Hash)]
-enum PKeyRef<'a> {
+enum KeyRef<'a> {
     Abbreviation(&'a str),
     CategoryByName(&'a str),
     ComponentByName(&'a str),
@@ -58,33 +60,33 @@ enum PKeyRef<'a> {
     MessageByMsgType(MsgType),
 }
 
-impl PKey {
-    fn as_ref<'a>(&'a self) -> PKeyRef<'a> {
+impl Key {
+    fn as_ref<'a>(&'a self) -> KeyRef<'a> {
         match self {
-            PKey::Abbreviation(s) => PKeyRef::Abbreviation(s.as_str()),
-            PKey::CategoryByName(s) => PKeyRef::CategoryByName(s.as_str()),
-            PKey::ComponentByName(s) => PKeyRef::ComponentByName(s.as_str()),
-            PKey::DatatypeByName(s) => PKeyRef::DatatypeByName(s.as_str()),
-            PKey::FieldByTag(t) => PKeyRef::FieldByTag(*t),
-            PKey::FieldByName(s) => PKeyRef::FieldByName(s.as_str()),
-            PKey::MessageByName(s) => PKeyRef::MessageByName(s.as_str()),
-            PKey::MessageByMsgType(t) => PKeyRef::MessageByMsgType(*t),
+            Key::Abbreviation(s) => KeyRef::Abbreviation(s.as_str()),
+            Key::CategoryByName(s) => KeyRef::CategoryByName(s.as_str()),
+            Key::ComponentByName(s) => KeyRef::ComponentByName(s.as_str()),
+            Key::DatatypeByName(s) => KeyRef::DatatypeByName(s.as_str()),
+            Key::FieldByTag(t) => KeyRef::FieldByTag(*t),
+            Key::FieldByName(s) => KeyRef::FieldByName(s.as_str()),
+            Key::MessageByName(s) => KeyRef::MessageByName(s.as_str()),
+            Key::MessageByMsgType(t) => KeyRef::MessageByMsgType(*t),
         }
     }
 }
 
 trait SymbolTableIndex {
-    fn to_key(&self) -> PKeyRef;
+    fn to_key(&self) -> KeyRef;
 }
 
-impl SymbolTableIndex for PKey {
-    fn to_key(&self) -> PKeyRef {
+impl SymbolTableIndex for Key {
+    fn to_key(&self) -> KeyRef {
         self.as_ref()
     }
 }
 
-impl<'a> SymbolTableIndex for PKeyRef<'a> {
-    fn to_key(&self) -> PKeyRef {
+impl<'a> SymbolTableIndex for KeyRef<'a> {
+    fn to_key(&self) -> KeyRef {
         *self
     }
 }
@@ -95,7 +97,7 @@ impl<'a> std::hash::Hash for dyn SymbolTableIndex + 'a {
     }
 }
 
-impl<'a> std::borrow::Borrow<dyn SymbolTableIndex + 'a> for PKey {
+impl<'a> std::borrow::Borrow<dyn SymbolTableIndex + 'a> for Key {
     fn borrow(&self) -> &(dyn SymbolTableIndex + 'a) {
         self
     }
@@ -109,7 +111,13 @@ impl<'a> PartialEq for dyn SymbolTableIndex + 'a {
     }
 }
 
-/// Specification of the application layer of FIX Protocol.
+/// Specifies business semantics for application-level entities within the FIX
+/// Protocol.
+///
+/// [`Dictionary`] doesn't provide information regarding
+/// the detailed layouts of messages and components; such intricacies are handled
+/// by the
+/// presentation layer ([`fasters::codec`]).
 ///
 /// All FIX Dictionaries have a version string which MUST be unique and
 /// established out-of-band between involved parties.
@@ -121,7 +129,7 @@ impl<'a> PartialEq for dyn SymbolTableIndex + 'a {
 #[derive(Clone, Debug)]
 pub struct Dictionary {
     version: String,
-    symbol_table: HashMap<PKey, InternalId>,
+    symbol_table: HashMap<Key, InternalId>,
     abbreviations: Vec<AbbreviatonData>,
     data_types: Vec<DatatypeData>,
     fields: Vec<FieldData>,
@@ -181,14 +189,14 @@ impl Dictionary {
         self.version.as_str()
     }
 
-    fn symbol(&self, pkey: PKeyRef) -> Option<&u32> {
+    fn symbol(&self, pkey: KeyRef) -> Option<&u32> {
         self.symbol_table.get(&pkey as &dyn SymbolTableIndex)
     }
 
     /// Return the known abbreviation for `term` -if any- according to the
     /// documentation of this FIX Dictionary.
     pub fn abbreviation_for<S: AsRef<str>>(&self, term: S) -> Option<Abbreviation> {
-        self.symbol(PKeyRef::Abbreviation(term.as_ref()))
+        self.symbol(KeyRef::Abbreviation(term.as_ref()))
             .map(|iid| self.abbreviations.get(*iid as usize).unwrap())
             .map(move |data| Abbreviation(self, data))
     }
@@ -206,22 +214,22 @@ impl Dictionary {
     /// assert_eq!(msg1.name(), msg2.name());
     /// ```
     pub fn get_message_by_name<S: AsRef<str>>(&self, name: S) -> Option<Message> {
-        self.symbol(PKeyRef::MessageByName(name.as_ref()))
+        self.symbol(KeyRef::MessageByName(name.as_ref()))
             .map(|iid| self.messages.get(*iid as usize).unwrap())
             .map(|data| Message(self, data))
     }
 
     pub fn get_message_by_msg_type<S: AsRef<str>>(&self, key: S) -> Option<Message> {
-        self.symbol(PKeyRef::MessageByMsgType(MsgType::from(
+        self.symbol(KeyRef::MessageByMsgType(MsgType::from_bytes(
             key.as_ref().as_bytes(),
-        )))
+        )?))
         .map(|iid| self.messages.get(*iid as usize).unwrap())
         .map(|data| Message(self, data))
     }
 
     /// Returns the [`Component`] named `name`, if any.
     pub fn get_component<S: AsRef<str>>(&self, name: S) -> Option<Component> {
-        self.symbol(PKeyRef::ComponentByName(name.as_ref()))
+        self.symbol(KeyRef::ComponentByName(name.as_ref()))
             .map(|iid| self.components.get(*iid as usize).unwrap())
             .map(|data| Component(self, data))
     }
@@ -270,14 +278,14 @@ impl Dictionary {
     /// assert_eq!(field1.name(), field2.name());
     /// ```
     pub fn get_field(&self, tag: u32) -> Option<Field> {
-        self.symbol(PKeyRef::FieldByTag(tag))
+        self.symbol(KeyRef::FieldByTag(tag))
             .map(|iid| self.fields.get(*iid as usize).unwrap())
             .map(|data| Field(self, data))
     }
 
     /// Returns the [`Field`] named `name`, if any.
     pub fn get_field_by_name<S: AsRef<str>>(&self, name: S) -> Option<Field> {
-        self.symbol(PKeyRef::FieldByName(name.as_ref()))
+        self.symbol(KeyRef::FieldByName(name.as_ref()))
             .map(|iid| self.fields.get(*iid as usize).unwrap())
             .map(|data| Field(self, data))
     }
@@ -288,16 +296,6 @@ impl Dictionary {
         let xml_document = roxmltree::Document::parse(input.as_ref()).unwrap();
         QuickFixReader::new(&xml_document)
     }
-}
-
-/// Enumeration type for all base types in the FIX specification.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum BaseType {
-    Int,
-    Float,
-    Char,
-    String,
-    Data,
 }
 
 #[derive(Clone, Debug)]
@@ -413,9 +411,7 @@ pub enum ComponentType {
 #[derive(Clone, Debug, PartialEq)]
 struct DatatypeData {
     /// **Primary key.** Identifier of the datatype.
-    pub name: String,
-    /// Base type from which this type is derived.
-    base_type: Option<String>,
+    datatype: datatypes::DataType,
     /// Human readable description of this Datatype.
     description: String,
     /// A string that contains examples values for a datatype
@@ -428,11 +424,11 @@ pub struct Datatype<'a>(&'a Dictionary, &'a DatatypeData);
 
 impl<'a> Datatype<'a> {
     pub fn name(&self) -> &str {
-        self.1.name.as_str()
+        self.1.datatype.name()
     }
 
-    pub fn basetype(&self) -> BaseType {
-        str_to_basetype(self.1.name.as_str())
+    pub fn basetype(&self) -> datatypes::DataType {
+        self.1.datatype
     }
 }
 
@@ -494,20 +490,6 @@ impl<'a> FieldEnum<'a> {
 #[derive(Debug)]
 pub struct Field<'a>(&'a Dictionary, &'a FieldData);
 
-fn str_to_basetype(s: &str) -> BaseType {
-    match s {
-        "STRING" => BaseType::String,
-        "UTCTIMESTAMP" => BaseType::String,
-        "CHAR" => BaseType::Char,
-        "INT" => BaseType::Int,
-        "LENGTH" => BaseType::Int,
-        "SEQNUM" => BaseType::Int,
-        "FLOAT" => BaseType::Float,
-        "DATA" => BaseType::Data,
-        _ => BaseType::Char, // FIXME
-    }
-}
-
 impl<'a> Field<'a> {
     pub fn doc_url_onixs(&self, version: &str) -> String {
         let v = match version {
@@ -531,7 +513,7 @@ impl<'a> Field<'a> {
     }
 
     /// Returns the [`BaseType`] of `self`.
-    pub fn basetype(&self) -> BaseType {
+    pub fn basetype(&self) -> datatypes::DataType {
         self.data_type().basetype()
     }
 
@@ -710,20 +692,36 @@ mod quickfix {
 
     fn add_datatype(dict: &mut Dictionary, datatype: DatatypeData) {
         let iid = dict.data_types.len();
-        let name = datatype.name.clone();
+        let name = datatype.datatype.name().to_string();
         dict.data_types.push(datatype);
         dict.symbol_table
-            .insert(PKey::DatatypeByName(name), iid as u32);
+            .insert(Key::DatatypeByName(name), iid as u32);
     }
 
+    impl datatypes::DataType {
+        fn from_quickfix_name(name: &str) -> Option<Self> {
+            use datatypes::DataType;
+            Some(match name {
+                "STRING" => DataType::String,
+                "UTCTIMESTAMP" => DataType::String,
+                "CHAR" => DataType::Char,
+                "INT" => DataType::Int,
+                "LENGTH" => DataType::Int,
+                "SEQNUM" => DataType::Int,
+                "FLOAT" => DataType::Float,
+                "DATA" => DataType::Data,
+                _ => DataType::String, // FIXME
+            })
+        }
+    }
+
+    /// Adds all FIX datatypes to `dict`. This is necessary because QuickFIX
+    /// definition files don't include them.
     fn add_all_datatypes(dict: &mut Dictionary) {
-        // Add all datatypes to the dictionary. QuickFix definition files
-        // don't have datatypes.
         add_datatype(
             dict,
             DatatypeData {
-                name: "STRING".to_string(),
-                base_type: Some("string".to_string()),
+                datatype: datatypes::DataType::String,
                 description: String::new(),
                 examples: vec![],
             },
@@ -731,8 +729,7 @@ mod quickfix {
         add_datatype(
             dict,
             DatatypeData {
-                name: "INT".to_string(),
-                base_type: Some("int".to_string()),
+                datatype: datatypes::DataType::Int,
                 description: String::new(),
                 examples: vec![],
             },
@@ -740,8 +737,7 @@ mod quickfix {
         add_datatype(
             dict,
             DatatypeData {
-                name: "CHAR".to_string(),
-                base_type: Some("char".to_string()),
+                datatype: datatypes::DataType::Char,
                 description: String::new(),
                 examples: vec![],
             },
@@ -823,10 +819,10 @@ mod quickfix {
             let field = FieldData::definition_from_node(&mut self.dict, node);
             self.dict
                 .symbol_table
-                .insert(PKey::FieldByName(field.name.clone()), iid);
+                .insert(Key::FieldByName(field.name.clone()), iid);
             self.dict
                 .symbol_table
-                .insert(PKey::FieldByTag(field.tag as u32), iid);
+                .insert(Key::FieldByTag(field.tag as u32), iid);
             self.dict.fields.push(field);
         }
 
@@ -836,7 +832,7 @@ mod quickfix {
                 ComponentData::definition_from_node_with_name(&mut self.dict, node, name.as_ref());
             self.dict
                 .symbol_table
-                .insert(PKey::ComponentByName(name.as_ref().to_string()), iid as u32);
+                .insert(Key::ComponentByName(name.as_ref().to_string()), iid as u32);
             self.dict.components.push(component);
         }
 
@@ -845,7 +841,7 @@ mod quickfix {
             let component = ComponentData::definition_from_node(&mut self.dict, node);
             self.dict
                 .symbol_table
-                .insert(PKey::ComponentByName(component.name.clone()), iid as u32);
+                .insert(Key::ComponentByName(component.name.clone()), iid as u32);
             self.dict.components.push(component);
         }
 
@@ -854,9 +850,9 @@ mod quickfix {
             let message = MessageData::definition_from_node(&mut self.dict, node);
             self.dict
                 .symbol_table
-                .insert(PKey::MessageByName(message.name.clone()), iid);
+                .insert(Key::MessageByName(message.name.clone()), iid);
             self.dict.symbol_table.insert(
-                PKey::MessageByMsgType(MsgType::from(message.msg_type.as_bytes())),
+                Key::MessageByMsgType(MsgType::from_bytes(message.msg_type.as_bytes()).unwrap()),
                 iid,
             );
             self.dict.messages.push(message);
@@ -897,7 +893,7 @@ mod quickfix {
         fn get_or_create_iid_from_ref(dict: &mut Dictionary, node: roxmltree::Node) -> InternalId {
             debug_assert_eq!(node.tag_name().name(), "component");
             let name = node.attribute("name").unwrap();
-            match dict.symbol(PKeyRef::ComponentByName(name)) {
+            match dict.symbol(KeyRef::ComponentByName(name)) {
                 Some(x) => *x,
                 None => {
                     let iid = dict.data_types.len() as u32;
@@ -911,7 +907,7 @@ mod quickfix {
                     };
                     dict.components.push(data);
                     dict.symbol_table
-                        .insert(PKey::ComponentByName(name.to_string()), iid);
+                        .insert(Key::ComponentByName(name.to_string()), iid);
                     iid
                 }
             }
@@ -966,19 +962,19 @@ mod quickfix {
             // References should only happen at <field> tags.
             debug_assert_eq!(node.tag_name().name(), "field");
             let name = node.attribute("type").unwrap();
-            match dict.symbol(PKeyRef::DatatypeByName(name)) {
+            let datatype = datatypes::DataType::from_quickfix_name(name).unwrap();
+            match dict.symbol(KeyRef::DatatypeByName(name)) {
                 Some(x) => *x,
                 None => {
                     let iid = dict.data_types.len() as u32;
                     let data = DatatypeData {
-                        name: name.to_string(),
+                        datatype,
                         description: String::new(),
                         examples: Vec::new(),
-                        base_type: None,
                     };
                     dict.data_types.push(data);
                     dict.symbol_table
-                        .insert(PKey::DatatypeByName(name.to_string()), iid);
+                        .insert(Key::DatatypeByName(name.to_string()), iid);
                     iid
                 }
             }
@@ -995,7 +991,7 @@ mod quickfix {
             let tag = node.tag_name().name();
             let kind = match tag {
                 "field" => {
-                    let field_iid = dict.symbol(PKeyRef::FieldByName(name)).unwrap();
+                    let field_iid = dict.symbol(KeyRef::FieldByName(name)).unwrap();
                     LayoutItemKindData::Field(*field_iid)
                 }
                 "component" => {
@@ -1052,7 +1048,7 @@ mod quickfix {
         fn get_or_create_iid_from_ref(dict: &mut Dictionary, node: roxmltree::Node) -> InternalId {
             debug_assert_eq!(node.tag_name().name(), "message");
             let name = node.attribute("msgcat").unwrap();
-            match dict.symbol(PKeyRef::CategoryByName(name)) {
+            match dict.symbol(KeyRef::CategoryByName(name)) {
                 Some(x) => *x,
                 None => {
                     let iid = dict.categories.len() as u32;
@@ -1061,7 +1057,7 @@ mod quickfix {
                         fixml_filename: String::new(),
                     });
                     dict.symbol_table
-                        .insert(PKey::CategoryByName(name.to_string()), iid);
+                        .insert(Key::CategoryByName(name.to_string()), iid);
                     iid
                 }
             }
@@ -1087,7 +1083,7 @@ mod test {
     fn msg_type_conversion() {
         fn prop(val: u16) -> bool {
             let bytes = val.to_le_bytes();
-            let msg_type = MsgType::from(&bytes[..]);
+            let msg_type = MsgType::from_bytes(&bytes[..]).unwrap();
             let mut buffer = vec![0, 0];
             msg_type.write(&mut &mut buffer[..]).unwrap();
             val == u16::from_le_bytes((&buffer[..]).try_into().unwrap())

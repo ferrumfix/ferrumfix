@@ -715,7 +715,7 @@ dependencies = [
  "bitvec",
  "boolinator",
  "chrono",
- "fasters_derive",
+ "fasters_derive 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures",
  "futures-lite",
  "openssl",
@@ -735,6 +735,18 @@ dependencies = [
 [[package]]
 name = "fasters_derive"
 version = "0.3.0"
+dependencies = [
+ "darling",
+ "proc-macro2 1.0.24",
+ "quote 1.0.8",
+ "syn 1.0.57",
+]
+
+[[package]]
+name = "fasters_derive"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f839a28478cc9bd9b9b1887e55cdf2e519b7014e83bac09790fc8999feb79623"
 dependencies = [
  "darling",
  "proc-macro2 1.0.24",

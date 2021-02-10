@@ -18,10 +18,12 @@ use std::io;
 
 const HEADER_LENGTH: usize = 6;
 
-/// An immutable view into a SOFH-enclosed message, complete with encoding type
-/// and payload.
+/// An immutable view into a SOFH-enclosed message, complete with its
+/// encoding type tag and payload.
 ///
-/// This type is returned in a borrowed form from [`sofh::Codec::decode`].
+/// This type is returned in a borrowed form from
+/// [`sofh::Codec::decode`](sofh::Codec::decode) and
+/// there is no owned version of this type.
 #[derive(Debug)]
 pub struct Frame {
     encoding_type: u16,
@@ -30,11 +32,12 @@ pub struct Frame {
 }
 
 impl Frame {
-    /// Creates a new [`Frame`] that points to `data`.
+    /// Creates a new [`Frame`](Frame) that points to `data`.
     ///
     /// # Safety
     /// This function is marked `unsafe` because it returns an owned `Frame`,
-    /// which should **never** be possible to an end user ([`Frame`]s should only
+    /// which should **never** be possible to an end user ([`Frame`](Frame)s
+    /// should only
     /// be borrowed for as long as the underlying buffer lives).
     unsafe fn new(encoding_type: u16, data: &[u8]) -> Self {
         Self {
@@ -44,15 +47,35 @@ impl Frame {
         }
     }
 
-    /// Returns the 16-bits encoding type of this [`Frame`]. You may want to
-    /// convert this value to an [`EncodingType`], which facilites validation via
-    /// pattern matching.
+    /// Returns the 16-bits encoding type of `self`. You may want to
+    /// convert this value to an [`EncodingType`](EncodingType), which allows
+    /// for nice pattern matching.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fasters::codec::sofh::Codec;
+    ///
+    /// let frame = Codec::decode(&[0, 0, 0, 0, 0, 1, 42]).unwrap();
+    /// let encoding_type = frame.encoding_type().into();
+    /// assert_eq!(encoding_type, EncodingType::Json);
+    /// ```
     pub fn encoding_type(&self) -> u16 {
         self.encoding_type
     }
 
     /// Returns an immutable reference to the actual contents of `self`, i.e.
     /// without its header.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fasters::codec::sofh::Codec;
+    ///
+    /// let frame = Codec::decode(&[0, 0, 0, 0, 0, 1, 42]).unwrap();
+    /// let payload = frame.payload();
+    /// assert_eq!(payload, &[42]);
+    /// ```
     pub fn payload(&self) -> &[u8] {
         unsafe { std::slice::from_raw_parts(self.buffer, self.len) }
     }
@@ -250,10 +273,27 @@ fn get_encoding_type(data: &[u8]) -> u16 {
     u16::from_be_bytes(data[4..HEADER_LENGTH].try_into().unwrap())
 }
 
-/// Enumeration type mapped from the 16-bit raw space.
+/// Sum type that can be converted [`Into`](Into) and [`From`](From) a
+/// `u16` encoding type value.
 ///
-/// One should always prefer to deal with raw 16-bit values and only convert to
-/// [`EncodingType`] when matching.
+/// Each variant has a predetermined value or range of values, as specified by
+/// the official guidelines. This type is marked with `#[non_exhaustive]` to
+/// support new encoding types without breaking compatilbity;
+/// [`EncodingType::Unknown`](EncodingType::Unknown) contains all values that are
+/// not included in the official guidelines.
+///
+/// # Equality
+///
+/// It's important to note that the behavior of [`Eq`](Eq) and
+/// [`PartialEq`](PartialEq) for this type always falls back to equality on
+/// `u16`. This may cause unexpected behavior e.g.:
+///
+/// ```
+/// use fasters::codec::sofh::EncodingType;
+///
+/// let e_type = EncodingType::Unknown(0xF500);
+/// assert_eq!(e_type, EncodingType::Json);
+/// ```
 #[derive(Copy, Clone, Debug)]
 #[non_exhaustive]
 pub enum EncodingType {
@@ -360,6 +400,15 @@ impl PartialEq for EncodingType {
 }
 
 impl std::cmp::Eq for EncodingType {}
+
+impl std::hash::Hash for EncodingType {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: std::hash::Hasher,
+    {
+        u16::from(*self).hash(state)
+    }
+}
 
 #[cfg(test)]
 mod test {

@@ -1,6 +1,7 @@
 //! A schema-less, [`HashMap`]-backed internal representation for FIX messages.
 
 use crate::app::slr;
+use crate::datatypes::{self, DataTypeValue};
 use crate::app::TsrMessageRef;
 use std::collections::BTreeMap;
 use std::time::SystemTime;
@@ -9,10 +10,9 @@ use std::time::SystemTime;
 #[derive(Clone, Debug, PartialEq)]
 pub enum FixFieldValue {
     Int(i64),
-    Float(f64),
-    Char(char),
     String(String),
     Data(Vec<u8>),
+    Value(DataTypeValue),
     Group(Vec<BTreeMap<i64, FixFieldValue>>),
 }
 
@@ -30,7 +30,7 @@ impl From<String> for FixFieldValue {
 
 impl From<f64> for FixFieldValue {
     fn from(v: f64) -> Self {
-        FixFieldValue::Float(v)
+        FixFieldValue::Value(DataTypeValue::Float(datatypes::Float::from(v as f32)))
     }
 }
 
@@ -42,7 +42,7 @@ impl From<(u8, u16)> for FixFieldValue {
 
 impl From<char> for FixFieldValue {
     fn from(v: char) -> Self {
-        FixFieldValue::Char(v)
+        FixFieldValue::Value(DataTypeValue::Char(datatypes::Char::from(v)))
     }
 }
 
@@ -60,7 +60,7 @@ impl From<Vec<u8>> for FixFieldValue {
 
 impl From<bool> for FixFieldValue {
     fn from(v: bool) -> Self {
-        FixFieldValue::Char(if v { 't' } else { 'f' })
+        FixFieldValue::from(if v { 't' } else { 'f' })
     }
 }
 
@@ -164,9 +164,11 @@ impl PushyMessage {
     }
 
     pub fn test_indicator(&self) -> Option<bool> {
+        let y = FixFieldValue::from('Y');
+        let n = FixFieldValue::from('N');
         match self.get_field(464u32) {
-            Some(FixFieldValue::Char('Y')) => Some(true),
-            Some(FixFieldValue::Char('N')) => Some(false),
+            Some(f) if *f == y => Some(true),
+            Some(f) if *f == n => Some(false),
             _ => Some(false),
         }
     }
@@ -232,9 +234,11 @@ impl Message {
     }
 
     pub fn test_indicator(&self) -> Option<bool> {
+        let y = FixFieldValue::from('Y');
+        let n = FixFieldValue::from('N');
         match self.fields.get(&464) {
-            Some(FixFieldValue::Char('Y')) => Some(true),
-            Some(FixFieldValue::Char('N')) => Some(false),
+            Some(f) if *f == y => Some(true),
+            Some(f) if *f == n => Some(false),
             _ => Some(false),
         }
     }

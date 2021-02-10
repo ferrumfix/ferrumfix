@@ -8,12 +8,12 @@ use serde_json::json;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 
-/// Transmuter configuration for [`json::Codec`](Codec).
-pub trait Transmuter: Clone {
+/// Configuration interface for [`json::Codec`](Codec).
+pub trait Config: Clone {
     /// This setting indicates that all encoded messages should be "prettified",
     /// i.e. the JSON code will not be compressed and instead it will have
     /// indentation and other whitespace that favors human readability. Some
-    /// performance loss is expected.
+    /// performance loss and increased payload size is expected.
     ///
     /// This is turned off be default.
     #[inline(always)]
@@ -22,13 +22,12 @@ pub trait Transmuter: Clone {
     }
 }
 
-/// A pretty-printer [`Transmuter`].
-/// 
-/// Indentation details are not specified.
+/// A [`Config`](Config) that "pretty-prints", i.e. always returns `true` from
+/// [`Config::pretty_print`](Config::pretty_print).
 /// 
 /// # Output examples
 /// 
-/// With [`TransPrettyPrint`]:
+/// With [`ConfigPrettyPrint`]:
 /// 
 /// ```
 /// {
@@ -54,17 +53,50 @@ pub trait Transmuter: Clone {
 /// }
 /// ```
 /// 
-/// Without [`TransPrettyPrint`]:
+/// Without [`ConfigPrettyPrint`]:
 /// 
 /// ```
 /// {"Header":{"BeginString":"FIX.4.4","MsgType":"W","MsgSeqNum":"4567","SenderCompID":"SENDER","TargetCompID":"TARGET","SendingTime":"20160802-21:14:38.717"},"Body":{"SecurityIDSource":"8","SecurityID":"ESU6","MDReqID":"789","NoMDEntries":[{"MDEntryType":"0","MDEntryPx":"1.50","MDEntrySize":"75","MDEntryTime":"21:14:38.688"},{"MDEntryType":"1","MDEntryPx":"1.75","MDEntrySize":"25","MDEntryTime":"21:14:38.688"}]},"Trailer":{}}
 /// ```
 #[derive(Debug, Clone)]
-pub struct TransPrettyPrint;
+pub struct ConfigPrettyPrint;
 
-impl Transmuter for TransPrettyPrint {
+impl Config for ConfigPrettyPrint {
     fn pretty_print(&self) -> bool {
         true
+    }
+}
+
+/// A [`Config`](Config) that can be read from a file and modified at runtime.
+#[derive(Debug, Clone)]
+pub struct ConfigSettable {
+    pretty_print: bool,
+}
+
+impl ConfigSettable {
+    /// Creates a [`ConfigSettable`](ConfigSettable) with default settings.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Enables [`Config::pretty_print`](Config::pretty_print) if and only if
+    /// `pretty_print` is true; otherwise it disables pretty-printing.
+    pub fn set_pretty_print(&mut self, pretty_print: bool) {
+        self.pretty_print = pretty_print;
+    }
+}
+
+impl Default for ConfigSettable {
+    fn default() -> Self {
+        Self {
+            pretty_print: false,
+        }
+    }
+}
+
+impl Config for ConfigSettable {
+    fn pretty_print(&self) -> bool {
+        self.pretty_print
     }
 }
 
@@ -73,21 +105,21 @@ impl Transmuter for TransPrettyPrint {
 pub struct Codec<T, Z> {
     dictionaries: HashMap<String, Dictionary>,
     message: T,
-    transmuter: Z,
+    config: Z,
 }
 
 impl<T, Z> Codec<T, Z>
 where
     T: TsrMessageRef,
-    Z: Transmuter,
+    Z: Config,
 {
-    pub fn new(dict: Dictionary, transmuter: Z) -> Self {
+    pub fn new(dict: Dictionary, config: Z) -> Self {
         let mut dictionaries = HashMap::new();
         dictionaries.insert(dict.get_version().to_string(), dict);
         Self {
             dictionaries,
             message: T::default(),
-            transmuter,
+            config,
         }
     }
 
@@ -158,7 +190,7 @@ where
 impl<Z, T> Decoder<T> for Codec<T, Z>
 where
     T: TsrMessageRef,
-    Z: Transmuter,
+    Z: Config,
 {
     type Error = DecodeError;
 
@@ -201,7 +233,7 @@ where
 
 impl<Z, T> Encoder<slr::Message> for Codec<T, Z>
 where
-    Z: Transmuter,
+    Z: Config,
     T: TsrMessageRef,
 {
     type Error = EncoderError;
@@ -259,7 +291,7 @@ where
             "Trailer": map_trailer,
         });
         let mut writer = BufferWriter::new(buffer);
-        if self.transmuter.pretty_print() {
+        if self.config.pretty_print() {
             serde_json::to_writer_pretty(&mut writer, &value).unwrap();
         } else {
             serde_json::to_writer(&mut writer, &value).unwrap();
@@ -344,8 +376,8 @@ mod test {
         Dictionary::from_version(crate::app::Version::Fix44)
     }
 
-    fn encoder_fix44() -> Codec<slr::Message, impl Transmuter> {
-        Codec::new(dict_fix44(), TransPrettyPrint)
+    fn encoder_fix44() -> Codec<slr::Message, impl Config> {
+        Codec::new(dict_fix44(), ConfigPrettyPrint)
     }
 
     #[test]

@@ -1,4 +1,4 @@
-//! Inspection and representation of FIX messages.
+//! Data structures and interfaces to work with FIX messages.
 
 use rust_embed::RustEmbed;
 use std::fmt;
@@ -23,7 +23,7 @@ pub trait TsrMessageRef: Default
     fn set_field(&mut self, msg_type: u32, val: slr::FixFieldValue);
 }
 
-/// Enumeration type for all existing revisions of FIX.
+/// Which [`Dictionary`](fasters::Dictionary) version to use.
 #[derive(Copy, Debug, Clone)]
 #[non_exhaustive]
 pub enum Version {
