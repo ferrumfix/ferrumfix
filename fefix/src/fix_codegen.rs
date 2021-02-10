@@ -13,7 +13,7 @@ pub fn codegen(dict: &Dictionary) -> String {
     let code = format!(
         "#![allow(dead_code)]
 
-        use fasters_derive::*;
+        use fefix_derive::*;
         
         pub mod components {{
             use super::*;
@@ -56,7 +56,7 @@ impl Dictionary {
             r#"
             /// Message information: {msg_name}
             #[derive(Debug, Clone, TsrMessage)]
-            #[fasters(msg_type = "{msg_type}")]
+            #[fefix(msg_type = "{msg_type}")]
             pub struct {msg_name} {{
                 {fields}
             }}
@@ -79,7 +79,7 @@ impl Dictionary {
         format!(
             r#"
             /// Component information: {msg_name}
-            #[fasters(msg_type = "TODO")]
+            #[fefix(msg_type = "TODO")]
             #[derive(Debug, Clone, TsrMessage)]
             pub struct {msg_name} {{
                 {fields}
@@ -117,7 +117,7 @@ impl Dictionary {
         };
         Some(format!(
             r#"
-            #[fasters(tag = {field_tag}, rust_type = "{rust_type}", opt = {opt})]
+            #[fefix(tag = {field_tag}, rust_type = "{rust_type}", opt = {opt})]
             pub {field_name}: {field_type}
             "#,
             opt = !required,

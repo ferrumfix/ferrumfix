@@ -58,7 +58,7 @@ impl HeartbeatRule {
     /// # Examples
     /// Require exact matching with [`HeartbeatRule::Exact`](HeartbeatRule):
     /// ```
-    /// use fasters::session::classic::HeartbeatRule;
+    /// use fefix::session::classic::HeartbeatRule;
     /// use std::time::Duration;
     ///
     /// let rule = HeartbeatRule::Exact(Duration::from_secs(30));
@@ -68,7 +68,7 @@ impl HeartbeatRule {
     /// ```
     /// Accepting any proposed heartbeat value:
     /// ```
-    /// use fasters::session::classic::HeartbeatRule;
+    /// use fefix::session::classic::HeartbeatRule;
     /// use std::time::Duration;
     ///
     /// let rule = HeartbeatRule::Any;

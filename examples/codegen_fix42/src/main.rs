@@ -1,8 +1,8 @@
-use fasters::app::Version;
-use fasters::Dictionary;
+use fefix::app::Version;
+use fefix::Dictionary;
 
 fn main() {
     let dict = Dictionary::from_version(Version::Fix42);
-    let code = fasters::codegen(&dict);
+    let code = fefix::codegen(&dict);
     println!("{}", code);
 }

@@ -48,7 +48,7 @@ impl Version {
     /// according to this version. The ciphersuites are specified in IANA format.
     /// 
     /// ```
-    /// use fasters::transport::fixs::Version;
+    /// use fefix::transport::fixs::Version;
     /// 
     /// let version = Version::V1Draft;
     /// let mut ciphersuites_iana = version.recommended_cs_iana(false);
@@ -71,7 +71,7 @@ impl Version {
     /// # Examples:
     /// 
     /// ```
-    /// use fasters::transport::fixs::Version;
+    /// use fefix::transport::fixs::Version;
     /// 
     /// let version = Version::V1Draft;
     /// let mut ciphersuites_openssl = version.recommended_cs_openssl(false);
@@ -82,7 +82,7 @@ impl Version {
     /// [`openssl-ciphers`](https://www.openssl.org/docs/manmaster/man1/openssl-ciphers.html).
     /// 
     /// ```
-    /// use fasters::transport::fixs::Version;
+    /// use fefix::transport::fixs::Version;
     /// 
     /// let version = Version::V1Draft;
     /// let mut ciphersuites_openssl = version.recommended_cs_openssl(false);

@@ -1,4 +1,4 @@
-//! Code generation for Fasters.
+//! Code generation for FerrumFIX.
 
 #![deny(missing_debug_implementations, clippy::useless_conversion)]
 
@@ -7,7 +7,7 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
-#[proc_macro_derive(TsrMessage, attributes(fasters))]
+#[proc_macro_derive(TsrMessage, attributes(fefix))]
 pub fn derive_tsr_message(input: TokenStream) -> TokenStream {
     let ast: syn::DeriveInput = syn::parse(input).unwrap();
     let darling_context = MessageStructure::from_derive_input(&ast).unwrap();
@@ -22,7 +22,7 @@ pub fn derive_tsr_message(input: TokenStream) -> TokenStream {
 }
 
 #[derive(Debug, Clone, FromField)]
-#[darling(attributes(fasters))]
+#[darling(attributes(fefix))]
 struct MessageStructureField {
     ident: Option<syn::Ident>,
     ty: syn::Type,
@@ -32,7 +32,7 @@ struct MessageStructureField {
 }
 
 #[derive(Debug, Clone, FromDeriveInput)]
-#[darling(attributes(fasters), supports(struct_named))]
+#[darling(attributes(fefix), supports(struct_named))]
 struct MessageStructure {
     ident: syn::Ident,
     data: darling::ast::Data<darling::util::Ignored, MessageStructureField>,
@@ -52,7 +52,7 @@ struct GeneratorContext {
 impl GeneratorContext {
     fn crate_path(&self) -> TokenStream2 {
         match self.crate_path {
-            CratePath::Absolute => quote! { ::fasters },
+            CratePath::Absolute => quote! { ::fefix },
             CratePath::Relative => quote! { crate },
         }
     }

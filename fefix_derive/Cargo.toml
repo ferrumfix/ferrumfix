@@ -1,18 +1,18 @@
 [package]
-name = "fasters_derive"
+name = "fefix_derive"
 version = "0.3.0"
 edition = "2018"
 authors = ["Filippo Costa @neysofu"]
-homepage = "https://github.com/neysofu/fasters"
-repository = "https://github.com/neysofu/fasters"
-description = "Code generation for Fasters"
+homepage = "https://github.com/neysofu/fefix"
+repository = "https://github.com/neysofu/fefix"
+description = "Code generation for FerrumFIX"
 publish = true
 keywords = ["fix", "fast", "protocol", "finance", "streaming"]
 categories = ["network-programming", "parser-implementations", "encoding"]
 license = "MIT"
 
 [lib]
-name = "fasters_derive"
+name = "fefix_derive"
 proc-macro = true
 
 [dependencies]

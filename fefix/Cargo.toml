@@ -1,10 +1,10 @@
 [package]
-name = "fasters"
+name = "fefix"
 version = "0.3.0"
 edition = "2018"
 authors = ["Filippo Costa @neysofu"]
-homepage = "https://github.com/neysofu/fasters"
-repository = "https://github.com/neysofu/fasters"
+homepage = "https://github.com/neysofu/fefix"
+repository = "https://github.com/neysofu/fefix"
 description = "FIX & FAST (FIX Adapted for STreaming) in pure Rust."
 publish = true
 readme = "../README.md"
@@ -13,7 +13,7 @@ categories = ["network-programming", "parser-implementations", "encoding"]
 license = "MIT"
 
 [lib]
-name = "fasters"
+name = "fefix"
 
 [features]
 default = ["repo_v2010", "repo_v50sp2ep254", "expose_openssl", "expose_tokio"]
@@ -37,7 +37,7 @@ serde = "1"
 serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 uuid = { version = "0.8.1", features = ["v4"] }
-fasters_derive = { path = "../fasters_derive" }
+fefix_derive = { path = "../fefix_derive" }
 
 [dev-dependencies]
 arbitrary = { version = "0.4", features = ["derive"] }

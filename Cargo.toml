@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "fasters",
-    "fasters_derive",
+    "fefix",
+    "fefix_derive",
     "examples/codegen_fix42",
     "examples/web_json_to_tagvalue",
     "examples/tcp_sofh",

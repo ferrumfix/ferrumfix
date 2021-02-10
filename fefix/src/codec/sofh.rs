@@ -95,7 +95,7 @@ impl BufCodec {
     /// # Examples
     ///
     /// ```
-    /// use fasters::codec::sofh::Codec;
+    /// use fefix::codec::sofh::Codec;
     ///
     /// let parser = Codec::with_capacity(8192);
     /// assert_eq!(parser.capacity(), 8192);

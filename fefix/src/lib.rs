@@ -1,17 +1,17 @@
 //! A Financial Information eXchange
 //! ([FIX](https://www.fixtrading.org/standards/)) protocol implementation in Rust.
 //!
-//! Fasters is a collection of reusable components to produce and consume
+//! FerrumFIX is a collection of reusable components to produce and consume
 //! FIX-compliant data. It is *not* a FIX engine, although you can very easily
-//! build one with Fasters. Fasters is:
+//! build one with FerrumFIX. FerrumFIX is:
 //!
-//!  - **Unopinionated**. Fasters takes care of every little detail of the FIX
+//!  - **Unopinionated**. FerrumFIX takes care of every little detail of the FIX
 //!  specification, but no configurations or decisions are mandated to the user
 //!  (as much as practically feasible).
 //!  - **Comprehensive**. Most standards adopted by the FIX Community are
 //!  available, from [transport] and [session] layers to [encodings](encoders) and
 //!  dictionary-related [application](app) logic.
-//!  - **Foundational**. Fasters is foundational in the sense that it exposes a
+//!  - **Foundational**. FerrumFIX is foundational in the sense that it exposes a
 //!  large amount of primitives in its public interface, so that users can
 //!  easily build upon them to implement custom solutions tailored for their
 //!  needs. Multiple FIX message data structures are available.
@@ -19,8 +19,8 @@
 //!  than files. This results in much faster code at the cost of compilation speed
 //!  and code size.
 //!  
-//! Please check out the [README](https://github.com/neysofu/fasters/) for more
-//! general information regarding Fasters.
+//! Please check out the [README](https://github.com/neysofu/fefix/) for more
+//! general information regarding FerrumFIX.
 
 #![deny(unused, missing_debug_implementations, clippy::useless_conversion)]
 
@@ -35,7 +35,7 @@ pub mod transport;
 pub mod utils;
 
 pub use dictionary::{Dictionary, MsgType};
-pub use fasters_derive::*;
+pub use fefix_derive::*;
 pub use fix_codegen::codegen;
 pub use stream_iterator::StreamIterator;
 

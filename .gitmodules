@@ -1,3 +1,3 @@
-[submodule "fasters/resources/fix-repository"]
-	path = fasters/resources/fix-repository
+[submodule "fefix/resources/fix-repository"]
+	path = fefix/resources/fix-repository
 	url = https://github.com/FIXTradingCommunity/fix-repository

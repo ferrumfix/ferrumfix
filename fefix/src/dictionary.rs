@@ -138,7 +138,7 @@ impl Dictionary {
     /// # Examples
     ///
     /// ```
-    /// use fasters::Dictionary;
+    /// use fefix::Dictionary;
     /// let dict = Dictionary::new("FIX.foobar");
     /// ```
     pub fn new<S: ToString>(version: S) -> Self {
@@ -171,8 +171,8 @@ impl Dictionary {
     /// `FIXT.1.1`, `FIX.4.2`).
     ///
     /// ```
-    /// use fasters::Dictionary;
-    /// use fasters::app::Version;
+    /// use fefix::Dictionary;
+    /// use fefix::app::Version;
     ///
     /// let dict = Dictionary::from_version(Version::Fix44);
     /// assert_eq!(dict.get_version(), "FIX.4.4");
@@ -196,8 +196,8 @@ impl Dictionary {
     /// Returns the [`Message`] associated with `name`, if any.
     ///
     /// ```
-    /// use fasters::Dictionary;
-    /// use fasters::app::Version;
+    /// use fefix::Dictionary;
+    /// use fefix::app::Version;
     ///
     /// let dict = Dictionary::from_version(Version::Fix44);
     ///
@@ -238,8 +238,8 @@ impl Dictionary {
     /// no particular order.
     ///
     /// ```
-    /// use fasters::Dictionary;
-    /// use fasters::app::Version;
+    /// use fefix::Dictionary;
+    /// use fefix::app::Version;
     ///
     /// let dict = Dictionary::from_version(Version::Fix44);
     /// let msg = dict.messages().find(|m| m.name() == "MarketDataRequest");
@@ -260,8 +260,8 @@ impl Dictionary {
     /// Returns the [`Field`] associated with `tag`, if any.
     ///
     /// ```
-    /// use fasters::Dictionary;
-    /// use fasters::app::Version;
+    /// use fefix::Dictionary;
+    /// use fefix::app::Version;
     ///
     /// let dict = Dictionary::from_version(Version::Fix44);
     ///
