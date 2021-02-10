@@ -1,3 +1,7 @@
+# - The name of the project is FerrumFIX.
+# - The repository is `ferrum-fix`.
+# - The crates are named `fefix`, `fefix_derive`, etc..
+
 [workspace]
 members = [
     "fefix",
