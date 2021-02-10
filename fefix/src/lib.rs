@@ -15,7 +15,7 @@
 //!  large amount of primitives in its public interface, so that users can
 //!  easily build upon them to implement custom solutions tailored for their
 //!  needs. Multiple FIX message data structures are available.
-//!  - **Fast**. We favor configuration via trait specialization in code rather
+//!  - **Fast**. We favor configuration via trait interfaces directly in code rather
 //!  than files. This results in much faster code at the cost of compilation speed
 //!  and code size.
 //!  
@@ -26,6 +26,7 @@
 
 pub mod app;
 pub mod codec;
+pub mod dt;
 mod dictionary;
 pub mod engines;
 mod fix_codegen;

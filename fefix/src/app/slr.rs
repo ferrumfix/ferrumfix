@@ -2,23 +2,22 @@
 
 use crate::app::slr;
 use crate::app::TsrMessageRef;
+use crate::dt::{self, DataTypeValue};
 use std::collections::BTreeMap;
 use std::time::SystemTime;
 
 /// An owned value of a FIX field.
 #[derive(Clone, Debug, PartialEq)]
 pub enum FixFieldValue {
-    Int(i64),
-    Float(f64),
-    Char(char),
     String(String),
     Data(Vec<u8>),
+    Value(DataTypeValue),
     Group(Vec<BTreeMap<i64, FixFieldValue>>),
 }
 
 impl From<i64> for FixFieldValue {
     fn from(v: i64) -> Self {
-        FixFieldValue::Int(v)
+        FixFieldValue::Value(dt::DataTypeValue::Int(dt::Int(v as i32)))
     }
 }
 
@@ -30,25 +29,25 @@ impl From<String> for FixFieldValue {
 
 impl From<f64> for FixFieldValue {
     fn from(v: f64) -> Self {
-        FixFieldValue::Float(v)
+        FixFieldValue::Value(DataTypeValue::Float(dt::Float::from(v as f32)))
     }
 }
 
 impl From<(u8, u16)> for FixFieldValue {
     fn from(v: (u8, u16)) -> Self {
-        FixFieldValue::Int(((v.0 as i64) << 16) + (v.1 as i64))
+        FixFieldValue::from(((v.0 as i64) << 16) + (v.1 as i64))
     }
 }
 
 impl From<char> for FixFieldValue {
     fn from(v: char) -> Self {
-        FixFieldValue::Char(v)
+        FixFieldValue::Value(DataTypeValue::Char(dt::Char::from(v)))
     }
 }
 
 impl From<usize> for FixFieldValue {
     fn from(v: usize) -> Self {
-        FixFieldValue::Int(v as i64)
+        FixFieldValue::from(v as i64)
     }
 }
 
@@ -60,19 +59,19 @@ impl From<Vec<u8>> for FixFieldValue {
 
 impl From<bool> for FixFieldValue {
     fn from(v: bool) -> Self {
-        FixFieldValue::Char(if v { 't' } else { 'f' })
+        FixFieldValue::from(if v { 't' } else { 'f' })
     }
 }
 
 impl From<u8> for FixFieldValue {
     fn from(v: u8) -> Self {
-        FixFieldValue::Int(v.into())
+        FixFieldValue::from(i64::from(v))
     }
 }
 
 impl From<SystemTime> for FixFieldValue {
     fn from(v: SystemTime) -> Self {
-        FixFieldValue::Int(v.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64)
+        FixFieldValue::from(v.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64)
     }
 }
 
@@ -85,7 +84,10 @@ pub struct Field {
 impl Field {
     /// Creates a new [`Field`] value with `tag` and `value`.
     pub fn new(tag: u32, value: FixFieldValue) -> Self {
-        Self { tag: tag as i64, value }
+        Self {
+            tag: tag as i64,
+            value,
+        }
     }
 
     /// Returns the field tag of `self`.
@@ -123,9 +125,7 @@ impl TsrMessageRef for PushyMessage {
 impl PushyMessage {
     /// Creates a new [`Message`] without any fields.
     pub fn new() -> Self {
-        Self {
-            fields: Vec::new(),
-        }
+        Self { fields: Vec::new() }
     }
 
     /// Adds a field to `self`.
@@ -140,7 +140,7 @@ impl PushyMessage {
 
     /// Adds an integer field to `self`.
     pub fn add_int<K: Into<u32>>(&mut self, tag: K, value: i64) {
-        self.add_field(tag, slr::FixFieldValue::Int(value))
+        self.add_field(tag, slr::FixFieldValue::from(value))
     }
 
     pub fn get_field<K: Into<u32>>(&self, tag: K) -> Option<&slr::FixFieldValue> {
@@ -158,15 +158,19 @@ impl PushyMessage {
 
     pub fn seq_num(&self) -> Option<u64> {
         match self.get_field(34u32) {
-            Some(FixFieldValue::Int(n)) => Some(*n as u64),
+            Some(FixFieldValue::Value(dt::DataTypeValue::Int(dt::Int(n)))) => {
+                Some(*n as u64)
+            }
             _ => None,
         }
     }
 
     pub fn test_indicator(&self) -> Option<bool> {
+        let y = FixFieldValue::from('Y');
+        let n = FixFieldValue::from('N');
         match self.get_field(464u32) {
-            Some(FixFieldValue::Char('Y')) => Some(true),
-            Some(FixFieldValue::Char('N')) => Some(false),
+            Some(f) if *f == y => Some(true),
+            Some(f) if *f == n => Some(false),
             _ => Some(false),
         }
     }
@@ -210,7 +214,7 @@ impl Message {
 
     /// Adds an integer field to `self`.
     pub fn add_int<K: Into<i64>>(&mut self, tag: K, value: i64) {
-        self.add_field(tag, slr::FixFieldValue::Int(value))
+        self.add_field(tag, slr::FixFieldValue::from(value))
     }
 
     pub fn get_field<K: Into<i64>>(&self, tag: K) -> Option<&slr::FixFieldValue> {
@@ -226,15 +230,17 @@ impl Message {
 
     pub fn seq_num(&self) -> Option<u64> {
         match self.fields.get(&34) {
-            Some(FixFieldValue::Int(n)) => Some(*n as u64),
+            Some(FixFieldValue::Value(dt::DataTypeValue::Int(dt::Int(n)))) => Some(*n as u64),
             _ => None,
         }
     }
 
     pub fn test_indicator(&self) -> Option<bool> {
+        let y = FixFieldValue::from('Y');
+        let n = FixFieldValue::from('N');
         match self.fields.get(&464) {
-            Some(FixFieldValue::Char('Y')) => Some(true),
-            Some(FixFieldValue::Char('N')) => Some(false),
+            Some(f) if *f == y => Some(true),
+            Some(f) if *f == n => Some(false),
             _ => Some(false),
         }
     }

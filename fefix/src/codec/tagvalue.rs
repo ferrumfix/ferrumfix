@@ -5,7 +5,9 @@
 
 use crate::app::{slr, TsrMessageRef, Version};
 use crate::codec::{Decoder, Encoder, StreamingDecoder};
-use crate::dictionary::{BaseType, Dictionary};
+use crate::dt;
+use crate::dt::DataType;
+use crate::dictionary::Dictionary;
 use crate::utils::{Buffer, BufferWriter};
 use std::fmt;
 use std::fmt::Debug;
@@ -30,28 +32,28 @@ pub struct Codec<T, Z> {
     state: DecoderState,
     message: T,
     body: Body,
-    transmuter: Z,
+    config: Z,
 }
 
 impl<T, Z> Codec<T, Z>
 where
     T: TsrMessageRef,
-    Z: Transmuter,
+    Z: Config,
 {
     /// Builds a new `Codec` encoding device with a FIX 4.4 dictionary.
-    pub fn new(transmuter: Z) -> Self {
-        Self::with_dict(Dictionary::from_version(Version::Fix44), transmuter)
+    pub fn new(config: Z) -> Self {
+        Self::with_dict(Dictionary::from_version(Version::Fix44), config)
     }
 
     /// Creates a new codec for the tag-value format. `dict` is used to parse messages.
-    pub fn with_dict(dict: Dictionary, transmuter: Z) -> Self {
+    pub fn with_dict(dict: Dictionary, config: Z) -> Self {
         Self {
             dict,
             buffer: Vec::new(),
             state: DecoderState::Header,
             message: T::default(),
             body: Body::new(&[]),
-            transmuter,
+            config,
         }
     }
 }
@@ -66,21 +68,19 @@ enum DecoderState {
 #[derive(Debug)]
 pub struct Body {
     len: usize,
-    data: *const u8,
 }
 
 impl Body {
     fn new(data: &[u8]) -> Self {
         Self {
             len: data.len(),
-            data: data.as_ptr(),
         }
     }
 }
 
 impl<Z> StreamingDecoder<Body> for Codec<slr::Message, Z>
 where
-    Z: Transmuter,
+    Z: Config,
 {
     type Error = DecodeError;
 
@@ -145,7 +145,7 @@ where
 impl<Z, T> Decoder<T> for Codec<T, Z>
 where
     T: TsrMessageRef,
-    Z: Transmuter,
+    Z: Config,
 {
     type Error = DecodeError;
 
@@ -214,7 +214,7 @@ where
 
 impl<Z> Encoder<slr::Message> for Codec<slr::Message, Z>
 where
-    Z: Transmuter,
+    Z: Config,
 {
     type Error = EncodeError;
 
@@ -226,11 +226,11 @@ where
         let mut writer = BufferWriter::new(&mut buffer);
         // First, write `BeginString(8)`.
         encode_field(
-            8,
+            8.into(),
             message.get_field(8).unwrap(),
             &mut writer,
             Z::SOH_SEPARATOR,
-        )?;
+        );
         // The second field is supposed to be `BodyLength(9)`, but obviously
         // the length of the message is unknow until later in the
         // serialization phase. This alone would usually require to
@@ -250,22 +250,23 @@ where
         writer.extend_from_slice(&[Z::SOH_SEPARATOR]);
         let body_length_range = writer.as_slice().len() - 7..writer.as_slice().len() - 2;
         // We now must start to calculate the message length.
-        let mut len = 0;
+        let mut len = writer.as_slice().len();
         // Third field: `MsgType(35)`.
         encode_field(
-            35,
+            35.into(),
             message.get_field(35).unwrap(),
             &mut writer,
             Z::SOH_SEPARATOR,
-        )?;
+        );
         // Now all the other fields.
         for (tag, value) in message.fields.iter() {
             if *tag != 35 {
-                len += encode_field(*tag as u32, value, &mut writer, Z::SOH_SEPARATOR)?;
+                encode_field((*tag as u16).into(), value, &mut writer, Z::SOH_SEPARATOR);
             }
         }
+        len = writer.as_slice().len() - len;
         // Finally, we need to serialize the `Checksum(10)` field.
-        //encode_field(9, &slr::FixFieldValue::Int(len as i64), &mut writer)?;
+        //encode_field(9.into(), &slr::FixFieldValue::Int(len as i64), &mut writer)?;
         for i in body_length_range.rev() {
             writer.as_mut_slice()[i] = (len % 10) as u8 + '0' as u8;
             len /= 10;
@@ -273,33 +274,30 @@ where
         let mut checksum = Z::ChecksumAlgo::default();
         checksum.roll(writer.as_slice());
         encode_field(
-            10,
-            &slr::FixFieldValue::Int(checksum.result() as i64),
+            10.into(),
+            &slr::FixFieldValue::from(checksum.result() as i64),
             &mut writer,
             Z::SOH_SEPARATOR,
-        )?;
+        );
         Ok(writer.as_slice().len())
     }
 }
 
 fn encode_field(
-    tag: u32,
+    tag: dt::TagNum,
     value: &slr::FixFieldValue,
-    write: &mut impl io::Write,
+    write: &mut impl Buffer,
     separator: u8,
-) -> io::Result<usize> {
-    let mut length = write.write(tag.to_string().as_bytes())? + 2;
-    write.write_all(&[b'='])?;
-    length += match &value {
-        slr::FixFieldValue::Char(c) => write.write(&[*c as u8]),
-        slr::FixFieldValue::String(s) => write.write(s.as_bytes()),
-        slr::FixFieldValue::Int(int) => write.write(int.to_string().as_bytes()),
-        slr::FixFieldValue::Float(float) => write.write(float.to_string().as_bytes()),
-        slr::FixFieldValue::Data(raw_data) => write.write(&raw_data),
+) {
+    write.extend_from_slice(tag.to_string().as_bytes());
+    write.extend_from_slice(&[b'=']);
+    match &value {
+        slr::FixFieldValue::String(s) => write.extend_from_slice(s.as_bytes()),
+        slr::FixFieldValue::Data(raw_data) => write.extend_from_slice(&raw_data),
         slr::FixFieldValue::Group(_) => panic!("Can't encode a group!"),
-    }?;
-    write.write_all(&[separator])?;
-    Ok(length)
+        slr::FixFieldValue::Value(field) => write.extend_from_slice(field.to_string().as_bytes()),
+    };
+    write.extend_from_slice(&[separator]);
 }
 
 /// This trait describes dynamic tag lookup logic.
@@ -329,7 +327,7 @@ pub trait TagLookup {
     fn from_dict(dict: &Dictionary) -> Self;
 
     /// Returns the [`BaseType`] of the tag number `tag`.
-    fn lookup(&mut self, tag: u32) -> Result<BaseType, Self::Error>;
+    fn lookup(&mut self, tag: u32) -> Result<dt::DataType, Self::Error>;
 }
 
 /// A [`TagLookup`] that only allows a specific revision of the standard, like
@@ -348,7 +346,7 @@ impl TagLookup for TagLookupPredetermined {
         }
     }
 
-    fn lookup(&mut self, tag: u32) -> Result<BaseType, Self::Error> {
+    fn lookup(&mut self, tag: u32) -> Result<dt::DataType, Self::Error> {
         // TODO
         match tag {
             // `ApplVerID <1128>`
@@ -379,7 +377,7 @@ impl TagLookup for TagLookupPredetermined {
             .current_dict
             .get_field(tag)
             .map(|f| f.basetype())
-            .unwrap_or(BaseType::String))
+            .unwrap_or(DataType::String))
     }
 }
 
@@ -399,7 +397,7 @@ pub enum TypeInfo {
     Data(usize),
 }
 
-struct FieldIter<R, Z: Transmuter> {
+struct FieldIter<R, Z: Config> {
     handle: R,
     is_last: bool,
     data_length: u32,
@@ -409,7 +407,7 @@ struct FieldIter<R, Z: Transmuter> {
 impl<'d, R, Z> Iterator for &mut FieldIter<&'d mut R, Z>
 where
     R: io::Read,
-    Z: Transmuter,
+    Z: Config,
 {
     type Item = Result<slr::Field, DecodeError>;
 
@@ -437,7 +435,7 @@ where
         }
         let datatype = self.designator.lookup(tag as u32);
         match datatype {
-            Ok(BaseType::Data) => {
+            Ok(DataType::Data) => {
                 buffer = vec![0u8; self.data_length as usize];
                 self.handle.read_exact(&mut buffer).unwrap();
                 self.handle.read_exact(&mut buffer[0..1]).unwrap();
@@ -460,28 +458,28 @@ where
         };
         let datatype = datatype.unwrap();
         let field_value = field_value(datatype, &buffer[..]).unwrap();
-        if let slr::FixFieldValue::Int(l) = field_value {
+        if let slr::FixFieldValue::Value(dt::DataTypeValue::Int(dt::Int(l))) = field_value {
             self.data_length = l as u32;
         }
         Some(Ok(slr::Field::new(tag, field_value)))
     }
 }
 
-fn field_value(datatype: BaseType, buf: &[u8]) -> Result<slr::FixFieldValue, Error> {
+fn field_value(datatype: DataType, buf: &[u8]) -> Result<slr::FixFieldValue, Error> {
     debug_assert!(!buf.is_empty());
     Ok(match datatype {
-        BaseType::Char => slr::FixFieldValue::Char(buf[0] as char),
-        BaseType::String => {
+        DataType::Char => slr::FixFieldValue::from(buf[0] as char),
+        DataType::String => {
             slr::FixFieldValue::String(str::from_utf8(buf).map_err(|_| Error::Syntax)?.to_string())
         }
-        BaseType::Data => slr::FixFieldValue::Data(buf.to_vec()),
-        BaseType::Float => slr::FixFieldValue::Float(
+        DataType::Data => slr::FixFieldValue::Data(buf.to_vec()),
+        DataType::Float => slr::FixFieldValue::Value(dt::DataTypeValue::Float(dt::Float::from(
             str::from_utf8(buf)
                 .map_err(|_| Error::Syntax)?
-                .parse::<f64>()
+                .parse::<f32>()
                 .map_err(|_| Error::Syntax)?,
-        ),
-        BaseType::Int => {
+        ))),
+        DataType::Int => {
             let mut n: i64 = 0;
             for byte in buf {
                 if *byte >= '0' as u8 && *byte <= '9' as u8 {
@@ -493,19 +491,20 @@ fn field_value(datatype: BaseType, buf: &[u8]) -> Result<slr::FixFieldValue, Err
                     return Err(Error::Syntax);
                 }
             }
-            slr::FixFieldValue::Int(n)
+            slr::FixFieldValue::from(n)
         }
+        _ => return Err(Error::Syntax),
     })
 }
 
-/// The [`Transmuter`](Transmuter) pattern allows deep customization of encoding
+/// The [`Config`](Config) pattern allows deep customization of encoding
 /// and decoding behavior without relying on runtime settings. By using this
 /// trait and specializing the behavior of particular methods, users can change
 /// the behavior of the FIX encoder without incurring in performance loss.
 ///
 /// # Naming conventions
 /// Implementors of this trait should start with `Trans`.
-pub trait Transmuter: Clone {
+pub trait Config: Clone {
     type ChecksumAlgo: ChecksumAlgo;
     type TagLookup: TagLookup;
 
@@ -516,38 +515,38 @@ pub trait Transmuter: Clone {
     const SOH_SEPARATOR: u8 = 0x1;
 }
 
-/// A [`Transmuter`] for [`Codec`] with default configuration
+/// A [`Config`] for [`Codec`] with default configuration
 /// options.
 ///
-/// This transmuter uses [`ChecksumAlgoStd`] as a checksum algorithm and
+/// This configurator uses [`ChecksumAlgoDefault`] as a checksum algorithm and
 /// [`TagLookupPredetermined`] for its dynamic tag lookup logic.
 #[derive(Debug, Clone)]
-pub struct TransStd;
+pub struct ConfigDefault;
 
-impl Transmuter for TransStd {
-    type ChecksumAlgo = ChecksumAlgoStd;
+impl Config for ConfigDefault {
+    type ChecksumAlgo = ChecksumAlgoDefault;
     type TagLookup = TagLookupPredetermined;
 }
 
-/// A [`Transmuter`](Transmuter) for [`Codec`] with `|` (ASCII 0x7C)
+/// A [`Config`](Config) for [`Codec`] with `|` (ASCII 0x7C)
 /// as a field separator.
 #[derive(Debug, Clone)]
-pub struct TransVerticalSlash;
+pub struct ConfigVerticalSlash;
 
-impl Transmuter for TransVerticalSlash {
-    type ChecksumAlgo = ChecksumAlgoStd;
+impl Config for ConfigVerticalSlash {
+    type ChecksumAlgo = ChecksumAlgoDefault;
     type TagLookup = TagLookupPredetermined;
 
     const SOH_SEPARATOR: u8 = '|' as u8;
 }
 
-/// A [`Transmuter`](Transmuter) for [`Codec`] with `^` (ASCII 0x5F)
+/// A [`Config`](Config) for [`Codec`] with `^` (ASCII 0x5F)
 /// as a field separator.
 #[derive(Debug, Clone)]
-pub struct TransCaret;
+pub struct ConfigCaret;
 
-impl Transmuter for TransCaret {
-    type ChecksumAlgo = ChecksumAlgoStd;
+impl Config for ConfigCaret {
+    type ChecksumAlgo = ChecksumAlgoDefault;
     type TagLookup = TagLookupPredetermined;
 
     const SOH_SEPARATOR: u8 = '^' as u8;
@@ -580,12 +579,12 @@ pub trait ChecksumAlgo: Default + Clone {
 /// A rolling checksum over a byte array. Sums over each byte wrapping around at
 /// 256.
 #[derive(Copy, Clone, Debug, Default)]
-pub struct ChecksumAlgoStd {
+pub struct ChecksumAlgoDefault {
     checksum: u8,
     len: usize,
 }
 
-impl ChecksumAlgo for ChecksumAlgoStd {
+impl ChecksumAlgo for ChecksumAlgoDefault {
     fn roll(&mut self, window: &[u8]) {
         for byte in window {
             self.checksum = self.checksum.wrapping_add(*byte);
@@ -680,26 +679,26 @@ mod test {
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
-    fn encoder() -> Codec<slr::Message, impl Transmuter> {
-        Codec::new(TransVerticalSlash)
+    fn encoder() -> Codec<slr::Message, impl Config> {
+        Codec::new(ConfigVerticalSlash)
     }
 
-    fn encoder_with_soh() -> Codec<slr::Message, impl Transmuter> {
-        Codec::new(TransStd)
+    fn encoder_with_soh() -> Codec<slr::Message, impl Config> {
+        Codec::new(ConfigDefault)
     }
 
     #[derive(Clone, Debug)]
-    struct TransVerticalSlashNoVerify;
+    struct ConfigVerticalSlashNoVerify;
 
-    impl Transmuter for TransVerticalSlashNoVerify {
+    impl Config for ConfigVerticalSlashNoVerify {
         type ChecksumAlgo = ChecksumAlgoLazy;
         type TagLookup = TagLookupPredetermined;
 
         const SOH_SEPARATOR: u8 = '|' as u8;
     }
 
-    fn encoder_slash_no_verify() -> Codec<slr::Message, impl Transmuter> {
-        Codec::new(TransVerticalSlashNoVerify)
+    fn encoder_slash_no_verify() -> Codec<slr::Message, impl Config> {
+        Codec::new(ConfigVerticalSlashNoVerify)
     }
 
     fn with_soh(msg: &str) -> String {
@@ -742,7 +741,7 @@ mod test {
             message.get_field(8),
             Some(&slr::FixFieldValue::String("FIX.4.2".to_string()))
         );
-        assert_eq!(message.get_field(9), Some(&slr::FixFieldValue::Int(42)));
+        assert_eq!(message.get_field(9), Some(&slr::FixFieldValue::from(42i64)));
         assert_eq!(
             message.get_field(35),
             Some(&slr::FixFieldValue::String("0".to_string()))

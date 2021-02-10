@@ -37,15 +37,15 @@ const V1_DRAFT_RECOMMENDED_CIPHERSUITES_PSK_ONLY: &[&str] = &[
     "TLS_DHE_PSK_WITH_AES_256_CBC_SHA384",
 ];
 
-/// A specific version of the FIXS protocol specification.
+/// Which version of FIX-over-TLS (FIXS) to use.
 #[derive(Debug, Copy, Clone)]
 pub enum Version {
     V1Draft,
 }
 
 impl Version {
-    /// Returns an [`Iterator`] over the suggested ciphersuites for TLS,
-    /// according to this version. The ciphersuites are specified in IANA format.
+    /// Returns an [`Iterator`](Iterator) over the suggested ciphersuites for TLS,
+    /// according to `self` version. The ciphersuites are specified in IANA format.
     /// 
     /// ```
     /// use fefix::transport::fixs::Version;
@@ -64,8 +64,8 @@ impl Version {
         .copied()
     }
 
-    /// Returns an [`Iterator`] over the suggested ciphersuites for TLS,
-    /// according to this version. The ciphersuites are specified in OpenSSL's
+    /// Returns an [`Iterator`](Iterator) over the suggested ciphersuites for TLS,
+    /// according to `self` version. The ciphersuites are specified in OpenSSL's
     /// format.
     /// 
     /// # Examples:
