@@ -5,7 +5,7 @@
 [![Docs.rs](https://img.shields.io/badge/docs.rs-v0.4.0-green)](https://docs.rs/fefix/0.4.0/fefix/)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat)](https://github.com/clap-rs/clap/blob/master/LICENSE-MIT)
 [![Open issues](https://img.shields.io/github/issues-raw/neysofu/fefix)](https://img.shields.io/github/issues-raw/neysofu/fefix)
-[![matrix.org](https://img.shields.io/badge/matrix.org-%23fasters-blue)](https://matrix.to/#/#ferrum-fix:matrix.org)
+[![matrix.org](https://img.shields.io/badge/matrix.org-%23ferrum-fix-blue)](https://matrix.to/#/#ferrum-fix:matrix.org)
 
 FerrumFIX is a free and open source FIX engine implementation in Rust. Please note that it's currently under heavy development and wildly unstable, so all interested parties should refrain from using it in production prior to its 1.0 release. Performance and full adherence to the FIX protocol are core goals of the project which, if anything, might serve as a useful foundation for others' work.
 
