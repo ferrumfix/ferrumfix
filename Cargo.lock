@@ -717,7 +717,7 @@ dependencies = [
 
 [[package]]
 name = "fefix"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "Inflector",
  "arbitrary",
@@ -743,7 +743,7 @@ dependencies = [
 
 [[package]]
 name = "fefix_derive"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "darling",
  "proc-macro2 1.0.24",
