@@ -252,7 +252,7 @@ impl Dictionary {
             .map(|data| Datatype(self, data))
     }
 
-    /// Returns the [`Field`] associated with `tag`, if any.
+    /// Returns the [`Field`](Field) associated with `tag`, if any.
     ///
     /// ```
     /// use fefix::Dictionary;
@@ -1162,6 +1162,24 @@ mod test {
                 datatypes.insert(field.data_type().name().to_string());
             }
             assert_eq!(datatypes_count, datatypes.len());
+        }
+    }
+
+    #[test]
+    fn at_least_one_datatype() {
+        for version in Version::all() {
+            let dict = Dictionary::from_version(version);
+            assert!(dict.iter_datatypes().count() >= 1);
+        }
+    }
+
+    #[test]
+    fn std_header_and_trailer_always_present() {
+        for version in Version::all() {
+            let dict = Dictionary::from_version(version);
+            let std_header = dict.component_by_name("StandardHeader");
+            let std_trailer = dict.component_by_name("StandardTrailer");
+            assert!(std_header.is_some() && std_trailer.is_some());
         }
     }
 
