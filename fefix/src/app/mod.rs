@@ -39,7 +39,8 @@ pub enum Version {
 }
 
 impl Version {
-    /// Returns a [`String`] with the QuickFix definition file for `self` as its
+    /// Returns a [`String`](String) with the QuickFIX definition file for `self`
+    /// as its
     /// content. The QuickFix definition files are extracted and decompressed
     /// from the binary without filesystem access.
     pub fn get_quickfix_spec(&self) -> String {

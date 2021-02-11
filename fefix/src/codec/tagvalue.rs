@@ -375,7 +375,7 @@ impl TagLookup for TagLookupPredetermined {
         };
         Ok(self
             .current_dict
-            .get_field(tag)
+            .field_by_tag(tag)
             .map(|f| f.basetype())
             .unwrap_or(DataType::String))
     }

@@ -142,14 +142,7 @@ pub struct Dictionary {
 
 impl Dictionary {
     /// Creates a new empty FIX Dictionary named `version`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use fefix::Dictionary;
-    /// let dict = Dictionary::new("FIX.foobar");
-    /// ```
-    pub fn new<S: ToString>(version: S) -> Self {
+    fn new<S: ToString>(version: S) -> Self {
         Dictionary {
             version: version.to_string(),
             symbol_table: HashMap::new(),
@@ -159,12 +152,12 @@ impl Dictionary {
             components: Vec::new(),
             messages: Vec::new(),
             layout_items: Vec::new(),
-            categories: vec![],
+            categories: Vec::new(),
             header: Vec::new(),
         }
     }
 
-    /// Creates a new [`Dictionary`] according to the specification of
+    /// Creates a new [`Dictionary`](Dictionary) according to the specification of
     /// `version`.
     pub fn from_version(version: Version) -> Self {
         Dictionary::save_definition_spec(version.get_quickfix_spec()).unwrap()
@@ -201,7 +194,7 @@ impl Dictionary {
             .map(move |data| Abbreviation(self, data))
     }
 
-    /// Returns the [`Message`] associated with `name`, if any.
+    /// Returns the [`Message`](Message) associated with `name`, if any.
     ///
     /// ```
     /// use fefix::Dictionary;
@@ -209,60 +202,54 @@ impl Dictionary {
     ///
     /// let dict = Dictionary::from_version(Version::Fix44);
     ///
-    /// let msg1 = dict.get_message_by_name("Heartbeat").unwrap();
-    /// let msg2 = dict.get_message_by_msg_type("0").unwrap();
+    /// let msg1 = dict.message_by_name("Heartbeat").unwrap();
+    /// let msg2 = dict.message_by_msgtype("0").unwrap();
     /// assert_eq!(msg1.name(), msg2.name());
     /// ```
-    pub fn get_message_by_name<S: AsRef<str>>(&self, name: S) -> Option<Message> {
+    pub fn message_by_name<S: AsRef<str>>(&self, name: S) -> Option<Message> {
         self.symbol(KeyRef::MessageByName(name.as_ref()))
             .map(|iid| self.messages.get(*iid as usize).unwrap())
             .map(|data| Message(self, data))
     }
 
-    pub fn get_message_by_msg_type<S: AsRef<str>>(&self, key: S) -> Option<Message> {
+    /// Returns the [`Message`](Message) that has the given `msgtype`, if any.
+    ///
+    /// ```
+    /// use fefix::Dictionary;
+    /// use fefix::app::Version;
+    ///
+    /// let dict = Dictionary::from_version(Version::Fix44);
+    ///
+    /// let msg1 = dict.message_by_msgtype("0").unwrap();
+    /// let msg2 = dict.message_by_name("Heartbeat").unwrap();
+    /// assert_eq!(msg1.name(), msg2.name());
+    /// ```
+    pub fn message_by_msgtype<S: AsRef<str>>(&self, msgtype: S) -> Option<Message> {
         self.symbol(KeyRef::MessageByMsgType(MsgType::from_bytes(
-            key.as_ref().as_bytes(),
+            msgtype.as_ref().as_bytes(),
         )?))
         .map(|iid| self.messages.get(*iid as usize).unwrap())
         .map(|data| Message(self, data))
     }
 
     /// Returns the [`Component`] named `name`, if any.
-    pub fn get_component<S: AsRef<str>>(&self, name: S) -> Option<Component> {
+    pub fn component_by_name<S: AsRef<str>>(&self, name: S) -> Option<Component> {
         self.symbol(KeyRef::ComponentByName(name.as_ref()))
             .map(|iid| self.components.get(*iid as usize).unwrap())
             .map(|data| Component(self, data))
     }
 
-    /// Returns an [`Iterator`] over this [`Dictionary`]'s components. Items are in
-    /// no particular order.
-    pub fn components(&self) -> impl Iterator<Item = Component> {
-        self.components
-            .iter()
-            .map(move |data| Component(&self, data))
+    /// Attempts to read a QuickFIX-style specification file and convert it into
+    /// a [`Dictionary`].
+    pub fn save_definition_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
+        let xml_document = roxmltree::Document::parse(input.as_ref()).unwrap();
+        QuickFixReader::new(&xml_document)
     }
 
-    /// Returns an [`Iterator`] over this [`Dictionary`]'s messages. Items are in
-    /// no particular order.
-    ///
-    /// ```
-    /// use fefix::Dictionary;
-    /// use fefix::app::Version;
-    ///
-    /// let dict = Dictionary::from_version(Version::Fix44);
-    /// let msg = dict.messages().find(|m| m.name() == "MarketDataRequest");
-    /// assert_eq!(msg.unwrap().msg_type(), "V");
-    /// ```
-    pub fn messages(&self) -> impl Iterator<Item = Message> {
-        self.messages.iter().map(move |data| Message(&self, data))
-    }
-
-    /// Returns an [`Iterator`] over this [`Dictionary`]'s categories. Items are
-    /// in no particular order.
-    pub fn categories(&self) -> impl Iterator<Item = Category> {
-        self.categories
-            .iter()
-            .map(move |data| Category(&self, data))
+    pub fn datatype_by_name<S: AsRef<str>>(&self, name: S) -> Option<Datatype> {
+        self.symbol(KeyRef::DatatypeByName(name.as_ref()))
+            .map(|iid| self.data_types.get(*iid as usize).unwrap())
+            .map(|data| Datatype(self, data))
     }
 
     /// Returns the [`Field`] associated with `tag`, if any.
@@ -273,28 +260,75 @@ impl Dictionary {
     ///
     /// let dict = Dictionary::from_version(Version::Fix44);
     ///
-    /// let field1 = dict.get_field(112).unwrap();
-    /// let field2 = dict.get_field_by_name("TestReqID").unwrap();
+    /// let field1 = dict.field(112).unwrap();
+    /// let field2 = dict.field_by_name("TestReqID").unwrap();
     /// assert_eq!(field1.name(), field2.name());
     /// ```
-    pub fn get_field(&self, tag: u32) -> Option<Field> {
+    pub fn field_by_tag(&self, tag: u32) -> Option<Field> {
         self.symbol(KeyRef::FieldByTag(tag))
             .map(|iid| self.fields.get(*iid as usize).unwrap())
             .map(|data| Field(self, data))
     }
 
     /// Returns the [`Field`] named `name`, if any.
-    pub fn get_field_by_name<S: AsRef<str>>(&self, name: S) -> Option<Field> {
+    pub fn field_by_name<S: AsRef<str>>(&self, name: S) -> Option<Field> {
         self.symbol(KeyRef::FieldByName(name.as_ref()))
             .map(|iid| self.fields.get(*iid as usize).unwrap())
             .map(|data| Field(self, data))
     }
 
-    /// Attempts to read a QuickFIX-style specification file and convert it into
-    /// a [`Dictionary`].
-    pub fn save_definition_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
-        let xml_document = roxmltree::Document::parse(input.as_ref()).unwrap();
-        QuickFixReader::new(&xml_document)
+    /// Returns an [`Iterator`](Iterator) over all [`DataType`](DataType) defined
+    /// in `self`. Items are in no particular order.
+    ///
+    /// ```
+    /// use fefix::Dictionary;
+    /// use fefix::app::Version;
+    ///
+    /// let dict = Dictionary::from_version(Version::Fix42);
+    /// // FIX 4.2 defines 19 datatypes.
+    /// assert_eq!(dict.iter_datatypes().count(), 19);
+    /// ```
+    pub fn iter_datatypes(&self) -> impl Iterator<Item = Datatype> {
+        self.data_types.iter().map(move |data| Datatype(self, data))
+    }
+
+    /// Returns an [`Iterator`](Iterator) over this [`Dictionary`]'s messages. Items are in
+    /// no particular order.
+    ///
+    /// ```
+    /// use fefix::Dictionary;
+    /// use fefix::app::Version;
+    ///
+    /// let dict = Dictionary::from_version(Version::Fix44);
+    /// let msg = dict.iter_messages().find(|m| m.name() == "MarketDataRequest");
+    /// assert_eq!(msg.unwrap().msg_type(), "V");
+    /// ```
+    pub fn iter_messages(&self) -> impl Iterator<Item = Message> {
+        self.messages.iter().map(move |data| Message(&self, data))
+    }
+
+    /// Returns an [`Iterator`] over this [`Dictionary`]'s categories. Items are
+    /// in no particular order.
+    pub fn iter_categories(&self) -> impl Iterator<Item = Category> {
+        self.categories
+            .iter()
+            .map(move |data| Category(&self, data))
+    }
+
+    /// Returns an [`Iterator`] over this [`Dictionary`]'s fields. Items are
+    /// in no particular order.
+    pub fn iter_fields(&self) -> impl Iterator<Item = Field> {
+        self.fields
+            .iter()
+            .map(move |data| Field(&self, data))
+    }
+
+    /// Returns an [`Iterator`] over this [`Dictionary`]'s components. Items are in
+    /// no particular order.
+    pub fn iter_components(&self) -> impl Iterator<Item = Component> {
+        self.components
+            .iter()
+            .map(move |data| Component(&self, data))
     }
 }
 
@@ -690,13 +724,13 @@ pub struct Value {
 mod quickfix {
     use super::*;
 
-    fn add_datatype(dict: &mut Dictionary, datatype: DatatypeData) {
-        let iid = dict.data_types.len();
-        let name = datatype.datatype.name().to_string();
-        dict.data_types.push(datatype);
-        dict.symbol_table
-            .insert(Key::DatatypeByName(name), iid as u32);
-    }
+    //fn add_datatype(dict: &mut Dictionary, datatype: DatatypeData) {
+    //    let iid = dict.data_types.len();
+    //    let name = datatype.datatype.name().to_string();
+    //    dict.data_types.push(datatype);
+    //    dict.symbol_table
+    //        .insert(Key::DatatypeByName(name), iid as u32);
+    //}
 
     impl dt::DataType {
         fn from_quickfix_name(name: &str) -> Option<Self> {
@@ -717,31 +751,31 @@ mod quickfix {
 
     /// Adds all FIX datatypes to `dict`. This is necessary because QuickFIX
     /// definition files don't include them.
-    fn add_all_datatypes(dict: &mut Dictionary) {
-        add_datatype(
-            dict,
-            DatatypeData {
-                datatype: dt::DataType::String,
-                description: String::new(),
-                examples: vec![],
-            },
-        );
-        add_datatype(
-            dict,
-            DatatypeData {
-                datatype: dt::DataType::Int,
-                description: String::new(),
-                examples: vec![],
-            },
-        );
-        add_datatype(
-            dict,
-            DatatypeData {
-                datatype: dt::DataType::Char,
-                description: String::new(),
-                examples: vec![],
-            },
-        );
+    fn add_all_datatypes(_dict: &mut Dictionary) {
+        //add_datatype(
+        //    dict,
+        //    DatatypeData {
+        //        datatype: dt::DataType::String,
+        //        description: String::new(),
+        //        examples: vec![],
+        //    },
+        //);
+        //add_datatype(
+        //    dict,
+        //    DatatypeData {
+        //        datatype: dt::DataType::Int,
+        //        description: String::new(),
+        //        examples: vec![],
+        //    },
+        //);
+        //add_datatype(
+        //    dict,
+        //    DatatypeData {
+        //        datatype: dt::DataType::Char,
+        //        description: String::new(),
+        //        examples: vec![],
+        //    },
+        //);
     }
 
     pub(crate) struct QuickFixReader<'a> {
@@ -774,6 +808,9 @@ mod quickfix {
                     reader.add_message(child);
                 }
             }
+            // `StandardHeader` and `StandardTrailer` are defined in ad-hoc
+            // sections of the XML files. They're always there, even if
+            // potentially empty (FIX 5.0+).
             reader.add_component_with_name(reader.node_with_header, "StandardHeader");
             reader.add_component_with_name(reader.node_with_trailer, "StandardTrailer");
             Ok(reader.dict)
@@ -814,9 +851,11 @@ mod quickfix {
             })
         }
 
+        /// Reads a [`FieldData`](FieldData) definition from `node` and
+        /// updates `self`.
         fn add_field(&mut self, node: roxmltree::Node) {
             let iid = self.dict.fields.len() as u32;
-            let field = FieldData::definition_from_node(&mut self.dict, node);
+            let field = self.import_field(node);
             self.dict
                 .symbol_table
                 .insert(Key::FieldByName(field.name.clone()), iid);
@@ -824,6 +863,28 @@ mod quickfix {
                 .symbol_table
                 .insert(Key::FieldByTag(field.tag as u32), iid);
             self.dict.fields.push(field);
+        }
+
+        /// Reads a [`MessageData`](MessageData) definition from `node` and
+        /// updates `self`.
+        fn add_message(&mut self, node: roxmltree::Node) {
+            let iid = self.dict.messages.len() as u32;
+            let message = self.import_message(node);
+            self.dict
+                .symbol_table
+                .insert(Key::MessageByName(message.name.clone()), iid);
+            self.dict.symbol_table.insert(
+                Key::MessageByMsgType(MsgType::from_bytes(message.msg_type.as_bytes()).unwrap()),
+                iid,
+            );
+            self.dict.messages.push(message);
+        }
+
+        /// Reads a [`ComponentData`](ComponentData) definition from `node` and
+        /// updates `self`.
+        fn add_component(&mut self, node: roxmltree::Node) {
+            let name = node.attribute("name").unwrap().to_string();
+            self.add_component_with_name(node, name);
         }
 
         fn add_component_with_name<S: AsRef<str>>(&mut self, node: roxmltree::Node, name: S) {
@@ -836,36 +897,53 @@ mod quickfix {
             self.dict.components.push(component);
         }
 
-        fn add_component(&mut self, node: roxmltree::Node) {
-            let iid = self.dict.components.len();
-            let component = ComponentData::definition_from_node(&mut self.dict, node);
-            self.dict
-                .symbol_table
-                .insert(Key::ComponentByName(component.name.clone()), iid as u32);
-            self.dict.components.push(component);
+        fn import_message(&mut self, node: roxmltree::Node) -> MessageData {
+            debug_assert_eq!(node.tag_name().name(), "message");
+            let category_iid = CategoryData::get_or_create_iid_from_ref(&mut self.dict, node);
+            let layout_start = self.dict.layout_items.len() as u32;
+            for child in node.children() {
+                if child.is_element() {
+                    // We don't need to generate new IID's because we're dealing
+                    // with ranges.
+                    let data = LayoutItemData::save_definition(&mut self.dict, child);
+                    self.dict.layout_items.push(data);
+                }
+            }
+            let layout_end = self.dict.layout_items.len() as u32;
+            MessageData {
+                name: node.attribute("name").unwrap().to_string(),
+                msg_type: node.attribute("msgtype").unwrap().to_string(),
+                component_id: 0,
+                category_iid,
+                section_id: String::new(),
+                layout_items: layout_start..layout_end,
+                abbr_name: None,
+                required: true,
+                elaboration: None,
+                description: String::new(),
+            }
         }
 
-        fn add_message(&mut self, node: roxmltree::Node) {
-            let iid = self.dict.messages.len() as u32;
-            let message = MessageData::definition_from_node(&mut self.dict, node);
-            self.dict
-                .symbol_table
-                .insert(Key::MessageByName(message.name.clone()), iid);
-            self.dict.symbol_table.insert(
-                Key::MessageByMsgType(MsgType::from_bytes(message.msg_type.as_bytes()).unwrap()),
-                iid,
-            );
-            self.dict.messages.push(message);
+        fn import_field(&mut self, node: roxmltree::Node) -> FieldData {
+            debug_assert_eq!(node.tag_name().name(), "field");
+            let data_type_iid = DatatypeData::get_or_create_iid_from_ref(&mut self.dict, node);
+            let value_restrictions = value_restrictions_from_node(node, data_type_iid);
+            FieldData {
+                name: node.attribute("name").unwrap().to_string(),
+                tag: node.attribute("number").unwrap().parse().unwrap(),
+                data_type_iid: data_type_iid,
+                associated_data_tag: None,
+                value_restrictions,
+                required: true,
+                abbr_name: None,
+                base_category_abbr_name: None,
+                base_category_id: None,
+                description: None,
+            }
         }
     }
 
     impl ComponentData {
-        fn definition_from_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
-            debug_assert_eq!(node.tag_name().name(), "component");
-            let name = node.attribute("name").unwrap().to_string();
-            Self::definition_from_node_with_name(dict, node, name)
-        }
-
         fn definition_from_node_with_name<S: AsRef<str>>(
             dict: &mut Dictionary,
             node: roxmltree::Node,
@@ -937,32 +1015,18 @@ mod quickfix {
         }
     }
 
-    impl FieldData {
-        fn definition_from_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
-            debug_assert_eq!(node.tag_name().name(), "field");
-            let data_type_iid = DatatypeData::get_or_create_iid_from_ref(dict, node);
-            let value_restrictions = value_restrictions_from_node(node, data_type_iid);
-            FieldData {
-                name: node.attribute("name").unwrap().to_string(),
-                tag: node.attribute("number").unwrap().parse().unwrap(),
-                data_type_iid: data_type_iid,
-                associated_data_tag: None,
-                value_restrictions,
-                required: true,
-                abbr_name: None,
-                base_category_abbr_name: None,
-                base_category_id: None,
-                description: None,
-            }
-        }
-    }
-
     impl DatatypeData {
         fn get_or_create_iid_from_ref(dict: &mut Dictionary, node: roxmltree::Node) -> InternalId {
             // References should only happen at <field> tags.
             debug_assert_eq!(node.tag_name().name(), "field");
-            let name = node.attribute("type").unwrap();
-            let datatype = dt::DataType::from_quickfix_name(name).unwrap();
+            let datatype = {
+                // The idenfier that QuickFIX uses for this type.
+                let quickfix_name = node.attribute("type").unwrap();
+                // Translate that into a real datatype.
+                dt::DataType::from_quickfix_name(quickfix_name).unwrap()
+            };
+            // Get the official (not QuickFIX's) name of `datatype`.
+            let name = datatype.name();
             match dict.symbol(KeyRef::DatatypeByName(name)) {
                 Some(x) => *x,
                 None => {
@@ -1016,34 +1080,6 @@ mod quickfix {
         }
     }
 
-    impl MessageData {
-        fn definition_from_node(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
-            debug_assert_eq!(node.tag_name().name(), "message");
-            let category_iid = CategoryData::get_or_create_iid_from_ref(dict, node);
-            let layout_start = dict.layout_items.len() as u32;
-            for child in node.children() {
-                if child.is_element() {
-                    // We don't need IID's because we're dealing with ranges.
-                    let data = LayoutItemData::save_definition(dict, child);
-                    dict.layout_items.push(data);
-                }
-            }
-            let layout_end = dict.layout_items.len() as u32;
-            MessageData {
-                name: node.attribute("name").unwrap().to_string(),
-                msg_type: node.attribute("msgtype").unwrap().to_string(),
-                component_id: 0,
-                category_iid,
-                section_id: String::new(),
-                layout_items: layout_start..layout_end,
-                abbr_name: None,
-                required: true,
-                elaboration: None,
-                description: String::new(),
-            }
-        }
-    }
-
     impl CategoryData {
         fn get_or_create_iid_from_ref(dict: &mut Dictionary, node: roxmltree::Node) -> InternalId {
             debug_assert_eq!(node.tag_name().name(), "message");
@@ -1078,6 +1114,7 @@ mod test {
     use crate::app::Version;
     use quickcheck::QuickCheck;
     use std::convert::TryInto;
+    use std::collections::HashSet;
 
     #[test]
     fn msg_type_conversion() {
@@ -1096,7 +1133,7 @@ mod test {
     #[test]
     fn fixt11_quickfix_is_ok() {
         let dict = Dictionary::from_version(Version::Fixt11);
-        let msg_heartbeat = dict.get_message_by_name("Heartbeat").unwrap();
+        let msg_heartbeat = dict.message_by_name("Heartbeat").unwrap();
         assert_eq!(msg_heartbeat.msg_type(), "0");
         assert_eq!(msg_heartbeat.name(), "Heartbeat".to_string());
         assert!(msg_heartbeat.layout().any(|c| {
@@ -1116,9 +1153,22 @@ mod test {
     }
 
     #[test]
+    fn all_datatypes_are_used_at_least_once() {
+        for version in Version::all() {
+            let dict = Dictionary::from_version(version);
+            let datatypes_count = dict.iter_datatypes().count();
+            let mut datatypes = HashSet::new();
+            for field in dict.iter_fields() {
+                datatypes.insert(field.data_type().name().to_string());
+            }
+            assert_eq!(datatypes_count, datatypes.len());
+        }
+    }
+
+    #[test]
     fn fix44_field_28_has_three_variants() {
         let dict = Dictionary::from_version(Version::Fix44);
-        let field_28 = dict.get_field(28).unwrap();
+        let field_28 = dict.field_by_tag(28).unwrap();
         assert_eq!(field_28.name(), "IOITransType");
         assert_eq!(field_28.enums().unwrap().count(), 3);
     }
@@ -1126,7 +1176,7 @@ mod test {
     #[test]
     fn fix44_field_36_has_no_variants() {
         let dict = Dictionary::from_version(Version::Fix44);
-        let field_36 = dict.get_field(36).unwrap();
+        let field_36 = dict.field_by_tag(36).unwrap();
         assert_eq!(field_36.name(), "NewSeqNo");
         assert!(field_36.enums().is_none());
     }
@@ -1134,7 +1184,7 @@ mod test {
     #[test]
     fn fix44_field_167_has_eucorp_variant() {
         let dict = Dictionary::from_version(Version::Fix44);
-        let field_167 = dict.get_field(167).unwrap();
+        let field_167 = dict.field_by_tag(167).unwrap();
         assert_eq!(field_167.name(), "SecurityType");
         assert!(field_167.enums().unwrap().any(|e| e.value() == "EUCORP"));
     }

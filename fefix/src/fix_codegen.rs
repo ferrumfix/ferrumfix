@@ -3,11 +3,11 @@ use inflector::Inflector;
 
 pub fn codegen(dict: &Dictionary) -> String {
     let component_defs: Vec<String> = dict
-        .components()
+        .iter_components()
         .map(|comp| dict.build_component_struct(&comp))
         .collect();
     let message_defs: Vec<String> = dict
-        .messages()
+        .iter_messages()
         .map(|msg| dict.build_message_struct(msg.msg_type()))
         .collect();
     let code = format!(
@@ -43,7 +43,7 @@ fn make_type_optional(required: bool, typ: String) -> String {
 
 impl Dictionary {
     fn build_message_struct(&self, msg_type: &str) -> String {
-        let message = self.get_message_by_msg_type(msg_type).unwrap();
+        let message = self.message_by_msgtype(msg_type).unwrap();
         let fields: Vec<String> = message
             .layout()
             .map(|layout_item| {

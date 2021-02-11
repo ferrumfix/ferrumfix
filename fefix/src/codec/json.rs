@@ -24,11 +24,11 @@ pub trait Config: Clone {
 
 /// A [`Config`](Config) that "pretty-prints", i.e. always returns `true` from
 /// [`Config::pretty_print`](Config::pretty_print).
-/// 
+///
 /// # Output examples
-/// 
+///
 /// With [`ConfigPrettyPrint`]:
-/// 
+///
 /// ```json
 /// {
 ///     "Header": {
@@ -52,9 +52,9 @@ pub trait Config: Clone {
 ///     }
 /// }
 /// ```
-/// 
+///
 /// Without [`ConfigPrettyPrint`]:
-/// 
+///
 /// ```json
 /// {"Header":{"BeginString":"FIX.4.4","MsgType":"W","MsgSeqNum":"4567","SenderCompID":"SENDER","TargetCompID":"TARGET","SendingTime":"20160802-21:14:38.717"},"Body":{"SecurityIDSource":"8","SecurityID":"ESU6","MDReqID":"789","NoMDEntries":[{"MDEntryType":"0","MDEntryPx":"1.50","MDEntrySize":"75","MDEntryTime":"21:14:38.688"},{"MDEntryType":"1","MDEntryPx":"1.75","MDEntrySize":"25","MDEntryTime":"21:14:38.688"}]},"Trailer":{}}
 /// ```
@@ -129,7 +129,7 @@ where
         key: &str,
         value: &serde_json::Value,
     ) -> Result<(u32, slr::FixFieldValue), DecodeError> {
-        if let Some(field) = dictionary.get_field_by_name(key) {
+        if let Some(field) = dictionary.field_by_name(key) {
             match value {
                 serde_json::Value::String(s) => Ok((
                     field.tag() as u32,
@@ -171,7 +171,7 @@ where
                     let mut map = serde_json::Map::new();
                     for item in group {
                         let field = dict
-                            .get_field(*item.0 as u32)
+                            .field_by_tag(*item.0 as u32)
                             .ok_or(DecodeError::InvalidData)
                             .unwrap();
                         let field_name = field.name().to_string();
@@ -245,15 +245,18 @@ where
     ) -> Result<usize, Self::Error> {
         let dictionary =
             if let Some(slr::FixFieldValue::String(fix_version)) = message.fields.get(&8) {
-                self
-                    .dictionaries
+                self.dictionaries
                     .get(fix_version.as_str())
                     .ok_or(Self::Error::Dictionary)?
             } else {
                 return Err(Self::Error::Dictionary);
             };
-        let component_std_header = dictionary.get_component("StandardHeader").unwrap();
-        let component_std_traler = dictionary.get_component("StandardTrailer").unwrap();
+        let component_std_header = dictionary
+            .component_by_name("StandardHeader")
+            .expect("The `StandardHeader` component is mandatory.");
+        let component_std_traler = dictionary
+            .component_by_name("StandardTrailer")
+            .expect("The `StandardTrailer` component is mandatory.");
         let msg_type = if let Some(slr::FixFieldValue::String(s)) = message.get_field(35) {
             s
         } else {
@@ -264,7 +267,7 @@ where
         let mut map_header = json!({ "MsgType": msg_type });
         for (field_tag, field_value) in message.fields.iter() {
             let field = dictionary
-                .get_field(*field_tag as u32)
+                .field_by_tag(*field_tag as u32)
                 .ok_or(Self::Error::Dictionary)?;
             let field_name = field.name().to_string();
             let field_value = self.translate(dictionary, field_value);
