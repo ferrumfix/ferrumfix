@@ -3,40 +3,6 @@ use std::net::{SocketAddr, TcpListener};
 use std::path::Path;
 use std::sync::Arc;
 
-const V1_DRAFT_RECOMMENDED_CIPHERSUITES: &[&str] = &[
-    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-    "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
-    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
-    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
-    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
-    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-    "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
-    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-    "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
-    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
-    "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
-    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
-    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
-    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
-    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
-    "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
-];
-
-const V1_DRAFT_RECOMMENDED_CIPHERSUITES_PSK_ONLY: &[&str] = &[
-    "TLS_DHE_PSK_WITH_AES_128_GCM_SHA256",
-    "TLS_DHE_PSK_WITH_AES_256_GCM_SHA384",
-    "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA",
-    "TLS_DHE_PSK_WITH_AES_128_CBC_SHA",
-    "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA",
-    "TLS_DHE_PSK_WITH_AES_256_CBC_SHA",
-    "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256",
-    "TLS_DHE_PSK_WITH_AES_128_CBC_SHA256",
-    "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384",
-    "TLS_DHE_PSK_WITH_AES_256_CBC_SHA384",
-];
-
 /// Which version of FIX-over-TLS (FIXS) to use.
 #[derive(Debug, Copy, Clone)]
 pub enum Version {
@@ -46,10 +12,10 @@ pub enum Version {
 impl Version {
     /// Returns an [`Iterator`](Iterator) over the suggested ciphersuites for TLS,
     /// according to `self` version. The ciphersuites are specified in IANA format.
-    /// 
+    ///
     /// ```
     /// use fefix::transport::fixs::Version;
-    /// 
+    ///
     /// let version = Version::V1Draft;
     /// let mut ciphersuites_iana = version.recommended_cs_iana(false);
     /// assert!(ciphersuites_iana.any(|cs| cs == "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"));
@@ -67,23 +33,23 @@ impl Version {
     /// Returns an [`Iterator`](Iterator) over the suggested ciphersuites for TLS,
     /// according to `self` version. The ciphersuites are specified in OpenSSL's
     /// format.
-    /// 
+    ///
     /// # Examples:
-    /// 
+    ///
     /// ```
     /// use fefix::transport::fixs::Version;
-    /// 
+    ///
     /// let version = Version::V1Draft;
     /// let mut ciphersuites_openssl = version.recommended_cs_openssl(false);
     /// assert!(ciphersuites_openssl.any(|cs| cs == "DHE-RSA-AES128-GCM-SHA256"));
     /// ```
-    /// 
+    ///
     /// List all ciphersuites in a colon-separated format, like required by
     /// [`openssl-ciphers`](https://www.openssl.org/docs/manmaster/man1/openssl-ciphers.html).
-    /// 
+    ///
     /// ```
     /// use fefix::transport::fixs::Version;
-    /// 
+    ///
     /// let version = Version::V1Draft;
     /// let mut ciphersuites_openssl = version.recommended_cs_openssl(false);
     /// let cipherlist = ciphersuites_openssl.collect::<Vec<&str>>().join(":");
@@ -177,6 +143,40 @@ pub struct FixuaConfig<'a> {
     pub key: &'a Path,
     pub address: SocketAddr,
 }
+
+const V1_DRAFT_RECOMMENDED_CIPHERSUITES: &[&str] = &[
+    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+    "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
+    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+    "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+    "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+    "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
+    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+    "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+];
+
+const V1_DRAFT_RECOMMENDED_CIPHERSUITES_PSK_ONLY: &[&str] = &[
+    "TLS_DHE_PSK_WITH_AES_128_GCM_SHA256",
+    "TLS_DHE_PSK_WITH_AES_256_GCM_SHA384",
+    "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA",
+    "TLS_DHE_PSK_WITH_AES_128_CBC_SHA",
+    "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA",
+    "TLS_DHE_PSK_WITH_AES_256_CBC_SHA",
+    "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256",
+    "TLS_DHE_PSK_WITH_AES_128_CBC_SHA256",
+    "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384",
+    "TLS_DHE_PSK_WITH_AES_256_CBC_SHA384",
+];
 
 mod ciphersuites {
     use phf::phf_map;

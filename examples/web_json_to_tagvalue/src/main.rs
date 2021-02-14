@@ -110,10 +110,11 @@ mod test {
             Dictionary::from_version(Version::Fix42),
             json::ConfigPrettyPrint,
         );
-        let mut decoder_tagvalue = tagvalue::Codec::<slr::Message, tagvalue::ConfigDefault>::with_dict(
-            Dictionary::from_version(Version::Fix42),
-            tagvalue::ConfigDefault,
-        );
+        let mut decoder_tagvalue =
+            tagvalue::Codec::<slr::Message, tagvalue::ConfigDefault>::with_dict(
+                Dictionary::from_version(Version::Fix42),
+                tagvalue::ConfigDefault,
+            );
         let msg_json = decoder_json.decode(body_json.as_bytes()).unwrap();
         let msg_tagvalue = decoder_tagvalue.decode(body_tagvalue.as_bytes()).unwrap();
         assert_eq!(msg_json.get_field(8), msg_tagvalue.get_field(8));

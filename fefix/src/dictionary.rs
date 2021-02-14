@@ -1,9 +1,10 @@
 //! Access to FIX Dictionary reference and message specifications.
 
 use crate::app::Version;
-use crate::dt;
+use crate::DataType;
 use quickfix::{ParseDictionaryError, QuickFixReader};
 use std::collections::HashMap;
+use std::fmt;
 use std::io;
 use std::ops::Range;
 
@@ -138,6 +139,81 @@ pub struct Dictionary {
     layout_items: Vec<LayoutItemData>,
     categories: Vec<CategoryData>,
     header: Vec<FieldData>,
+}
+
+fn display_layout_item(indent: u32, item: LayoutItem, f: &mut fmt::Formatter) -> fmt::Result {
+    for _ in 0..indent {
+        write!(f, " ")?;
+    }
+    match item.kind() {
+        LayoutItemKind::Field(_) => {
+            writeln!(
+                f,
+                "<field name='{}' required='{}' />",
+                item.tag_text(),
+                item.required(),
+            )?;
+        }
+        LayoutItemKind::Group => {
+            writeln!(
+                f,
+                "<group name='{}' required='{}' />",
+                item.tag_text(),
+                item.required(),
+            )?;
+            writeln!(f, "</group>")?;
+        },
+        LayoutItemKind::Component(_c) => {
+            writeln!(
+                f,
+                "<component name='{}' required='{}' />",
+                item.tag_text(),
+                item.required(),
+            )?;
+            writeln!(f, "</component>")?;
+        },
+    }
+    Ok(())
+}
+
+impl fmt::Display for Dictionary {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "<fix type='FIX' version='{}'>", self.version)?;
+        {
+            writeln!(f, " <header>")?;
+            let std_header = self.component_by_name("StandardHeader").unwrap();
+            for item in std_header.items() {
+                display_layout_item(2, item, f)?;
+            }
+            writeln!(f, " </header>")?;
+        }
+        {
+            writeln!(f, " <messages>")?;
+            for message in self.iter_messages() {
+                writeln!(
+                    f,
+                    "  <message name='{}' msgtype='{}' msgcat='{}'>",
+                    message.name(),
+                    message.msg_type(),
+                    "TODO"
+                )?;
+                for item in message.layout() {
+                    display_layout_item(2, item, f)?;
+                }
+                writeln!(f, "  </message>")?;
+            }
+            writeln!(f, " </messages>")?;
+        }
+        {
+            writeln!(f, " <header>")?;
+            let std_header = self.component_by_name("StandardTrailer").unwrap();
+            for item in std_header.items() {
+                display_layout_item(2, item, f)?;
+            }
+            writeln!(f, " </header>")?;
+        }
+        Ok(())
+    }
 }
 
 impl Dictionary {
@@ -318,9 +394,7 @@ impl Dictionary {
     /// Returns an [`Iterator`] over this [`Dictionary`]'s fields. Items are
     /// in no particular order.
     pub fn iter_fields(&self) -> impl Iterator<Item = Field> {
-        self.fields
-            .iter()
-            .map(move |data| Field(&self, data))
+        self.fields.iter().map(move |data| Field(&self, data))
     }
 
     /// Returns an [`Iterator`] over this [`Dictionary`]'s components. Items are in
@@ -445,7 +519,7 @@ pub enum ComponentType {
 #[derive(Clone, Debug, PartialEq)]
 struct DatatypeData {
     /// **Primary key.** Identifier of the datatype.
-    datatype: dt::DataType,
+    datatype: DataType,
     /// Human readable description of this Datatype.
     description: String,
     /// A string that contains examples values for a datatype
@@ -461,7 +535,7 @@ impl<'a> Datatype<'a> {
         self.1.datatype.name()
     }
 
-    pub fn basetype(&self) -> dt::DataType {
+    pub fn basetype(&self) -> DataType {
         self.1.datatype
     }
 }
@@ -547,7 +621,7 @@ impl<'a> Field<'a> {
     }
 
     /// Returns the [`BaseType`] of `self`.
-    pub fn basetype(&self) -> dt::DataType {
+    pub fn basetype(&self) -> DataType {
         self.data_type().basetype()
     }
 
@@ -607,7 +681,7 @@ pub struct LayoutItem<'a>(&'a Dictionary, &'a LayoutItemData);
 #[derive(Debug)]
 pub enum LayoutItemKind<'a> {
     Component(Component<'a>),
-    Group(),
+    Group,
     Field(Field<'a>),
 }
 
@@ -625,7 +699,7 @@ impl<'a> LayoutItem<'a> {
                 self.0.components.get(*n as usize).unwrap(),
             )),
             LayoutItemKindData::Group(_range) => {
-                LayoutItemKind::Group() // FIXME
+                LayoutItemKind::Group // FIXME
             }
             LayoutItemKindData::Field(n) => {
                 LayoutItemKind::Field(Field(self.0, self.0.fields.get(*n as usize).unwrap()))
@@ -724,61 +798,38 @@ pub struct Value {
 mod quickfix {
     use super::*;
 
-    //fn add_datatype(dict: &mut Dictionary, datatype: DatatypeData) {
-    //    let iid = dict.data_types.len();
-    //    let name = datatype.datatype.name().to_string();
-    //    dict.data_types.push(datatype);
-    //    dict.symbol_table
-    //        .insert(Key::DatatypeByName(name), iid as u32);
-    //}
-
-    impl dt::DataType {
+    impl DataType {
         fn from_quickfix_name(name: &str) -> Option<Self> {
-            use dt::DataType;
+            // https://github.com/quickfix/quickfix/blob/b6760f55ac6a46306b4e081bb13b65e6220ab02d/src/C%2B%2B/DataDictionary.cpp#L646-L680
             Some(match name {
-                "STRING" => DataType::String,
-                "UTCTIMESTAMP" => DataType::String,
+                "AMT" => DataType::Amt,
+                "BOOLEAN" => DataType::Boolean,
+                "COUNTRY" => DataType::Country,
+                "CURRENCY" => DataType::Currency,
+                "DATA" => DataType::Data,
                 "CHAR" => DataType::Char,
+                "FLOAT" => DataType::Float,
                 "INT" => DataType::Int,
                 "LENGTH" => DataType::Int,
+                "MONTHYEAR" => DataType::MonthYear,
+                "MULTIPLEVALUESTRING" => DataType::MultipleCharValue,
+                "MULTIPLESTRINGVALUE" => DataType::MultipleStringValue,
+                "NUMINGROUP" => DataType::NumInGroup,
+                "PRICE" => DataType::Price,
+                "PRICEOFFSET" => DataType::PriceOffset,
+                "QTY" => DataType::Qty,
+                "STRING" => DataType::String,
+                "UTCDATE" => DataType::UtcDateOnly,
+                "UTCDATEONLY" => DataType::UtcDateOnly,
+                "UTCTIMESTAMP" => DataType::String,
                 "SEQNUM" => DataType::Int,
-                "FLOAT" => DataType::Float,
-                "DATA" => DataType::Data,
-                _ => DataType::String, // FIXME
+                "TIME" => DataType::UtcTimestamp,
+                _ => DataType::String,
             })
         }
     }
 
-    /// Adds all FIX datatypes to `dict`. This is necessary because QuickFIX
-    /// definition files don't include them.
-    fn add_all_datatypes(_dict: &mut Dictionary) {
-        //add_datatype(
-        //    dict,
-        //    DatatypeData {
-        //        datatype: dt::DataType::String,
-        //        description: String::new(),
-        //        examples: vec![],
-        //    },
-        //);
-        //add_datatype(
-        //    dict,
-        //    DatatypeData {
-        //        datatype: dt::DataType::Int,
-        //        description: String::new(),
-        //        examples: vec![],
-        //    },
-        //);
-        //add_datatype(
-        //    dict,
-        //    DatatypeData {
-        //        datatype: dt::DataType::Char,
-        //        description: String::new(),
-        //        examples: vec![],
-        //    },
-        //);
-    }
-
-    pub(crate) struct QuickFixReader<'a> {
+    pub struct QuickFixReader<'a> {
         node_with_header: roxmltree::Node<'a, 'a>,
         node_with_trailer: roxmltree::Node<'a, 'a>,
         node_with_components: roxmltree::Node<'a, 'a>,
@@ -792,7 +843,6 @@ mod quickfix {
             xml_document: &'a roxmltree::Document<'a>,
         ) -> Result<Dictionary, ParseDictionaryError> {
             let mut reader = Self::empty(&xml_document)?;
-            add_all_datatypes(&mut reader.dict);
             for child in reader.node_with_fields.children() {
                 if child.is_element() {
                     reader.add_field(child);
@@ -1023,7 +1073,7 @@ mod quickfix {
                 // The idenfier that QuickFIX uses for this type.
                 let quickfix_name = node.attribute("type").unwrap();
                 // Translate that into a real datatype.
-                dt::DataType::from_quickfix_name(quickfix_name).unwrap()
+                DataType::from_quickfix_name(quickfix_name).unwrap()
             };
             // Get the official (not QuickFIX's) name of `datatype`.
             let name = datatype.name();
@@ -1113,8 +1163,8 @@ mod test {
     use super::*;
     use crate::app::Version;
     use quickcheck::QuickCheck;
-    use std::convert::TryInto;
     use std::collections::HashSet;
+    use std::convert::TryInto;
 
     #[test]
     fn msg_type_conversion() {

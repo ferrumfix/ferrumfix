@@ -13,7 +13,7 @@
 //! Most encoding types support configuration options via the *transmuter
 //! pattern*. Transmuters are traits that define all configurable options for a
 //! specific encoding.
-use crate::utils::*;
+use crate::buffering::*;
 use std::io;
 use std::marker::PhantomData;
 
@@ -60,7 +60,6 @@ where
         }
     }
 }
-
 
 /// A device that can parse arbitrary sequences of bytes into messages.
 pub trait Decoder<M> {

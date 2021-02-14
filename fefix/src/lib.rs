@@ -25,17 +25,18 @@
 #![deny(unused, missing_debug_implementations, clippy::useless_conversion)]
 
 pub mod app;
+pub mod buffering;
 pub mod codec;
-pub mod dt;
 mod dictionary;
+mod dt;
 pub mod engines;
 mod fix_codegen;
 pub mod session;
 mod stream_iterator;
 pub mod transport;
-pub mod utils;
 
 pub use dictionary::{Dictionary, MsgType};
+pub use dt::DataType;
 pub use fefix_derive::*;
 pub use fix_codegen::codegen;
 pub use stream_iterator::StreamIterator;

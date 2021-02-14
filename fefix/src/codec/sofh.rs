@@ -10,7 +10,7 @@
 //! information.
 
 use super::{Decoder, Encoder, StreamingDecoder};
-use crate::utils::Buffer;
+use crate::buffering::Buffer;
 use std::convert::TryInto;
 use std::default::Default;
 use std::fmt;

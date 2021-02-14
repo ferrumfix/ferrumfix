@@ -3,12 +3,12 @@
 //! This is the original encoding used for FIX messages and also the encoding
 //! currently used by the FIX session layer.
 
+use crate::app::value as val;
 use crate::app::{slr, TsrMessageRef, Version};
+use crate::buffering::{Buffer, BufferWriter};
 use crate::codec::{Decoder, Encoder, StreamingDecoder};
-use crate::dt;
-use crate::dt::DataType;
 use crate::dictionary::Dictionary;
-use crate::utils::{Buffer, BufferWriter};
+use crate::DataType;
 use std::fmt;
 use std::fmt::Debug;
 use std::io;
@@ -72,9 +72,7 @@ pub struct Body {
 
 impl Body {
     fn new(data: &[u8]) -> Self {
-        Self {
-            len: data.len(),
-        }
+        Self { len: data.len() }
     }
 }
 
@@ -284,7 +282,7 @@ where
 }
 
 fn encode_field(
-    tag: dt::TagNum,
+    tag: val::TagNum,
     value: &slr::FixFieldValue,
     write: &mut impl Buffer,
     separator: u8,
@@ -293,9 +291,8 @@ fn encode_field(
     write.extend_from_slice(&[b'=']);
     match &value {
         slr::FixFieldValue::String(s) => write.extend_from_slice(s.as_bytes()),
-        slr::FixFieldValue::Data(raw_data) => write.extend_from_slice(&raw_data),
         slr::FixFieldValue::Group(_) => panic!("Can't encode a group!"),
-        slr::FixFieldValue::Value(field) => write.extend_from_slice(field.to_string().as_bytes()),
+        slr::FixFieldValue::Atom(field) => write.extend_from_slice(field.to_string().as_bytes()),
     };
     write.extend_from_slice(&[separator]);
 }
@@ -327,7 +324,7 @@ pub trait TagLookup {
     fn from_dict(dict: &Dictionary) -> Self;
 
     /// Returns the [`BaseType`] of the tag number `tag`.
-    fn lookup(&mut self, tag: u32) -> Result<dt::DataType, Self::Error>;
+    fn lookup(&mut self, tag: u32) -> Result<DataType, Self::Error>;
 }
 
 /// A [`TagLookup`] that only allows a specific revision of the standard, like
@@ -346,7 +343,7 @@ impl TagLookup for TagLookupPredetermined {
         }
     }
 
-    fn lookup(&mut self, tag: u32) -> Result<dt::DataType, Self::Error> {
+    fn lookup(&mut self, tag: u32) -> Result<DataType, Self::Error> {
         // TODO
         match tag {
             // `ApplVerID <1128>`
@@ -458,7 +455,7 @@ where
         };
         let datatype = datatype.unwrap();
         let field_value = field_value(datatype, &buffer[..]).unwrap();
-        if let slr::FixFieldValue::Value(dt::DataTypeValue::Int(dt::Int(l))) = field_value {
+        if let slr::FixFieldValue::Atom(val::Atomic::Int(val::Int(l))) = field_value {
             self.data_length = l as u32;
         }
         Some(Ok(slr::Field::new(tag, field_value)))
@@ -469,16 +466,13 @@ fn field_value(datatype: DataType, buf: &[u8]) -> Result<slr::FixFieldValue, Err
     debug_assert!(!buf.is_empty());
     Ok(match datatype {
         DataType::Char => slr::FixFieldValue::from(buf[0] as char),
-        DataType::String => {
-            slr::FixFieldValue::String(str::from_utf8(buf).map_err(|_| Error::Syntax)?.to_string())
-        }
-        DataType::Data => slr::FixFieldValue::Data(buf.to_vec()),
-        DataType::Float => slr::FixFieldValue::Value(dt::DataTypeValue::Float(dt::Float::from(
+        DataType::Data => slr::FixFieldValue::Atom(val::Atomic::Data(buf.to_vec())),
+        DataType::Float => slr::FixFieldValue::Atom(val::Atomic::float(
             str::from_utf8(buf)
                 .map_err(|_| Error::Syntax)?
                 .parse::<f32>()
                 .map_err(|_| Error::Syntax)?,
-        ))),
+        )),
         DataType::Int => {
             let mut n: i64 = 0;
             for byte in buf {
@@ -493,7 +487,9 @@ fn field_value(datatype: DataType, buf: &[u8]) -> Result<slr::FixFieldValue, Err
             }
             slr::FixFieldValue::from(n)
         }
-        _ => return Err(Error::Syntax),
+        _ => {
+            slr::FixFieldValue::String(str::from_utf8(buf).map_err(|_| Error::Syntax)?.to_string())
+        }
     })
 }
 

@@ -5,6 +5,7 @@ use std::fmt;
 
 pub mod fix42;
 pub mod slr;
+pub mod value;
 
 pub trait FieldsIterator {
     fn next(&mut self) -> Option<(u32, &slr::FixFieldValue)>;

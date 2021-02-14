@@ -1,4 +1,6 @@
-use crate::dictionary::{Component, Datatype, Dictionary, Field, LayoutItem, LayoutItemKind};
+//!
+
+use crate::dictionary::{Component, Dictionary, Field, LayoutItem, LayoutItemKind};
 use inflector::Inflector;
 
 pub fn codegen(dict: &Dictionary) -> String {
@@ -14,18 +16,10 @@ pub fn codegen(dict: &Dictionary) -> String {
         "#![allow(dead_code)]
 
         use fefix_derive::*;
+    
+        {components}
         
-        pub mod components {{
-            use super::*;
-        
-            {components}
-        }}
-        
-        pub mod messages {{
-            use super::*;
-        
-            {messages}
-        }}
+        {messages}
         ",
         components = component_defs.join("\n\n"),
         messages = message_defs.join("\n\n")
@@ -97,22 +91,22 @@ impl Dictionary {
     ) -> Option<String> {
         let field_name = match item.kind() {
             LayoutItemKind::Component(c) => c.name().to_snake_case(),
-            LayoutItemKind::Group() => return None,
+            LayoutItemKind::Group => return None,
             LayoutItemKind::Field(f) => f.name().to_snake_case(),
         };
         let field_type = match item.kind() {
             LayoutItemKind::Component(_c) => "()".to_string(),
-            LayoutItemKind::Group() => "()".to_string(),
-            LayoutItemKind::Field(f) => data_type_to_str(&f.data_type()).to_string(),
+            LayoutItemKind::Group => "()".to_string(),
+            LayoutItemKind::Field(f) => f.data_type().basetype().name().to_string(),
         };
         let field_tag = match item.kind() {
             LayoutItemKind::Component(_c) => 1337,
-            LayoutItemKind::Group() => 42,
+            LayoutItemKind::Group => 42,
             LayoutItemKind::Field(f) => f.tag(),
         };
         let _field_doc = match item.kind() {
             LayoutItemKind::Component(_c) => "///".to_string(),
-            LayoutItemKind::Group() => "///".to_string(),
+            LayoutItemKind::Group => "///".to_string(),
             LayoutItemKind::Field(f) => docs::gen_field(self.get_version().to_string(), &f),
         };
         Some(format!(
@@ -126,24 +120,6 @@ impl Dictionary {
             field_name = field_name,
             field_type = make_type_optional(required, field_type)
         ))
-    }
-}
-
-fn data_type_to_str(basetype: &Datatype) -> &'static str {
-    match basetype.name() {
-        "STRING" => "String",
-        "INT" => "i64",
-        "LENGTH" => "usize",
-        "DATA" => "Vec<u8>",
-        "BOOLEAN" => "bool",
-        "CHAR" => "char",
-        "MONTHYEAR" => "(u8, u16)",
-        "DAYOFMONTH" => "u8",
-        "PRICE" => "f64", // FIXME
-        "EXCHANGE" => "String",
-        "CURRENCY" => "String",
-        "TIME" => "::std::time::Instant",
-        _ => "Vec<u8>",
     }
 }
 

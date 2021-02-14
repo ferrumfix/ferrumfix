@@ -1,8 +1,8 @@
 //! A schema-less, [`HashMap`]-backed internal representation for FIX messages.
 
+use super::value as val;
 use crate::app::slr;
 use crate::app::TsrMessageRef;
-use crate::dt::{self, DataTypeValue};
 use std::collections::BTreeMap;
 use std::time::SystemTime;
 
@@ -10,14 +10,13 @@ use std::time::SystemTime;
 #[derive(Clone, Debug, PartialEq)]
 pub enum FixFieldValue {
     String(String),
-    Data(Vec<u8>),
-    Value(DataTypeValue),
+    Atom(val::Atomic),
     Group(Vec<BTreeMap<i64, FixFieldValue>>),
 }
 
 impl From<i64> for FixFieldValue {
     fn from(v: i64) -> Self {
-        FixFieldValue::Value(dt::DataTypeValue::Int(dt::Int(v as i32)))
+        FixFieldValue::Atom(val::Atomic::int(v as i64))
     }
 }
 
@@ -29,7 +28,7 @@ impl From<String> for FixFieldValue {
 
 impl From<f64> for FixFieldValue {
     fn from(v: f64) -> Self {
-        FixFieldValue::Value(DataTypeValue::Float(dt::Float::from(v as f32)))
+        FixFieldValue::Atom(val::Atomic::float(v as f32))
     }
 }
 
@@ -41,7 +40,7 @@ impl From<(u8, u16)> for FixFieldValue {
 
 impl From<char> for FixFieldValue {
     fn from(v: char) -> Self {
-        FixFieldValue::Value(DataTypeValue::Char(dt::Char::from(v)))
+        FixFieldValue::Atom(val::Atomic::char(v))
     }
 }
 
@@ -53,7 +52,7 @@ impl From<usize> for FixFieldValue {
 
 impl From<Vec<u8>> for FixFieldValue {
     fn from(v: Vec<u8>) -> Self {
-        FixFieldValue::Data(v)
+        FixFieldValue::Atom(val::Atomic::Data(v))
     }
 }
 
@@ -158,9 +157,7 @@ impl PushyMessage {
 
     pub fn seq_num(&self) -> Option<u64> {
         match self.get_field(34u32) {
-            Some(FixFieldValue::Value(dt::DataTypeValue::Int(dt::Int(n)))) => {
-                Some(*n as u64)
-            }
+            Some(FixFieldValue::Atom(val::Atomic::Int(val::Int(n)))) => Some(*n as u64),
             _ => None,
         }
     }
@@ -230,7 +227,7 @@ impl Message {
 
     pub fn seq_num(&self) -> Option<u64> {
         match self.fields.get(&34) {
-            Some(FixFieldValue::Value(dt::DataTypeValue::Int(dt::Int(n)))) => Some(*n as u64),
+            Some(FixFieldValue::Atom(val::Atomic::Int(val::Int(n)))) => Some(*n as u64),
             _ => None,
         }
     }
