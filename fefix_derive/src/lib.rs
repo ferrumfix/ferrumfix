@@ -7,7 +7,7 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
-#[proc_macro_derive(TsrMessage, attributes(fefix))]
+#[proc_macro_derive(ReadFields, attributes(fefix))]
 pub fn derive_tsr_message(input: TokenStream) -> TokenStream {
     let ast: syn::DeriveInput = syn::parse(input).unwrap();
     let darling_context = MessageStructure::from_derive_input(&ast).unwrap();
@@ -119,7 +119,7 @@ impl GeneratorContext {
         let name = &self.message_structure.ident;
         let gen = quote! {
             impl #name {
-                fn get_field(&self, tag: u32) -> ::std::option::Option<#crate_name::backend::slr::FixFieldValue> {
+                fn get_field(&self, tag: u32) -> ::std::option::Option<#crate_name::backend::FixFieldValue> {
                     match tag {
                         #(#match_body),*,
                         _ => None,

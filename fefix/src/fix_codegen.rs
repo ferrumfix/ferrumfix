@@ -16,6 +16,7 @@ pub fn codegen(dict: &Dictionary) -> String {
         "#![allow(dead_code)]
 
         use fefix_derive::*;
+        use fefix::backend::value::*;
     
         {components}
         
@@ -49,7 +50,7 @@ impl Dictionary {
         format!(
             r#"
             /// Message information: {msg_name}
-            #[derive(Debug, Clone, TsrMessage)]
+            #[derive(Debug, Clone, ReadFields)]
             #[fefix(msg_type = "{msg_type}")]
             pub struct {msg_name} {{
                 {fields}
@@ -74,7 +75,7 @@ impl Dictionary {
             r#"
             /// Component information: {msg_name}
             #[fefix(msg_type = "TODO")]
-            #[derive(Debug, Clone, TsrMessage)]
+            #[derive(Debug, Clone, ReadFields)]
             pub struct {msg_name} {{
                 {fields}
             }}

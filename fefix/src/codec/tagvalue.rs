@@ -4,7 +4,7 @@
 //! currently used by the FIX session layer.
 
 use crate::backend::value as val;
-use crate::backend::{slr, TsrMessageRef, Version};
+use crate::backend::{slr, FixFieldValue, ReadFields, Version, WriteFields};
 use crate::buffering::{Buffer, BufferWriter};
 use crate::codec::{Decoder, Encoder, StreamingDecoder};
 use crate::dictionary::Dictionary;
@@ -37,7 +37,7 @@ pub struct Codec<T, Z> {
 
 impl<T, Z> Codec<T, Z>
 where
-    T: TsrMessageRef,
+    T: Default,
     Z: Config,
 {
     /// Builds a new `Codec` encoding device with a FIX 4.4 dictionary.
@@ -142,7 +142,7 @@ where
 
 impl<Z, T> Decoder<T> for Codec<T, Z>
 where
-    T: TsrMessageRef,
+    T: WriteFields + Default + ReadFields,
     Z: Config,
 {
     type Error = DecodeError;
@@ -191,7 +191,7 @@ where
             last_tag = f.tag();
         }
         let chesksum_field = message.get_field(10);
-        if let Some(slr::FixFieldValue::String(s)) = chesksum_field {
+        if let Some(FixFieldValue::String(s)) = chesksum_field {
             let n = s.as_str().parse::<u8>().unwrap();
             if !checksum.verify(n) {
                 let checksum_error = InvalidChecksum {
@@ -210,8 +210,9 @@ where
     }
 }
 
-impl<Z> Encoder<slr::Message> for Codec<slr::Message, Z>
+impl<Z, T> Encoder<slr::Message> for Codec<T, Z>
 where
+    T: WriteFields + Default,
     Z: Config,
 {
     type Error = EncodeError;
@@ -273,7 +274,7 @@ where
         checksum.roll(writer.as_slice());
         encode_field(
             10.into(),
-            &slr::FixFieldValue::from(checksum.result() as i64),
+            &FixFieldValue::from(checksum.result() as i64),
             &mut writer,
             Z::SOH_SEPARATOR,
         );
@@ -281,18 +282,13 @@ where
     }
 }
 
-fn encode_field(
-    tag: val::TagNum,
-    value: &slr::FixFieldValue,
-    write: &mut impl Buffer,
-    separator: u8,
-) {
+fn encode_field(tag: val::TagNum, value: &FixFieldValue, write: &mut impl Buffer, separator: u8) {
     write.extend_from_slice(tag.to_string().as_bytes());
     write.extend_from_slice(&[b'=']);
     match &value {
-        slr::FixFieldValue::String(s) => write.extend_from_slice(s.as_bytes()),
-        slr::FixFieldValue::Group(_) => panic!("Can't encode a group!"),
-        slr::FixFieldValue::Atom(field) => write.extend_from_slice(field.to_string().as_bytes()),
+        FixFieldValue::String(s) => write.extend_from_slice(s.as_bytes()),
+        FixFieldValue::Group(_) => panic!("Can't encode a group!"),
+        FixFieldValue::Atom(field) => write.extend_from_slice(field.to_string().as_bytes()),
     };
     write.extend_from_slice(&[separator]);
 }
@@ -455,19 +451,19 @@ where
         };
         let datatype = datatype.unwrap();
         let field_value = field_value(datatype, &buffer[..]).unwrap();
-        if let slr::FixFieldValue::Atom(val::Atomic::Int(val::Int(l))) = field_value {
+        if let FixFieldValue::Atom(val::Atomic::Int(val::Int(l))) = field_value {
             self.data_length = l as u32;
         }
         Some(Ok(slr::Field::new(tag, field_value)))
     }
 }
 
-fn field_value(datatype: DataType, buf: &[u8]) -> Result<slr::FixFieldValue, Error> {
+fn field_value(datatype: DataType, buf: &[u8]) -> Result<FixFieldValue, Error> {
     debug_assert!(!buf.is_empty());
     Ok(match datatype {
-        DataType::Char => slr::FixFieldValue::from(buf[0] as char),
-        DataType::Data => slr::FixFieldValue::Atom(val::Atomic::Data(buf.to_vec())),
-        DataType::Float => slr::FixFieldValue::Atom(val::Atomic::float(
+        DataType::Char => FixFieldValue::from(buf[0] as char),
+        DataType::Data => FixFieldValue::Atom(val::Atomic::Data(buf.to_vec())),
+        DataType::Float => FixFieldValue::Atom(val::Atomic::float(
             str::from_utf8(buf)
                 .map_err(|_| Error::Syntax)?
                 .parse::<f32>()
@@ -485,11 +481,9 @@ fn field_value(datatype: DataType, buf: &[u8]) -> Result<slr::FixFieldValue, Err
                     return Err(Error::Syntax);
                 }
             }
-            slr::FixFieldValue::from(n)
+            FixFieldValue::from(n)
         }
-        _ => {
-            slr::FixFieldValue::String(str::from_utf8(buf).map_err(|_| Error::Syntax)?.to_string())
-        }
+        _ => FixFieldValue::String(str::from_utf8(buf).map_err(|_| Error::Syntax)?.to_string()),
     })
 }
 
@@ -735,12 +729,12 @@ mod test {
         let message = codec.decode(&mut RANDOM_MESSAGES[0].as_bytes()).unwrap();
         assert_eq!(
             message.get_field(8),
-            Some(&slr::FixFieldValue::String("FIX.4.2".to_string()))
+            Some(&FixFieldValue::String("FIX.4.2".to_string()))
         );
-        assert_eq!(message.get_field(9), Some(&slr::FixFieldValue::from(42i64)));
+        assert_eq!(message.get_field(9), Some(&FixFieldValue::from(42i64)));
         assert_eq!(
             message.get_field(35),
-            Some(&slr::FixFieldValue::String("0".to_string()))
+            Some(&FixFieldValue::String("0".to_string()))
         );
     }
 

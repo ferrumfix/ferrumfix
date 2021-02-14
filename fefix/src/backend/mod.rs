@@ -2,27 +2,99 @@
 //! and performance characteristics.
 
 use rust_embed::RustEmbed;
+use std::collections::BTreeMap;
 use std::fmt;
+use std::time::SystemTime;
 
 pub mod fix42;
+mod seqdump;
 pub mod slr;
 pub mod value;
 
-pub trait FieldsIterator {
-    fn next(&mut self) -> Option<(u32, &slr::FixFieldValue)>;
+use value as val;
+pub use seqdump::PushyMessage;
+
+/// Allows to iterate sequentially over FIX fields.
+pub trait ReadFieldsSeq {
+    fn next(&mut self) -> Option<(u32, &FixFieldValue)>;
 }
 
-pub trait TsrMessage {
-    fn get_field(&self, msg_type: i32) -> slr::FixFieldValue;
-    fn set_field(&mut self, msg_type: i32, val: slr::FixFieldValue);
+/// Allows fast random lookup of FIX fields..
+pub trait ReadFields {
+    fn get_field(&self, msg_type: u32) -> Option<&FixFieldValue>;
 }
 
-pub trait TsrMessageRef: Default
-//where
-//    for<'a> &'a Self: Iterator<Item = slr::FixFieldValue>,
-{
-    fn get_field(&self, msg_type: u32) -> Option<&slr::FixFieldValue>;
-    fn set_field(&mut self, msg_type: u32, val: slr::FixFieldValue);
+/// Allows appending new FIX field values.
+pub trait WriteFields {
+    fn set_field(&mut self, msg_type: u32, val: FixFieldValue);
+}
+
+/// An owned value of a FIX field.
+#[derive(Clone, Debug, PartialEq)]
+pub enum FixFieldValue {
+    String(String),
+    Atom(val::Atomic),
+    Group(Vec<BTreeMap<i64, FixFieldValue>>),
+}
+
+impl From<i64> for FixFieldValue {
+    fn from(v: i64) -> Self {
+        FixFieldValue::Atom(val::Atomic::int(v as i64))
+    }
+}
+
+impl From<String> for FixFieldValue {
+    fn from(v: String) -> Self {
+        FixFieldValue::String(v)
+    }
+}
+
+impl From<f64> for FixFieldValue {
+    fn from(v: f64) -> Self {
+        FixFieldValue::Atom(val::Atomic::float(v as f32))
+    }
+}
+
+impl From<(u8, u16)> for FixFieldValue {
+    fn from(v: (u8, u16)) -> Self {
+        FixFieldValue::from(((v.0 as i64) << 16) + (v.1 as i64))
+    }
+}
+
+impl From<char> for FixFieldValue {
+    fn from(v: char) -> Self {
+        FixFieldValue::Atom(val::Atomic::char(v))
+    }
+}
+
+impl From<usize> for FixFieldValue {
+    fn from(v: usize) -> Self {
+        FixFieldValue::from(v as i64)
+    }
+}
+
+impl From<Vec<u8>> for FixFieldValue {
+    fn from(v: Vec<u8>) -> Self {
+        FixFieldValue::Atom(val::Atomic::Data(v))
+    }
+}
+
+impl From<bool> for FixFieldValue {
+    fn from(v: bool) -> Self {
+        FixFieldValue::from(if v { 't' } else { 'f' })
+    }
+}
+
+impl From<u8> for FixFieldValue {
+    fn from(v: u8) -> Self {
+        FixFieldValue::from(i64::from(v))
+    }
+}
+
+impl From<SystemTime> for FixFieldValue {
+    fn from(v: SystemTime) -> Self {
+        FixFieldValue::from(v.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64)
+    }
 }
 
 /// Which [`Dictionary`](fefix::Dictionary) version to use.

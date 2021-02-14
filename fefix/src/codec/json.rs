@@ -1,7 +1,6 @@
 //! JSON encoding for FIX support.
 
-use crate::backend::slr;
-use crate::backend::TsrMessageRef;
+use crate::backend::{slr, FixFieldValue, ReadFields, WriteFields};
 use crate::codec::*;
 use crate::Dictionary;
 use serde_json::json;
@@ -110,7 +109,7 @@ pub struct Codec<T, Z> {
 
 impl<T, Z> Codec<T, Z>
 where
-    T: TsrMessageRef,
+    T: Default,
     Z: Config,
 {
     pub fn new(dict: Dictionary, config: Z) -> Self {
@@ -128,19 +127,19 @@ where
         dictionary: &Dictionary,
         key: &str,
         value: &serde_json::Value,
-    ) -> Result<(u32, slr::FixFieldValue), DecodeError> {
+    ) -> Result<(u32, FixFieldValue), DecodeError> {
         if let Some(field) = dictionary.field_by_name(key) {
             match value {
                 serde_json::Value::String(s) => Ok((
                     field.tag() as u32,
-                    slr::FixFieldValue::String(s.to_string()),
+                    FixFieldValue::String(s.to_string()),
                 )),
                 serde_json::Value::Array(values) => {
                     let mut group = Vec::new();
                     for item in values {
                         group.push(self.decode_component_block(dictionary, item)?);
                     }
-                    Ok((field.tag() as u32, slr::FixFieldValue::Group(group)))
+                    Ok((field.tag() as u32, FixFieldValue::Group(group)))
                 }
                 _ => Err(DecodeError::InvalidData),
             }
@@ -153,7 +152,7 @@ where
         &self,
         dictionary: &Dictionary,
         value: &serde_json::Value,
-    ) -> Result<BTreeMap<i64, slr::FixFieldValue>, DecodeError> {
+    ) -> Result<BTreeMap<i64, FixFieldValue>, DecodeError> {
         let mut group = BTreeMap::new();
         for item in value.as_object().unwrap() {
             let (tag, field) = self.decode_field(dictionary, item.0, item.1)?;
@@ -162,10 +161,10 @@ where
         Ok(group)
     }
 
-    fn translate(&self, dict: &Dictionary, field: &slr::FixFieldValue) -> serde_json::Value {
+    fn translate(&self, dict: &Dictionary, field: &FixFieldValue) -> serde_json::Value {
         match field {
-            slr::FixFieldValue::String(c) => serde_json::Value::String(c.to_string()),
-            slr::FixFieldValue::Group(array) => {
+            FixFieldValue::String(c) => serde_json::Value::String(c.to_string()),
+            FixFieldValue::Group(array) => {
                 let mut values = Vec::new();
                 for group in array {
                     let mut map = serde_json::Map::new();
@@ -189,7 +188,7 @@ where
 
 impl<Z, T> Decoder<T> for Codec<T, Z>
 where
-    T: TsrMessageRef,
+    T: WriteFields + Default,
     Z: Config,
 {
     type Error = DecodeError;
@@ -233,8 +232,8 @@ where
 
 impl<Z, T> Encoder<slr::Message> for Codec<T, Z>
 where
+    T: ReadFields + WriteFields + Default,
     Z: Config,
-    T: TsrMessageRef,
 {
     type Error = EncoderError;
 
@@ -244,7 +243,7 @@ where
         message: &slr::Message,
     ) -> Result<usize, Self::Error> {
         let dictionary =
-            if let Some(slr::FixFieldValue::String(fix_version)) = message.fields.get(&8) {
+            if let Some(FixFieldValue::String(fix_version)) = message.fields.get(&8) {
                 self.dictionaries
                     .get(fix_version.as_str())
                     .ok_or(Self::Error::Dictionary)?
@@ -257,7 +256,7 @@ where
         let component_std_traler = dictionary
             .component_by_name("StandardTrailer")
             .expect("The `StandardTrailer` component is mandatory.");
-        let msg_type = if let Some(slr::FixFieldValue::String(s)) = message.get_field(35) {
+        let msg_type = if let Some(FixFieldValue::String(s)) = message.get_field(35) {
             s
         } else {
             return Err(Self::Error::Dictionary);

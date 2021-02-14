@@ -1,6 +1,6 @@
 //! Starts an HTTP server on any open port and listens for JSON FIX messages.
 
-use fefix::backend::{self, Version};
+use fefix::backend::{self, Version, slr};
 use fefix::codec::json;
 use fefix::codec::tagvalue;
 use fefix::codec::{Decoder, Encoder};
@@ -54,7 +54,7 @@ async fn serve_json_relay(mut req: tide::Request<State>) -> tide::Result {
     };
     let mut buffer = Vec::new();
     let body_response = {
-        let mut encoder = tagvalue::Codec::with_dict(
+        let mut encoder = tagvalue::Codec::<slr::Message, _>::with_dict(
             Dictionary::from_version(Version::Fix42),
             tagvalue::ConfigDefault,
         );

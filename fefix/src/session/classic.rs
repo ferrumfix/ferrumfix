@@ -12,7 +12,7 @@
 //! [`Acceptor`] abstract over such details and present users with a single entry
 //! point, namely [`Initiator::feed`] and [`Acceptor::feed`].
 
-use crate::backend::slr;
+use crate::backend::{slr, FixFieldValue};
 use boolinator::Boolinator;
 use futures_lite::prelude::*;
 use std::cmp::Ordering;
@@ -354,10 +354,10 @@ mod acceptor {
                 }
                 let mut response = slr::Message::new();
                 // TODO: add other details to response message.
-                response.add_field(35, slr::FixFieldValue::String("A".to_string()));
+                response.add_field(35, FixFieldValue::String("A".to_string()));
                 response.add_field(
                     49,
-                    slr::FixFieldValue::String(self.config.company_id.clone()),
+                    FixFieldValue::String(self.config.company_id.clone()),
                 );
                 self.seq_numbers.incr_outbound();
                 to.push(EventOutbound::Message(add_time_to_msg(response)));
@@ -571,7 +571,7 @@ mod initiator {
             let heartbeat = self.next_msg().await;
             assert_eq!(
                 heartbeat.get_field(112),
-                Some(&slr::FixFieldValue::String(test_request_id))
+                Some(&FixFieldValue::String(test_request_id))
             );
             // TODO: check seq number.
             // TODO: resend missed messages.
@@ -712,6 +712,7 @@ pub mod errs {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::backend::FixFieldValue;
 
     const COMPANY_ID: &str = "FOOBAR-INC";
 
@@ -760,11 +761,11 @@ mod test {
             EventOutbound::Message(response) => {
                 assert_eq!(
                     *response.get_field(35).unwrap(),
-                    slr::FixFieldValue::String("A".to_string())
+                    FixFieldValue::String("A".to_string())
                 );
                 assert_eq!(
                     *response.get_field(49).unwrap(),
-                    slr::FixFieldValue::String(COMPANY_ID.to_string())
+                    FixFieldValue::String(COMPANY_ID.to_string())
                 );
                 assert!(response.get_field(112).is_none());
             }
@@ -792,11 +793,11 @@ mod test {
             EventOutbound::Message(response) => {
                 assert_eq!(
                     *response.get_field(35).unwrap(),
-                    slr::FixFieldValue::String("2".to_string())
+                    FixFieldValue::String("2".to_string())
                 );
                 assert_eq!(
                     *response.get_field(49).unwrap(),
-                    slr::FixFieldValue::String(COMPANY_ID.to_string())
+                    FixFieldValue::String(COMPANY_ID.to_string())
                 );
                 assert!(response.get_field(112).is_none());
             }
@@ -828,11 +829,11 @@ mod test {
             EventOutbound::Message(response) => {
                 assert_eq!(
                     *response.get_field(35).unwrap(),
-                    slr::FixFieldValue::String("A".to_string())
+                    FixFieldValue::String("A".to_string())
                 );
                 assert_eq!(
                     *response.get_field(49).unwrap(),
-                    slr::FixFieldValue::String(COMPANY_ID.to_string())
+                    FixFieldValue::String(COMPANY_ID.to_string())
                 );
                 assert!(response.get_field(112).is_none());
             }

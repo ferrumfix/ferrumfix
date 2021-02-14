@@ -7,7 +7,7 @@ pub mod components {
 
     /// Component information: StandardHeader
     #[fefix(msg_type = "TODO")]
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     pub struct StandardHeader {
         #[fefix(tag = 8, rust_type = "", opt = false)]
         pub begin_string: String,
@@ -67,7 +67,7 @@ pub mod components {
 
     /// Component information: StandardTrailer
     #[fefix(msg_type = "TODO")]
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     pub struct StandardTrailer {
         #[fefix(tag = 93, rust_type = "", opt = true)]
         pub signature_length: ::std::option::Option<usize>,
@@ -82,7 +82,7 @@ pub mod messages {
     use super::*;
 
     /// Message information: Heartbeat
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "0")]
     pub struct Heartbeat {
         #[fefix(tag = 112, rust_type = "", opt = true)]
@@ -90,7 +90,7 @@ pub mod messages {
     }
 
     /// Message information: TestRequest
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "1")]
     pub struct TestRequest {
         #[fefix(tag = 112, rust_type = "", opt = false)]
@@ -98,7 +98,7 @@ pub mod messages {
     }
 
     /// Message information: ResendRequest
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "2")]
     pub struct ResendRequest {
         #[fefix(tag = 7, rust_type = "", opt = false)]
@@ -108,7 +108,7 @@ pub mod messages {
     }
 
     /// Message information: Reject
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "3")]
     pub struct Reject {
         #[fefix(tag = 45, rust_type = "", opt = false)]
@@ -128,7 +128,7 @@ pub mod messages {
     }
 
     /// Message information: SequenceReset
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "4")]
     pub struct SequenceReset {
         #[fefix(tag = 123, rust_type = "", opt = true)]
@@ -138,7 +138,7 @@ pub mod messages {
     }
 
     /// Message information: Logout
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "5")]
     pub struct Logout {
         #[fefix(tag = 58, rust_type = "", opt = true)]
@@ -150,7 +150,7 @@ pub mod messages {
     }
 
     /// Message information: IOI
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "6")]
     pub struct IOI {
         #[fefix(tag = 23, rust_type = "", opt = false)]
@@ -228,7 +228,7 @@ pub mod messages {
     }
 
     /// Message information: Advertisement
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "7")]
     pub struct Advertisement {
         #[fefix(tag = 2, rust_type = "", opt = false)]
@@ -302,7 +302,7 @@ pub mod messages {
     }
 
     /// Message information: ExecutionReport
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "8")]
     pub struct ExecutionReport {
         #[fefix(tag = 37, rust_type = "", opt = false)]
@@ -490,7 +490,7 @@ pub mod messages {
     }
 
     /// Message information: OrderCancelReject
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "9")]
     pub struct OrderCancelReject {
         #[fefix(tag = 37, rust_type = "", opt = false)]
@@ -526,7 +526,7 @@ pub mod messages {
     }
 
     /// Message information: Logon
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "A")]
     pub struct Logon {
         #[fefix(tag = 98, rust_type = "", opt = false)]
@@ -544,7 +544,7 @@ pub mod messages {
     }
 
     /// Message information: News
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "B")]
     pub struct News {
         #[fefix(tag = 42, rust_type = "", opt = true)]
@@ -566,7 +566,7 @@ pub mod messages {
     }
 
     /// Message information: Email
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "C")]
     pub struct Email {
         #[fefix(tag = 164, rust_type = "", opt = false)]
@@ -592,7 +592,7 @@ pub mod messages {
     }
 
     /// Message information: NewOrderSingle
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "D")]
     pub struct NewOrderSingle {
         #[fefix(tag = 11, rust_type = "", opt = false)]
@@ -736,7 +736,7 @@ pub mod messages {
     }
 
     /// Message information: NewOrderList
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "E")]
     pub struct NewOrderList {
         #[fefix(tag = 66, rust_type = "", opt = false)]
@@ -764,7 +764,7 @@ pub mod messages {
     }
 
     /// Message information: OrderCancelRequest
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "F")]
     pub struct OrderCancelRequest {
         #[fefix(tag = 41, rust_type = "", opt = false)]
@@ -840,7 +840,7 @@ pub mod messages {
     }
 
     /// Message information: OrderCancelReplaceRequest
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "G")]
     pub struct OrderCancelReplaceRequest {
         #[fefix(tag = 37, rust_type = "", opt = true)]
@@ -982,7 +982,7 @@ pub mod messages {
     }
 
     /// Message information: OrderStatusRequest
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "H")]
     pub struct OrderStatusRequest {
         #[fefix(tag = 37, rust_type = "", opt = true)]
@@ -1038,7 +1038,7 @@ pub mod messages {
     }
 
     /// Message information: Allocation
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "J")]
     pub struct Allocation {
         #[fefix(tag = 70, rust_type = "", opt = false)]
@@ -1130,7 +1130,7 @@ pub mod messages {
     }
 
     /// Message information: ListCancelRequest
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "K")]
     pub struct ListCancelRequest {
         #[fefix(tag = 66, rust_type = "", opt = false)]
@@ -1146,7 +1146,7 @@ pub mod messages {
     }
 
     /// Message information: ListExecute
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "L")]
     pub struct ListExecute {
         #[fefix(tag = 66, rust_type = "", opt = false)]
@@ -1166,7 +1166,7 @@ pub mod messages {
     }
 
     /// Message information: ListStatusRequest
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "M")]
     pub struct ListStatusRequest {
         #[fefix(tag = 66, rust_type = "", opt = false)]
@@ -1180,7 +1180,7 @@ pub mod messages {
     }
 
     /// Message information: ListStatus
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "N")]
     pub struct ListStatus {
         #[fefix(tag = 66, rust_type = "", opt = false)]
@@ -1206,7 +1206,7 @@ pub mod messages {
     }
 
     /// Message information: AllocationInstructionAck
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "P")]
     pub struct AllocationInstructionAck {
         #[fefix(tag = 109, rust_type = "", opt = true)]
@@ -1232,7 +1232,7 @@ pub mod messages {
     }
 
     /// Message information: DontKnowTrade
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "Q")]
     pub struct DontKnowTrade {
         #[fefix(tag = 37, rust_type = "", opt = false)]
@@ -1298,7 +1298,7 @@ pub mod messages {
     }
 
     /// Message information: QuoteRequest
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "R")]
     pub struct QuoteRequest {
         #[fefix(tag = 131, rust_type = "", opt = false)]
@@ -1306,7 +1306,7 @@ pub mod messages {
     }
 
     /// Message information: Quote
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "S")]
     pub struct Quote {
         #[fefix(tag = 131, rust_type = "", opt = true)]
@@ -1388,7 +1388,7 @@ pub mod messages {
     }
 
     /// Message information: SettlementInstructions
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "T")]
     pub struct SettlementInstructions {
         #[fefix(tag = 162, rust_type = "", opt = false)]
@@ -1466,7 +1466,7 @@ pub mod messages {
     }
 
     /// Message information: MarketDataRequest
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "V")]
     pub struct MarketDataRequest {
         #[fefix(tag = 262, rust_type = "", opt = false)]
@@ -1482,7 +1482,7 @@ pub mod messages {
     }
 
     /// Message information: MarketDataSnapshotFullRefresh
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "W")]
     pub struct MarketDataSnapshotFullRefresh {
         #[fefix(tag = 262, rust_type = "", opt = true)]
@@ -1534,7 +1534,7 @@ pub mod messages {
     }
 
     /// Message information: MarketDataIncrementalRefresh
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "X")]
     pub struct MarketDataIncrementalRefresh {
         #[fefix(tag = 262, rust_type = "", opt = true)]
@@ -1542,7 +1542,7 @@ pub mod messages {
     }
 
     /// Message information: MarketDataRequestReject
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "Y")]
     pub struct MarketDataRequestReject {
         #[fefix(tag = 262, rust_type = "", opt = false)]
@@ -1558,7 +1558,7 @@ pub mod messages {
     }
 
     /// Message information: QuoteCancel
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "Z")]
     pub struct QuoteCancel {
         #[fefix(tag = 131, rust_type = "", opt = true)]
@@ -1574,7 +1574,7 @@ pub mod messages {
     }
 
     /// Message information: QuoteStatusRequest
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "a")]
     pub struct QuoteStatusRequest {
         #[fefix(tag = 117, rust_type = "", opt = true)]
@@ -1624,7 +1624,7 @@ pub mod messages {
     }
 
     /// Message information: QuoteAcknowledgement
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "b")]
     pub struct QuoteAcknowledgement {
         #[fefix(tag = 131, rust_type = "", opt = true)]
@@ -1644,7 +1644,7 @@ pub mod messages {
     }
 
     /// Message information: SecurityDefinitionRequest
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "c")]
     pub struct SecurityDefinitionRequest {
         #[fefix(tag = 320, rust_type = "", opt = false)]
@@ -1702,7 +1702,7 @@ pub mod messages {
     }
 
     /// Message information: SecurityDefinition
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "d")]
     pub struct SecurityDefinition {
         #[fefix(tag = 320, rust_type = "", opt = false)]
@@ -1764,7 +1764,7 @@ pub mod messages {
     }
 
     /// Message information: SecurityStatusRequest
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "e")]
     pub struct SecurityStatusRequest {
         #[fefix(tag = 324, rust_type = "", opt = false)]
@@ -1816,7 +1816,7 @@ pub mod messages {
     }
 
     /// Message information: SecurityStatus
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "f")]
     pub struct SecurityStatus {
         #[fefix(tag = 324, rust_type = "", opt = true)]
@@ -1894,7 +1894,7 @@ pub mod messages {
     }
 
     /// Message information: TradingSessionStatusRequest
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "g")]
     pub struct TradingSessionStatusRequest {
         #[fefix(tag = 335, rust_type = "", opt = false)]
@@ -1910,7 +1910,7 @@ pub mod messages {
     }
 
     /// Message information: TradingSessionStatus
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "h")]
     pub struct TradingSessionStatus {
         #[fefix(tag = 335, rust_type = "", opt = true)]
@@ -1946,7 +1946,7 @@ pub mod messages {
     }
 
     /// Message information: MassQuote
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "i")]
     pub struct MassQuote {
         #[fefix(tag = 131, rust_type = "", opt = true)]
@@ -1962,7 +1962,7 @@ pub mod messages {
     }
 
     /// Message information: BusinessMessageReject
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "j")]
     pub struct BusinessMessageReject {
         #[fefix(tag = 45, rust_type = "", opt = true)]
@@ -1982,7 +1982,7 @@ pub mod messages {
     }
 
     /// Message information: BidRequest
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "k")]
     pub struct BidRequest {
         #[fefix(tag = 390, rust_type = "", opt = true)]
@@ -2042,7 +2042,7 @@ pub mod messages {
     }
 
     /// Message information: BidResponse
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "l")]
     pub struct BidResponse {
         #[fefix(tag = 390, rust_type = "", opt = true)]
@@ -2052,7 +2052,7 @@ pub mod messages {
     }
 
     /// Message information: ListStrikePrice
-    #[derive(Debug, Clone, TsrMessage)]
+    #[derive(Debug, Clone, ReadFields)]
     #[fefix(msg_type = "m")]
     pub struct ListStrikePrice {
         #[fefix(tag = 66, rust_type = "", opt = false)]
