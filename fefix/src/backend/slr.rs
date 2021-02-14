@@ -1,8 +1,8 @@
 //! A schema-less, [`HashMap`]-backed internal representation for FIX messages.
 
 use super::value as val;
-use crate::app::slr;
-use crate::app::TsrMessageRef;
+use crate::backend::slr;
+use crate::backend::TsrMessageRef;
 use std::collections::BTreeMap;
 use std::time::SystemTime;
 

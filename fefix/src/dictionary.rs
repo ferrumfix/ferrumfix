@@ -1,6 +1,6 @@
 //! Access to FIX Dictionary reference and message specifications.
 
-use crate::app::Version;
+use crate::backend::Version;
 use crate::DataType;
 use quickfix::{ParseDictionaryError, QuickFixReader};
 use std::collections::HashMap;
@@ -249,7 +249,7 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::app::Version;
+    /// use fefix::backend::Version;
     ///
     /// let dict = Dictionary::from_version(Version::Fix44);
     /// assert_eq!(dict.get_version(), "FIX.4.4");
@@ -274,7 +274,7 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::app::Version;
+    /// use fefix::backend::Version;
     ///
     /// let dict = Dictionary::from_version(Version::Fix44);
     ///
@@ -292,7 +292,7 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::app::Version;
+    /// use fefix::backend::Version;
     ///
     /// let dict = Dictionary::from_version(Version::Fix44);
     ///
@@ -332,7 +332,7 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::app::Version;
+    /// use fefix::backend::Version;
     ///
     /// let dict = Dictionary::from_version(Version::Fix44);
     ///
@@ -358,7 +358,7 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::app::Version;
+    /// use fefix::backend::Version;
     ///
     /// let dict = Dictionary::from_version(Version::Fix42);
     /// // FIX 4.2 defines 19 datatypes.
@@ -373,7 +373,7 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::app::Version;
+    /// use fefix::backend::Version;
     ///
     /// let dict = Dictionary::from_version(Version::Fix44);
     /// let msg = dict.iter_messages().find(|m| m.name() == "MarketDataRequest");
@@ -1161,7 +1161,7 @@ mod quickfix {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::app::Version;
+    use crate::backend::Version;
     use quickcheck::QuickCheck;
     use std::collections::HashSet;
     use std::convert::TryInto;

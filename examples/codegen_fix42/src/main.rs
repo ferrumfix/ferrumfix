@@ -1,4 +1,4 @@
-use fefix::app::Version;
+use fefix::backend::Version;
 use fefix::Dictionary;
 
 fn main() {

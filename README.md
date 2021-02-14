@@ -27,7 +27,7 @@ FerrumFIX enforces strict separation of concerns according to the OSI model, as 
 - Layer 4 (Transport Layer): `fefix::transport`.
 - Layer 5 (Session Layer): `fefix::session`.
 - Layer 6 (Presentation Layer): `fefix::codec`.
-- Layer 7 (Application Layer): `fefix::app`.
+- Layer 7 (Application Layer): `fefix::backend`.
 
 You don't have to understand the whole tech stack to use a single layer; in fact, FerrumFIX makes sure that you only ever need to worry about layers above your chosen abstraction level. For most users, that would be Layer 7 (i.e. semantics of FIX messages and business logic). On the other hand, you will need to delve deep into lower layers in case you plan on building a fully-fledged FIX engine.
 

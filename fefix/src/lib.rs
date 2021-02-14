@@ -10,7 +10,7 @@
 //!  (as much as practically feasible).
 //!  - **Comprehensive**. Most standards adopted by the FIX Community are
 //!  available, from [transport] and [session] layers to [encodings](encoders) and
-//!  dictionary-related [application](app) logic.
+//!  dictionary-related [application](backend) logic.
 //!  - **Foundational**. FerrumFIX is foundational in the sense that it exposes a
 //!  large amount of primitives in its public interface, so that users can
 //!  easily build upon them to implement custom solutions tailored for their
@@ -24,7 +24,7 @@
 
 #![deny(unused, missing_debug_implementations, clippy::useless_conversion)]
 
-pub mod app;
+pub mod backend;
 pub mod buffering;
 pub mod codec;
 mod dictionary;

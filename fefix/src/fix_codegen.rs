@@ -144,7 +144,7 @@ mod docs {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::app::Version;
+    use crate::backend::Version;
 
     #[test]
     fn fix_v42_syntax() {

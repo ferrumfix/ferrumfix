@@ -3,8 +3,8 @@
 //! This is the original encoding used for FIX messages and also the encoding
 //! currently used by the FIX session layer.
 
-use crate::app::value as val;
-use crate::app::{slr, TsrMessageRef, Version};
+use crate::backend::value as val;
+use crate::backend::{slr, TsrMessageRef, Version};
 use crate::buffering::{Buffer, BufferWriter};
 use crate::codec::{Decoder, Encoder, StreamingDecoder};
 use crate::dictionary::Dictionary;

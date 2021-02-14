@@ -1,4 +1,5 @@
-//! Data structures and interfaces to work with FIX messages.
+//! FIX message in-memory representations, each tuned for specific operations
+//! and performance characteristics.
 
 use rust_embed::RustEmbed;
 use std::fmt;

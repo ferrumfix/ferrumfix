@@ -1,6 +1,6 @@
 //! FIX Adapted for Streaming (FAST) support.
 
-use crate::app::slr;
+use crate::backend::slr;
 use crate::codec::{Decoder, Encoder};
 use crate::dictionary::Dictionary;
 use crate::buffering::Buffer;

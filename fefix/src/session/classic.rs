@@ -12,7 +12,7 @@
 //! [`Acceptor`] abstract over such details and present users with a single entry
 //! point, namely [`Initiator::feed`] and [`Acceptor::feed`].
 
-use crate::app::slr;
+use crate::backend::slr;
 use boolinator::Boolinator;
 use futures_lite::prelude::*;
 use std::cmp::Ordering;

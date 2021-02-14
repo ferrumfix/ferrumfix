@@ -119,7 +119,7 @@ impl GeneratorContext {
         let name = &self.message_structure.ident;
         let gen = quote! {
             impl #name {
-                fn get_field(&self, tag: u32) -> ::std::option::Option<#crate_name::app::slr::FixFieldValue> {
+                fn get_field(&self, tag: u32) -> ::std::option::Option<#crate_name::backend::slr::FixFieldValue> {
                     match tag {
                         #(#match_body),*,
                         _ => None,

@@ -1,3 +1,5 @@
+//! Zero-copy buffering utilities.
+
 use std::io;
 
 /// Buffer operations.

@@ -1,7 +1,7 @@
 //! JSON encoding for FIX support.
 
-use crate::app::slr;
-use crate::app::TsrMessageRef;
+use crate::backend::slr;
+use crate::backend::TsrMessageRef;
 use crate::codec::*;
 use crate::Dictionary;
 use serde_json::json;
@@ -376,7 +376,7 @@ mod test {
     "#;
 
     fn dict_fix44() -> Dictionary {
-        Dictionary::from_version(crate::app::Version::Fix44)
+        Dictionary::from_version(crate::backend::Version::Fix44)
     }
 
     fn encoder_fix44() -> Codec<slr::Message, impl Config> {
