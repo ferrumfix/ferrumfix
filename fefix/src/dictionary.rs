@@ -809,37 +809,6 @@ pub struct Value {
 mod quickfix {
     use super::*;
 
-    impl DataType {
-        fn from_quickfix_name(name: &str) -> Option<Self> {
-            // https://github.com/quickfix/quickfix/blob/b6760f55ac6a46306b4e081bb13b65e6220ab02d/src/C%2B%2B/DataDictionary.cpp#L646-L680
-            Some(match name {
-                "AMT" => DataType::Amt,
-                "BOOLEAN" => DataType::Boolean,
-                "COUNTRY" => DataType::Country,
-                "CURRENCY" => DataType::Currency,
-                "DATA" => DataType::Data,
-                "CHAR" => DataType::Char,
-                "FLOAT" => DataType::Float,
-                "INT" => DataType::Int,
-                "LENGTH" => DataType::Int,
-                "MONTHYEAR" => DataType::MonthYear,
-                "MULTIPLEVALUESTRING" => DataType::MultipleCharValue,
-                "MULTIPLESTRINGVALUE" => DataType::MultipleStringValue,
-                "NUMINGROUP" => DataType::NumInGroup,
-                "PRICE" => DataType::Price,
-                "PRICEOFFSET" => DataType::PriceOffset,
-                "QTY" => DataType::Qty,
-                "STRING" => DataType::String,
-                "UTCDATE" => DataType::UtcDateOnly,
-                "UTCDATEONLY" => DataType::UtcDateOnly,
-                "UTCTIMESTAMP" => DataType::String,
-                "SEQNUM" => DataType::Int,
-                "TIME" => DataType::UtcTimestamp,
-                _ => DataType::String,
-            })
-        }
-    }
-
     pub struct QuickFixReader<'a> {
         node_with_header: roxmltree::Node<'a, 'a>,
         node_with_trailer: roxmltree::Node<'a, 'a>,

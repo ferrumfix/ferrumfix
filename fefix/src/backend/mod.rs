@@ -16,11 +16,6 @@ pub mod value;
 pub use seqdump::PushyMessage;
 use value as val;
 
-/// Allows to iterate sequentially over FIX fields.
-pub trait ReadFieldsSeq {
-    fn next(&mut self) -> Option<(u32, &FixFieldValue)>;
-}
-
 /// An interface for backends that allow field lookup by tag.
 pub trait ReadFields {
     /// Returns an immutable reference to the field tagged `tag`, if defined.
@@ -41,19 +36,48 @@ pub trait FieldRef<U> {
     fn value(&self) -> &U;
 }
 
-/// An interface for FIX backends.
+/// A [`Dictionary`](crate::Dictionary) -agnostic FIX message representation.
 pub trait Backend<U> {
+    /// The error type that can be returned when defining new fields.
     type Error: fmt::Debug;
     type Iter: StreamIterator<Item = Self::IterItem>;
     type IterItem: FieldRef<U>;
 
-    /// Returns an immutable reference to the field tagged `tag`, if present.
+    /// Returns an immutable reference to a specific field by `tag`, if present.
     fn field(&self, tag: u32) -> Option<&U>;
 
-    /// Removes all fields.
+    /// Removes all fields and resets `self` to its empty state.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::backend::Backend;
+    /// use fefix::backend::PushyMessage;
+    ///
+    /// let mut message = PushyMessage::default();
+    /// assert_eq!(message.len(), 0);
+    /// message.insert(35, FixFieldValue::String("A")).unwrap();
+    /// assert_eq!(message.len(), 1);
+    /// message.clear();
+    /// assert_eq!(message.len(), 0);
+    /// ```
     fn clear(&mut self);
 
-    /// Returns the number of fields set in `self`.
+    /// Returns the number of fields set in `self`. This counter gets incremented
+    /// by one at each call of [`Backend::insert`](Backend::insert).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::backend::Backend;
+    /// use fefix::backend::PushyMessage;
+    ///
+    /// let mut message = PushyMessage::default();
+    /// assert_eq!(message.len(), 0);
+    /// message.insert(8, FixFieldValue::String("FIX.4.4")).unwrap();
+    /// message.insert(35, FixFieldValue::String("D")).unwrap();
+    /// assert_eq!(message.len(), 2);
+    /// ```
     fn len(&self) -> usize;
 
     /// Defines a new field with value `value` and tag `tag`.
@@ -66,38 +90,6 @@ pub trait Backend<U> {
 
     /// Calls a function `f` for every field in `self`.
     fn iter_fields(&mut self) -> &mut Self::Iter;
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum Hbt {
-    Header,
-    Body,
-    Trailer,
-}
-
-pub trait HbtBackend<U> {
-    type Error: fmt::Debug;
-    type Iter: StreamIterator<Item = U>;
-}
-
-pub fn fmt<B>(backend: B, f: &mut fmt::Formatter) -> fmt::Result
-where
-    B: Backend<FixFieldValue>,
-{
-    backend.for_each::<fmt::Error, _>(|tag, value| {
-        write!(f, "{}=|", tag)?;
-        match value {
-            FixFieldValue::String(s) => {
-                write!(f, "{}|", s)
-            }
-            FixFieldValue::Atom(a) => {
-                write!(f, "{}|", a)
-            }
-            _ => Ok(()),
-        }?;
-        Ok(())
-    })?;
-    Ok(())
 }
 
 /// An owned value of a FIX field.

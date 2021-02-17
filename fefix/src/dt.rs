@@ -89,6 +89,8 @@ pub enum DataType {
     /// string field representing a market or exchange using ISO 10383 Market
     /// Identifier Code (MIC) values (see"Appendix 6-C).
     Exchange,
+    /// Identifier for a national language - uses ISO 639-1 standard.
+    Language,
     /// string field represening a Date of Local Market (as oppose to UTC) in
     /// YYYYMMDD format. This is the "normal" date field used by the FIX
     /// Protocol. Valid values: YYYY = 0000-9999, MM = 01-12, DD = 01-31.
@@ -140,6 +142,58 @@ pub enum DataType {
 }
 
 impl DataType {
+    /// Compares `name` to the set of strings commonly used by QuickFIX's custom
+    /// specification format and returns its associated [`DataType`] if a match
+    /// was found. The query is case-sensitive.
+    ///
+    /// # Examples
+    /// ```
+    /// use fefix::DataType;
+    ///
+    /// assert_eq!(DataType::from_quickfix_name("AMT"), Some(DataType::Amt));
+    /// assert_eq!(DataType::from_quickfix_name("MONTHYEAR"), Some(DataType::MonthYear));
+    /// assert_eq!(DataType::from_quickfix_name(""), None);
+    /// assert_eq!(DataType::from_quickfix_name("Amt"), None);
+    /// ```
+    pub fn from_quickfix_name<S: AsRef<str>>(name: S) -> Option<Self> {
+        // https://github.com/quickfix/quickfix/blob/b6760f55ac6a46306b4e081bb13b65e6220ab02d/src/C%2B%2B/DataDictionary.cpp#L646-L680
+        dbglog!("Querying QuickFIX data type '{}'", name.as_ref());
+        Some(match name.as_ref() {
+            "AMT" => DataType::Amt,
+            "BOOLEAN" => DataType::Boolean,
+            "CHAR" => DataType::Char,
+            "COUNTRY" => DataType::Country,
+            "CURRENCY" => DataType::Currency,
+            "DATA" => DataType::Data,
+            "DATE" => DataType::UtcDateOnly, // FIXME?
+            "DAYOFMONTH" => DataType::DayOfMonth,
+            "EXCHANGE" => DataType::Exchange,
+            "FLOAT" => DataType::Float,
+            "INT" => DataType::Int,
+            "LANGUAGE" => DataType::Language,
+            "LENGTH" => DataType::Int,
+            "LOCALMKTDATE" => DataType::LocalMktDate,
+            "MONTHYEAR" => DataType::MonthYear,
+            "MULTIPLECHARVALUE" | "MULTIPLEVALUESTRING" => DataType::MultipleCharValue,
+            "MULTIPLESTRINGVALUE" => DataType::MultipleStringValue,
+            "NUMINGROUP" => DataType::NumInGroup,
+            "PERCENTAGE" => DataType::Percentage,
+            "PRICE" => DataType::Price,
+            "PRICEOFFSET" => DataType::PriceOffset,
+            "QTY" => DataType::Qty,
+            "STRING" => DataType::String,
+            "TZTIMEONLY" => DataType::UtcTimeOnly, // FIXME
+            "TZTIMESTAMP" => DataType::UtcTimestamp, // FIXME
+            "UTCDATE" => DataType::UtcDateOnly,
+            "UTCDATEONLY" => DataType::UtcDateOnly,
+            "UTCTIMEONLY" => DataType::UtcTimeOnly,
+            "UTCTIMESTAMP" => DataType::String,
+            "SEQNUM" => DataType::Int,
+            "TIME" => DataType::UtcTimestamp,
+            "XMLDATA" => DataType::XmlData,
+            _ => return None,
+        })
+    }
     /// Returns the name of `self`, character by character identical to the name
     /// that appears in the official guidelines. **Generally** primitive datatypes
     /// will use `snake_case` and non-primitive ones will have `PascalCase`, but
@@ -173,6 +227,7 @@ impl DataType {
             DataType::Percentage => "Percentage",
             DataType::DayOfMonth => "DayOfMonth",
             DataType::NumInGroup => "NumInGroup",
+            DataType::Language => "Language",
             DataType::SeqNum => "SeqNum",
             DataType::TagNum => "TagNum",
             DataType::String => "String",
