@@ -24,6 +24,15 @@
 
 #![deny(unused, missing_debug_implementations, clippy::useless_conversion)]
 
+#[macro_export]
+macro_rules! dbglog {
+    ($($arg:tt)*) => {{
+        if std::cfg!(debug_assertions) {
+            std::eprintln!("[{}:{}] {}", std::file!(), std::line!(), std::format!($($arg)*));
+        }
+    }}
+}
+
 pub mod backend;
 pub mod buffering;
 pub mod codec;

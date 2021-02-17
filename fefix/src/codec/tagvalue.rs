@@ -4,34 +4,197 @@
 //! currently used by the FIX session layer.
 
 use crate::backend::value as val;
-use crate::backend::{slr, FixFieldValue, ReadFields, Version, WriteFields};
-use crate::buffering::{Buffer, BufferWriter};
-use crate::codec::{Decoder, Encoder, StreamingDecoder};
+use crate::backend::{slr, Backend, FixFieldValue, Version};
+use crate::buffering::Buffer;
+use crate::codec::{Encoding, StreamingDecoder};
+use crate::dbglog;
 use crate::dictionary::Dictionary;
 use crate::DataType;
+use std::convert::TryInto;
 use std::fmt;
 use std::fmt::Debug;
 use std::io;
 use std::rc::Rc;
 use std::str;
 
-/// A (de)serializer for the classic FIX tag-value encoding.
-///
-/// The FIX tag-value encoding is designed to be both human-readable and easy for
-/// machines to parse.
-///
-/// Please reach out to the FIX official documentation[^1][^2] for more information.
-///
-/// [^1]: [FIX TagValue Encoding: Online reference.](https://www.fixtrading.org/standards/tagvalue-online)
-///
-/// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
 #[derive(Debug)]
-pub struct Codec<T, Z> {
+pub struct AgnosticMessage {
+    begin_string: (*const u8, usize),
+    body: (*const u8, usize),
+}
+
+impl AgnosticMessage {
+    fn empty() -> Self {
+        Self {
+            begin_string: ([].as_ptr(), 0),
+            body: ([].as_ptr(), 0),
+        }
+    }
+}
+
+impl AgnosticMessage {
+    /// Returns an immutable reference to the `BeginString <8>` field value of
+    /// `self`.
+    pub fn field_begin_string(&self) -> &[u8] {
+        unsafe { std::slice::from_raw_parts(self.begin_string.0, self.begin_string.1) }
+    }
+
+    /// Returns an immutable reference to the body contents of `self`.
+    pub fn body(&self) -> &[u8] {
+        unsafe { std::slice::from_raw_parts(self.body.0, self.body.1) }
+    }
+}
+
+#[derive(Debug)]
+pub struct AgnosticCodec<Z>
+where
+    Z: Config,
+{
+    message: AgnosticMessage,
+    config: Z,
+}
+
+impl<Z> Default for AgnosticCodec<Z>
+where
+    Z: Config,
+{
+    fn default() -> Self {
+        Self {
+            message: AgnosticMessage::empty(),
+            config: Z::default(),
+        }
+    }
+}
+
+impl<Z> Encoding<AgnosticMessage> for AgnosticCodec<Z>
+where
+    Z: Config,
+{
+    type DecodeError = DecodeError;
+    type EncodeError = ();
+
+    fn decode(&mut self, data: &[u8]) -> Result<&AgnosticMessage, Self::DecodeError> {
+        if data.len() < 14 {
+            // 14 is a good heuristic, I haven't checked but it's possible that
+            // we can raise this.
+            dbglog!("The input data is too short to contain a well-defined FIX message.");
+            return Err(Self::DecodeError::Syntax);
+        }
+        dbglog!(
+            "Content-agnostic decoding: UTF-8 lossy is '{}'.",
+            String::from_utf8_lossy(data)
+        );
+        // Branchless decoding. It feels weird if you're not used to it. Note
+        // that we only care about the first two fields, after which we jump
+        // right to `BodyLength` and `CheckSum` verification. In this specific
+        // context, everything in the middle is considered part of the body
+        // (even though e.g. `MsgType` is the third field and is part of
+        // `StandardHeader`): we simply don't care about that distinction. The
+        // only fields that matter here are `BeginString`, `BodyLength`, and
+        // `CheckSum`.
+        let mut indexes_of_equal_sign: [usize; 2] = [0, 0];
+        let mut indexes_of_separator: [usize; 2] = [0, 0];
+        let mut field_i = 0;
+        let mut i = 0;
+        let mut nominal_body_length = 0usize;
+        while field_i < 2 && i < data.len() {
+            let byte = data[i];
+            let is_equal_sign = byte == b'=';
+            let is_separator = byte == Z::SEPARATOR;
+            indexes_of_equal_sign[field_i] =
+                [indexes_of_equal_sign[field_i], i][is_equal_sign as usize];
+            indexes_of_separator[field_i] =
+                [indexes_of_separator[field_i], i][is_separator as usize];
+            i += 1;
+            field_i += is_separator as usize;
+            // We should reset the value in case it's the equal sign.
+            nominal_body_length = [
+                (nominal_body_length * 10 + byte.wrapping_sub(b'0') as usize)
+                    * !is_equal_sign as usize,
+                nominal_body_length,
+            ][is_separator as usize];
+        }
+        // Let's check some invariants... you can never be too sure.
+        debug_assert!(indexes_of_equal_sign[0] < indexes_of_separator[0]);
+        debug_assert!(indexes_of_equal_sign[1] < indexes_of_separator[1]);
+        debug_assert!(indexes_of_separator[0] < indexes_of_separator[1]);
+        debug_assert!(indexes_of_separator[1] < data.len());
+        // Verify `BodyLength`.
+        let start_of_body = indexes_of_separator[1] + 1;
+        {
+            let body_length = data
+                .len()
+                .wrapping_sub(FIELD_CHECKSUM_SIZE_IN_BYTES)
+                .wrapping_sub(start_of_body);
+            let end_of_body = data.len() - FIELD_CHECKSUM_SIZE_IN_BYTES;
+            if start_of_body > end_of_body || nominal_body_length != body_length {
+                dbglog!(
+                    "BodyLength mismatch: expected {} but is {}.",
+                    body_length,
+                    nominal_body_length,
+                );
+                return Err(Self::DecodeError::Syntax);
+            }
+            debug_assert!(body_length < data.len());
+        }
+        if self.config.verify_checksum() {
+            let nominal_checksum =
+                read_checksum_from_digits(data[data.len() - 4..data.len() - 1].try_into().unwrap());
+            let mut actual_checksum = 0u8;
+            for byte in &data[..data.len() - FIELD_CHECKSUM_SIZE_IN_BYTES] {
+                actual_checksum = actual_checksum.wrapping_add(*byte);
+            }
+            if nominal_checksum != actual_checksum {
+                dbglog!(
+                    "CheckSum mismatch: expected {:03} but is {:03}.",
+                    actual_checksum,
+                    nominal_checksum,
+                );
+                return Err(Self::DecodeError::Syntax);
+            }
+        } else {
+            dbglog!("Skipping checksum verification.");
+        }
+        self.message.begin_string = (
+            unsafe { data.as_ptr().add(indexes_of_equal_sign[0] + 1) },
+            indexes_of_separator[0] - indexes_of_equal_sign[0] - 1,
+        );
+        self.message.body = (
+            unsafe { data.as_ptr().add(start_of_body) },
+            nominal_body_length,
+        );
+        Ok(&self.message)
+    }
+
+    fn encode<B>(
+        &mut self,
+        mut buffer: &mut B,
+        message: &AgnosticMessage,
+    ) -> Result<usize, Self::EncodeError>
+    where
+        B: Buffer,
+    {
+        let body_writer = |buffer: &mut B| {
+            buffer.extend_from_slice(message.body());
+            message.body().len()
+        };
+        encode(
+            &self.config,
+            message.field_begin_string(),
+            body_writer,
+            &mut buffer,
+        )
+    }
+}
+
+#[derive(Debug)]
+pub struct Codec<T, Z>
+where
+    Z: Config,
+{
     dict: Dictionary,
-    buffer: Vec<u8>,
-    state: DecoderState,
     message: T,
-    body: Body,
+    agnostic_codec: AgnosticCodec<Z>,
     config: Z,
 }
 
@@ -49,194 +212,118 @@ where
     pub fn with_dict(dict: Dictionary, config: Z) -> Self {
         Self {
             dict,
-            buffer: Vec::new(),
-            state: DecoderState::Header,
+            agnostic_codec: AgnosticCodec::<Z>::default(),
             message: T::default(),
-            body: Body::new(&[]),
             config,
         }
     }
 }
 
-#[derive(Debug)]
-enum DecoderState {
-    Header,
-    Body(usize),
-    Trailer,
-}
+/// The checksum field is composed of:
+///  - `10=` (3 characters)
+///  - `XYZ` (checksum value, always 3 characters)
+///  - SOH   (1 character)
+/// Total: 7 characters.
+const FIELD_CHECKSUM_SIZE_IN_BYTES: usize = 7;
 
-#[derive(Debug)]
-pub struct Body {
-    len: usize,
-}
-
-impl Body {
-    fn new(data: &[u8]) -> Self {
-        Self { len: data.len() }
-    }
-}
-
-impl<Z> StreamingDecoder<Body> for Codec<slr::Message, Z>
+impl<T, Z> Encoding<T> for Codec<T, Z>
 where
+    T: Backend<FixFieldValue>,
     Z: Config,
 {
-    type Error = DecodeError;
+    type DecodeError = DecodeError;
+    type EncodeError = EncodeError;
 
-    fn supply_buffer(&mut self) -> &mut [u8] {
-        let buffer_len = self.buffer.len();
-        let additional_capacity = match self.state {
-            DecoderState::Header => 50,
-            DecoderState::Body(n) => n,
-            DecoderState::Trailer => 7,
+    fn decode(&mut self, data: &[u8]) -> Result<&T, Self::DecodeError> {
+        let agnostic_message = self.agnostic_codec.decode(data)?;
+        let field_begin_string = agnostic_message.field_begin_string();
+        dbglog!("BeginString <8> has value '{:?}'.", field_begin_string);
+        // Empty the message.
+        self.message.clear();
+        let mut fields = &mut FieldIter::<Z>::new(agnostic_message.body(), &self.dict);
+        // Deserialize `MsgType(35)`.
+        let msg_type = {
+            let mut f = fields.next().ok_or(Self::DecodeError::Syntax)??;
+            if f.tag() != 35 {
+                dbglog!("Expected MsgType <35>, got <{}> instead.", f.tag());
+                return Err(Self::DecodeError::Syntax);
+            }
+            f.take_value()
         };
-        for _ in 0..additional_capacity {
-            self.buffer.push(0);
+        self.message
+            .insert(8, FixFieldValue::string(field_begin_string).unwrap())
+            .unwrap();
+        self.message.insert(35, msg_type).unwrap();
+        // Iterate over all the other fields and store them to the message.
+        for field_result in &mut fields {
+            let mut field = field_result?;
+            dbglog!("Finished parsing field <{}>.", field.tag());
+            self.message
+                .insert(field.tag(), field.take_value())
+                .unwrap();
         }
-        &mut self.buffer[buffer_len..]
+        Ok(&self.message)
     }
 
-    fn attempt_decoding(&mut self) -> Result<Option<&Body>, Self::Error> {
-        let mut field_iter: &mut FieldIter<_, Z> = &mut FieldIter {
-            handle: &mut &self.buffer[..],
-            designator: Z::TagLookup::from_dict(&self.dict),
-            is_last: false,
-            data_length: 0,
+    fn encode<B>(&mut self, buffer: &mut B, message: &T) -> Result<usize, Self::EncodeError>
+    where
+        B: Buffer,
+    {
+        let body_writer = |buffer: &mut B| {
+            let start_i = buffer.as_slice().len();
+            message
+                .for_each::<(), _>(|tag, value| {
+                    if tag != 8 {
+                        encode_field((tag as u16).into(), value, buffer, Z::SEPARATOR);
+                    }
+                    Ok(())
+                })
+                .unwrap();
+            buffer.as_slice().len() - start_i
         };
-        let mut message = slr::Message::new();
-        {
-            // `BeginString(8)`.
-            let f = field_iter.next().ok_or(Error::Eof)??;
-            if f.tag() == 8 {
-                message.set_field(f.tag() as u32, f.value().clone());
-            } else {
-                return Err(Error::InvalidStandardHeader);
-            }
-        };
-        {
-            // `BodyLength(9)`.
-            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
-            if f.tag() == 9 {
-                message.set_field(f.tag() as u32, f.value().clone());
-            } else {
-                return Err(Error::InvalidStandardHeader);
-            }
-        };
-        {
-            // `MsgType(35)`.
-            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
-            if f.tag() == 35 {
-                message.set_field(f.tag() as u32, f.value().clone());
-            } else {
-                return Err(Error::InvalidStandardHeader);
-            }
-        };
-        self.state = DecoderState::Body(0);
-        self.state = DecoderState::Trailer;
-        Ok(Some(&self.body))
-    }
-
-    fn get(&self) -> &Body {
-        &self.body
+        let field_begin_string = message.field(8).unwrap().as_str().unwrap().as_bytes();
+        encode(&self.config, field_begin_string, body_writer, buffer)
     }
 }
 
-impl<Z, T> Decoder<T> for Codec<T, Z>
+fn encode<Z, B, F>(
+    _config: &Z,
+    field_begin_string: &[u8],
+    body_writer: F,
+    buffer: &mut B,
+) -> Result<usize, EncodeError>
 where
-    T: WriteFields + Default + ReadFields,
     Z: Config,
+    B: Buffer,
+    F: Fn(&mut B) -> usize,
 {
-    type Error = DecodeError;
-
-    fn decode(&mut self, mut data: &[u8]) -> Result<&T, Self::Error> {
-        let mut checksum = Z::ChecksumAlgo::default();
-        checksum.roll(&data[..data.len() - 7]);
-        let mut field_iter: &mut FieldIter<_, Z> = &mut FieldIter {
-            handle: &mut data,
-            designator: Z::TagLookup::from_dict(&self.dict),
-            is_last: false,
-            data_length: 0,
-        };
-        let mut message = T::default();
-        {
-            // `BeginString(8)`.
-            let f = field_iter.next().ok_or(Error::Eof)??;
-            if f.tag() == 8 {
-                message.set_field(f.tag() as u32, f.value().clone());
-            } else {
-                return Err(Error::InvalidStandardHeader);
-            }
-        };
-        {
-            // `BodyLength(9)`.
-            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
-            if f.tag() == 9 {
-                message.set_field(f.tag() as u32, f.value().clone());
-            } else {
-                return Err(Error::InvalidStandardHeader);
-            }
-        };
-        {
-            // `MsgType(35)`.
-            let f = field_iter.next().ok_or(Error::InvalidStandardHeader)??;
-            if f.tag() == 35 {
-                message.set_field(f.tag() as u32, f.value().clone());
-            } else {
-                return Err(Error::InvalidStandardHeader);
-            }
-        };
-        let mut last_tag = 35;
-        for f_result in &mut field_iter {
-            let f = f_result?;
-            message.set_field(f.tag() as u32, f.value().clone());
-            last_tag = f.tag();
-        }
-        let chesksum_field = message.get_field(10);
-        if let Some(FixFieldValue::String(s)) = chesksum_field {
-            let n = s.as_str().parse::<u8>().unwrap();
-            if !checksum.verify(n) {
-                let checksum_error = InvalidChecksum {
-                    actual: n,
-                    expected: checksum.result(),
-                };
-                return Err(Error::InvalidChecksum(checksum_error));
-            }
-        }
-        if last_tag == 10 {
-            self.message = message;
-            Ok(&self.message)
-        } else {
-            Err(Error::InvalidStandardTrailer)
-        }
-    }
-}
-
-impl<Z, T> Encoder<slr::Message> for Codec<T, Z>
-where
-    T: WriteFields + Default,
-    Z: Config,
-{
-    type Error = EncodeError;
-
-    fn encode(
-        &mut self,
-        mut buffer: impl Buffer,
-        message: &slr::Message,
-    ) -> Result<usize, Self::Error> {
-        let mut writer = BufferWriter::new(&mut buffer);
-        // First, write `BeginString(8)`.
-        encode_field(
-            8.into(),
-            message.get_field(8).unwrap(),
-            &mut writer,
-            Z::SOH_SEPARATOR,
-        );
+    let start_i = buffer.as_slice().len();
+    // First, write `BeginString(8)`.
+    buffer.extend_from_slice(b"8=");
+    buffer.extend_from_slice(field_begin_string);
+    buffer.extend_from_slice(&[
+        Z::SEPARATOR,
+        b'9',
+        b'=',
+        b'0',
+        b'0',
+        b'0',
+        b'0',
+        b'0',
+        b'0',
+        Z::SEPARATOR,
+    ]);
+    let body_length_writable_range = buffer.as_slice().len() - 7..buffer.as_slice().len() - 1;
+    let body_length = body_writer(buffer);
+    {
+        let slice = &mut buffer.as_mut_slice()[body_length_writable_range];
         // The second field is supposed to be `BodyLength(9)`, but obviously
         // the length of the message is unknow until later in the
         // serialization phase. This alone would usually require to
         //
         //  1. Serialize the rest of the message into an external buffer.
         //  2. Calculate the length of the message.
-        //  3. Serialize `BodyLength(9)`.
+        //  3. Serialize `BodyLength(9)` to `buffer`.
         //  4. Copy the contents of the external buffer into `buffer`.
         //  5. ... go on with the serialization process.
         //
@@ -245,41 +332,34 @@ where
         // some bytes but the benefits largely outweight the costs.
         //
         // Six digits (~1MB) ought to be enough for every message.
-        writer.extend_from_slice(b"9=000000");
-        writer.extend_from_slice(&[Z::SOH_SEPARATOR]);
-        let body_length_range = writer.as_slice().len() - 7..writer.as_slice().len() - 2;
-        // We now must start to calculate the message length.
-        let mut len = writer.as_slice().len();
-        // Third field: `MsgType(35)`.
-        encode_field(
-            35.into(),
-            message.get_field(35).unwrap(),
-            &mut writer,
-            Z::SOH_SEPARATOR,
-        );
-        // Now all the other fields.
-        for (tag, value) in message.fields.iter() {
-            if *tag != 35 {
-                encode_field((*tag as u16).into(), value, &mut writer, Z::SOH_SEPARATOR);
-            }
-        }
-        len = writer.as_slice().len() - len;
-        // Finally, we need to serialize the `Checksum(10)` field.
-        //encode_field(9.into(), &slr::FixFieldValue::Int(len as i64), &mut writer)?;
-        for i in body_length_range.rev() {
-            writer.as_mut_slice()[i] = (len % 10) as u8 + '0' as u8;
-            len /= 10;
-        }
-        let mut checksum = Z::ChecksumAlgo::default();
-        checksum.roll(writer.as_slice());
-        encode_field(
-            10.into(),
-            &FixFieldValue::from(checksum.result() as i64),
-            &mut writer,
-            Z::SOH_SEPARATOR,
-        );
-        Ok(writer.as_slice().len())
+        slice[0] = (body_length / 100000) as u8 + b'0';
+        slice[1] = ((body_length / 10000) % 10) as u8 + b'0';
+        slice[2] = ((body_length / 1000) % 10) as u8 + b'0';
+        slice[3] = ((body_length / 100) % 10) as u8 + b'0';
+        slice[4] = ((body_length / 10) % 10) as u8 + b'0';
+        slice[5] = (body_length % 10) as u8 + b'0';
     }
+    {
+        let checksum = compute_checksum(&buffer.as_slice()[start_i..]);
+        buffer.extend_from_slice(&[
+            b'1',
+            b'0',
+            b'=',
+            (checksum / 100) + b'0',
+            ((checksum / 10) % 10) + b'0',
+            (checksum % 10) + b'0',
+        ]);
+    }
+    Ok(buffer.as_slice().len())
+}
+
+#[inline]
+fn read_checksum_from_digits(digits: [u8; 3]) -> u8 {
+    digits[0]
+        .wrapping_sub(b'0')
+        .wrapping_mul(100)
+        .wrapping_add(digits[1].wrapping_sub(b'0').wrapping_mul(10))
+        .wrapping_add(digits[2].wrapping_sub(b'0'))
 }
 
 fn encode_field(tag: val::TagNum, value: &FixFieldValue, write: &mut impl Buffer, separator: u8) {
@@ -291,6 +371,118 @@ fn encode_field(tag: val::TagNum, value: &FixFieldValue, write: &mut impl Buffer
         FixFieldValue::Atom(field) => write.extend_from_slice(field.to_string().as_bytes()),
     };
     write.extend_from_slice(&[separator]);
+}
+
+#[inline]
+fn compute_checksum(data: &[u8]) -> u8 {
+    let mut value = 0u8;
+    for byte in data {
+        value = value.wrapping_add(*byte);
+    }
+    value
+}
+
+/// A (de)serializer for the classic FIX tag-value encoding.
+///
+/// The FIX tag-value encoding is designed to be both human-readable and easy for
+/// machines to parse.
+///
+/// Please reach out to the FIX official documentation[^1][^2] for more information.
+///
+/// [^1]: [FIX TagValue Encoding: Online reference.](https://www.fixtrading.org/standards/tagvalue-online)
+///
+/// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
+#[derive(Debug)]
+pub struct BufferedCodec<T, Z>
+where
+    Z: Config,
+{
+    buffer: Vec<u8>,
+    buffer_relevant_len: usize,
+    buffer_additional_len: usize,
+    codec: Codec<T, Z>,
+}
+
+impl<T, Z> BufferedCodec<T, Z>
+where
+    T: Default,
+    Z: Config,
+{
+    /// Builds a new `Codec` encoding device with a FIX 4.4 dictionary.
+    pub fn new(config: Z) -> Self {
+        Self::with_dict(Dictionary::from_version(Version::Fix44), config)
+    }
+
+    /// Creates a new codec for the tag-value format. `dict` is used to parse messages.
+    pub fn with_dict(dict: Dictionary, config: Z) -> Self {
+        Self {
+            buffer: Vec::new(),
+            buffer_relevant_len: 0,
+            buffer_additional_len: 0,
+            codec: Codec::with_dict(dict.clone(), config.clone()),
+        }
+    }
+}
+
+impl<T, Z> Encoding<T> for BufferedCodec<T, Z>
+where
+    T: Backend<FixFieldValue> + Default,
+    Z: Config,
+{
+    type DecodeError = DecodeError;
+    type EncodeError = EncodeError;
+
+    fn decode(&mut self, data: &[u8]) -> Result<&T, Self::DecodeError> {
+        self.codec.decode(data)
+    }
+
+    fn encode<B>(
+        &mut self,
+        buffer: &mut B,
+        message: &T,
+    ) -> std::result::Result<usize, Self::EncodeError>
+    where
+        B: Buffer,
+    {
+        self.codec.encode(buffer, message)
+    }
+}
+
+impl<T, Z> StreamingDecoder<T> for BufferedCodec<T, Z>
+where
+    T: Backend<FixFieldValue> + Default,
+    Z: Config,
+{
+    type Error = DecodeError;
+
+    fn supply_buffer(&mut self) -> (&mut usize, &mut [u8]) {
+        // 512 bytes at a time. Not optimal, but a reasonable default.
+        let len = 512;
+        self.buffer.resize(self.buffer_relevant_len + len, 0);
+        (
+            &mut self.buffer_additional_len,
+            &mut self.buffer[self.buffer_relevant_len..self.buffer_relevant_len + len],
+        )
+    }
+
+    fn attempt_decoding(&mut self) -> Result<Option<&T>, Self::Error> {
+        self.buffer_relevant_len += self.buffer_additional_len;
+        assert!(self.buffer_relevant_len <= self.buffer.len());
+        if self.buffer_relevant_len < 10 {
+            Ok(None)
+        } else if &self.buffer[self.buffer_relevant_len - 7..self.buffer_relevant_len - 3] == b"10="
+        {
+            self.codec
+                .decode(&self.buffer[..self.buffer_relevant_len])
+                .map(|message| Some(message))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn get(&self) -> &T {
+        &self.codec.message
+    }
 }
 
 /// This trait describes dynamic tag lookup logic.
@@ -323,8 +515,8 @@ pub trait TagLookup {
     fn lookup(&mut self, tag: u32) -> Result<DataType, Self::Error>;
 }
 
-/// A [`TagLookup`] that only allows a specific revision of the standard, like
-/// most venues do.
+/// A [`TagLookup`](TagLookup) that only allows a specific revision of the
+/// standard, like most venues do.
 #[derive(Debug)]
 pub struct TagLookupPredetermined {
     current_dict: Rc<Dictionary>,
@@ -381,109 +573,127 @@ pub enum TagLookupPredeterminedError {
     InvalidCstmApplVerID,
 }
 
-#[derive(Debug)]
-pub enum TypeInfo {
-    Int,
-    Float,
-    Char,
-    String,
-    Data(usize),
+struct FieldIter<'a, Z: Config> {
+    data: &'a [u8],
+    cursor: usize,
+    tag_lookup: Z::TagLookup,
+    data_field_length: usize,
 }
 
-struct FieldIter<R, Z: Config> {
-    handle: R,
-    is_last: bool,
-    data_length: u32,
-    designator: Z::TagLookup,
-}
-
-impl<'d, R, Z> Iterator for &mut FieldIter<&'d mut R, Z>
+impl<'a, Z> FieldIter<'a, Z>
 where
-    R: io::Read,
+    Z: Config,
+{
+    fn new(data: &'a [u8], dictionary: &'a Dictionary) -> Self {
+        Self {
+            data,
+            cursor: 0,
+            tag_lookup: Z::TagLookup::from_dict(dictionary),
+            data_field_length: 0,
+        }
+    }
+}
+
+impl<'a, Z> Iterator for &mut FieldIter<'a, Z>
+where
     Z: Config,
 {
     type Item = Result<slr::Field, DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.is_last {
+        if self.cursor >= self.data.len() {
             return None;
         }
-        let mut buffer: Vec<u8> = Vec::new();
-        let mut tag: u32 = 0;
-        let mut buf = [0];
-        loop {
-            if self.handle.read(&mut buf).unwrap() == 0 {
-                break;
+        let mut tag = 0u32;
+        while let Some(byte) = self.data.get(self.cursor) {
+            self.cursor += 1;
+            if *byte == b'=' {
+                if tag == 0 {
+                    return Some(Err(DecodeError::Syntax));
+                } else {
+                    break;
+                }
             }
-            let byte = buf[0];
-            if byte == b'=' {
-                break;
-            }
-            tag = tag * 10 + (byte as char).to_digit(10).unwrap();
+            tag = tag * 10 + byte.wrapping_sub(b'0') as u32;
         }
-        if tag == 10 {
-            self.is_last = true;
-        } else if tag == 0 {
-            return None;
+        if self.data.get(self.cursor).is_none() {
+            return Some(Err(DecodeError::Syntax));
         }
-        let datatype = self.designator.lookup(tag as u32);
+        debug_assert_eq!(self.data[self.cursor - 1], b'=');
+        debug_assert!(tag > 0);
+        let datatype = self.tag_lookup.lookup(tag);
+        dbglog!("Parsing a field with data type '{:?}'.", &datatype);
+        let mut field_value = FixFieldValue::from(0i64);
         match datatype {
             Ok(DataType::Data) => {
-                buffer = vec![0u8; self.data_length as usize];
-                self.handle.read_exact(&mut buffer).unwrap();
-                self.handle.read_exact(&mut buffer[0..1]).unwrap();
+                field_value = FixFieldValue::Atom(val::Atomic::Data(
+                    self.data[self.cursor..self.cursor + self.data_field_length].to_vec(),
+                ));
+                self.cursor += self.data_field_length + 1;
+                debug_assert_eq!(self.data[self.cursor - 1], Z::SEPARATOR);
             }
-            Ok(_basetype) => {
-                buffer = vec![];
-                loop {
-                    if self.handle.read(&mut buf).unwrap() == 0 {
-                        return Some(Err(Error::Eof));
+            Ok(datatype) => {
+                dbglog!(
+                    "Parsing the field value of <{}> (residual data as lossy UTF-8 is '{}').",
+                    tag,
+                    String::from_utf8_lossy(&self.data[self.cursor..]),
+                );
+                if let Some(separator_i) = &self.data[self.cursor..]
+                    .iter()
+                    .position(|byte| *byte == Z::SEPARATOR)
+                    .map(|i| i + self.cursor)
+                {
+                    field_value =
+                        read_field_value(datatype, &self.data[self.cursor..*separator_i]).unwrap();
+                    self.cursor = separator_i + 1;
+                    debug_assert_eq!(self.data[self.cursor - 1], Z::SEPARATOR);
+                    if datatype == DataType::Length {
+                        self.data_field_length = field_value.as_length().unwrap();
                     }
-                    let byte = buf[0];
-                    if byte == Z::SOH_SEPARATOR {
-                        break;
-                    } else {
-                        buffer.push(byte);
-                    }
+                } else {
+                    dbglog!("EOF before expected separator. Error.");
+                    return Some(Err(DecodeError::Syntax));
                 }
             }
             Err(_) => (),
-        };
-        let datatype = datatype.unwrap();
-        let field_value = field_value(datatype, &buffer[..]).unwrap();
-        if let FixFieldValue::Atom(val::Atomic::Int(val::Int(l))) = field_value {
-            self.data_length = l as u32;
         }
+        debug_assert_eq!(self.data[self.cursor - 1], Z::SEPARATOR);
         Some(Ok(slr::Field::new(tag, field_value)))
     }
 }
 
-fn field_value(datatype: DataType, buf: &[u8]) -> Result<FixFieldValue, Error> {
+fn read_field_value(datatype: DataType, buf: &[u8]) -> Result<FixFieldValue, DecodeError> {
     debug_assert!(!buf.is_empty());
     Ok(match datatype {
         DataType::Char => FixFieldValue::from(buf[0] as char),
         DataType::Data => FixFieldValue::Atom(val::Atomic::Data(buf.to_vec())),
         DataType::Float => FixFieldValue::Atom(val::Atomic::float(
             str::from_utf8(buf)
-                .map_err(|_| Error::Syntax)?
+                .map_err(|_| DecodeError::Syntax)?
                 .parse::<f32>()
-                .map_err(|_| Error::Syntax)?,
+                .map_err(|_| DecodeError::Syntax)?,
         )),
         DataType::Int => {
-            let mut n: i64 = 0;
-            for byte in buf {
-                if *byte >= '0' as u8 && *byte <= '9' as u8 {
-                    let digit = byte - '0' as u8;
-                    n = n * 10 + digit as i64;
-                } else if *byte == '-' as u8 {
+            let mut n = 0i64;
+            let mut multiplier = 1;
+            for byte in buf.iter().rev() {
+                if *byte >= b'0' && *byte <= b'9' {
+                    let digit = byte - b'0';
+                    n += digit as i64 * multiplier;
+                } else if *byte == b'-' {
                     n *= -1;
-                } else if *byte != '+' as u8 {
-                    return Err(Error::Syntax);
+                } else if *byte != b'+' {
+                    return Err(DecodeError::Syntax);
                 }
+                multiplier *= 10;
             }
             FixFieldValue::from(n)
         }
-        _ => FixFieldValue::String(str::from_utf8(buf).map_err(|_| Error::Syntax)?.to_string()),
+        _ => FixFieldValue::String(
+            str::from_utf8(buf)
+                .map_err(|_| DecodeError::Syntax)?
+                .to_string(),
+        ),
     })
 }
 
@@ -493,16 +703,30 @@ fn field_value(datatype: DataType, buf: &[u8]) -> Result<FixFieldValue, Error> {
 /// the behavior of the FIX encoder without incurring in performance loss.
 ///
 /// # Naming conventions
-/// Implementors of this trait should start with `Trans`.
-pub trait Config: Clone {
-    type ChecksumAlgo: ChecksumAlgo;
+/// Implementors of this trait should start with `Config`.
+pub trait Config: Clone + Default {
     type TagLookup: TagLookup;
 
     /// The delimiter character, which terminates every tag-value pair including
     /// the last one.
     ///
-    /// ASCII 0x1 is the default SOH separator character.
-    const SOH_SEPARATOR: u8 = 0x1;
+    /// ASCII 0x1 (SOH) is the default separator character.
+    const SEPARATOR: u8 = 0x1;
+
+    #[inline]
+    fn max_message_size(&self) -> Option<usize> {
+        Some(65536)
+    }
+
+    #[inline]
+    fn verify_body_length(&self) -> bool {
+        true
+    }
+
+    #[inline]
+    fn verify_checksum(&self) -> bool {
+        true
+    }
 }
 
 /// A [`Config`] for [`Codec`] with default configuration
@@ -510,157 +734,59 @@ pub trait Config: Clone {
 ///
 /// This configurator uses [`ChecksumAlgoDefault`] as a checksum algorithm and
 /// [`TagLookupPredetermined`] for its dynamic tag lookup logic.
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct ConfigDefault;
 
 impl Config for ConfigDefault {
-    type ChecksumAlgo = ChecksumAlgoDefault;
     type TagLookup = TagLookupPredetermined;
 }
 
-/// A [`Config`](Config) for [`Codec`] with `|` (ASCII 0x7C)
+/// A [`Config`](Config) for [`Codec`](Codec) with `|` (ASCII 0x7C)
 /// as a field separator.
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct ConfigVerticalSlash;
 
 impl Config for ConfigVerticalSlash {
-    type ChecksumAlgo = ChecksumAlgoDefault;
     type TagLookup = TagLookupPredetermined;
 
-    const SOH_SEPARATOR: u8 = '|' as u8;
+    const SEPARATOR: u8 = b'|';
 }
 
-/// A [`Config`](Config) for [`Codec`] with `^` (ASCII 0x5F)
+/// A [`Config`](Config) for [`Codec`](Codec) with `^` (ASCII 0x5F)
 /// as a field separator.
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct ConfigCaret;
 
 impl Config for ConfigCaret {
-    type ChecksumAlgo = ChecksumAlgoDefault;
     type TagLookup = TagLookupPredetermined;
 
-    const SOH_SEPARATOR: u8 = '^' as u8;
+    const SEPARATOR: u8 = b'^';
 }
 
-/// Checksum calculation & verification algorithm. The API is designed to work
-/// only with so-called "rolling" checksum algorithms, much like the one used by
-/// the FIX tag-value encoding.
-///
-/// # Naming conventions
-/// Implementors of this trait should start with `ChecksumAlgo`.
-pub trait ChecksumAlgo: Default + Clone {
-    /// Calculates the checksum of `window` and compounds it with `self`.
-    fn roll(&mut self, window: &[u8]);
-
-    /// Adds a partial checksum to `self`.
-    fn add(&mut self, sum: u8);
-
-    /// Returns the amount of bytes that were processed calculating for this
-    /// checksum.
-    fn window_length(&self) -> usize;
-
-    /// Returns the final checksum value.
-    fn result(&self) -> u8;
-
-    /// Checks that the calculated checksum of `self` matches `checksum`.
-    fn verify(&self, checksum: u8) -> bool;
-}
-
-/// A rolling checksum over a byte array. Sums over each byte wrapping around at
-/// 256.
-#[derive(Copy, Clone, Debug, Default)]
-pub struct ChecksumAlgoDefault {
-    checksum: u8,
-    len: usize,
-}
-
-impl ChecksumAlgo for ChecksumAlgoDefault {
-    fn roll(&mut self, window: &[u8]) {
-        for byte in window {
-            self.checksum = self.checksum.wrapping_add(*byte);
-        }
-        self.len += window.len();
-    }
-
-    fn add(&mut self, sum: u8) {
-        self.checksum = self.checksum.wrapping_add(sum);
-    }
-
-    fn window_length(&self) -> usize {
-        self.len
-    }
-
-    fn result(&self) -> u8 {
-        self.checksum
-    }
-
-    fn verify(&self, checksum: u8) -> bool {
-        self.checksum == checksum
-    }
-}
-
-/// A non-verifying checksum calculator.
-#[derive(Copy, Clone, Debug, Default)]
-pub struct ChecksumAlgoLazy {
-    len: usize,
-}
-
-impl ChecksumAlgo for ChecksumAlgoLazy {
-    fn roll(&mut self, window: &[u8]) {
-        self.len += window.len();
-    }
-
-    fn add(&mut self, _sum: u8) {}
-
-    fn window_length(&self) -> usize {
-        self.len
-    }
-
-    fn result(&self) -> u8 {
-        0
-    }
-
-    fn verify(&self, _checksum: u8) -> bool {
-        true
-    }
-}
-
-type DecodeError = Error;
-type EncodeError = Error;
+type EncodeError = ();
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Error {
-    FieldWithoutValue(u32),
-    RepeatedTag(u32),
-    Eof,
-    InvalidStandardHeader,
-    InvalidStandardTrailer,
-    InvalidChecksum(InvalidChecksum),
+pub enum DecodeError {
+    FieldPresence,
     Syntax,
 }
 
-impl fmt::Display for Error {
+impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "SuperError is here!")
     }
 }
 
-impl std::error::Error for Error {
+impl std::error::Error for DecodeError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
     }
 }
 
-impl From<io::Error> for Error {
+impl From<io::Error> for DecodeError {
     fn from(_err: io::Error) -> Self {
-        Error::Eof // FIXME
+        Self::Syntax // FIXME
     }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct InvalidChecksum {
-    pub expected: u8,
-    pub actual: u8,
 }
 
 #[cfg(test)]
@@ -677,14 +803,17 @@ mod test {
         Codec::new(ConfigDefault)
     }
 
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Default, Debug)]
     struct ConfigVerticalSlashNoVerify;
 
     impl Config for ConfigVerticalSlashNoVerify {
-        type ChecksumAlgo = ChecksumAlgoLazy;
         type TagLookup = TagLookupPredetermined;
 
-        const SOH_SEPARATOR: u8 = '|' as u8;
+        const SEPARATOR: u8 = '|' as u8;
+
+        fn verify_checksum(&self) -> bool {
+            false
+        }
     }
 
     fn encoder_slash_no_verify() -> Codec<slr::Message, impl Config> {
@@ -697,8 +826,8 @@ mod test {
 
     #[test]
     fn can_parse_simple_message() {
-        let msg = with_soh("8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=050|");
-        let mut codec = encoder_with_soh();
+        let msg = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
+        let mut codec = encoder();
         let result = codec.decode(&mut msg.as_bytes());
         assert!(result.is_ok());
     }
@@ -719,7 +848,7 @@ mod test {
             let msg = with_soh(msg_with_vertical_bar);
             let mut codec = encoder_with_soh();
             let result = codec.decode(&mut msg.as_bytes());
-            assert!(result.is_ok());
+            result.unwrap();
         }
     }
 
@@ -731,7 +860,6 @@ mod test {
             message.get_field(8),
             Some(&FixFieldValue::String("FIX.4.2".to_string()))
         );
-        assert_eq!(message.get_field(9), Some(&FixFieldValue::from(42i64)));
         assert_eq!(
             message.get_field(35),
             Some(&FixFieldValue::String("0".to_string()))
@@ -743,23 +871,23 @@ mod test {
         let msg = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
         let mut codec = encoder();
         let result = codec.decode(&mut msg.as_bytes());
-        assert_eq!(result, Err(Error::Eof));
+        assert_eq!(result, Err(DecodeError::Syntax));
     }
 
     #[test]
     fn message_must_end_with_separator() {
-        let msg = "8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127";
+        let msg = "8=FIX.4.2|9=41|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127";
         let mut codec = encoder();
         let result = codec.decode(&mut msg.as_bytes());
-        assert_eq!(result, Err(Error::Eof));
+        assert_eq!(result, Err(DecodeError::Syntax));
     }
 
     #[test]
     fn message_without_checksum() {
-        let msg = "8=FIX.4.4|9=251|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|";
+        let msg = "8=FIX.4.4|9=37|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|";
         let mut codec = encoder();
         let result = codec.decode(&mut msg.as_bytes());
-        assert_eq!(result, Err(Error::InvalidStandardTrailer));
+        assert_eq!(result, Err(DecodeError::Syntax));
     }
 
     #[test]
@@ -767,17 +895,42 @@ mod test {
         let msg = "35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=000|";
         let mut codec = encoder();
         let result = codec.decode(&mut msg.as_bytes());
-        assert_eq!(result, Err(Error::InvalidStandardHeader));
+        assert_eq!(result, Err(DecodeError::Syntax));
     }
 
     #[test]
     fn detect_incorrect_checksum() {
-        let msg = "8=FIX.4.2|9=251|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=146|";
+        let msg = "8=FIX.4.2|9=43|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=146|";
         let mut codec = encoder();
         let result = codec.decode(&mut msg.as_bytes());
-        match result {
-            Err(DecodeError::InvalidChecksum(_)) => (),
-            _ => panic!(),
-        }
+        assert_eq!(result, Err(DecodeError::Syntax));
+    }
+
+    #[test]
+    fn agnostic_simple_message() {
+        let msg = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
+        let mut decoder = AgnosticCodec::<ConfigVerticalSlash>::default();
+        let message = decoder.decode(&mut msg.as_bytes()).unwrap();
+        assert_eq!(message.field_begin_string(), b"FIX.4.2");
+        assert_eq!(message.body(), b"35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|");
+    }
+
+    #[test]
+    fn agnostic_empty_body() {
+        let msg = "8=FIX.FOOBAR|9=0|10=225|";
+        let mut decoder = AgnosticCodec::<ConfigVerticalSlash>::default();
+        let message = decoder.decode(&mut msg.as_bytes()).unwrap();
+        assert_eq!(message.field_begin_string(), b"FIX.FOOBAR");
+        assert_eq!(message.body(), b"");
+    }
+
+    #[test]
+    fn agnostic_edge_cases_no_panic() {
+        let mut decoder = AgnosticCodec::<ConfigVerticalSlash>::default();
+        decoder.decode(b"8=FIX.FOOBAR|9=0|10=225|").ok();
+        decoder.decode(b"8=|9=0|10=225|").ok();
+        decoder.decode(b"8=|9=0|10=|").ok();
+        decoder.decode(b"8====|9=0|10=|").ok();
+        decoder.decode(b"|||9=0|10=|").ok();
     }
 }

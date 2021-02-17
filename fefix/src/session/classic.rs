@@ -355,10 +355,7 @@ mod acceptor {
                 let mut response = slr::Message::new();
                 // TODO: add other details to response message.
                 response.add_field(35, FixFieldValue::String("A".to_string()));
-                response.add_field(
-                    49,
-                    FixFieldValue::String(self.config.company_id.clone()),
-                );
+                response.add_field(49, FixFieldValue::String(self.config.company_id.clone()));
                 self.seq_numbers.incr_outbound();
                 to.push(EventOutbound::Message(add_time_to_msg(response)));
                 self.state = State::Active;

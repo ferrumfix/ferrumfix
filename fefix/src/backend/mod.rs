@@ -1,9 +1,11 @@
 //! FIX message in-memory representations, each tuned for specific operations
 //! and performance characteristics.
 
+use crate::StreamIterator;
 use rust_embed::RustEmbed;
 use std::collections::BTreeMap;
 use std::fmt;
+use std::str;
 use std::time::SystemTime;
 
 pub mod fix42;
@@ -11,22 +13,91 @@ mod seqdump;
 pub mod slr;
 pub mod value;
 
-use value as val;
 pub use seqdump::PushyMessage;
+use value as val;
 
 /// Allows to iterate sequentially over FIX fields.
 pub trait ReadFieldsSeq {
     fn next(&mut self) -> Option<(u32, &FixFieldValue)>;
 }
 
-/// Allows fast random lookup of FIX fields..
+/// An interface for backends that allow field lookup by tag.
 pub trait ReadFields {
-    fn get_field(&self, msg_type: u32) -> Option<&FixFieldValue>;
+    /// Returns an immutable reference to the field tagged `tag`, if defined.
+    fn get_field(&self, tag: u32) -> Option<&FixFieldValue>;
 }
 
-/// Allows appending new FIX field values.
-pub trait WriteFields {
-    fn set_field(&mut self, msg_type: u32, val: FixFieldValue);
+impl<'a, T> ReadFields for &'a T
+where
+    T: ReadFields,
+{
+    fn get_field(&self, tag: u32) -> Option<&FixFieldValue> {
+        T::get_field(self, tag)
+    }
+}
+
+pub trait FieldRef<U> {
+    fn tag(&self) -> u32;
+    fn value(&self) -> &U;
+}
+
+/// An interface for FIX backends.
+pub trait Backend<U> {
+    type Error: fmt::Debug;
+    type Iter: StreamIterator<Item = Self::IterItem>;
+    type IterItem: FieldRef<U>;
+
+    /// Returns an immutable reference to the field tagged `tag`, if present.
+    fn field(&self, tag: u32) -> Option<&U>;
+
+    /// Removes all fields.
+    fn clear(&mut self);
+
+    /// Returns the number of fields set in `self`.
+    fn len(&self) -> usize;
+
+    /// Defines a new field with value `value` and tag `tag`.
+    fn insert(&mut self, tag: u32, value: U) -> Result<(), Self::Error>;
+
+    /// Calls a function `f` for every field in `self`.
+    fn for_each<E, F>(&self, f: F) -> Result<(), E>
+    where
+        F: FnMut(u32, &U) -> Result<(), E>;
+
+    /// Calls a function `f` for every field in `self`.
+    fn iter_fields(&mut self) -> &mut Self::Iter;
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Hbt {
+    Header,
+    Body,
+    Trailer,
+}
+
+pub trait HbtBackend<U> {
+    type Error: fmt::Debug;
+    type Iter: StreamIterator<Item = U>;
+}
+
+pub fn fmt<B>(backend: B, f: &mut fmt::Formatter) -> fmt::Result
+where
+    B: Backend<FixFieldValue>,
+{
+    backend.for_each::<fmt::Error, _>(|tag, value| {
+        write!(f, "{}=|", tag)?;
+        match value {
+            FixFieldValue::String(s) => {
+                write!(f, "{}|", s)
+            }
+            FixFieldValue::Atom(a) => {
+                write!(f, "{}|", a)
+            }
+            _ => Ok(()),
+        }?;
+        Ok(())
+    })?;
+    Ok(())
 }
 
 /// An owned value of a FIX field.
@@ -35,6 +106,38 @@ pub enum FixFieldValue {
     String(String),
     Atom(val::Atomic),
     Group(Vec<BTreeMap<i64, FixFieldValue>>),
+}
+
+impl FixFieldValue {
+    pub fn string(data: &[u8]) -> Option<Self> {
+        str::from_utf8(data)
+            .ok()
+            .map(|s| Self::String(s.to_string()))
+    }
+
+    pub fn as_length(&self) -> Option<usize> {
+        if let Self::Atom(val::Atomic::Length(length)) = self {
+            Some((*length).into())
+        } else {
+            None
+        }
+    }
+
+    pub fn as_int(&self) -> Option<i64> {
+        if let Self::Atom(val::Atomic::Int(x)) = self {
+            Some((*x).into())
+        } else {
+            None
+        }
+    }
+
+    pub fn as_str(&self) -> Option<&str> {
+        if let Self::String(s) = self {
+            Some(s.as_str())
+        } else {
+            None
+        }
+    }
 }
 
 impl From<i64> for FixFieldValue {

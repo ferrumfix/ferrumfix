@@ -162,7 +162,7 @@ fn display_layout_item(indent: u32, item: LayoutItem, f: &mut fmt::Formatter) ->
                 item.required(),
             )?;
             writeln!(f, "</group>")?;
-        },
+        }
         LayoutItemKind::Component(_c) => {
             writeln!(
                 f,
@@ -171,7 +171,7 @@ fn display_layout_item(indent: u32, item: LayoutItem, f: &mut fmt::Formatter) ->
                 item.required(),
             )?;
             writeln!(f, "</component>")?;
-        },
+        }
     }
     Ok(())
 }

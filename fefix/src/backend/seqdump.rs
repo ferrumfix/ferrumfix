@@ -1,16 +1,18 @@
-use super::FixFieldValue;
 use super::value as val;
+use super::Backend;
+use super::FixFieldValue;
 use super::*;
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct PushyMessage {
     fields: Vec<(u32, FixFieldValue)>,
+    iter: FieldsIterator,
 }
 
 impl PushyMessage {
     /// Creates a new [`Message`] without any fields.
     pub fn new() -> Self {
-        Self { fields: Vec::new() }
+        Self::default()
     }
 
     /// Adds a field to `self`.
@@ -57,37 +59,98 @@ impl PushyMessage {
             _ => Some(false),
         }
     }
+}
 
-    pub fn iter_fields<'a>(&'a self) -> impl ReadFieldsSeq + 'a {
-        FieldsIterator {
-            message: &self,
-            i: 0,
+impl Backend<FixFieldValue> for PushyMessage {
+    type Error = ();
+    type Iter = FieldsIterator;
+    type IterItem = TaggedField;
+
+    fn field(&self, tag: u32) -> Option<&FixFieldValue> {
+        self.fields
+            .iter()
+            .find(|(t, _)| *t == tag)
+            .map(|(_, value)| value)
+    }
+
+    fn clear(&mut self) {
+        self.fields.clear();
+    }
+
+    fn len(&self) -> usize {
+        self.fields.len()
+    }
+
+    fn insert(&mut self, tag: u32, value: FixFieldValue) -> Result<(), Self::Error> {
+        self.fields.push((tag, value));
+        Ok(())
+    }
+
+    fn for_each<E, F>(&self, mut f: F) -> Result<(), E>
+    where
+        F: FnMut(u32, &FixFieldValue) -> Result<(), E>,
+    {
+        for (tag, value) in self.fields.iter() {
+            f(*tag, value)?;
+        }
+        Ok(())
+    }
+
+    fn iter_fields(&mut self) -> &mut Self::Iter {
+        &mut self.iter
+    }
+}
+
+impl Default for PushyMessage {
+    fn default() -> Self {
+        Self {
+            fields: Vec::new(),
+            iter: FieldsIterator {
+                message: std::ptr::null(),
+                field_i: 0,
+                tagged_field: TaggedField {
+                    tag: 0,
+                    value: FixFieldValue::from(0i64),
+                },
+            },
         }
     }
 }
 
-impl WriteFields for PushyMessage {
-    fn set_field(&mut self, msg_type: u32, val: FixFieldValue) {
-        PushyMessage::add_field(self, msg_type, val)
+#[derive(Debug, Clone)]
+pub struct TaggedField {
+    tag: u32,
+    value: FixFieldValue,
+}
+
+impl FieldRef<FixFieldValue> for TaggedField {
+    fn tag(&self) -> u32 {
+        self.tag
+    }
+
+    fn value(&self) -> &FixFieldValue {
+        &self.value
     }
 }
 
-impl ReadFields for PushyMessage {
-    fn get_field(&self, msg_type: u32) -> Option<&FixFieldValue> {
-        PushyMessage::get_field(self, msg_type)
+#[derive(Debug, Clone)]
+pub struct FieldsIterator {
+    message: *const PushyMessage,
+    field_i: usize,
+    tagged_field: TaggedField,
+}
+
+impl StreamIterator for FieldsIterator {
+    type Item = TaggedField;
+
+    fn advance(&mut self) {
+        self.field_i += 1;
     }
-}
 
-struct FieldsIterator<'a> {
-    message: &'a PushyMessage,
-    i: usize,
-}
-
-impl<'a> ReadFieldsSeq for FieldsIterator<'a> {
-    fn next(&mut self) -> Option<(u32, &FixFieldValue)> {
-        if self.message.fields.len() < self.i {
-            let elem = &self.message.fields[self.i];
-            Some((elem.0, &elem.1))
+    fn get(&self) -> Option<&Self::Item> {
+        let message = unsafe { &*self.message };
+        if self.field_i < message.fields.len() {
+            Some(&self.tagged_field)
         } else {
             None
         }

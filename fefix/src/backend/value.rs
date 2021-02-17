@@ -83,7 +83,7 @@ impl Atomic {
             }
             DataType::String => Some(Self::string(std::str::from_utf8(data).unwrap().to_string())),
             DataType::XmlData => Some(Atomic::XmlData(XmlData(
-                std::str::from_utf8(data).unwrap().to_string(),
+                std::str::from_utf8(data).unwrap().to_string().into_bytes(),
             ))),
             _ => unimplemented!(),
         }
@@ -157,8 +157,14 @@ pub trait DerivedDataType {
 ///
 /// Examples: 723 in field 21 would be mapped int as |21=723|, -723 in field 12
 /// would be mapped int as |12=-723|.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Int(pub i32);
+
+impl From<Int> for i64 {
+    fn from(value: Int) -> Self {
+        value.0 as Self
+    }
+}
 
 impl PrimitiveDataType for Int {}
 
@@ -170,8 +176,14 @@ impl fmt::Display for Int {
 
 /// Int field (see definition of "int" above) representing the length in bytes.
 /// Value must be positive.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Length(u32);
+
+impl From<Length> for usize {
+    fn from(value: Length) -> Self {
+        value.0 as Self
+    }
+}
 
 impl fmt::Display for Length {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -384,7 +396,13 @@ impl DerivedDataType for Boolean {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct XmlData(std::string::String);
+pub struct XmlData(Vec<u8>);
+
+impl XmlData {
+    pub fn new(data: &[u8]) -> Self {
+        Self(data.to_vec())
+    }
+}
 
 /// Alpha-numeric free format strings, can include any character or punctuation
 /// except the delimiter. All char fields are case sensitive (i.e. morstatt !=

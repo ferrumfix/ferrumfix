@@ -19,31 +19,160 @@ impl Field {
     }
 
     /// Returns the field tag of `self`.
-    pub fn tag(&self) -> i64 {
-        self.tag
+    pub fn tag(&self) -> u32 {
+        self.tag as u32
     }
 
     /// Returns an immutable reference to the value of `self`.
     pub fn value(&self) -> &FixFieldValue {
         &self.value
     }
+
+    pub fn take_value(&mut self) -> FixFieldValue {
+        std::mem::replace(&mut self.value, FixFieldValue::from(0i64))
+    }
 }
 
 /// FIX message, backed by an associative array.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Message {
-    pub fields: BTreeMap<i64, FixFieldValue>,
+    pub fields: BTreeMap<u32, FixFieldValue>,
+    iter: FieldsIterator,
+}
+
+impl Backend<FixFieldValue> for Message {
+    type Error = ();
+    type Iter = FieldsIterator;
+    type IterItem = ();
+
+    #[inline]
+    fn field(&self, tag: u32) -> Option<&FixFieldValue> {
+        self.fields
+            .iter()
+            .find(|(t, _)| **t == tag)
+            .map(|(_, value)| value)
+    }
+
+    #[inline]
+    fn clear(&mut self) {
+        self.fields.clear();
+    }
+
+    #[inline]
+    fn len(&self) -> usize {
+        self.fields.len()
+    }
+
+    #[inline]
+    fn insert(&mut self, tag: u32, value: FixFieldValue) -> Result<(), Self::Error> {
+        self.fields.insert(tag, value);
+        Ok(())
+    }
+
+    #[inline]
+    fn for_each<E, F>(&self, mut f: F) -> Result<(), E>
+    where
+        F: FnMut(u32, &FixFieldValue) -> Result<(), E>,
+    {
+        for (tag, value) in self.fields.iter() {
+            f(*tag, value)?;
+        }
+        Ok(())
+    }
+
+    #[inline]
+    fn iter_fields(&mut self) -> &mut Self::Iter {
+        &mut self.iter
+    }
+}
+
+impl Default for Message {
+    fn default() -> Self {
+        Self {
+            fields: BTreeMap::new(),
+            iter: FieldsIterator {},
+        }
+    }
+}
+
+impl PartialEq for Message {
+    fn eq(&self, other: &Self) -> bool {
+        self.fields == other.fields
+    }
+}
+
+impl<'a> Backend<FixFieldValue> for &'a mut Message {
+    type Error = ();
+    type Iter = FieldsIterator;
+    type IterItem = ();
+
+    #[inline]
+    fn field(&self, tag: u32) -> Option<&FixFieldValue> {
+        self.fields
+            .iter()
+            .find(|(t, _)| **t == tag)
+            .map(|(_, value)| value)
+    }
+
+    #[inline]
+    fn clear(&mut self) {
+        self.fields.clear();
+    }
+
+    #[inline]
+    fn len(&self) -> usize {
+        self.fields.len()
+    }
+
+    #[inline]
+    fn insert(&mut self, tag: u32, value: FixFieldValue) -> Result<(), Self::Error> {
+        self.fields.insert(tag, value);
+        Ok(())
+    }
+
+    #[inline]
+    fn for_each<E, F>(&self, mut f: F) -> Result<(), E>
+    where
+        F: FnMut(u32, &FixFieldValue) -> Result<(), E>,
+    {
+        for (tag, value) in self.fields.iter() {
+            f(*tag, value)?;
+        }
+        Ok(())
+    }
+
+    #[inline]
+    fn iter_fields(&mut self) -> &mut Self::Iter {
+        &mut self.iter
+    }
+}
+
+impl FieldRef<FixFieldValue> for () {
+    fn tag(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn value(&self) -> &FixFieldValue {
+        unimplemented!()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FieldsIterator {}
+
+impl StreamIterator for FieldsIterator {
+    type Item = ();
+
+    fn advance(&mut self) {}
+
+    fn get(&self) -> Option<&Self::Item> {
+        Some(&())
+    }
 }
 
 impl ReadFields for Message {
     fn get_field(&self, msg_type: u32) -> Option<&slr::FixFieldValue> {
-        self.fields.get(&(msg_type as i64))
-    }
-}
-
-impl WriteFields for Message {
-    fn set_field(&mut self, msg_type: u32, val: slr::FixFieldValue) {
-        self.fields.insert(msg_type as i64, val);
+        self.fields.get(&msg_type)
     }
 }
 
@@ -58,14 +187,12 @@ impl<'a> Iterator for &'a Message {
 impl Message {
     /// Creates a new [`Message`] without any fields.
     pub fn new() -> Self {
-        Message {
-            fields: BTreeMap::new(),
-        }
+        Self::default()
     }
 
     /// Adds a field to `self`.
     pub fn add_field<K: Into<i64>>(&mut self, tag: K, value: slr::FixFieldValue) {
-        self.fields.insert(tag.into(), value);
+        self.fields.insert(tag.into() as u32, value);
     }
 
     /// Adds a string field to `self`.
@@ -79,7 +206,7 @@ impl Message {
     }
 
     pub fn get_field<K: Into<i64>>(&self, tag: K) -> Option<&slr::FixFieldValue> {
-        self.fields.get(&tag.into())
+        self.fields.get(&(tag.into() as u32))
     }
 
     pub fn msg_type(&self) -> Option<&str> {

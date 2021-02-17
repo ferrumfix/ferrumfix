@@ -1,9 +1,9 @@
 //! Starts an HTTP server on any open port and listens for JSON FIX messages.
 
-use fefix::backend::{self, Version, slr};
+use fefix::backend::{self, slr, Version};
 use fefix::codec::json;
 use fefix::codec::tagvalue;
-use fefix::codec::{Decoder, Encoder};
+use fefix::codec::Encoding;
 use fefix::Dictionary;
 
 #[tokio::main]
@@ -56,7 +56,7 @@ async fn serve_json_relay(mut req: tide::Request<State>) -> tide::Result {
     let body_response = {
         let mut encoder = tagvalue::Codec::<slr::Message, _>::with_dict(
             Dictionary::from_version(Version::Fix42),
-            tagvalue::ConfigDefault,
+            tagvalue::ConfigVerticalSlash,
         );
         encoder.encode(&mut buffer, &message).unwrap();
         let buffer_string = std::str::from_utf8(&buffer[..]).unwrap();
@@ -105,17 +105,16 @@ mod test {
         req.set_body(body_json);
         let mut response: Response = server.respond(req).await.unwrap();
         let body_tagvalue = response.take_body().into_string().await.unwrap();
-        println!("{}", body_tagvalue);
         let mut decoder_json = json::Codec::<slr::Message, json::ConfigPrettyPrint>::new(
             Dictionary::from_version(Version::Fix42),
             json::ConfigPrettyPrint,
         );
-        let mut decoder_tagvalue =
-            tagvalue::Codec::<slr::Message, tagvalue::ConfigDefault>::with_dict(
-                Dictionary::from_version(Version::Fix42),
-                tagvalue::ConfigDefault,
-            );
+        let mut decoder_tagvalue = tagvalue::Codec::<slr::Message, _>::with_dict(
+            Dictionary::from_version(Version::Fix42),
+            tagvalue::ConfigVerticalSlash,
+        );
         let msg_json = decoder_json.decode(body_json.as_bytes()).unwrap();
+        println!("{}", body_tagvalue);
         let msg_tagvalue = decoder_tagvalue.decode(body_tagvalue.as_bytes()).unwrap();
         assert_eq!(msg_json.get_field(8), msg_tagvalue.get_field(8));
         assert_eq!(msg_json.get_field(35), msg_tagvalue.get_field(35));

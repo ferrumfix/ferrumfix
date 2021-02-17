@@ -1,9 +1,9 @@
 //! FIX Adapted for Streaming (FAST) support.
 
 use crate::backend::slr;
-use crate::codec::{Decoder, Encoder};
-use crate::dictionary::Dictionary;
 use crate::buffering::Buffer;
+use crate::codec::Encoding;
+use crate::dictionary::Dictionary;
 use bitvec::vec::BitVec;
 use codec::decode_stop_bit_bitvec;
 use errors::Error;
@@ -44,8 +44,9 @@ impl Fast {
     }
 }
 
-impl Decoder<slr::Message> for Fast {
-    type Error = Error;
+impl Encoding<slr::Message> for Fast {
+    type DecodeError = Error;
+    type EncodeError = Error;
 
     fn decode(&mut self, mut source: &[u8]) -> Result<&slr::Message, Error> {
         let _presence_map = decode_stop_bit_bitvec(&mut source).unwrap();
@@ -103,12 +104,11 @@ impl Decoder<slr::Message> for Fast {
         self.message = message;
         Ok(&self.message)
     }
-}
 
-impl Encoder<slr::Message> for Fast {
-    type Error = Error;
-
-    fn encode(&mut self, buffer: impl Buffer, _message: &slr::Message) -> Result<usize, Error> {
+    fn encode<B>(&mut self, buffer: &mut B, _message: &slr::Message) -> Result<usize, Error>
+    where
+        B: Buffer,
+    {
         let _presence_by_field: BitVec = BitVec::new();
         Ok(buffer.as_slice().len())
     }

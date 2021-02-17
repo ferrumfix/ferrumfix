@@ -23,12 +23,7 @@ pub mod sofh;
 pub mod tagvalue;
 
 /// A device that can parse a stream of bytes into messages.
-///
-/// A [`StreamingDecoder`]
-pub trait StreamingDecoder<M>
-where
-    Self: Sized,
-{
+pub trait StreamingDecoder<M>: Sized {
     /// The type returned in the event of a deserialization error.
     type Error;
 
@@ -37,7 +32,7 @@ where
     /// The slice
     /// can have any non-zero length, depending on how many bytes `self` believes
     /// is a good guess. All bytes should be set to 0.
-    fn supply_buffer(&mut self) -> &mut [u8];
+    fn supply_buffer(&mut self) -> (&mut usize, &mut [u8]);
 
     /// Validates the contents of the internal buffer and possibly caches the
     /// resulting message. When successful, this method will return a [`Poll`] to
@@ -61,33 +56,52 @@ where
     }
 }
 
-/// A device that can parse arbitrary sequences of bytes into messages.
-pub trait Decoder<M> {
+/// A device that can consume and produce message instances.
+pub trait Encoding<T> {
     /// The type returned in the event of a deserialization error.
-    type Error;
+    type DecodeError;
+    /// The type returned in the event of a serialization error.
+    type EncodeError;
 
     /// Parses the contents of `data` into a message `M`, which is then returned
     /// in the form of an immutable reference. In the event of failure, this
     /// method will return `Self::Error`.
-    fn decode(&mut self, data: &[u8]) -> Result<&M, Self::Error>;
-}
-
-/// A device that writes messages to a [`Buffer`].
-pub trait Encoder<M> {
-    /// The type returned in the event of a serialization error.
-    type Error;
+    fn decode(&mut self, data: &[u8]) -> Result<&T, Self::DecodeError>;
 
     /// Encodes `message` to `buffer`. It then returns the number of bytes
     /// written to `buffer`.
-    fn encode(&mut self, buffer: impl Buffer, message: &M) -> Result<usize, Self::Error>;
+    fn encode<B>(&mut self, buffer: &mut B, message: &T) -> Result<usize, Self::EncodeError>
+    where
+        B: Buffer;
 
     /// Allocates a buffer on the heap and encodes `message` to it.
-    fn encode_to_vec(&mut self, message: &M) -> Result<Vec<u8>, Self::Error> {
+    fn encode_to_vec(&mut self, message: &T) -> Result<Vec<u8>, Self::EncodeError> {
         let mut buffer = Vec::<u8>::new();
         self.encode(&mut buffer, message)?;
         Ok(buffer.as_slice().iter().cloned().collect())
     }
 }
+
+/// A device that writes messages to a [`Buffer`].
+//pub trait Encoder<M> {
+//    /// The type returned in the event of a serialization error.
+//    type Error;
+//
+//    fn message(&self) -> &M;
+//
+//    fn message_mut(&mut self) -> &mut M;
+//
+//    /// Encodes `message` to `buffer`. It then returns the number of bytes
+//    /// written to `buffer`.
+//    fn encode(&mut self, buffer: impl Buffer) -> Result<usize, Self::Error>;
+//
+//    /// Allocates a buffer on the heap and encodes `message` to it.
+//    fn encode_to_vec(&mut self) -> Result<Vec<u8>, Self::Error> {
+//        let mut buffer = Vec::<u8>::new();
+//        self.encode(&mut buffer)?;
+//        Ok(buffer.as_slice().iter().cloned().collect())
+//    }
+//}
 
 /// A [`StreamIterator`] that iterates over all the messages that come from a
 /// [reader](std::io::Read).
@@ -111,10 +125,15 @@ where
 {
     pub fn next(&mut self) -> Result<Option<&M>, &FramelessError<E>> {
         loop {
-            let mut buffer = self.decoder.supply_buffer();
-            if let Err(e) = self.source.read(&mut buffer) {
-                self.err = Some(e.into());
-                break;
+            let (len, mut buffer) = self.decoder.supply_buffer();
+            match self.source.read(&mut buffer) {
+                Err(e) => {
+                    self.err = Some(e.into());
+                    break;
+                }
+                Ok(count) => {
+                    *len = count;
+                }
             }
             match self.decoder.attempt_decoding() {
                 Ok(Some(_)) => break,

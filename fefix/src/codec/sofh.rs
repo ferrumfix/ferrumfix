@@ -9,14 +9,14 @@
 //! Please refer to https://www.fixtrading.org/standards/fix-sofh/ for more
 //! information.
 
-use super::{Decoder, Encoder, StreamingDecoder};
+use super::{Encoding, StreamingDecoder};
 use crate::buffering::Buffer;
 use std::convert::TryInto;
 use std::default::Default;
 use std::fmt;
 use std::io;
 
-const HEADER_LENGTH: usize = 6;
+const HEADER_SIZE_IN_BYTES: usize = 6;
 
 /// An immutable view into a SOFH-enclosed message, complete with its
 /// encoding type tag and payload.
@@ -27,8 +27,8 @@ const HEADER_LENGTH: usize = 6;
 #[derive(Debug)]
 pub struct Frame {
     encoding_type: u16,
-    len: usize,
     buffer: *const u8,
+    buffer_len: usize,
 }
 
 impl Frame {
@@ -42,8 +42,8 @@ impl Frame {
     unsafe fn new(encoding_type: u16, data: &[u8]) -> Self {
         Self {
             encoding_type,
-            len: data.len(),
             buffer: data.as_ptr(),
+            buffer_len: data.len(),
         }
     }
 
@@ -74,13 +74,95 @@ impl Frame {
     /// use fefix::codec::Decoder;
     /// use fefix::codec::sofh::Codec;
     ///
-    /// let frame = Codec::decode(&[0, 0, 0, 0, 0, 1, 42]).unwrap();
+    /// let frame = Codec::decode(&[0, 0, 0, 1, 0, 0, 42]).unwrap();
     /// let payload = frame.payload();
     /// assert_eq!(payload, &[42]);
     /// ```
     pub fn payload(&self) -> &[u8] {
-        unsafe { std::slice::from_raw_parts(self.buffer, self.len) }
+        unsafe { std::slice::from_raw_parts(self.buffer, self.buffer_len) }
     }
+}
+
+/// A codec for SOFH-enclosed payloads.
+#[derive(Debug)]
+pub struct Codec {
+    frame: Frame,
+}
+
+impl Codec {
+    pub fn buffered(self) -> BufferedCodec {
+        BufferedCodec {
+            buffer: Vec::new(),
+            buffer_relevant_len: 0,
+            buffer_additional_len: 0,
+            codec: self,
+        }
+    }
+
+    pub fn buffered_with_capacity(self, capacity: usize) -> BufferedCodec {
+        BufferedCodec {
+            buffer: vec![0; capacity],
+            buffer_relevant_len: 0,
+            buffer_additional_len: 0,
+            codec: self,
+        }
+    }
+}
+
+impl Default for Codec {
+    fn default() -> Self {
+        Self {
+            frame: unsafe { Frame::new(0, &[]) },
+        }
+    }
+}
+
+impl Encoding<Frame> for Codec {
+    type DecodeError = DecodeError;
+    type EncodeError = EncodeError;
+
+    fn decode(&mut self, data: &[u8]) -> Result<&Frame, Self::DecodeError> {
+        if data.len() < HEADER_SIZE_IN_BYTES {
+            return Err(Self::DecodeError::InvalidMessageLength);
+        }
+        // Note that the message length field also includes the header.
+        if data.len() != get_field_message_length(data) as usize {
+            return Err(Self::DecodeError::InvalidMessageLength);
+        }
+        let encoding_type = get_field_encoding_type(data);
+        self.frame = Frame {
+            encoding_type,
+            buffer: data.as_ptr(),
+            buffer_len: data.len(),
+        };
+        Ok(&self.frame)
+    }
+
+    fn encode<B>(
+        &mut self,
+        buffer: &mut B,
+        frame: &Frame,
+    ) -> std::result::Result<usize, Self::EncodeError>
+    where
+        B: Buffer,
+    {
+        let len = frame.payload().len();
+        let body_len: u32 = len.try_into().map_err(|_| EncodeError::TooLong)?;
+        let field_message_length = body_len.to_be_bytes();
+        let field_encoding_type = frame.encoding_type().to_be_bytes();
+        buffer.extend_from_slice(&field_message_length[..]);
+        buffer.extend_from_slice(&field_encoding_type[..]);
+        buffer.extend_from_slice(frame.payload());
+        Ok(buffer.as_slice().len())
+    }
+}
+
+fn get_field_message_length(data: &[u8]) -> u32 {
+    u32::from_be_bytes(data[0..4].try_into().unwrap())
+}
+
+fn get_field_encoding_type(data: &[u8]) -> u16 {
+    u16::from_be_bytes(data[4..6].try_into().unwrap())
 }
 
 /// A parser for SOFH-enclosed messages.
@@ -90,13 +172,14 @@ impl Frame {
 /// High Performance Group to allow message processors and communication gateways
 /// to determine the length and the data format of incoming messages.
 #[derive(Debug)]
-pub struct BufCodec {
+pub struct BufferedCodec {
     buffer: Vec<u8>,
-    header: Option<(usize, u16)>,
-    frameref: Frame,
+    buffer_relevant_len: usize,
+    buffer_additional_len: usize,
+    codec: Codec,
 }
 
-impl BufCodec {
+impl BufferedCodec {
     /// Creates a new SOFH parser with default buffer size.
     pub fn new() -> Self {
         Self::with_capacity(1024)
@@ -105,12 +188,11 @@ impl BufCodec {
     /// Creates a new [`Codec`](Codec) with a buffer large enough to
     /// hold `capacity` amounts of bytes without reallocating.
     pub fn with_capacity(capacity: usize) -> Self {
-        unsafe {
-            Self {
-                buffer: Vec::with_capacity(capacity),
-                header: None,
-                frameref: Frame::new(0, &[]),
-            }
+        Self {
+            buffer: vec![0; capacity],
+            buffer_relevant_len: 0,
+            buffer_additional_len: 0,
+            codec: Codec::default(),
         }
     }
 
@@ -130,116 +212,74 @@ impl BufCodec {
     }
 }
 
-impl StreamingDecoder<Frame> for BufCodec {
+impl Encoding<Frame> for BufferedCodec {
+    type DecodeError = DecodeError;
+    type EncodeError = EncodeError;
+
+    fn decode(&mut self, data: &[u8]) -> Result<&Frame, Self::DecodeError> {
+        self.codec.decode(data)
+    }
+
+    fn encode<B>(
+        &mut self,
+        buffer: &mut B,
+        frame: &Frame,
+    ) -> std::result::Result<usize, Self::EncodeError>
+    where
+        B: Buffer,
+    {
+        self.codec.encode(buffer, frame)
+    }
+}
+
+impl StreamingDecoder<Frame> for BufferedCodec {
     type Error = DecodeError;
 
-    fn supply_buffer(&mut self) -> &mut [u8] {
-        let buffer_len = self.buffer.len();
-        let additional_capacity = match self.header {
-            None => 6,
-            Some((len, _)) => (len as i64 - buffer_len as i64).max(0),
+    fn supply_buffer(&mut self) -> (&mut usize, &mut [u8]) {
+        let len = if self.buffer_relevant_len < 4 {
+            // A good default.
+            512
+        } else {
+            // We can calculate how many additional bytes we need.
+            let payload_size = get_field_message_length(&self.buffer[..]);
+            payload_size as usize - self.buffer_relevant_len
         };
-        for _ in 0..additional_capacity {
-            self.buffer.push(0);
-        }
-        &mut self.buffer[buffer_len..]
+        self.buffer.resize(self.buffer_relevant_len + len, 0);
+        (
+            &mut self.buffer_additional_len,
+            &mut self.buffer[self.buffer_relevant_len..self.buffer_relevant_len + len],
+        )
     }
 
     fn attempt_decoding(&mut self) -> Result<Option<&Frame>, Self::Error> {
-        match self.header {
-            None => {
-                if self.buffer.len() >= 6 {
-                    self.header = Some((
-                        get_message_length(&self.buffer[..]) as usize,
-                        get_encoding_type(&self.buffer[..]),
-                    ));
-                }
-                Ok(None)
-            }
-            Some((len, _)) if len < HEADER_LENGTH => {
-                Err(DecodeError::InvalidMessageLength(len.try_into().unwrap()))
-            }
-            Some((len, _)) if len < self.buffer.len() => Ok(None),
-            Some((_, encoding_type)) => {
-                self.frameref = unsafe { Frame::new(encoding_type, &self.buffer[HEADER_LENGTH..]) };
-                Ok(Some(&self.frameref))
-            }
+        self.buffer_relevant_len += self.buffer_additional_len;
+        assert!(self.buffer_relevant_len <= self.buffer.len());
+        // We don't even have a full header, so don't bother.
+        if self.buffer_relevant_len < HEADER_SIZE_IN_BYTES {
+            return Ok(None);
+        }
+        let expected_payload_size = get_field_message_length(&self.buffer[..]);
+        if self.buffer_relevant_len < expected_payload_size as usize {
+            // The payload is incomplete.
+            Ok(None)
+        } else {
+            self.codec
+                .decode(&self.buffer[..self.buffer_relevant_len])
+                .map(|frame| Some(frame))
         }
     }
 
     fn get(&self) -> &Frame {
-        &self.frameref
+        &self.codec.frame
     }
-}
-
-#[derive(Debug)]
-pub struct Codec {
-    last_frame: Frame,
-}
-
-impl Default for Codec {
-    fn default() -> Self {
-        Self {
-            last_frame: unsafe { Frame::new(0, &[]) },
-        }
-    }
-}
-
-impl Decoder<Frame> for Codec {
-    type Error = DecodeError;
-
-    fn decode(&mut self, data: &[u8]) -> Result<&Frame, Self::Error> {
-        let err = || DecodeError::InvalidMessageLength(data.len() as u32);
-        if data.len() < HEADER_LENGTH {
-            return Err(err());
-        }
-        // Note that the message length field also includes the header.
-        if data.len() != get_message_length(data) as usize {
-            return Err(err());
-        }
-        let encoding_type = get_encoding_type(data);
-        self.last_frame = Frame {
-            len: get_message_length(data) as usize,
-            encoding_type,
-            buffer: data.as_ptr(),
-        };
-        Ok(&self.last_frame)
-    }
-}
-
-impl<'a> Encoder<Frame> for Codec {
-    type Error = EncodeError;
-
-    fn encode(
-        &mut self,
-        mut buffer: impl Buffer,
-        message: &Frame,
-    ) -> std::result::Result<usize, Self::Error> {
-        let len = message.payload().len();
-        let body_len: u32 = len.try_into().map_err(|_| Self::Error::TooLong(len))?;
-        let message_length = body_len.to_be_bytes();
-        let encoding_type = message.encoding_type().to_be_bytes();
-        buffer.extend_from_slice(&message_length[..]);
-        buffer.extend_from_slice(&encoding_type[..]);
-        buffer.extend_from_slice(message.payload());
-        Ok(buffer.as_slice().len())
-    }
-}
-
-/// The error type that can arise when attempting to serialize a SOFH-enclosed
-/// payload.
-#[derive(Debug, Clone)]
-pub enum EncodeError {
-    /// The assigned payload is too big to fit in a single SOFH-enclosed
-    /// message.
-    TooLong(usize),
 }
 
 /// The error type that can be returned if some error occurs during SOFH parsing.
 #[derive(Debug)]
 pub enum DecodeError {
-    /// The given message length is not valid because it's not in a valid range.
-    InvalidMessageLength(u32),
+    /// The provided message length is outside the legal range.
+    InvalidMessageLength,
+    /// I/O-related error.
     Io(io::Error),
 }
 
@@ -250,12 +290,8 @@ impl fmt::Display for DecodeError {
                 writeln!(f, "I/O error while reading the message.")?;
                 (*err).fmt(f)
             }
-            DecodeError::InvalidMessageLength(len) => {
-                writeln!(
-                    f,
-                    "Message length is {} but it must be greater than or equal to 6.",
-                    len
-                )
+            DecodeError::InvalidMessageLength => {
+                writeln!(f, "Message length must be greater than or equal to 6.",)
             }
         }
     }
@@ -267,12 +303,13 @@ impl From<io::Error> for DecodeError {
     }
 }
 
-fn get_message_length(data: &[u8]) -> u32 {
-    u32::from_be_bytes(data[0..4].try_into().unwrap())
-}
-
-fn get_encoding_type(data: &[u8]) -> u16 {
-    u16::from_be_bytes(data[4..HEADER_LENGTH].try_into().unwrap())
+/// The error type that can be returned when attempting to serialize a SOFH-enclosed
+/// payload.
+#[derive(Debug, Clone)]
+pub enum EncodeError {
+    /// The assigned payload is too big to fit in a single SOFH-enclosed
+    /// message.
+    TooLong,
 }
 
 /// Sum type that can be converted [`Into`](Into) and [`From`](From) a
@@ -280,15 +317,16 @@ fn get_encoding_type(data: &[u8]) -> u16 {
 ///
 /// Each variant has a predetermined value or range of values, as specified by
 /// the official guidelines. This type is marked with `#[non_exhaustive]` to
-/// support new encoding types without breaking compatilbity;
+/// support new encoding types without breaking compatibility;
 /// [`EncodingType::Unknown`](EncodingType::Unknown) contains all values that are
-/// not included in the official guidelines.
+/// not included in the official guidelines; this way conversion is infallible
+/// and doesn't lose any information.
 ///
 /// # Equality
 ///
 /// It's important to note that the behavior of [`Eq`](Eq) and
 /// [`PartialEq`](PartialEq) for this type always falls back to equality on
-/// `u16`. This may cause unexpected behavior e.g.:
+/// `u16`. This may cause unusual behavior e.g.:
 ///
 /// ```
 /// use fefix::codec::sofh::EncodingType;
@@ -354,6 +392,8 @@ pub enum EncodingType {
     Unknown(u16),
 }
 
+const ENCODING_TYPE_FAST_OFFSET: u16 = 0xFA00;
+
 impl From<u16> for EncodingType {
     fn from(encoding_type: u16) -> Self {
         // https://www.fixtrading.org/standards/fix-sofh-online/#encoding_type-field
@@ -368,7 +408,9 @@ impl From<u16> for EncodingType {
             0xF000 => EncodingType::TagValue,
             0xF100 => EncodingType::FixmlSchema,
             0xF500 => EncodingType::Json,
-            0xFA01..=0xFAFF => EncodingType::Fast((encoding_type - 0xFA00) as u8),
+            0xFA01..=0xFAFF => {
+                EncodingType::Fast((encoding_type - ENCODING_TYPE_FAST_OFFSET) as u8)
+            }
             0xFB00 => EncodingType::Bson,
             _ => EncodingType::Unknown(encoding_type),
         }
@@ -388,7 +430,7 @@ impl From<EncodingType> for u16 {
             EncodingType::TagValue => 0xF000,
             EncodingType::FixmlSchema => 0xF100,
             EncodingType::Json => 0xF500,
-            EncodingType::Fast(x) => 0xFA00u16 + (x as u16),
+            EncodingType::Fast(x) => ENCODING_TYPE_FAST_OFFSET + (x as u16),
             EncodingType::Bson => 0xFB00,
             EncodingType::Unknown(x) => x,
         }
@@ -511,11 +553,11 @@ mod test {
     fn frameless_decoder_returns_error_when_frame_has_len_lt_6() {
         for len in 0..6 {
             let header = encode_header(len, 0x4324);
-            let parser = BufCodec::new();
+            let parser = BufferedCodec::new();
             let mut frames = parser.frames_streamiter(&header[..]);
             let frame = frames.next();
             match frame {
-                Err(FramelessError::Decoder(DecodeError::InvalidMessageLength(_))) => (),
+                Err(FramelessError::Decoder(DecodeError::InvalidMessageLength)) => (),
                 _ => panic!(),
             }
         }
@@ -528,7 +570,7 @@ mod test {
             let mut parser = Codec::default();
             let frame = parser.decode(&header[..]);
             match frame {
-                Err(DecodeError::InvalidMessageLength(_)) => (),
+                Err(DecodeError::InvalidMessageLength) => (),
                 _ => panic!(),
             }
         }

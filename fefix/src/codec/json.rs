@@ -1,11 +1,201 @@
 //! JSON encoding for FIX support.
 
-use crate::backend::{slr, FixFieldValue, ReadFields, WriteFields};
+use crate::backend::{Backend, FixFieldValue};
 use crate::codec::*;
 use crate::Dictionary;
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
+
+/// A codec for the JSON encoding type.
+#[derive(Debug, Clone)]
+pub struct Codec<T, Z> {
+    dictionaries: HashMap<String, Dictionary>,
+    message: T,
+    config: Z,
+}
+
+impl<T, Z> Codec<T, Z>
+where
+    T: Default,
+    Z: Config,
+{
+    pub fn new(dict: Dictionary, config: Z) -> Self {
+        let mut dictionaries = HashMap::new();
+        dictionaries.insert(dict.get_version().to_string(), dict);
+        Self {
+            dictionaries,
+            message: T::default(),
+            config,
+        }
+    }
+
+    fn translate(&self, dict: &Dictionary, field: &FixFieldValue) -> serde_json::Value {
+        match field {
+            FixFieldValue::String(c) => serde_json::Value::String(c.to_string()),
+            FixFieldValue::Group(array) => {
+                let mut values = Vec::new();
+                for group in array {
+                    let mut map = serde_json::Map::new();
+                    for item in group {
+                        let field = dict
+                            .field_by_tag(*item.0 as u32)
+                            .ok_or(DecodeError::InvalidData)
+                            .unwrap();
+                        let field_name = field.name().to_string();
+                        let field_value = self.translate(dict, item.1);
+                        map.insert(field_name, field_value);
+                    }
+                    values.push(serde_json::Value::Object(map));
+                }
+                serde_json::Value::Array(values)
+            }
+            _ => panic!(),
+        }
+    }
+}
+
+impl<Z, T> Encoding<T> for Codec<T, Z>
+where
+    T: Backend<FixFieldValue> + Default,
+    Z: Config,
+{
+    type DecodeError = DecodeError;
+    type EncodeError = EncoderError;
+
+    fn decode(&mut self, data: &[u8]) -> Result<&T, Self::DecodeError> {
+        let value: serde_json::Value =
+            serde_json::from_reader(data).map_err(|_| Self::DecodeError::Syntax)?;
+        let header = value
+            .get("Header")
+            .and_then(|v| v.as_object())
+            .ok_or(Self::DecodeError::Schema)?;
+        let body = value
+            .get("Body")
+            .and_then(|v| v.as_object())
+            .ok_or(Self::DecodeError::Schema)?;
+        let trailer = value
+            .get("Trailer")
+            .and_then(|v| v.as_object())
+            .ok_or(Self::DecodeError::Schema)?;
+        let field_begin_string = header
+            .get("BeginString")
+            .and_then(|v| v.as_str())
+            .ok_or(Self::DecodeError::Schema)?;
+        let dictionary = self
+            .dictionaries
+            .get(field_begin_string)
+            .ok_or(Self::DecodeError::InvalidMsgType)?;
+        let mut message = T::default();
+        let mut decode_field = |name: &str, value: &serde_json::Value| {
+            decode_field(dictionary, name, value).map(|(tag, field)| message.insert(tag, field))
+        };
+        for (key, value) in header.iter() {
+            decode_field(key, value)?.unwrap();
+        }
+        for (key, value) in body.iter() {
+            decode_field(key, value)?.unwrap();
+        }
+        for (key, value) in trailer.iter() {
+            decode_field(key, value)?.unwrap();
+        }
+        self.message = message;
+        Ok(&self.message)
+    }
+
+    fn encode<B>(&mut self, mut buffer: &mut B, message: &T) -> Result<usize, Self::EncodeError>
+    where
+        B: Buffer,
+    {
+        let dictionary = if let Some(FixFieldValue::String(fix_version)) = message.field(8) {
+            self.dictionaries
+                .get(fix_version.as_str())
+                .ok_or(Self::EncodeError::Dictionary)?
+        } else {
+            return Err(Self::EncodeError::Dictionary);
+        };
+        let component_std_header = dictionary
+            .component_by_name("StandardHeader")
+            .expect("The `StandardHeader` component is mandatory.");
+        let component_std_traler = dictionary
+            .component_by_name("StandardTrailer")
+            .expect("The `StandardTrailer` component is mandatory.");
+        let mut map_header = json!({});
+        let mut map_body = json!({});
+        let mut map_trailer = json!({});
+        message.for_each::<Self::EncodeError, _>(|field_tag, field_value| {
+            let field = dictionary
+                .field_by_tag(field_tag)
+                .ok_or(Self::EncodeError::Dictionary)?;
+            let field_name = field.name().to_string();
+            let field_value = self.translate(dictionary, field_value);
+            if component_std_header.contains_field(&field) {
+                map_header
+                    .as_object_mut()
+                    .unwrap()
+                    .insert(field_name, field_value);
+            } else if component_std_traler.contains_field(&field) {
+                map_trailer
+                    .as_object_mut()
+                    .unwrap()
+                    .insert(field_name, field_value);
+            } else {
+                map_body
+                    .as_object_mut()
+                    .unwrap()
+                    .insert(field_name, field_value);
+            }
+            Ok(())
+        })?;
+        let value = json!({
+            "Header": map_header,
+            "Body": map_body,
+            "Trailer": map_trailer,
+        });
+        if self.config.pretty_print() {
+            serde_json::to_writer_pretty(&mut buffer, &value).unwrap();
+        } else {
+            serde_json::to_writer(&mut buffer, &value).unwrap();
+        }
+        Ok(buffer.as_slice().len())
+    }
+}
+
+fn decode_field(
+    dictionary: &Dictionary,
+    key: &str,
+    value: &serde_json::Value,
+) -> Result<(u32, FixFieldValue), DecodeError> {
+    if let Some(field) = dictionary.field_by_name(key) {
+        match value {
+            serde_json::Value::String(s) => {
+                Ok((field.tag() as u32, FixFieldValue::String(s.to_string())))
+            }
+            serde_json::Value::Array(values) => {
+                let mut group = Vec::new();
+                for item in values {
+                    group.push(decode_component_block(dictionary, item)?);
+                }
+                Ok((field.tag() as u32, FixFieldValue::Group(group)))
+            }
+            _ => Err(DecodeError::InvalidData),
+        }
+    } else {
+        Err(DecodeError::InvalidData)
+    }
+}
+
+fn decode_component_block(
+    dictionary: &Dictionary,
+    value: &serde_json::Value,
+) -> Result<BTreeMap<i64, FixFieldValue>, DecodeError> {
+    let mut group = BTreeMap::new();
+    for item in value.as_object().unwrap() {
+        let (tag, field) = decode_field(dictionary, item.0, item.1)?;
+        group.insert(tag as i64, field);
+    }
+    Ok(group)
+}
 
 /// Configuration interface for [`json::Codec`](Codec).
 pub trait Config: Clone {
@@ -99,209 +289,6 @@ impl Config for ConfigSettable {
     }
 }
 
-/// A codec device for the JSON data format.
-#[derive(Debug, Clone)]
-pub struct Codec<T, Z> {
-    dictionaries: HashMap<String, Dictionary>,
-    message: T,
-    config: Z,
-}
-
-impl<T, Z> Codec<T, Z>
-where
-    T: Default,
-    Z: Config,
-{
-    pub fn new(dict: Dictionary, config: Z) -> Self {
-        let mut dictionaries = HashMap::new();
-        dictionaries.insert(dict.get_version().to_string(), dict);
-        Self {
-            dictionaries,
-            message: T::default(),
-            config,
-        }
-    }
-
-    fn decode_field(
-        &self,
-        dictionary: &Dictionary,
-        key: &str,
-        value: &serde_json::Value,
-    ) -> Result<(u32, FixFieldValue), DecodeError> {
-        if let Some(field) = dictionary.field_by_name(key) {
-            match value {
-                serde_json::Value::String(s) => Ok((
-                    field.tag() as u32,
-                    FixFieldValue::String(s.to_string()),
-                )),
-                serde_json::Value::Array(values) => {
-                    let mut group = Vec::new();
-                    for item in values {
-                        group.push(self.decode_component_block(dictionary, item)?);
-                    }
-                    Ok((field.tag() as u32, FixFieldValue::Group(group)))
-                }
-                _ => Err(DecodeError::InvalidData),
-            }
-        } else {
-            Err(DecodeError::InvalidData)
-        }
-    }
-
-    fn decode_component_block(
-        &self,
-        dictionary: &Dictionary,
-        value: &serde_json::Value,
-    ) -> Result<BTreeMap<i64, FixFieldValue>, DecodeError> {
-        let mut group = BTreeMap::new();
-        for item in value.as_object().unwrap() {
-            let (tag, field) = self.decode_field(dictionary, item.0, item.1)?;
-            group.insert(tag as i64, field);
-        }
-        Ok(group)
-    }
-
-    fn translate(&self, dict: &Dictionary, field: &FixFieldValue) -> serde_json::Value {
-        match field {
-            FixFieldValue::String(c) => serde_json::Value::String(c.to_string()),
-            FixFieldValue::Group(array) => {
-                let mut values = Vec::new();
-                for group in array {
-                    let mut map = serde_json::Map::new();
-                    for item in group {
-                        let field = dict
-                            .field_by_tag(*item.0 as u32)
-                            .ok_or(DecodeError::InvalidData)
-                            .unwrap();
-                        let field_name = field.name().to_string();
-                        let field_value = self.translate(dict, item.1);
-                        map.insert(field_name, field_value);
-                    }
-                    values.push(serde_json::Value::Object(map));
-                }
-                serde_json::Value::Array(values)
-            }
-            _ => panic!(),
-        }
-    }
-}
-
-impl<Z, T> Decoder<T> for Codec<T, Z>
-where
-    T: WriteFields + Default,
-    Z: Config,
-{
-    type Error = DecodeError;
-
-    fn decode(&mut self, data: &[u8]) -> Result<&T, Self::Error> {
-        let value: serde_json::Value =
-            serde_json::from_reader(data).map_err(|_| Self::Error::Syntax)?;
-        let header = value
-            .get("Header")
-            .and_then(|v| v.as_object())
-            .ok_or(Self::Error::Schema)?;
-        let body = value
-            .get("Body")
-            .and_then(|v| v.as_object())
-            .ok_or(Self::Error::Schema)?;
-        let trailer = value
-            .get("Trailer")
-            .and_then(|v| v.as_object())
-            .ok_or(Self::Error::Schema)?;
-        let _field_msg_type = header // TODO: field presence checks.
-            .get("MsgType")
-            .and_then(|v| v.as_str())
-            .ok_or(Self::Error::Schema)?;
-        let field_begin_string = header
-            .get("BeginString")
-            .and_then(|v| v.as_str())
-            .ok_or(Self::Error::Schema)?;
-        let dictionary = self
-            .dictionaries
-            .get(field_begin_string)
-            .ok_or(Self::Error::InvalidMsgType)?;
-        let mut message = T::default();
-        for item in header.iter().chain(body).chain(trailer) {
-            let (tag, field) = self.decode_field(dictionary, item.0, item.1)?;
-            message.set_field(tag, field);
-        }
-        self.message = message;
-        Ok(&self.message)
-    }
-}
-
-impl<Z, T> Encoder<slr::Message> for Codec<T, Z>
-where
-    T: ReadFields + WriteFields + Default,
-    Z: Config,
-{
-    type Error = EncoderError;
-
-    fn encode(
-        &mut self,
-        buffer: impl Buffer,
-        message: &slr::Message,
-    ) -> Result<usize, Self::Error> {
-        let dictionary =
-            if let Some(FixFieldValue::String(fix_version)) = message.fields.get(&8) {
-                self.dictionaries
-                    .get(fix_version.as_str())
-                    .ok_or(Self::Error::Dictionary)?
-            } else {
-                return Err(Self::Error::Dictionary);
-            };
-        let component_std_header = dictionary
-            .component_by_name("StandardHeader")
-            .expect("The `StandardHeader` component is mandatory.");
-        let component_std_traler = dictionary
-            .component_by_name("StandardTrailer")
-            .expect("The `StandardTrailer` component is mandatory.");
-        let msg_type = if let Some(FixFieldValue::String(s)) = message.get_field(35) {
-            s
-        } else {
-            return Err(Self::Error::Dictionary);
-        };
-        let mut map_body = json!({});
-        let mut map_trailer = json!({});
-        let mut map_header = json!({ "MsgType": msg_type });
-        for (field_tag, field_value) in message.fields.iter() {
-            let field = dictionary
-                .field_by_tag(*field_tag as u32)
-                .ok_or(Self::Error::Dictionary)?;
-            let field_name = field.name().to_string();
-            let field_value = self.translate(dictionary, field_value);
-            if component_std_header.contains_field(&field) {
-                map_header
-                    .as_object_mut()
-                    .unwrap()
-                    .insert(field_name, field_value);
-            } else if component_std_traler.contains_field(&field) {
-                map_trailer
-                    .as_object_mut()
-                    .unwrap()
-                    .insert(field_name, field_value);
-            } else {
-                map_body
-                    .as_object_mut()
-                    .unwrap()
-                    .insert(field_name, field_value);
-            }
-        }
-        let value = json!({
-            "Header": map_header,
-            "Body": map_body,
-            "Trailer": map_trailer,
-        });
-        let mut writer = BufferWriter::new(buffer);
-        if self.config.pretty_print() {
-            serde_json::to_writer_pretty(&mut writer, &value).unwrap();
-        } else {
-            serde_json::to_writer(&mut writer, &value).unwrap();
-        }
-        Ok(writer.as_slice().len())
-    }
-}
-
 /// The error type that can be returned if some error occurs when encoding JSON
 /// messages.
 #[derive(Copy, Clone, Debug)]
@@ -332,6 +319,7 @@ impl fmt::Display for DecodeError {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::backend::slr;
     use serde_json::*;
 
     const MESSAGE_SIMPLE: &str = r#"
@@ -387,9 +375,9 @@ mod test {
         let mut decoder = encoder_fix44();
         let mut encoder = encoder_fix44();
         let json_value_before: Value = from_str(MESSAGE_SIMPLE).unwrap();
-        let message = Decoder::decode(&mut decoder, &mut MESSAGE_SIMPLE.as_bytes()).unwrap();
+        let message = Encoding::decode(&mut decoder, &mut MESSAGE_SIMPLE.as_bytes()).unwrap();
         let mut buffer = Vec::<u8>::new();
-        Encoder::encode(&mut encoder, &mut buffer, message).unwrap();
+        Encoding::encode(&mut encoder, &mut buffer, &message).unwrap();
         let json_value_after: Value = from_slice(&buffer[..]).unwrap();
         assert_eq!(json_value_before, json_value_after);
     }
@@ -397,7 +385,7 @@ mod test {
     #[test]
     fn message_without_header() {
         let mut encoder = encoder_fix44();
-        let result = Decoder::decode(&mut encoder, &mut MESSAGE_WITHOUT_HEADER.as_bytes());
+        let result = Encoding::decode(&mut encoder, &mut MESSAGE_WITHOUT_HEADER.as_bytes());
         match result {
             Err(DecodeError::Schema) => (),
             _ => panic!(),
@@ -407,7 +395,7 @@ mod test {
     #[test]
     fn invalid_json() {
         let mut encoder = encoder_fix44();
-        let result = Decoder::decode(&mut encoder, &mut "this is invalid JSON".as_bytes());
+        let result = Encoding::decode(&mut encoder, &mut "this is invalid JSON".as_bytes());
         match result {
             Err(DecodeError::Syntax) => (),
             _ => panic!(),

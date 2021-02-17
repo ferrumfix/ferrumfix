@@ -5,7 +5,7 @@ use std::io;
 /// Buffer operations.
 ///
 /// [`Buffer`] differs from [`io::Write`] in several ways:
-pub trait Buffer {
+pub trait Buffer: io::Write {
     /// Returns an immutable reference to the contents of the buffer.
     fn as_slice(&self) -> &[u8];
 
