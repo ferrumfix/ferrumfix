@@ -46,7 +46,7 @@ impl AgnosticMessage {
 }
 
 #[derive(Debug)]
-pub struct AgnosticCodec<Z>
+pub struct CodecAgnostic<Z>
 where
     Z: Config,
 {
@@ -54,7 +54,7 @@ where
     config: Z,
 }
 
-impl<Z> AgnosticCodec<Z>
+impl<Z> CodecAgnostic<Z>
 where
     Z: Config,
 {
@@ -67,7 +67,7 @@ where
     }
 }
 
-impl<Z> Default for AgnosticCodec<Z>
+impl<Z> Default for CodecAgnostic<Z>
 where
     Z: Config,
 {
@@ -79,7 +79,7 @@ where
     }
 }
 
-impl<Z> Encoding<AgnosticMessage> for AgnosticCodec<Z>
+impl<Z> Encoding<AgnosticMessage> for CodecAgnostic<Z>
 where
     Z: Config,
 {
@@ -210,7 +210,7 @@ where
 {
     dict: Dictionary,
     message: T,
-    agnostic_codec: AgnosticCodec<Z>,
+    agnostic_codec: CodecAgnostic<Z>,
     config: Z,
 }
 
@@ -226,7 +226,7 @@ where
 
     /// Creates a new codec for the tag-value format. `dict` is used to parse messages.
     pub fn with_dict(dict: Dictionary, config: Z) -> Self {
-        let mut agnostic_codec = AgnosticCodec::<Z>::default();
+        let mut agnostic_codec = CodecAgnostic::<Z>::default();
         *agnostic_codec.config_mut() = config.clone();
         Self {
             dict,
@@ -423,7 +423,7 @@ fn compute_checksum(data: &[u8]) -> u8 {
 ///
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
 #[derive(Debug)]
-pub struct BufferedCodec<T, Z>
+pub struct CodecBuffered<T, Z>
 where
     Z: Config,
 {
@@ -433,7 +433,7 @@ where
     codec: Codec<T, Z>,
 }
 
-impl<T, Z> BufferedCodec<T, Z>
+impl<T, Z> CodecBuffered<T, Z>
 where
     T: Default,
     Z: Config,
@@ -454,7 +454,7 @@ where
     }
 }
 
-impl<T, Z> Encoding<T> for BufferedCodec<T, Z>
+impl<T, Z> Encoding<T> for CodecBuffered<T, Z>
 where
     T: Backend<FixFieldValue> + Default,
     Z: Config,
@@ -478,7 +478,7 @@ where
     }
 }
 
-impl<T, Z> StreamingDecoder<T> for BufferedCodec<T, Z>
+impl<T, Z> StreamingDecoder<T> for CodecBuffered<T, Z>
 where
     T: Backend<FixFieldValue> + Default,
     Z: Config,
@@ -771,19 +771,19 @@ pub trait Config: Clone + Default {
 /// This configurator uses [`ChecksumAlgoDefault`] as a checksum algorithm and
 /// [`TagLookupPredetermined`] for its dynamic tag lookup logic.
 #[derive(Debug, Default, Clone)]
-pub struct FastDefaultConfig;
+pub struct ConfigFastDefault;
 
-impl Config for FastDefaultConfig {
+impl Config for ConfigFastDefault {
     type TagLookup = TagLookupPredetermined;
 }
 
 #[derive(Debug, Clone)]
-pub struct SettableConfig {
+pub struct ConfigSettable {
     separator: u8,
     verify_checksum: bool,
 }
 
-impl SettableConfig {
+impl ConfigSettable {
     pub fn with_separator(mut self, separator: u8) -> Self {
         self.separator = separator;
         self
@@ -795,7 +795,7 @@ impl SettableConfig {
     }
 }
 
-impl Config for SettableConfig {
+impl Config for ConfigSettable {
     type TagLookup = TagLookupPredetermined;
 
     #[inline]
@@ -809,7 +809,7 @@ impl Config for SettableConfig {
     }
 }
 
-impl Default for SettableConfig {
+impl Default for ConfigSettable {
     fn default() -> Self {
         Self {
             separator: b'|',
@@ -851,16 +851,16 @@ mod test {
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
     fn encoder() -> Codec<slr::Message, impl Config> {
-        let config = SettableConfig::default().with_separator(b'|');
+        let config = ConfigSettable::default().with_separator(b'|');
         Codec::new(config)
     }
 
     fn encoder_with_soh() -> Codec<slr::Message, impl Config> {
-        Codec::new(FastDefaultConfig)
+        Codec::new(ConfigFastDefault)
     }
 
     fn encoder_slash_no_verify() -> Codec<slr::Message, impl Config> {
-        let config = SettableConfig::default()
+        let config = ConfigSettable::default()
             .with_separator(b'|')
             .with_verify_checksum(false);
         Codec::new(config)
@@ -873,7 +873,7 @@ mod test {
     #[test]
     fn can_parse_simple_message() {
         let message = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
-        let config = SettableConfig::default().with_separator(b'|');
+        let config = ConfigSettable::default().with_separator(b'|');
         let mut codec = Codec::<slr::Message, _>::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_ok());
@@ -892,7 +892,7 @@ mod test {
     #[test]
     fn skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
-        let config = SettableConfig::default()
+        let config = ConfigSettable::default()
             .with_separator(b'|')
             .with_verify_checksum(false);
         let mut codec = Codec::<slr::Message, _>::new(config);
@@ -903,7 +903,7 @@ mod test {
     #[test]
     fn no_skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
-        let config = SettableConfig::default()
+        let config = ConfigSettable::default()
             .with_separator(b'|')
             .with_verify_checksum(true);
         let mut codec = Codec::<slr::Message, _>::new(config);
@@ -938,7 +938,7 @@ mod test {
     #[test]
     fn message_without_final_separator() {
         let message = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
-        let config = SettableConfig::default().with_separator(b'|');
+        let config = ConfigSettable::default().with_separator(b'|');
         let mut codec = Codec::<slr::Message, _>::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
@@ -979,8 +979,8 @@ mod test {
     #[test]
     fn agnostic_simple_message() {
         let msg = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
-        let config = SettableConfig::default().with_separator(b'|');
-        let mut decoder = AgnosticCodec::<SettableConfig>::default();
+        let config = ConfigSettable::default().with_separator(b'|');
+        let mut decoder = CodecAgnostic::<ConfigSettable>::default();
         *decoder.config_mut() = config;
         let message = decoder.decode(&mut msg.as_bytes()).unwrap();
         assert_eq!(message.field_begin_string(), b"FIX.4.2");
@@ -990,8 +990,8 @@ mod test {
     #[test]
     fn agnostic_empty_body() {
         let msg = "8=FIX.FOOBAR|9=0|10=225|";
-        let config = SettableConfig::default().with_separator(b'|');
-        let mut decoder = AgnosticCodec::<SettableConfig>::default();
+        let config = ConfigSettable::default().with_separator(b'|');
+        let mut decoder = CodecAgnostic::<ConfigSettable>::default();
         *decoder.config_mut() = config;
         let message = decoder.decode(&mut msg.as_bytes()).unwrap();
         assert_eq!(message.field_begin_string(), b"FIX.FOOBAR");
@@ -1000,8 +1000,8 @@ mod test {
 
     #[test]
     fn agnostic_edge_cases_no_panic() {
-        let config = SettableConfig::default().with_separator(b'|');
-        let mut decoder = AgnosticCodec::<SettableConfig>::default();
+        let config = ConfigSettable::default().with_separator(b'|');
+        let mut decoder = CodecAgnostic::<ConfigSettable>::default();
         *decoder.config_mut() = config;
         decoder.decode(b"8=FIX.FOOBAR|9=0|10=225|").ok();
         decoder.decode(b"8=|9=0|10=225|").ok();

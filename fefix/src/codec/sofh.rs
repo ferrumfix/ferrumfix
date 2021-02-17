@@ -92,8 +92,8 @@ pub struct Codec {
 impl Codec {
     /// Turns `self` into a [`StreamingDecoder`](StreamingDecoder) -enabled codec
     /// by allocating an internal buffer.
-    pub fn buffered(self) -> BufferedCodec {
-        BufferedCodec {
+    pub fn buffered(self) -> CodecBuffered {
+        CodecBuffered {
             buffer: Vec::new(),
             buffer_relevant_len: 0,
             buffer_additional_len: 0,
@@ -104,8 +104,8 @@ impl Codec {
     /// Turns `self` into a [`StreamingDecoder`](StreamingDecoder) -enabled codec
     /// by allocating an internal buffer. The allocated buffer will have an
     /// initial capacity of `capacity` in bytes.
-    pub fn buffered_with_capacity(self, capacity: usize) -> BufferedCodec {
-        BufferedCodec {
+    pub fn buffered_with_capacity(self, capacity: usize) -> CodecBuffered {
+        CodecBuffered {
             buffer: vec![0; capacity],
             buffer_relevant_len: 0,
             buffer_additional_len: 0,
@@ -177,14 +177,14 @@ fn get_field_encoding_type(data: &[u8]) -> u16 {
 /// High Performance Group to allow message processors and communication gateways
 /// to determine the length and the data format of incoming messages.
 #[derive(Debug)]
-pub struct BufferedCodec {
+pub struct CodecBuffered {
     buffer: Vec<u8>,
     buffer_relevant_len: usize,
     buffer_additional_len: usize,
     codec: Codec,
 }
 
-impl BufferedCodec {
+impl CodecBuffered {
     /// Creates a new SOFH parser with default buffer size.
     pub fn new() -> Self {
         Self::with_capacity(1024)
@@ -217,7 +217,7 @@ impl BufferedCodec {
     }
 }
 
-impl Encoding<Frame> for BufferedCodec {
+impl Encoding<Frame> for CodecBuffered {
     type DecodeError = DecodeError;
     type EncodeError = EncodeError;
 
@@ -237,7 +237,7 @@ impl Encoding<Frame> for BufferedCodec {
     }
 }
 
-impl StreamingDecoder<Frame> for BufferedCodec {
+impl StreamingDecoder<Frame> for CodecBuffered {
     type Error = DecodeError;
 
     fn supply_buffer(&mut self) -> (&mut usize, &mut [u8]) {
@@ -558,7 +558,7 @@ mod test {
     fn frameless_decoder_returns_error_when_frame_has_len_lt_6() {
         for len in 0..6 {
             let header = encode_header(len, 0x4324);
-            let parser = BufferedCodec::new();
+            let parser = CodecBuffered::new();
             let mut frames = parser.frames_streamiter(&header[..]);
             let frame = frames.next();
             match frame {

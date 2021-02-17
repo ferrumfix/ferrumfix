@@ -53,10 +53,12 @@ pub enum HeartbeatRule {
 
 impl HeartbeatRule {
     /// Validates an initiator-provided heartbeat value according to the
-    /// heartbeat rule.
+    /// heartbeat rule represented by `self`.
     ///
     /// # Examples
-    /// Require exact matching with [`HeartbeatRule::Exact`](HeartbeatRule):
+    ///
+    /// Require exact matching with [`HeartbeatRule::Exact`](HeartbeatRule::Exact):
+    ///
     /// ```
     /// use fefix::session::classic::HeartbeatRule;
     /// use std::time::Duration;
@@ -66,7 +68,10 @@ impl HeartbeatRule {
     /// assert!(rule.validate(&Duration::from_secs(20)).is_err());
     /// assert!(rule.validate(&Duration::from_secs(30)).is_ok());
     /// ```
-    /// Accepting any proposed heartbeat value:
+    ///
+    /// Accepting any proposed heartbeat value with
+    /// [`HeartbeatRule::Any`](HeartbeatRule::Any):
+    ///
     /// ```
     /// use fefix::session::classic::HeartbeatRule;
     /// use std::time::Duration;
@@ -134,6 +139,8 @@ impl SeqNumbers {
 }
 
 impl Default for SeqNumbers {
+    /// Returns the default [`SeqNumbers`](SeqNumbers) at the start of a new FIX
+    /// session, i.e. both 1.
     fn default() -> Self {
         Self {
             next_inbound: 1,
@@ -148,8 +155,6 @@ pub enum SeqNumberError {
     TooLow,
     NoSeqNum,
 }
-
-type CompID = String;
 
 mod acceptor {
     use super::*;
@@ -181,16 +186,20 @@ mod acceptor {
             self
         }
 
+        /// Puts in place a custom restriction for the `HeartBeat` value. This is
+        /// [`HeartbeatRule::Any`](HeartbeatRule::Any) by default by default.
         pub fn with_hb_rule(&mut self, rule: HeartbeatRule) -> &mut Self {
             self.heartbeat_rule = rule;
             self
         }
 
+        /// Sets the "CompID" of the acceptor.
         pub fn with_company_id(&mut self, id: String) -> &mut Self {
             self.company_id = id;
             self
         }
 
+        /// Builds a new [`Acceptor`] and uses `self` to configure it.
         pub fn acceptor(self) -> Acceptor {
             Acceptor::new(self)
         }
@@ -451,7 +460,7 @@ mod initiator {
     const DEFAULT_HEARTBEAT: Duration = Duration::from_secs(60);
 
     impl Configuration {
-        pub fn new(from: CompID, to: CompID) -> Result<Self> {
+        pub fn new(from: String, to: String) -> Result<Self> {
             if !(is_alphanumeric(from.as_str()) && is_alphanumeric(to.as_str())) {
                 return Err(ConfigurationError::CompIDNotAlphanumeric);
             }
