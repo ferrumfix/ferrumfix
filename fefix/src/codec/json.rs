@@ -258,12 +258,12 @@ impl Config for ConfigPrettyPrint {
 
 /// A [`Config`](Config) that can be read from a file and modified at runtime.
 #[derive(Debug, Clone)]
-pub struct ConfigSettable {
+pub struct SettableConfig {
     pretty_print: bool,
 }
 
-impl ConfigSettable {
-    /// Creates a [`ConfigSettable`](ConfigSettable) with default settings.
+impl SettableConfig {
+    /// Creates a [`SettableConfig`](SettableConfig) with default settings.
     pub fn new() -> Self {
         Self::default()
     }
@@ -275,7 +275,7 @@ impl ConfigSettable {
     }
 }
 
-impl Default for ConfigSettable {
+impl Default for SettableConfig {
     fn default() -> Self {
         Self {
             pretty_print: false,
@@ -283,7 +283,7 @@ impl Default for ConfigSettable {
     }
 }
 
-impl Config for ConfigSettable {
+impl Config for SettableConfig {
     fn pretty_print(&self) -> bool {
         self.pretty_print
     }

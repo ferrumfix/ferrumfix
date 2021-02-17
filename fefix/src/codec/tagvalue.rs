@@ -54,6 +54,19 @@ where
     config: Z,
 }
 
+impl<Z> AgnosticCodec<Z>
+where
+    Z: Config,
+{
+    pub fn config(&self) -> &Z {
+        &self.config
+    }
+
+    pub fn config_mut(&mut self) -> &mut Z {
+        &mut self.config
+    }
+}
+
 impl<Z> Default for AgnosticCodec<Z>
 where
     Z: Config,
@@ -114,10 +127,13 @@ where
                 nominal_body_length,
             ][is_separator as usize];
         }
-        // Let's check some invariants... you can never be too sure.
-        debug_assert!(indexes_of_equal_sign[0] < indexes_of_separator[0]);
-        debug_assert!(indexes_of_equal_sign[1] < indexes_of_separator[1]);
-        debug_assert!(indexes_of_separator[0] < indexes_of_separator[1]);
+        if indexes_of_equal_sign[0] == 0
+            || indexes_of_equal_sign[1] == 0
+            || indexes_of_separator[0] == 0
+            || indexes_of_separator[1] == 0
+        {
+            return Err(DecodeError::Syntax);
+        }
         debug_assert!(indexes_of_separator[1] < data.len());
         // Verify `BodyLength`.
         let start_of_body = indexes_of_separator[1] + 1;
@@ -210,12 +226,24 @@ where
 
     /// Creates a new codec for the tag-value format. `dict` is used to parse messages.
     pub fn with_dict(dict: Dictionary, config: Z) -> Self {
+        let mut agnostic_codec = AgnosticCodec::<Z>::default();
+        *agnostic_codec.config_mut() = config.clone();
         Self {
             dict,
-            agnostic_codec: AgnosticCodec::<Z>::default(),
+            agnostic_codec,
             message: T::default(),
             config,
         }
+    }
+
+    /// Returns an immutable reference to the configuration object of `self`.
+    pub fn config(&self) -> &Z {
+        &self.config
+    }
+
+    /// Returns a mutable reference to the configuration object of `self`.
+    pub fn config_mut(&mut self) -> &mut Z {
+        &mut self.config
     }
 }
 
@@ -726,6 +754,7 @@ pub trait Config: Clone + Default {
     }
 
     #[inline]
+    #[deprecated(note = "BodyLength is mandatory. This method is ignored.")]
     fn verify_body_length(&self) -> bool {
         true
     }
@@ -742,37 +771,50 @@ pub trait Config: Clone + Default {
 /// This configurator uses [`ChecksumAlgoDefault`] as a checksum algorithm and
 /// [`TagLookupPredetermined`] for its dynamic tag lookup logic.
 #[derive(Debug, Default, Clone)]
-pub struct ConfigDefault;
+pub struct FastDefaultConfig;
 
-impl Config for ConfigDefault {
+impl Config for FastDefaultConfig {
     type TagLookup = TagLookupPredetermined;
 }
 
-/// A [`Config`](Config) for [`Codec`](Codec) with `|` (ASCII 0x7C)
-/// as a field separator.
-#[derive(Debug, Default, Clone)]
-pub struct ConfigVerticalSlash;
+#[derive(Debug, Clone)]
+pub struct SettableConfig {
+    separator: u8,
+    verify_checksum: bool,
+}
 
-impl Config for ConfigVerticalSlash {
-    type TagLookup = TagLookupPredetermined;
+impl SettableConfig {
+    pub fn with_separator(mut self, separator: u8) -> Self {
+        self.separator = separator;
+        self
+    }
 
-    #[inline]
-    fn separator(&self) -> u8 {
-        b'|'
+    pub fn with_verify_checksum(mut self, verify: bool) -> Self {
+        self.verify_checksum = verify;
+        self
     }
 }
 
-/// A [`Config`](Config) for [`Codec`](Codec) with `^` (ASCII 0x5F)
-/// as a field separator.
-#[derive(Debug, Default, Clone)]
-pub struct ConfigCaret;
-
-impl Config for ConfigCaret {
+impl Config for SettableConfig {
     type TagLookup = TagLookupPredetermined;
 
     #[inline]
     fn separator(&self) -> u8 {
-        b'^'
+        self.separator
+    }
+
+    #[inline]
+    fn verify_checksum(&self) -> bool {
+        self.verify_checksum
+    }
+}
+
+impl Default for SettableConfig {
+    fn default() -> Self {
+        Self {
+            separator: b'|',
+            verify_checksum: true,
+        }
     }
 }
 
@@ -809,30 +851,19 @@ mod test {
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
     fn encoder() -> Codec<slr::Message, impl Config> {
-        Codec::new(ConfigVerticalSlash)
+        let config = SettableConfig::default().with_separator(b'|');
+        Codec::new(config)
     }
 
     fn encoder_with_soh() -> Codec<slr::Message, impl Config> {
-        Codec::new(ConfigDefault)
-    }
-
-    #[derive(Clone, Default, Debug)]
-    struct ConfigVerticalSlashNoVerify;
-
-    impl Config for ConfigVerticalSlashNoVerify {
-        type TagLookup = TagLookupPredetermined;
-
-        fn separator(&self) -> u8 {
-            b'|'
-        }
-
-        fn verify_checksum(&self) -> bool {
-            false
-        }
+        Codec::new(FastDefaultConfig)
     }
 
     fn encoder_slash_no_verify() -> Codec<slr::Message, impl Config> {
-        Codec::new(ConfigVerticalSlashNoVerify)
+        let config = SettableConfig::default()
+            .with_separator(b'|')
+            .with_verify_checksum(false);
+        Codec::new(config)
     }
 
     fn with_soh(msg: &str) -> String {
@@ -841,9 +872,10 @@ mod test {
 
     #[test]
     fn can_parse_simple_message() {
-        let msg = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
-        let mut codec = encoder();
-        let result = codec.decode(&mut msg.as_bytes());
+        let message = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
+        let config = SettableConfig::default().with_separator(b'|');
+        let mut codec = Codec::<slr::Message, _>::new(config);
+        let result = codec.decode(message.as_bytes());
         assert!(result.is_ok());
     }
 
@@ -858,11 +890,33 @@ mod test {
     ];
 
     #[test]
+    fn skip_checksum_verification() {
+        let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
+        let config = SettableConfig::default()
+            .with_separator(b'|')
+            .with_verify_checksum(false);
+        let mut codec = Codec::<slr::Message, _>::new(config);
+        let result = codec.decode(message.as_bytes());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn no_skip_checksum_verification() {
+        let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
+        let config = SettableConfig::default()
+            .with_separator(b'|')
+            .with_verify_checksum(true);
+        let mut codec = Codec::<slr::Message, _>::new(config);
+        let result = codec.decode(message.as_bytes());
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn assortment_of_random_messages_is_ok() {
         for msg_with_vertical_bar in RANDOM_MESSAGES {
-            let msg = with_soh(msg_with_vertical_bar);
+            let message = with_soh(msg_with_vertical_bar);
             let mut codec = encoder_with_soh();
-            let result = codec.decode(&mut msg.as_bytes());
+            let result = codec.decode(message.as_bytes());
             result.unwrap();
         }
     }
@@ -882,11 +936,12 @@ mod test {
     }
 
     #[test]
-    fn new_order_single_without_final_separator() {
-        let msg = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
-        let mut codec = encoder();
-        let result = codec.decode(&mut msg.as_bytes());
-        assert_eq!(result, Err(DecodeError::Syntax));
+    fn message_without_final_separator() {
+        let message = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
+        let config = SettableConfig::default().with_separator(b'|');
+        let mut codec = Codec::<slr::Message, _>::new(config);
+        let result = codec.decode(message.as_bytes());
+        assert!(result.is_err());
     }
 
     #[test]
@@ -924,7 +979,9 @@ mod test {
     #[test]
     fn agnostic_simple_message() {
         let msg = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
-        let mut decoder = AgnosticCodec::<ConfigVerticalSlash>::default();
+        let config = SettableConfig::default().with_separator(b'|');
+        let mut decoder = AgnosticCodec::<SettableConfig>::default();
+        *decoder.config_mut() = config;
         let message = decoder.decode(&mut msg.as_bytes()).unwrap();
         assert_eq!(message.field_begin_string(), b"FIX.4.2");
         assert_eq!(message.body(), b"35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|");
@@ -933,7 +990,9 @@ mod test {
     #[test]
     fn agnostic_empty_body() {
         let msg = "8=FIX.FOOBAR|9=0|10=225|";
-        let mut decoder = AgnosticCodec::<ConfigVerticalSlash>::default();
+        let config = SettableConfig::default().with_separator(b'|');
+        let mut decoder = AgnosticCodec::<SettableConfig>::default();
+        *decoder.config_mut() = config;
         let message = decoder.decode(&mut msg.as_bytes()).unwrap();
         assert_eq!(message.field_begin_string(), b"FIX.FOOBAR");
         assert_eq!(message.body(), b"");
@@ -941,11 +1000,19 @@ mod test {
 
     #[test]
     fn agnostic_edge_cases_no_panic() {
-        let mut decoder = AgnosticCodec::<ConfigVerticalSlash>::default();
+        let config = SettableConfig::default().with_separator(b'|');
+        let mut decoder = AgnosticCodec::<SettableConfig>::default();
+        *decoder.config_mut() = config;
         decoder.decode(b"8=FIX.FOOBAR|9=0|10=225|").ok();
         decoder.decode(b"8=|9=0|10=225|").ok();
         decoder.decode(b"8=|9=0|10=|").ok();
         decoder.decode(b"8====|9=0|10=|").ok();
         decoder.decode(b"|||9=0|10=|").ok();
+        decoder.decode(b"9999999999999").ok();
+        decoder.decode(b"-9999999999999").ok();
+        decoder.decode(b"==============").ok();
+        decoder.decode(b"9999999999999|").ok();
+        decoder.decode(b"|999999999999=|").ok();
+        decoder.decode(b"|999=999999999999999999|=").ok();
     }
 }
