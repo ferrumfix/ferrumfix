@@ -100,7 +100,7 @@ where
         while field_i < 2 && i < data.len() {
             let byte = data[i];
             let is_equal_sign = byte == b'=';
-            let is_separator = byte == Z::SEPARATOR;
+            let is_separator = byte == self.config.separator();
             indexes_of_equal_sign[field_i] =
                 [indexes_of_equal_sign[field_i], i][is_equal_sign as usize];
             indexes_of_separator[field_i] =
@@ -240,7 +240,8 @@ where
         dbglog!("BeginString (8) has value '{:?}'.", field_begin_string);
         // Empty the message.
         self.message.clear();
-        let mut fields = &mut FieldIter::<Z>::new(agnostic_message.body(), &self.dict);
+        let mut fields =
+            &mut FieldIter::new(agnostic_message.body(), self.config.clone(), &self.dict);
         // Deserialize `MsgType(35)`.
         let msg_type = {
             let mut f = fields.next().ok_or(Self::DecodeError::Syntax)??;
@@ -274,7 +275,7 @@ where
             message
                 .for_each::<(), _>(|tag, value| {
                     if tag != 8 {
-                        encode_field((tag as u16).into(), value, buffer, Z::SEPARATOR);
+                        encode_field((tag as u16).into(), value, buffer, self.config.separator());
                     }
                     Ok(())
                 })
@@ -287,7 +288,7 @@ where
 }
 
 fn encode<Z, B, F>(
-    _config: &Z,
+    config: &Z,
     field_begin_string: &[u8],
     body_writer: F,
     buffer: &mut B,
@@ -302,7 +303,7 @@ where
     buffer.extend_from_slice(b"8=");
     buffer.extend_from_slice(field_begin_string);
     buffer.extend_from_slice(&[
-        Z::SEPARATOR,
+        config.separator(),
         b'9',
         b'=',
         b'0',
@@ -311,7 +312,7 @@ where
         b'0',
         b'0',
         b'0',
-        Z::SEPARATOR,
+        config.separator(),
     ]);
     let body_length_writable_range = buffer.as_slice().len() - 7..buffer.as_slice().len() - 1;
     let body_length = body_writer(buffer);
@@ -348,7 +349,7 @@ where
             (checksum / 100) + b'0',
             ((checksum / 10) % 10) + b'0',
             (checksum % 10) + b'0',
-            Z::SEPARATOR,
+            config.separator(),
         ]);
     }
     Ok(buffer.as_slice().len())
@@ -577,6 +578,7 @@ pub enum TagLookupPredeterminedError {
 struct FieldIter<'a, Z: Config> {
     data: &'a [u8],
     cursor: usize,
+    config: Z,
     tag_lookup: Z::TagLookup,
     data_field_length: usize,
 }
@@ -585,10 +587,11 @@ impl<'a, Z> FieldIter<'a, Z>
 where
     Z: Config,
 {
-    fn new(data: &'a [u8], dictionary: &'a Dictionary) -> Self {
+    fn new(data: &'a [u8], config: Z, dictionary: &'a Dictionary) -> Self {
         Self {
             data,
             cursor: 0,
+            config,
             tag_lookup: Z::TagLookup::from_dict(dictionary),
             data_field_length: 0,
         }
@@ -631,7 +634,7 @@ where
                     self.data[self.cursor..self.cursor + self.data_field_length].to_vec(),
                 ));
                 self.cursor += self.data_field_length + 1;
-                debug_assert_eq!(self.data[self.cursor - 1], Z::SEPARATOR);
+                debug_assert_eq!(self.data[self.cursor - 1], self.config.separator());
             }
             Ok(datatype) => {
                 dbglog!(
@@ -641,13 +644,13 @@ where
                 );
                 if let Some(separator_i) = &self.data[self.cursor..]
                     .iter()
-                    .position(|byte| *byte == Z::SEPARATOR)
+                    .position(|byte| *byte == self.config.separator())
                     .map(|i| i + self.cursor)
                 {
                     field_value =
                         read_field_value(datatype, &self.data[self.cursor..*separator_i]).unwrap();
                     self.cursor = separator_i + 1;
-                    debug_assert_eq!(self.data[self.cursor - 1], Z::SEPARATOR);
+                    debug_assert_eq!(self.data[self.cursor - 1], self.config.separator());
                     if datatype == DataType::Length {
                         self.data_field_length = field_value.as_length().unwrap();
                     }
@@ -658,7 +661,7 @@ where
             }
             Err(_) => (),
         }
-        debug_assert_eq!(self.data[self.cursor - 1], Z::SEPARATOR);
+        debug_assert_eq!(self.data[self.cursor - 1], self.config.separator());
         Some(Ok(slr::Field::new(tag, field_value)))
     }
 }
@@ -712,7 +715,10 @@ pub trait Config: Clone + Default {
     /// the last one.
     ///
     /// ASCII 0x1 (SOH) is the default separator character.
-    const SEPARATOR: u8 = 0x1;
+    #[inline]
+    fn separator(&self) -> u8 {
+        0x1
+    }
 
     #[inline]
     fn max_message_size(&self) -> Option<usize> {
@@ -750,7 +756,10 @@ pub struct ConfigVerticalSlash;
 impl Config for ConfigVerticalSlash {
     type TagLookup = TagLookupPredetermined;
 
-    const SEPARATOR: u8 = b'|';
+    #[inline]
+    fn separator(&self) -> u8 {
+        b'|'
+    }
 }
 
 /// A [`Config`](Config) for [`Codec`](Codec) with `^` (ASCII 0x5F)
@@ -761,7 +770,10 @@ pub struct ConfigCaret;
 impl Config for ConfigCaret {
     type TagLookup = TagLookupPredetermined;
 
-    const SEPARATOR: u8 = b'^';
+    #[inline]
+    fn separator(&self) -> u8 {
+        b'^'
+    }
 }
 
 type EncodeError = ();
@@ -810,7 +822,9 @@ mod test {
     impl Config for ConfigVerticalSlashNoVerify {
         type TagLookup = TagLookupPredetermined;
 
-        const SEPARATOR: u8 = '|' as u8;
+        fn separator(&self) -> u8 {
+            b'|'
+        }
 
         fn verify_checksum(&self) -> bool {
             false
