@@ -237,7 +237,7 @@ where
     fn decode(&mut self, data: &[u8]) -> Result<&T, Self::DecodeError> {
         let agnostic_message = self.agnostic_codec.decode(data)?;
         let field_begin_string = agnostic_message.field_begin_string();
-        dbglog!("BeginString <8> has value '{:?}'.", field_begin_string);
+        dbglog!("BeginString (8) has value '{:?}'.", field_begin_string);
         // Empty the message.
         self.message.clear();
         let mut fields = &mut FieldIter::<Z>::new(agnostic_message.body(), &self.dict);
@@ -245,7 +245,7 @@ where
         let msg_type = {
             let mut f = fields.next().ok_or(Self::DecodeError::Syntax)??;
             if f.tag() != 35 {
-                dbglog!("Expected MsgType <35>, got <{}> instead.", f.tag());
+                dbglog!("Expected MsgType (35), got ({}) instead.", f.tag());
                 return Err(Self::DecodeError::Syntax);
             }
             f.take_value()
@@ -348,6 +348,7 @@ where
             (checksum / 100) + b'0',
             ((checksum / 10) % 10) + b'0',
             (checksum % 10) + b'0',
+            Z::SEPARATOR,
         ]);
     }
     Ok(buffer.as_slice().len())
