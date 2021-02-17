@@ -22,8 +22,14 @@
 //! Please check out the [README](https://github.com/neysofu/fefix/) for more
 //! general information regarding FerrumFIX.
 
-#![deny(unused, missing_debug_implementations, clippy::useless_conversion)]
+#![deny(
+    unused,
+    missing_debug_implementations,
+    clippy::useless_conversion
+)]
 
+/// A handly macro for quick and dirty debugging. It reports the caller location
+/// in the form of file plus line, and it also supports `format!` -like arguments.
 #[macro_export]
 macro_rules! dbglog {
     ($($arg:tt)*) => {{

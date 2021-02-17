@@ -20,6 +20,10 @@ where
     T: Default,
     Z: Config,
 {
+
+    /// Creates a new codec. `dict` serves as a reference for data type inference
+    /// of incoming messages' fields. `config` handles encoding details. See the
+    /// [`Config`](Config) trait for more information.
     pub fn new(dict: Dictionary, config: Z) -> Self {
         let mut dictionaries = HashMap::new();
         dictionaries.insert(dict.get_version().to_string(), dict);
@@ -293,6 +297,9 @@ impl Config for SettableConfig {
 /// messages.
 #[derive(Copy, Clone, Debug)]
 pub enum EncoderError {
+    /// The error type that can be returned if there is an inconsistency between
+    /// `BeginString`, `MsgType`, fields presence and other encoding rules as
+    /// establised by the dictionary.
     Dictionary,
 }
 

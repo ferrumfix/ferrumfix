@@ -23,7 +23,7 @@ pub trait Buffer: io::Write {
     fn extend_from_slice(&mut self, extend: &[u8]);
 }
 
-/// A [`Vec`]-backed [`Buffer`] implementation.
+/// A [`Vec`] -backed [`Buffer`] implementation.
 #[derive(Debug)]
 pub struct GrowableBuffer<'a> {
     pub bytes: &'a mut Vec<u8>,

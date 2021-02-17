@@ -322,6 +322,17 @@ impl Dictionary {
         QuickFixReader::new(&xml_document)
     }
 
+    /// Returns the [`DataType`](DataType) named `name`, if any.
+    ///
+    /// ```
+    /// use fefix::Dictionary;
+    /// use fefix::backend::Version;
+    ///
+    /// let dict = Dictionary::from_version(Version::Fix44);
+    ///
+    /// let dt = dict.datatype_by_name("String").unwrap();
+    /// assert_eq!(dt.name(), "String");
+    /// ```
     pub fn datatype_by_name<S: AsRef<str>>(&self, name: S) -> Option<Datatype> {
         self.symbol(KeyRef::DatatypeByName(name.as_ref()))
             .map(|iid| self.data_types.get(*iid as usize).unwrap())

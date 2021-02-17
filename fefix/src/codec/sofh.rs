@@ -90,6 +90,8 @@ pub struct Codec {
 }
 
 impl Codec {
+    /// Turns `self` into a [`StreamingDecoder`](StreamingDecoder) -enabled codec
+    /// by allocating an internal buffer.
     pub fn buffered(self) -> BufferedCodec {
         BufferedCodec {
             buffer: Vec::new(),
@@ -99,6 +101,9 @@ impl Codec {
         }
     }
 
+    /// Turns `self` into a [`StreamingDecoder`](StreamingDecoder) -enabled codec
+    /// by allocating an internal buffer. The allocated buffer will have an
+    /// initial capacity of `capacity` in bytes.
     pub fn buffered_with_capacity(self, capacity: usize) -> BufferedCodec {
         BufferedCodec {
             buffer: vec![0; capacity],

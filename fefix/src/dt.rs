@@ -1,5 +1,7 @@
 //! Datatype specification.
 
+/// Sum type for all possible data types ever defined across all versions of the
+/// FIX protocol.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum DataType {
@@ -189,6 +191,8 @@ impl DataType {
         }
     }
 
+    /// Returns an [`Iterator`](Iterator) over all variants of
+    /// [`DataType`](DataType).
     pub fn iter_all() -> impl Iterator<Item = Self> {
         (&[
             Self::Char,
