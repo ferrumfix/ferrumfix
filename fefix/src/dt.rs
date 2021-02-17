@@ -205,7 +205,7 @@ impl DataType {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::DataType;
+    /// use fefix::DataType;
     ///
     /// assert_eq!(DataType::Qty.name(), "Qty");
     /// assert_eq!(DataType::Float.name(), "float");
