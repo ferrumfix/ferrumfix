@@ -1,8 +1,11 @@
 //! Datatype specification.
 
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
+
 /// Sum type for all possible data types ever defined across all versions of the
 /// FIX protocol.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, EnumIter)]
 #[non_exhaustive]
 pub enum DataType {
     /// Single character value, can include any alphanumeric character or
@@ -249,37 +252,7 @@ impl DataType {
     /// Returns an [`Iterator`](Iterator) over all variants of
     /// [`DataType`](DataType).
     pub fn iter_all() -> impl Iterator<Item = Self> {
-        (&[
-            Self::Char,
-            Self::Boolean,
-            Self::Float,
-            Self::Amt,
-            Self::Price,
-            Self::PriceOffset,
-            Self::Qty,
-            Self::Percentage,
-            Self::Int,
-            Self::DayOfMonth,
-            Self::Length,
-            Self::NumInGroup,
-            Self::SeqNum,
-            Self::TagNum,
-            Self::String,
-            Self::Data,
-            Self::MonthYear,
-            Self::MultipleCharValue,
-            Self::Currency,
-            Self::Exchange,
-            Self::LocalMktDate,
-            Self::MultipleStringValue,
-            Self::UtcDateOnly,
-            Self::UtcTimeOnly,
-            Self::UtcTimestamp,
-            Self::XmlData,
-            Self::Country,
-        ])
-            .iter()
-            .copied()
+        <Self as IntoEnumIterator>::iter()
     }
 }
 
