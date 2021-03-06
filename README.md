@@ -3,6 +3,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/fefix)](https://crates.io/crates/fefix)
 [![Docs.rs](https://img.shields.io/badge/docs.rs-v0.4.0-green)](https://docs.rs/fefix/0.4.0/fefix/)
+[![CircleCI](https://circleci.com/gh/neysofu/ferrum-fix/tree/develop.svg?style=svg)](https://circleci.com/gh/neysofu/ferrum-fix/tree/develop)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat)](https://github.com/clap-rs/clap/blob/master/LICENSE-MIT)
 [![Open issues](https://img.shields.io/github/issues-raw/neysofu/ferrum-fix)](https://img.shields.io/github/issues-raw/neysofu/ferrum-fix)
 [![matrix.org](https://img.shields.io/badge/matrix.org-%23ferrum--fix-blue)](https://matrix.to/#/#ferrum-fix:matrix.org)

@@ -1,0 +1,11 @@
+version: 2
+jobs:
+  build:
+    docker:
+      # specify the version
+      - image: rust:latest
+
+    working_directory: /usr/src/github.com/neysofu/ferrum-fix
+    steps:
+      - checkout
+      - run: cargo test
