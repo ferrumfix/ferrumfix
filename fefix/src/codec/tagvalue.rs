@@ -14,6 +14,7 @@ use std::convert::TryInto;
 use std::fmt;
 use std::fmt::Debug;
 use std::io;
+use std::ops::Range;
 use std::rc::Rc;
 use std::str;
 
@@ -87,9 +88,7 @@ where
     type EncodeError = ();
 
     fn decode(&mut self, data: &[u8]) -> Result<&AgnosticMessage, Self::DecodeError> {
-        if data.len() < 14 {
-            // 14 is a good heuristic, I haven't checked but it's possible that
-            // we can raise this.
+        if data.len() < MIN_FIX_MESSAGE_LEN_IN_BYTES {
             dbglog!("The input data is too short to contain a well-defined FIX message.");
             return Err(Self::DecodeError::Syntax);
         }
@@ -97,88 +96,25 @@ where
             "Content-agnostic decoding: UTF-8 lossy is '{}'.",
             String::from_utf8_lossy(data)
         );
-        // Branchless decoding. It feels weird if you're not used to it. Note
-        // that we only care about the first two fields, after which we jump
-        // right to `BodyLength` and `CheckSum` verification. In this specific
-        // context, everything in the middle is considered part of the body
-        // (even though e.g. `MsgType` is the third field and is part of
-        // `StandardHeader`): we simply don't care about that distinction. The
-        // only fields that matter here are `BeginString`, `BodyLength`, and
-        // `CheckSum`.
-        let mut indexes_of_equal_sign: [usize; 2] = [0, 0];
-        let mut indexes_of_separator: [usize; 2] = [0, 0];
-        let mut field_i = 0;
-        let mut i = 0;
-        let mut nominal_body_length = 0usize;
-        while field_i < 2 && i < data.len() {
-            let byte = data[i];
-            let is_equal_sign = byte == b'=';
-            let is_separator = byte == self.config.separator();
-            indexes_of_equal_sign[field_i] =
-                [indexes_of_equal_sign[field_i], i][is_equal_sign as usize];
-            indexes_of_separator[field_i] =
-                [indexes_of_separator[field_i], i][is_separator as usize];
-            i += 1;
-            field_i += is_separator as usize;
-            // We should reset the value in case it's the equal sign.
-            nominal_body_length = [
-                (nominal_body_length * 10 + byte.wrapping_sub(b'0') as usize)
-                    * !is_equal_sign as usize,
-                nominal_body_length,
-            ][is_separator as usize];
-        }
-        if indexes_of_equal_sign[0] == 0
-            || indexes_of_equal_sign[1] == 0
-            || indexes_of_separator[0] == 0
-            || indexes_of_separator[1] == 0
-        {
-            return Err(DecodeError::Syntax);
-        }
-        debug_assert!(indexes_of_separator[1] < data.len());
-        // Verify `BodyLength`.
-        let start_of_body = indexes_of_separator[1] + 1;
-        {
-            let body_length = data
-                .len()
-                .wrapping_sub(FIELD_CHECKSUM_SIZE_IN_BYTES)
-                .wrapping_sub(start_of_body);
-            let end_of_body = data.len() - FIELD_CHECKSUM_SIZE_IN_BYTES;
-            if start_of_body > end_of_body || nominal_body_length != body_length {
-                dbglog!(
-                    "BodyLength mismatch: expected {} but is {}.",
-                    body_length,
-                    nominal_body_length,
-                );
-                return Err(Self::DecodeError::Syntax);
-            }
-            debug_assert!(body_length < data.len());
-        }
+        let header_indices = parse_header_indices(data, self.config().separator())?;
+        verify_body_length(
+            data,
+            header_indices.start_of_body(),
+            header_indices.body().len(),
+        )?;
         if self.config.verify_checksum() {
-            let nominal_checksum =
-                read_checksum_from_digits(data[data.len() - 4..data.len() - 1].try_into().unwrap());
-            let mut actual_checksum = 0u8;
-            for byte in &data[..data.len() - FIELD_CHECKSUM_SIZE_IN_BYTES] {
-                actual_checksum = actual_checksum.wrapping_add(*byte);
-            }
-            if nominal_checksum != actual_checksum {
-                dbglog!(
-                    "CheckSum mismatch: expected {:03} but is {:03}.",
-                    actual_checksum,
-                    nominal_checksum,
-                );
-                return Err(Self::DecodeError::Syntax);
-            }
+            verify_checksum(data)?;
         } else {
             dbglog!("Skipping checksum verification.");
         }
-        self.message.begin_string = (
-            unsafe { data.as_ptr().add(indexes_of_equal_sign[0] + 1) },
-            indexes_of_separator[0] - indexes_of_equal_sign[0] - 1,
-        );
-        self.message.body = (
-            unsafe { data.as_ptr().add(start_of_body) },
-            nominal_body_length,
-        );
+        self.message.begin_string = {
+            let range = &data[header_indices.begin_string_value()];
+            (range.as_ptr(), range.len())
+        };
+        self.message.body = {
+            let range = &data[header_indices.body()];
+            (range.as_ptr(), range.len())
+        };
         Ok(&self.message)
     }
 
@@ -248,11 +184,11 @@ where
 }
 
 /// The checksum field is composed of:
-///  - `10=` (3 characters)
-///  - `XYZ` (checksum value, always 3 characters)
-///  - SOH   (1 character)
+///  - `10=`       (3 characters)
+///  - `XYZ`       (checksum value, always 3 characters)
+///  - separator   (1 character)
 /// Total: 7 characters.
-const FIELD_CHECKSUM_SIZE_IN_BYTES: usize = 7;
+const FIELD_CHECKSUM_LEN_IN_BYTES: usize = 7;
 
 impl<T, Z> Encoding<T> for Codec<T, Z>
 where
@@ -265,7 +201,6 @@ where
     fn decode(&mut self, data: &[u8]) -> Result<&T, Self::DecodeError> {
         let agnostic_message = self.agnostic_codec.decode(data)?;
         let field_begin_string = agnostic_message.field_begin_string();
-        dbglog!("BeginString (8) has value '{:?}'.", field_begin_string);
         // Empty the message.
         self.message.clear();
         let mut fields =
@@ -383,7 +318,6 @@ where
     Ok(buffer.as_slice().len())
 }
 
-#[inline]
 fn read_checksum_from_digits(digits: [u8; 3]) -> u8 {
     digits[0]
         .wrapping_sub(b'0')
@@ -403,13 +337,141 @@ fn encode_field(tag: val::TagNum, value: &FixFieldValue, write: &mut impl Buffer
     write.extend_from_slice(&[separator]);
 }
 
-#[inline]
 fn compute_checksum(data: &[u8]) -> u8 {
     let mut value = 0u8;
     for byte in data {
         value = value.wrapping_add(*byte);
     }
     value
+}
+
+fn checksum_digits(message: &[u8]) -> [u8; 3] {
+    debug_assert!(message.len() >= MIN_FIX_MESSAGE_LEN_IN_BYTES);
+    message[message.len() - 4..message.len() - 1]
+        .try_into()
+        .unwrap()
+}
+
+fn verify_checksum(data: &[u8]) -> Result<(), DecodeError> {
+    let nominal_checksum = read_checksum_from_digits(checksum_digits(data));
+    let mut actual_checksum = 0u8;
+    for byte in &data[..data.len() - FIELD_CHECKSUM_LEN_IN_BYTES] {
+        actual_checksum = actual_checksum.wrapping_add(*byte);
+    }
+    if nominal_checksum != actual_checksum {
+        dbglog!(
+            "CheckSum mismatch: expected {:03} but is {:03}.",
+            actual_checksum,
+            nominal_checksum,
+        );
+        Err(DecodeError::Syntax)
+    } else {
+        Ok(())
+    }
+}
+
+fn verify_body_length(
+    data: &[u8],
+    start_of_body: usize,
+    nominal_body_length: usize,
+) -> Result<(), DecodeError> {
+    let body_length = data
+        .len()
+        .wrapping_sub(FIELD_CHECKSUM_LEN_IN_BYTES)
+        .wrapping_sub(start_of_body);
+    let end_of_body = data.len() - FIELD_CHECKSUM_LEN_IN_BYTES;
+    if start_of_body > end_of_body || nominal_body_length != body_length {
+        dbglog!(
+            "BodyLength mismatch: expected {} but is {}.",
+            body_length,
+            nominal_body_length,
+        );
+        Err(DecodeError::Syntax)
+    } else {
+        debug_assert!(body_length < data.len());
+        Ok(())
+    }
+}
+
+// A tag-value message can't possibly be shorter than 14 characters.
+// I haven't checked, but it's possible that this is actually a
+// conservative heuristic and that we can raise this value.
+const MIN_FIX_MESSAGE_LEN_IN_BYTES: usize = 14;
+
+struct HeaderIndices {
+    indexes_of_equal_sign: [usize; 2],
+    indexes_of_separator: [usize; 2],
+    body_length: usize,
+}
+
+impl HeaderIndices {
+    fn empty() -> Self {
+        Self {
+            indexes_of_equal_sign: [0, 0],
+            indexes_of_separator: [0, 0],
+            body_length: 0,
+        }
+    }
+
+    fn is_valid(&self) -> bool {
+        // Let's check that we got valid values for everything we need.
+        self.indexes_of_equal_sign[0] != 0
+            || self.indexes_of_equal_sign[1] != 0
+            || self.indexes_of_separator[0] != 0
+            || self.indexes_of_separator[1] != 0
+    }
+
+    fn start_of_body(&self) -> usize {
+        // The body starts at the character immediately after the separator of
+        // `BodyLength`.
+        self.indexes_of_separator[1] + 1
+    }
+
+    fn begin_string_value(&self) -> Range<usize> {
+        self.indexes_of_equal_sign[0] + 1..self.indexes_of_separator[0]
+    }
+
+    fn body(&self) -> Range<usize> {
+        let start = self.start_of_body();
+        start..start + self.body_length
+    }
+}
+
+fn parse_header_indices(data: &[u8], separator: u8) -> Result<HeaderIndices, DecodeError> {
+    // Branchless decoding. It feels weird if you're not used to it. Note
+    // that we only care about the first two fields, after which we jump
+    // right to `BodyLength` and `CheckSum` verification. In this specific
+    // context, everything in the middle is considered part of the body
+    // (even though e.g. `MsgType` is the third field and is part of
+    // `StandardHeader`): we simply don't care about that distinction. The
+    // only fields that matter here are `BeginString`, `BodyLength`, and
+    // `CheckSum`.
+    let mut header_indices = HeaderIndices::empty();
+    let mut field_i = 0;
+    let mut i = 0;
+    while field_i < 2 && i < data.len() {
+        let byte = data[i];
+        let is_equal_sign = byte == b'=';
+        let is_separator = byte == separator;
+        header_indices.indexes_of_equal_sign[field_i] =
+            [header_indices.indexes_of_equal_sign[field_i], i][is_equal_sign as usize];
+        header_indices.indexes_of_separator[field_i] =
+            [header_indices.indexes_of_separator[field_i], i][is_separator as usize];
+        i += 1;
+        field_i += is_separator as usize;
+        // We should reset the value in case it's the equal sign.
+        header_indices.body_length = [
+            (header_indices.body_length * 10 + byte.wrapping_sub(b'0') as usize)
+                * !is_equal_sign as usize,
+            header_indices.body_length,
+        ][is_separator as usize];
+    }
+    if !header_indices.is_valid() {
+        Err(DecodeError::Syntax)
+    } else {
+        debug_assert!(header_indices.indexes_of_separator[1] < data.len());
+        Ok(header_indices)
+    }
 }
 
 /// A (de)serializer for the classic FIX tag-value encoding.
