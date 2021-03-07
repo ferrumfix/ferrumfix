@@ -10,135 +10,18 @@ use crate::codec::{Encoding, StreamingDecoder};
 use crate::dbglog;
 use crate::dictionary::Dictionary;
 use crate::DataType;
-use std::convert::TryInto;
 use std::fmt;
 use std::fmt::Debug;
 use std::io;
-use std::ops::Range;
 use std::rc::Rc;
 use std::str;
 
-#[derive(Debug)]
-pub struct AgnosticMessage {
-    begin_string: (*const u8, usize),
-    body: (*const u8, usize),
-}
+mod agnostic;
+mod utils;
 
-impl AgnosticMessage {
-    fn empty() -> Self {
-        Self {
-            begin_string: ([].as_ptr(), 0),
-            body: ([].as_ptr(), 0),
-        }
-    }
-}
+pub use agnostic::{AgnosticMessage, CodecAgnostic};
 
-impl AgnosticMessage {
-    /// Returns an immutable reference to the `BeginString <8>` field value of
-    /// `self`.
-    pub fn field_begin_string(&self) -> &[u8] {
-        unsafe { std::slice::from_raw_parts(self.begin_string.0, self.begin_string.1) }
-    }
-
-    /// Returns an immutable reference to the body contents of `self`.
-    pub fn body(&self) -> &[u8] {
-        unsafe { std::slice::from_raw_parts(self.body.0, self.body.1) }
-    }
-}
-
-#[derive(Debug)]
-pub struct CodecAgnostic<Z>
-where
-    Z: Config,
-{
-    message: AgnosticMessage,
-    config: Z,
-}
-
-impl<Z> CodecAgnostic<Z>
-where
-    Z: Config,
-{
-    pub fn config(&self) -> &Z {
-        &self.config
-    }
-
-    pub fn config_mut(&mut self) -> &mut Z {
-        &mut self.config
-    }
-}
-
-impl<Z> Default for CodecAgnostic<Z>
-where
-    Z: Config,
-{
-    fn default() -> Self {
-        Self {
-            message: AgnosticMessage::empty(),
-            config: Z::default(),
-        }
-    }
-}
-
-impl<Z> Encoding<AgnosticMessage> for CodecAgnostic<Z>
-where
-    Z: Config,
-{
-    type DecodeError = DecodeError;
-    type EncodeError = ();
-
-    fn decode(&mut self, data: &[u8]) -> Result<&AgnosticMessage, Self::DecodeError> {
-        if data.len() < MIN_FIX_MESSAGE_LEN_IN_BYTES {
-            dbglog!("The input data is too short to contain a well-defined FIX message.");
-            return Err(Self::DecodeError::Syntax);
-        }
-        dbglog!(
-            "Content-agnostic decoding: UTF-8 lossy is '{}'.",
-            String::from_utf8_lossy(data)
-        );
-        let header_indices = parse_header_indices(data, self.config().separator())?;
-        verify_body_length(
-            data,
-            header_indices.start_of_body(),
-            header_indices.body().len(),
-        )?;
-        if self.config.verify_checksum() {
-            verify_checksum(data)?;
-        } else {
-            dbglog!("Skipping checksum verification.");
-        }
-        self.message.begin_string = {
-            let range = &data[header_indices.begin_string_value()];
-            (range.as_ptr(), range.len())
-        };
-        self.message.body = {
-            let range = &data[header_indices.body()];
-            (range.as_ptr(), range.len())
-        };
-        Ok(&self.message)
-    }
-
-    fn encode<B>(
-        &mut self,
-        mut buffer: &mut B,
-        message: &AgnosticMessage,
-    ) -> Result<usize, Self::EncodeError>
-    where
-        B: Buffer,
-    {
-        let body_writer = |buffer: &mut B| {
-            buffer.extend_from_slice(message.body());
-            message.body().len()
-        };
-        encode(
-            &self.config,
-            message.field_begin_string(),
-            body_writer,
-            &mut buffer,
-        )
-    }
-}
-
+/// Easy-to-use [`Encoding`] that accomodates for most use cases.
 #[derive(Debug)]
 pub struct Codec<T, Z>
 where
@@ -155,7 +38,7 @@ where
     T: Default,
     Z: Config,
 {
-    /// Builds a new `Codec` encoding device with a FIX 4.4 dictionary.
+    /// Builds a new [`Codec`] encoding device with a FIX 4.4 dictionary.
     pub fn new(config: Z) -> Self {
         Self::with_dict(Dictionary::from_version(Version::Fix44), config)
     }
@@ -172,23 +55,16 @@ where
         }
     }
 
-    /// Returns an immutable reference to the configuration object of `self`.
+    /// Returns an immutable reference to the [`Config`] used by `self`.
     pub fn config(&self) -> &Z {
         &self.config
     }
 
-    /// Returns a mutable reference to the configuration object of `self`.
+    /// Returns a mutable reference to the [`Config`] used by `self`.
     pub fn config_mut(&mut self) -> &mut Z {
         &mut self.config
     }
 }
-
-/// The checksum field is composed of:
-///  - `10=`       (3 characters)
-///  - `XYZ`       (checksum value, always 3 characters)
-///  - separator   (1 character)
-/// Total: 7 characters.
-const FIELD_CHECKSUM_LEN_IN_BYTES: usize = 7;
 
 impl<T, Z> Encoding<T> for Codec<T, Z>
 where
@@ -199,6 +75,7 @@ where
     type EncodeError = EncodeError;
 
     fn decode(&mut self, data: &[u8]) -> Result<&T, Self::DecodeError> {
+        // Take care of `BeginString`, `BodyLength` and `CheckSum`.
         let agnostic_message = self.agnostic_codec.decode(data)?;
         let field_begin_string = agnostic_message.field_begin_string();
         // Empty the message.
@@ -246,84 +123,8 @@ where
             buffer.as_slice().len() - start_i
         };
         let field_begin_string = message.field(8).unwrap().as_str().unwrap().as_bytes();
-        encode(&self.config, field_begin_string, body_writer, buffer)
+        utils::encode(&self.config, field_begin_string, body_writer, buffer)
     }
-}
-
-fn encode<Z, B, F>(
-    config: &Z,
-    field_begin_string: &[u8],
-    body_writer: F,
-    buffer: &mut B,
-) -> Result<usize, EncodeError>
-where
-    Z: Config,
-    B: Buffer,
-    F: Fn(&mut B) -> usize,
-{
-    let start_i = buffer.as_slice().len();
-    // First, write `BeginString(8)`.
-    buffer.extend_from_slice(b"8=");
-    buffer.extend_from_slice(field_begin_string);
-    buffer.extend_from_slice(&[
-        config.separator(),
-        b'9',
-        b'=',
-        b'0',
-        b'0',
-        b'0',
-        b'0',
-        b'0',
-        b'0',
-        config.separator(),
-    ]);
-    let body_length_writable_range = buffer.as_slice().len() - 7..buffer.as_slice().len() - 1;
-    let body_length = body_writer(buffer);
-    {
-        let slice = &mut buffer.as_mut_slice()[body_length_writable_range];
-        // The second field is supposed to be `BodyLength(9)`, but obviously
-        // the length of the message is unknow until later in the
-        // serialization phase. This alone would usually require to
-        //
-        //  1. Serialize the rest of the message into an external buffer.
-        //  2. Calculate the length of the message.
-        //  3. Serialize `BodyLength(9)` to `buffer`.
-        //  4. Copy the contents of the external buffer into `buffer`.
-        //  5. ... go on with the serialization process.
-        //
-        // Luckily, FIX allows for zero-padded integer values and we can
-        // leverage this to reserve some space for the value. We might waste
-        // some bytes but the benefits largely outweight the costs.
-        //
-        // Six digits (~1MB) ought to be enough for every message.
-        slice[0] = (body_length / 100000) as u8 + b'0';
-        slice[1] = ((body_length / 10000) % 10) as u8 + b'0';
-        slice[2] = ((body_length / 1000) % 10) as u8 + b'0';
-        slice[3] = ((body_length / 100) % 10) as u8 + b'0';
-        slice[4] = ((body_length / 10) % 10) as u8 + b'0';
-        slice[5] = (body_length % 10) as u8 + b'0';
-    }
-    {
-        let checksum = compute_checksum(&buffer.as_slice()[start_i..]);
-        buffer.extend_from_slice(&[
-            b'1',
-            b'0',
-            b'=',
-            (checksum / 100) + b'0',
-            ((checksum / 10) % 10) + b'0',
-            (checksum % 10) + b'0',
-            config.separator(),
-        ]);
-    }
-    Ok(buffer.as_slice().len())
-}
-
-fn read_checksum_from_digits(digits: [u8; 3]) -> u8 {
-    digits[0]
-        .wrapping_sub(b'0')
-        .wrapping_mul(100)
-        .wrapping_add(digits[1].wrapping_sub(b'0').wrapping_mul(10))
-        .wrapping_add(digits[2].wrapping_sub(b'0'))
 }
 
 fn encode_field(tag: val::TagNum, value: &FixFieldValue, write: &mut impl Buffer, separator: u8) {
@@ -335,143 +136,6 @@ fn encode_field(tag: val::TagNum, value: &FixFieldValue, write: &mut impl Buffer
         FixFieldValue::Atom(field) => write.extend_from_slice(field.to_string().as_bytes()),
     };
     write.extend_from_slice(&[separator]);
-}
-
-fn compute_checksum(data: &[u8]) -> u8 {
-    let mut value = 0u8;
-    for byte in data {
-        value = value.wrapping_add(*byte);
-    }
-    value
-}
-
-fn checksum_digits(message: &[u8]) -> [u8; 3] {
-    debug_assert!(message.len() >= MIN_FIX_MESSAGE_LEN_IN_BYTES);
-    message[message.len() - 4..message.len() - 1]
-        .try_into()
-        .unwrap()
-}
-
-fn verify_checksum(data: &[u8]) -> Result<(), DecodeError> {
-    let nominal_checksum = read_checksum_from_digits(checksum_digits(data));
-    let mut actual_checksum = 0u8;
-    for byte in &data[..data.len() - FIELD_CHECKSUM_LEN_IN_BYTES] {
-        actual_checksum = actual_checksum.wrapping_add(*byte);
-    }
-    if nominal_checksum != actual_checksum {
-        dbglog!(
-            "CheckSum mismatch: expected {:03} but is {:03}.",
-            actual_checksum,
-            nominal_checksum,
-        );
-        Err(DecodeError::Syntax)
-    } else {
-        Ok(())
-    }
-}
-
-fn verify_body_length(
-    data: &[u8],
-    start_of_body: usize,
-    nominal_body_length: usize,
-) -> Result<(), DecodeError> {
-    let body_length = data
-        .len()
-        .wrapping_sub(FIELD_CHECKSUM_LEN_IN_BYTES)
-        .wrapping_sub(start_of_body);
-    let end_of_body = data.len() - FIELD_CHECKSUM_LEN_IN_BYTES;
-    if start_of_body > end_of_body || nominal_body_length != body_length {
-        dbglog!(
-            "BodyLength mismatch: expected {} but is {}.",
-            body_length,
-            nominal_body_length,
-        );
-        Err(DecodeError::Syntax)
-    } else {
-        debug_assert!(body_length < data.len());
-        Ok(())
-    }
-}
-
-// A tag-value message can't possibly be shorter than 14 characters.
-// I haven't checked, but it's possible that this is actually a
-// conservative heuristic and that we can raise this value.
-const MIN_FIX_MESSAGE_LEN_IN_BYTES: usize = 14;
-
-struct HeaderIndices {
-    indexes_of_equal_sign: [usize; 2],
-    indexes_of_separator: [usize; 2],
-    body_length: usize,
-}
-
-impl HeaderIndices {
-    fn empty() -> Self {
-        Self {
-            indexes_of_equal_sign: [0, 0],
-            indexes_of_separator: [0, 0],
-            body_length: 0,
-        }
-    }
-
-    fn is_valid(&self) -> bool {
-        // Let's check that we got valid values for everything we need.
-        self.indexes_of_equal_sign[0] != 0
-            || self.indexes_of_equal_sign[1] != 0
-            || self.indexes_of_separator[0] != 0
-            || self.indexes_of_separator[1] != 0
-    }
-
-    fn start_of_body(&self) -> usize {
-        // The body starts at the character immediately after the separator of
-        // `BodyLength`.
-        self.indexes_of_separator[1] + 1
-    }
-
-    fn begin_string_value(&self) -> Range<usize> {
-        self.indexes_of_equal_sign[0] + 1..self.indexes_of_separator[0]
-    }
-
-    fn body(&self) -> Range<usize> {
-        let start = self.start_of_body();
-        start..start + self.body_length
-    }
-}
-
-fn parse_header_indices(data: &[u8], separator: u8) -> Result<HeaderIndices, DecodeError> {
-    // Branchless decoding. It feels weird if you're not used to it. Note
-    // that we only care about the first two fields, after which we jump
-    // right to `BodyLength` and `CheckSum` verification. In this specific
-    // context, everything in the middle is considered part of the body
-    // (even though e.g. `MsgType` is the third field and is part of
-    // `StandardHeader`): we simply don't care about that distinction. The
-    // only fields that matter here are `BeginString`, `BodyLength`, and
-    // `CheckSum`.
-    let mut header_indices = HeaderIndices::empty();
-    let mut field_i = 0;
-    let mut i = 0;
-    while field_i < 2 && i < data.len() {
-        let byte = data[i];
-        let is_equal_sign = byte == b'=';
-        let is_separator = byte == separator;
-        header_indices.indexes_of_equal_sign[field_i] =
-            [header_indices.indexes_of_equal_sign[field_i], i][is_equal_sign as usize];
-        header_indices.indexes_of_separator[field_i] =
-            [header_indices.indexes_of_separator[field_i], i][is_separator as usize];
-        i += 1;
-        field_i += is_separator as usize;
-        // We should reset the value in case it's the equal sign.
-        header_indices.body_length = [
-            (header_indices.body_length * 10 + byte.wrapping_sub(b'0') as usize)
-                * !is_equal_sign as usize,
-            header_indices.body_length,
-        ][is_separator as usize];
-    }
-    if !header_indices.is_valid() {
-        Err(DecodeError::Syntax)
-    } else {
-        debug_assert!(header_indices.indexes_of_separator[1] < data.len());
-        Ok(header_indices)
-    }
 }
 
 /// A (de)serializer for the classic FIX tag-value encoding.
