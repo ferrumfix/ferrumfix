@@ -21,12 +21,21 @@ impl AgnosticMessage {
             body: ([].as_ptr(), 0),
         }
     }
-}
 
-impl AgnosticMessage {
     /// Returns an immutable reference to the `BeginString <8>` field value of
     /// `self`.
-    pub fn field_begin_string(&self) -> &[u8] {
+    ///
+    /// ```
+    /// use fefix::codec::Encoding;
+    /// use fefix::codec::tagvalue::{CodecAgnostic, Configurable};
+    ///
+    /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
+    /// let codec = &mut CodecAgnostic::<Configurable>::default();
+    /// let message = codec.decode(data).unwrap();
+    ///
+    /// assert_eq!(message.begin_string(), b"FIX.4.2");
+    /// ```
+    pub fn begin_string(&self) -> &[u8] {
         unsafe { std::slice::from_raw_parts(self.begin_string.0, self.begin_string.1) }
     }
 
@@ -38,6 +47,17 @@ impl AgnosticMessage {
     ///
     /// According to this definition, the body may also contain fields that are
     /// technically part of `StandardHeader` and `StandardTrailer`.
+    ///
+    /// ```
+    /// use fefix::codec::Encoding;
+    /// use fefix::codec::tagvalue::{CodecAgnostic, Configurable};
+    ///
+    /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
+    /// let codec = &mut CodecAgnostic::<Configurable>::default();
+    /// let message = codec.decode(data).unwrap();
+    ///
+    /// assert_eq!(message.body().len(), 42);
+    /// ```
     pub fn body(&self) -> &[u8] {
         unsafe { std::slice::from_raw_parts(self.body.0, self.body.1) }
     }
@@ -65,11 +85,26 @@ where
     Z: Config,
 {
     /// Returns an immutable reference to the [`Config`] used by `self`.
+    ///
+    /// ```
+    /// use fefix::codec::tagvalue::CodecAgnostic;
+    ///
+    /// let mut codec = CodecAgnostic::default();
+    /// assert_eq!(codec.config().separator(), 0x1); // SOH
+    /// ```
     pub fn config(&self) -> &Z {
         &self.config
     }
 
     /// Returns a mutable reference to the [`Config`] used by `self`.
+    ///
+    /// ```
+    /// use fefix::codec::tagvalue::CodecAgnostic;
+    ///
+    /// let mut codec = CodecAgnostic::default();
+    /// *codec.config_mut() = Configurable::default().with_separator(b'|');
+    /// assert_eq!(codec.config().separator(), b'|');
+    /// ```
     pub fn config_mut(&mut self) -> &mut Z {
         &mut self.config
     }
@@ -139,9 +174,56 @@ where
         };
         utils::encode(
             &self.config,
-            message.field_begin_string(),
+            message.begin_string(),
             body_writer,
             &mut buffer,
         )
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::codec::tagvalue::Configurable;
+
+    fn config_vertical_bar() -> Configurable {
+        Configurable::default().with_separator(b'|')
+    }
+
+    #[test]
+    fn agnostic_simple_message() {
+        let msg = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
+        let mut decoder = CodecAgnostic::default();
+        *decoder.config_mut() = config_vertical_bar();
+        let message = decoder.decode(&mut msg.as_bytes()).unwrap();
+        assert_eq!(message.begin_string(), b"FIX.4.2");
+        assert_eq!(message.body(), b"35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|");
+    }
+
+    #[test]
+    fn agnostic_empty_body() {
+        let msg = "8=FIX.FOOBAR|9=0|10=225|";
+        let mut decoder = CodecAgnostic::default();
+        *decoder.config_mut() = config_vertical_bar();
+        let message = decoder.decode(&mut msg.as_bytes()).unwrap();
+        assert_eq!(message.begin_string(), b"FIX.FOOBAR");
+        assert_eq!(message.body(), b"");
+    }
+
+    #[test]
+    fn agnostic_edge_cases_no_panic() {
+        let mut decoder = CodecAgnostic::default();
+        *decoder.config_mut() = config_vertical_bar();
+        decoder.decode(b"8=FIX.FOOBAR|9=0|10=225|").ok();
+        decoder.decode(b"8=|9=0|10=225|").ok();
+        decoder.decode(b"8=|9=0|10=|").ok();
+        decoder.decode(b"8====|9=0|10=|").ok();
+        decoder.decode(b"|||9=0|10=|").ok();
+        decoder.decode(b"9999999999999").ok();
+        decoder.decode(b"-9999999999999").ok();
+        decoder.decode(b"==============").ok();
+        decoder.decode(b"9999999999999|").ok();
+        decoder.decode(b"|999999999999=|").ok();
+        decoder.decode(b"|999=999999999999999999|=").ok();
     }
 }

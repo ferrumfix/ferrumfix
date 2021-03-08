@@ -82,13 +82,13 @@ where
             .get("Trailer")
             .and_then(|v| v.as_object())
             .ok_or(Self::DecodeError::Schema)?;
-        let field_begin_string = header
+        let begin_string = header
             .get("BeginString")
             .and_then(|v| v.as_str())
             .ok_or(Self::DecodeError::Schema)?;
         let dictionary = self
             .dictionaries
-            .get(field_begin_string)
+            .get(begin_string)
             .ok_or(Self::DecodeError::InvalidMsgType)?;
         let mut message = T::default();
         let mut decode_field = |name: &str, value: &serde_json::Value| {
@@ -262,12 +262,12 @@ impl Config for ConfigPrettyPrint {
 
 /// A [`Config`](Config) that can be read from a file and modified at runtime.
 #[derive(Debug, Clone)]
-pub struct ConfigSettable {
+pub struct Configurable {
     pretty_print: bool,
 }
 
-impl ConfigSettable {
-    /// Creates a [`ConfigSettable`](ConfigSettable) with default settings.
+impl Configurable {
+    /// Creates a [`Configurable`](Configurable) with default settings.
     pub fn new() -> Self {
         Self::default()
     }
@@ -279,7 +279,7 @@ impl ConfigSettable {
     }
 }
 
-impl Default for ConfigSettable {
+impl Default for Configurable {
     fn default() -> Self {
         Self {
             pretty_print: false,
@@ -287,24 +287,22 @@ impl Default for ConfigSettable {
     }
 }
 
-impl Config for ConfigSettable {
+impl Config for Configurable {
     fn pretty_print(&self) -> bool {
         self.pretty_print
     }
 }
 
-/// The error type that can be returned if some error occurs when encoding JSON
-/// messages.
+/// The type returned in the event of an error when encoding a FIX JSON message.
 #[derive(Copy, Clone, Debug)]
 pub enum EncoderError {
-    /// The error type that can be returned if there is an inconsistency between
+    /// The type returned in case there is an inconsistency between
     /// `BeginString`, `MsgType`, fields presence and other encoding rules as
     /// establised by the dictionary.
     Dictionary,
 }
 
-/// The error type that can be returned if some error is detected when decoding
-/// JSON messages.
+/// The type returned in the event of an error when decoding a FIX JSON message.
 #[derive(Copy, Clone, Debug)]
 pub enum DecodeError {
     /// Bad JSON syntax.

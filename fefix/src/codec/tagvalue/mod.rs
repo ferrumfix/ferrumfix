@@ -16,10 +16,12 @@ use std::io;
 use std::str;
 
 mod agnostic;
+mod config;
 mod taglookup;
 mod utils;
 
 pub use agnostic::{AgnosticMessage, CodecAgnostic};
+pub use config::{Config, ConfigFastDefault, Configurable};
 pub use taglookup::{TagLookup, TagLookupPredetermined};
 
 /// Easy-to-use [`Encoding`] that accomodates for most use cases.
@@ -56,6 +58,16 @@ where
         }
     }
 
+    /// Turns `self` into a [`CodecBuffered`] by allocating an internal buffer.
+    pub fn buffered(self) -> CodecBuffered<T, Z> {
+        CodecBuffered {
+            buffer: Vec::new(),
+            buffer_relevant_len: 0,
+            buffer_additional_len: 0,
+            codec: self,
+        }
+    }
+
     /// Returns an immutable reference to the [`Config`] used by `self`.
     pub fn config(&self) -> &Z {
         &self.config
@@ -78,7 +90,7 @@ where
     fn decode(&mut self, data: &[u8]) -> Result<&T, Self::DecodeError> {
         // Take care of `BeginString`, `BodyLength` and `CheckSum`.
         let agnostic_message = self.agnostic_codec.decode(data)?;
-        let field_begin_string = agnostic_message.field_begin_string();
+        let begin_string = agnostic_message.begin_string();
         // Empty the message.
         self.message.clear();
         let mut fields =
@@ -93,7 +105,7 @@ where
             f.take_value()
         };
         self.message
-            .insert(8, FixFieldValue::string(field_begin_string).unwrap())
+            .insert(8, FixFieldValue::string(begin_string).unwrap())
             .unwrap();
         self.message.insert(35, msg_type).unwrap();
         // Iterate over all the other fields and store them to the message.
@@ -123,8 +135,8 @@ where
                 .unwrap();
             buffer.as_slice().len() - start_i
         };
-        let field_begin_string = message.field(8).unwrap().as_str().unwrap().as_bytes();
-        utils::encode(&self.config, field_begin_string, body_writer, buffer)
+        let begin_string = message.field(8).unwrap().as_str().unwrap().as_bytes();
+        utils::encode(&self.config, begin_string, body_writer, buffer)
     }
 }
 
@@ -368,97 +380,10 @@ fn read_field_value(datatype: DataType, buf: &[u8]) -> Result<FixFieldValue, Dec
     })
 }
 
-/// The [`Config`](Config) pattern allows deep customization of encoding
-/// and decoding behavior without relying on runtime settings. By using this
-/// trait and specializing the behavior of particular methods, users can change
-/// the behavior of the FIX encoder without incurring in performance loss.
-///
-/// # Naming conventions
-/// Implementors of this trait should start with `Config`.
-pub trait Config: Clone + Default {
-    type TagLookup: TagLookup;
-
-    /// The delimiter character, which terminates every tag-value pair including
-    /// the last one.
-    ///
-    /// ASCII 0x1 (SOH) is the default separator character.
-    #[inline]
-    fn separator(&self) -> u8 {
-        0x1
-    }
-
-    #[inline]
-    fn max_message_size(&self) -> Option<usize> {
-        Some(65536)
-    }
-
-    #[inline]
-    #[deprecated(note = "BodyLength is mandatory. This method is ignored.")]
-    fn verify_body_length(&self) -> bool {
-        true
-    }
-
-    #[inline]
-    fn verify_checksum(&self) -> bool {
-        true
-    }
-}
-
-/// A [`Config`] for [`Codec`] with default configuration
-/// options.
-///
-/// This configurator uses [`ChecksumAlgoDefault`] as a checksum algorithm and
-/// [`TagLookupPredetermined`] for its dynamic tag lookup logic.
-#[derive(Debug, Default, Clone)]
-pub struct ConfigFastDefault;
-
-impl Config for ConfigFastDefault {
-    type TagLookup = TagLookupPredetermined;
-}
-
-#[derive(Debug, Clone)]
-pub struct ConfigSettable {
-    separator: u8,
-    verify_checksum: bool,
-}
-
-impl ConfigSettable {
-    pub fn with_separator(mut self, separator: u8) -> Self {
-        self.separator = separator;
-        self
-    }
-
-    pub fn with_verify_checksum(mut self, verify: bool) -> Self {
-        self.verify_checksum = verify;
-        self
-    }
-}
-
-impl Config for ConfigSettable {
-    type TagLookup = TagLookupPredetermined;
-
-    #[inline]
-    fn separator(&self) -> u8 {
-        self.separator
-    }
-
-    #[inline]
-    fn verify_checksum(&self) -> bool {
-        self.verify_checksum
-    }
-}
-
-impl Default for ConfigSettable {
-    fn default() -> Self {
-        Self {
-            separator: b'|',
-            verify_checksum: true,
-        }
-    }
-}
-
+/// The type returned in the event of an error during message encoding.
 type EncodeError = ();
 
+/// The type returned in the event of an error during message decoding.
 #[derive(Clone, Debug, PartialEq)]
 pub enum DecodeError {
     FieldPresence,
@@ -490,7 +415,7 @@ mod test {
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
     fn encoder() -> Codec<slr::Message, impl Config> {
-        let config = ConfigSettable::default().with_separator(b'|');
+        let config = Configurable::default().with_separator(b'|');
         Codec::new(config)
     }
 
@@ -499,7 +424,7 @@ mod test {
     }
 
     fn encoder_slash_no_verify() -> Codec<slr::Message, impl Config> {
-        let config = ConfigSettable::default()
+        let config = Configurable::default()
             .with_separator(b'|')
             .with_verify_checksum(false);
         Codec::new(config)
@@ -512,7 +437,7 @@ mod test {
     #[test]
     fn can_parse_simple_message() {
         let message = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
-        let config = ConfigSettable::default().with_separator(b'|');
+        let config = Configurable::default().with_separator(b'|');
         let mut codec = Codec::<slr::Message, _>::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_ok());
@@ -531,7 +456,7 @@ mod test {
     #[test]
     fn skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
-        let config = ConfigSettable::default()
+        let config = Configurable::default()
             .with_separator(b'|')
             .with_verify_checksum(false);
         let mut codec = Codec::<slr::Message, _>::new(config);
@@ -542,7 +467,7 @@ mod test {
     #[test]
     fn no_skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
-        let config = ConfigSettable::default()
+        let config = Configurable::default()
             .with_separator(b'|')
             .with_verify_checksum(true);
         let mut codec = Codec::<slr::Message, _>::new(config);
@@ -577,7 +502,7 @@ mod test {
     #[test]
     fn message_without_final_separator() {
         let message = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
-        let config = ConfigSettable::default().with_separator(b'|');
+        let config = Configurable::default().with_separator(b'|');
         let mut codec = Codec::<slr::Message, _>::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
@@ -613,45 +538,5 @@ mod test {
         let mut codec = encoder();
         let result = codec.decode(&mut msg.as_bytes());
         assert_eq!(result, Err(DecodeError::Syntax));
-    }
-
-    #[test]
-    fn agnostic_simple_message() {
-        let msg = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
-        let config = ConfigSettable::default().with_separator(b'|');
-        let mut decoder = CodecAgnostic::<ConfigSettable>::default();
-        *decoder.config_mut() = config;
-        let message = decoder.decode(&mut msg.as_bytes()).unwrap();
-        assert_eq!(message.field_begin_string(), b"FIX.4.2");
-        assert_eq!(message.body(), b"35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|");
-    }
-
-    #[test]
-    fn agnostic_empty_body() {
-        let msg = "8=FIX.FOOBAR|9=0|10=225|";
-        let config = ConfigSettable::default().with_separator(b'|');
-        let mut decoder = CodecAgnostic::<ConfigSettable>::default();
-        *decoder.config_mut() = config;
-        let message = decoder.decode(&mut msg.as_bytes()).unwrap();
-        assert_eq!(message.field_begin_string(), b"FIX.FOOBAR");
-        assert_eq!(message.body(), b"");
-    }
-
-    #[test]
-    fn agnostic_edge_cases_no_panic() {
-        let config = ConfigSettable::default().with_separator(b'|');
-        let mut decoder = CodecAgnostic::<ConfigSettable>::default();
-        *decoder.config_mut() = config;
-        decoder.decode(b"8=FIX.FOOBAR|9=0|10=225|").ok();
-        decoder.decode(b"8=|9=0|10=225|").ok();
-        decoder.decode(b"8=|9=0|10=|").ok();
-        decoder.decode(b"8====|9=0|10=|").ok();
-        decoder.decode(b"|||9=0|10=|").ok();
-        decoder.decode(b"9999999999999").ok();
-        decoder.decode(b"-9999999999999").ok();
-        decoder.decode(b"==============").ok();
-        decoder.decode(b"9999999999999|").ok();
-        decoder.decode(b"|999999999999=|").ok();
-        decoder.decode(b"|999=999999999999999999|=").ok();
     }
 }

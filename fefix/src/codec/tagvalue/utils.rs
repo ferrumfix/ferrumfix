@@ -90,7 +90,7 @@ pub fn verify_body_length(
 
 pub fn encode<Z, B, F>(
     config: &Z,
-    field_begin_string: &[u8],
+    begin_string: &[u8],
     body_writer: F,
     buffer: &mut B,
 ) -> Result<usize, EncodeError>
@@ -102,7 +102,7 @@ where
     let start_i = buffer.as_slice().len();
     // First, write `BeginString(8)`.
     buffer.extend_from_slice(b"8=");
-    buffer.extend_from_slice(field_begin_string);
+    buffer.extend_from_slice(begin_string);
     buffer.extend_from_slice(&[
         config.separator(),
         b'9',
