@@ -160,7 +160,6 @@ impl DataType {
     /// ```
     pub fn from_quickfix_name<S: AsRef<str>>(name: S) -> Option<Self> {
         // https://github.com/quickfix/quickfix/blob/b6760f55ac6a46306b4e081bb13b65e6220ab02d/src/C%2B%2B/DataDictionary.cpp#L646-L680
-        dbglog!("Querying QuickFIX data type '{}'", name.as_ref());
         Some(match name.as_ref() {
             "AMT" => DataType::Amt,
             "BOOLEAN" => DataType::Boolean,
@@ -185,7 +184,7 @@ impl DataType {
             "PRICEOFFSET" => DataType::PriceOffset,
             "QTY" => DataType::Qty,
             "STRING" => DataType::String,
-            "TZTIMEONLY" => DataType::UtcTimeOnly, // FIXME
+            "TZTIMEONLY" => DataType::UtcTimeOnly,   // FIXME
             "TZTIMESTAMP" => DataType::UtcTimestamp, // FIXME
             "UTCDATE" => DataType::UtcDateOnly,
             "UTCDATEONLY" => DataType::UtcDateOnly,
@@ -194,13 +193,17 @@ impl DataType {
             "SEQNUM" => DataType::Int,
             "TIME" => DataType::UtcTimestamp,
             "XMLDATA" => DataType::XmlData,
-            _ => return None,
+            _ => {
+                dbglog!("Unknown QuickFIX data type '{}'", name.as_ref());
+                return None;
+            }
         })
     }
+
     /// Returns the name of `self`, character by character identical to the name
     /// that appears in the official guidelines. **Generally** primitive datatypes
     /// will use `snake_case` and non-primitive ones will have `PascalCase`, but
-    /// that's not true for every [`DataType`](DataType).
+    /// that's not true for every [`DataType`].
     ///
     /// # Examples
     ///
@@ -215,8 +218,8 @@ impl DataType {
         // 1. Most primitive data types have `snake_case` names.
         // 2. Most derivative data types have `PascalCase` names.
         // 3. `data` and `String` ruin the party and mess it up.
-        //
-        // Why, you ask? Because nothing makes sense in FIX land.
+        //    Why, you ask? Oh, you sweet summer child. You'll learn soon enough
+        //    that nothing makes sense in FIX land.
         match self {
             DataType::Int => "int",
             DataType::Length => "Length",
@@ -249,8 +252,47 @@ impl DataType {
         }
     }
 
-    /// Returns an [`Iterator`](Iterator) over all variants of
-    /// [`DataType`](DataType).
+    /// Returns `true` if and only if `self` is a "base type", i.e. a primitive;
+    /// returns `false` otherwise.
+    ///
+    /// ```
+    /// use fefix::DataType;
+    ///
+    /// assert!(DataType::Int.is_base_type());
+    /// assert!(!DataType::Amt.is_base_type());
+    /// ```
+    pub fn is_base_type(&self) -> bool {
+        match self {
+            Self::Char | Self::Float | Self::Int | Self::String => true,
+            _ => false,
+        }
+    }
+
+    /// Returns the primitive [`DataType`] from which `self` is derived. If
+    /// `self` is primitive already, returns `self` unchanged.
+    pub fn base_type(&self) -> Self {
+        let dt = match self {
+            Self::Char | Self::Boolean => Self::Char,
+            Self::Float
+            | Self::Amt
+            | Self::Price
+            | Self::PriceOffset
+            | Self::Qty
+            | Self::Percentage => Self::Float,
+            Self::Int
+            | Self::DayOfMonth
+            | Self::Length
+            | Self::NumInGroup
+            | Self::SeqNum
+            | Self::TagNum => Self::Int,
+            _ => Self::String,
+        };
+        debug_assert!(dt.is_base_type());
+        dt
+    }
+
+    /// Returns an [`Iterator`] over all variants of
+    /// [`DataType`].
     pub fn iter_all() -> impl Iterator<Item = Self> {
         <Self as IntoEnumIterator>::iter()
     }
@@ -269,6 +311,14 @@ mod test {
     }
 
     #[test]
+    fn more_than_20_datatypes() {
+        // According to the official documentation, FIX has "about 20 data
+        // types". Including recent revisions, we should well exceed that
+        // number.
+        assert!(DataType::iter_all().count() > 20);
+    }
+
+    #[test]
     fn names_are_unique() {
         let as_vec = DataType::iter_all()
             .map(|dt| dt.name())
@@ -277,5 +327,16 @@ mod test {
             .map(|dt| dt.name())
             .collect::<HashSet<&str>>();
         assert_eq!(as_vec.len(), as_set.len());
+    }
+
+    #[test]
+    fn base_type_is_itself() {
+        for dt in DataType::iter_all() {
+            if dt.is_base_type() {
+                assert_eq!(dt.base_type(), dt);
+            } else {
+                assert_ne!(dt.base_type(), dt);
+            }
+        }
     }
 }
