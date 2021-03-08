@@ -1,7 +1,8 @@
 use std::fmt;
 use std::io;
 
-/// The error type that can be returned if some error occurs during SOFH parsing.
+/// The type returned in the event of an error when decoding SOFH-enclosed
+/// messages.
 #[derive(Debug)]
 pub enum DecodeError {
     /// The provided message length is outside the legal range.
@@ -30,8 +31,8 @@ impl From<io::Error> for DecodeError {
     }
 }
 
-/// The error type that can be returned when attempting to serialize a SOFH-enclosed
-/// payload.
+/// The type returned in the event of an error when encoding SOFH-enclosed
+/// messages.
 #[derive(Debug, Clone)]
 pub enum EncodeError {
     /// The assigned payload is too big to fit in a single SOFH-enclosed
