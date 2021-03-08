@@ -61,7 +61,7 @@ impl PushyMessage {
     }
 }
 
-impl Backend<FixFieldValue> for PushyMessage {
+impl Backend for PushyMessage {
     type Error = ();
     type Iter = FieldsIterator;
     type IterItem = TaggedField;

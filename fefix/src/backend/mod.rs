@@ -37,7 +37,7 @@ pub trait FieldRef<U> {
 }
 
 /// A [`Dictionary`](crate::Dictionary) -agnostic FIX message representation.
-pub trait Backend<U> {
+pub trait Backend<U = FixFieldValue> {
     /// The type returned in the event of a fatal error when defining new fields.
     type Error: fmt::Debug;
     type Iter: StreamIterator<Item = Self::IterItem>;

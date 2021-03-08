@@ -40,7 +40,7 @@ pub struct Message {
     iter: FieldsIterator,
 }
 
-impl Backend<FixFieldValue> for Message {
+impl Backend for Message {
     type Error = ();
     type Iter = FieldsIterator;
     type IterItem = ();
@@ -101,7 +101,7 @@ impl PartialEq for Message {
     }
 }
 
-impl<'a> Backend<FixFieldValue> for &'a mut Message {
+impl<'a> Backend for &'a mut Message {
     type Error = ();
     type Iter = FieldsIterator;
     type IterItem = ();

@@ -69,7 +69,7 @@ where
 
 impl<T, Z> Encoding<T> for Codec<T, Z>
 where
-    T: Backend<FixFieldValue>,
+    T: Backend,
     Z: Config,
 {
     type DecodeError = DecodeError;
@@ -183,7 +183,7 @@ where
 
 impl<T, Z> Encoding<T> for CodecBuffered<T, Z>
 where
-    T: Backend<FixFieldValue> + Default,
+    T: Backend + Default,
     Z: Config,
 {
     type DecodeError = DecodeError;
@@ -207,7 +207,7 @@ where
 
 impl<T, Z> StreamingDecoder<T> for CodecBuffered<T, Z>
 where
-    T: Backend<FixFieldValue> + Default,
+    T: Backend + Default,
     Z: Config,
 {
     type Error = DecodeError;

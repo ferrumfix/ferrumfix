@@ -60,7 +60,7 @@ where
 
 impl<Z, T> Encoding<T> for Codec<T, Z>
 where
-    T: Backend<FixFieldValue> + Default,
+    T: Backend + Default,
     Z: Config,
 {
     type DecodeError = DecodeError;
