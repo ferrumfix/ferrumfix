@@ -1,5 +1,5 @@
-use crate::codec::tagvalue::{Config, DecodeError, EncodeError};
 use crate::buffering::Buffer;
+use crate::codec::tagvalue::{Config, DecodeError, EncodeError};
 use std::convert::TryInto;
 use std::ops::Range;
 

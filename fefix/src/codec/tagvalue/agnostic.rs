@@ -201,17 +201,17 @@ mod test {
     }
 
     #[test]
-    fn agnostic_empty_body() {
+    fn empty_body() {
         let msg = "8=FIX.FOOBAR|9=0|10=225|";
-        let mut decoder = CodecAgnostic::default();
-        *decoder.config_mut() = config_vertical_bar();
-        let message = decoder.decode(&mut msg.as_bytes()).unwrap();
+        let codec = &mut CodecAgnostic::default();
+        *codec.config_mut() = config_vertical_bar();
+        let message = codec.decode(&mut msg.as_bytes()).unwrap();
         assert_eq!(message.begin_string(), b"FIX.FOOBAR");
         assert_eq!(message.body(), b"");
     }
 
     #[test]
-    fn agnostic_edge_cases_no_panic() {
+    fn edge_cases_dont_cause_panic() {
         let mut decoder = CodecAgnostic::default();
         *decoder.config_mut() = config_vertical_bar();
         decoder.decode(b"8=FIX.FOOBAR|9=0|10=225|").ok();
