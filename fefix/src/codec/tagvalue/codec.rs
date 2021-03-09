@@ -1,10 +1,7 @@
 use crate::backend::value as val;
 use crate::backend::{slr, Backend, FixFieldValue, Version};
 use crate::buffering::Buffer;
-use crate::codec::tagvalue::{
-    utils, CodecAgnostic, Config, DecodeError, EncodeError,
-    TagLookup,
-};
+use crate::codec::tagvalue::{utils, CodecAgnostic, Config, DecodeError, EncodeError, TagLookup};
 use crate::codec::{Encoding, StreamingDecoder};
 use crate::dbglog;
 use crate::dictionary::Dictionary;
@@ -79,10 +76,10 @@ where
         // Take care of `BeginString`, `BodyLength` and `CheckSum`.
         let agnostic_message = self.agnostic_codec.decode(data)?;
         let begin_string = agnostic_message.begin_string();
+        let body = agnostic_message.body();
         // Empty the message.
         self.message.clear();
-        let mut fields =
-            &mut FieldIter::new(agnostic_message.body(), self.config.clone(), &self.dict);
+        let mut fields = &mut FieldIter::new(body, &self.config, &self.dict);
         // Deserialize `MsgType(35)`.
         let msg_type = {
             let mut f = fields.next().ok_or(Self::DecodeError::Syntax)??;
@@ -242,10 +239,13 @@ where
     }
 }
 
-struct FieldIter<'a, Z: Config> {
+struct FieldIter<'a, Z>
+where
+    Z: Config,
+{
     data: &'a [u8],
     cursor: usize,
-    config: Z,
+    config: &'a Z,
     tag_lookup: Z::TagLookup,
     data_field_length: usize,
 }
@@ -254,7 +254,7 @@ impl<'a, Z> FieldIter<'a, Z>
 where
     Z: Config,
 {
-    fn new(data: &'a [u8], config: Z, dictionary: &'a Dictionary) -> Self {
+    fn new(data: &'a [u8], config: &'a Z, dictionary: &'a Dictionary) -> Self {
         Self {
             data,
             cursor: 0,
@@ -371,7 +371,7 @@ fn read_field_value(datatype: DataType, buf: &[u8]) -> Result<FixFieldValue, Dec
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::codec::tagvalue::{Configurable, ConfigFastDefault};
+    use crate::codec::tagvalue::{ConfigFastDefault, Configurable};
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
