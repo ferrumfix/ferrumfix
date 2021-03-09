@@ -1,6 +1,7 @@
+use crate::backend::value as val;
 use crate::backend::{Backend, FixFieldValue};
-use crate::codec::*;
 use crate::codec::json::Config;
+use crate::codec::*;
 use crate::Dictionary;
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap};
@@ -19,7 +20,6 @@ where
     T: Default,
     Z: Config,
 {
-
     /// Creates a new codec. `dict` serves as a reference for data type inference
     /// of incoming messages' fields. `config` handles encoding details. See the
     /// [`Config`](Config) trait for more information.
@@ -35,7 +35,9 @@ where
 
     fn translate(&self, dict: &Dictionary, field: &FixFieldValue) -> serde_json::Value {
         match field {
-            FixFieldValue::String(c) => serde_json::Value::String(c.to_string()),
+            FixFieldValue::Atom(val::Atomic::String(c)) => {
+                serde_json::Value::String(c.as_str().to_string())
+            }
             FixFieldValue::Group(array) => {
                 let mut values = Vec::new();
                 for group in array {
@@ -110,13 +112,14 @@ where
     where
         B: Buffer,
     {
-        let dictionary = if let Some(FixFieldValue::String(fix_version)) = message.field(8) {
-            self.dictionaries
-                .get(fix_version.as_str())
-                .ok_or(Self::EncodeError::Dictionary)?
-        } else {
-            return Err(Self::EncodeError::Dictionary);
-        };
+        let dictionary =
+            if let Some(FixFieldValue::Atom(val::Atomic::String(fix_version))) = message.field(8) {
+                self.dictionaries
+                    .get(fix_version.as_str())
+                    .ok_or(Self::EncodeError::Dictionary)?
+            } else {
+                return Err(Self::EncodeError::Dictionary);
+            };
         let component_std_header = dictionary
             .component_by_name("StandardHeader")
             .expect("The `StandardHeader` component is mandatory.");
@@ -171,9 +174,10 @@ fn decode_field(
 ) -> Result<(u32, FixFieldValue), DecodeError> {
     if let Some(field) = dictionary.field_by_name(key) {
         match value {
-            serde_json::Value::String(s) => {
-                Ok((field.tag() as u32, FixFieldValue::String(s.to_string())))
-            }
+            serde_json::Value::String(s) => Ok((
+                field.tag() as u32,
+                FixFieldValue::string(s.as_bytes()).unwrap(),
+            )),
             serde_json::Value::Array(values) => {
                 let mut group = Vec::new();
                 for item in values {

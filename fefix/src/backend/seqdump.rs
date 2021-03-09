@@ -22,7 +22,7 @@ impl PushyMessage {
 
     /// Adds a string field to `self`.
     pub fn add_str<K: Into<u32>, S: Into<String>>(&mut self, tag: K, value: S) {
-        self.add_field(tag, FixFieldValue::String(value.into()))
+        self.add_field(tag, FixFieldValue::string(value.into().as_bytes()).unwrap())
     }
 
     /// Adds an integer field to `self`.
@@ -38,7 +38,7 @@ impl PushyMessage {
 
     pub fn msg_type(&self) -> Option<&str> {
         match self.get_field(35u32) {
-            Some(FixFieldValue::String(s)) => Some(s.as_str()),
+            Some(FixFieldValue::Atom(val::Atomic::String(s))) => Some(s.as_str()),
             _ => None,
         }
     }

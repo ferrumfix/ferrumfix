@@ -129,7 +129,6 @@ fn encode_field(tag: val::TagNum, value: &FixFieldValue, write: &mut impl Buffer
     write.extend_from_slice(tag.to_string().as_bytes());
     write.extend_from_slice(&[b'=']);
     match &value {
-        FixFieldValue::String(s) => write.extend_from_slice(s.as_bytes()),
         FixFieldValue::Group(_) => panic!("Can't encode a group!"),
         FixFieldValue::Atom(field) => write.extend_from_slice(field.to_string().as_bytes()),
     };
@@ -360,11 +359,7 @@ fn read_field_value(datatype: DataType, buf: &[u8]) -> Result<FixFieldValue, Dec
             }
             FixFieldValue::from(n)
         }
-        _ => FixFieldValue::String(
-            str::from_utf8(buf)
-                .map_err(|_| DecodeError::Syntax)?
-                .to_string(),
-        ),
+        _ => FixFieldValue::string(buf).unwrap(),
     })
 }
 
@@ -452,11 +447,11 @@ mod test {
         let message = codec.decode(&mut RANDOM_MESSAGES[0].as_bytes()).unwrap();
         assert_eq!(
             message.get_field(8),
-            Some(&FixFieldValue::String("FIX.4.2".to_string()))
+            Some(&FixFieldValue::string(b"FIX.4.2").unwrap())
         );
         assert_eq!(
             message.get_field(35),
-            Some(&FixFieldValue::String("0".to_string()))
+            Some(&FixFieldValue::string(b"0").unwrap())
         );
     }
 

@@ -95,7 +95,6 @@ pub trait Backend<U = FixFieldValue> {
 /// An owned value of a FIX field.
 #[derive(Clone, Debug, PartialEq)]
 pub enum FixFieldValue {
-    String(String),
     Atom(val::Atomic),
     Group(Vec<BTreeMap<i64, FixFieldValue>>),
 }
@@ -104,7 +103,7 @@ impl FixFieldValue {
     pub fn string(data: &[u8]) -> Option<Self> {
         str::from_utf8(data)
             .ok()
-            .map(|s| Self::String(s.to_string()))
+            .map(|s| Self::Atom(val::Atomic::string(s.to_string())))
     }
 
     pub fn as_length(&self) -> Option<usize> {
@@ -124,7 +123,7 @@ impl FixFieldValue {
     }
 
     pub fn as_str(&self) -> Option<&str> {
-        if let Self::String(s) = self {
+        if let Self::Atom(val::Atomic::String(s)) = self {
             Some(s.as_str())
         } else {
             None
@@ -140,7 +139,7 @@ impl From<i64> for FixFieldValue {
 
 impl From<String> for FixFieldValue {
     fn from(v: String) -> Self {
-        FixFieldValue::String(v)
+        FixFieldValue::Atom(val::Atomic::string(v))
     }
 }
 

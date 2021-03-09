@@ -410,6 +410,12 @@ impl XmlData {
 #[derive(Debug, Clone, PartialEq)]
 pub struct String(std::string::String);
 
+impl String {
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
 impl PrimitiveDataType for String {}
 
 /// Int field (see definition of "int" above) representing a message sequence

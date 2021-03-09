@@ -363,8 +363,11 @@ mod acceptor {
                 }
                 let mut response = slr::Message::new();
                 // TODO: add other details to response message.
-                response.add_field(35, FixFieldValue::String("A".to_string()));
-                response.add_field(49, FixFieldValue::String(self.config.company_id.clone()));
+                response.add_field(35, FixFieldValue::string(b"A").unwrap());
+                response.add_field(
+                    49,
+                    FixFieldValue::string(self.config.company_id.as_bytes()).unwrap(),
+                );
                 self.seq_numbers.incr_outbound();
                 to.push(EventOutbound::Message(add_time_to_msg(response)));
                 self.state = State::Active;
@@ -577,7 +580,7 @@ mod initiator {
             let heartbeat = self.next_msg().await;
             assert_eq!(
                 heartbeat.get_field(112),
-                Some(&FixFieldValue::String(test_request_id))
+                Some(&FixFieldValue::string(test_request_id.as_bytes()).unwrap())
             );
             // TODO: check seq number.
             // TODO: resend missed messages.
@@ -767,11 +770,11 @@ mod test {
             EventOutbound::Message(response) => {
                 assert_eq!(
                     *response.get_field(35).unwrap(),
-                    FixFieldValue::String("A".to_string())
+                    FixFieldValue::string(b"A").unwrap()
                 );
                 assert_eq!(
                     *response.get_field(49).unwrap(),
-                    FixFieldValue::String(COMPANY_ID.to_string())
+                    FixFieldValue::string(COMPANY_ID.as_bytes()).unwrap()
                 );
                 assert!(response.get_field(112).is_none());
             }
@@ -799,11 +802,11 @@ mod test {
             EventOutbound::Message(response) => {
                 assert_eq!(
                     *response.get_field(35).unwrap(),
-                    FixFieldValue::String("2".to_string())
+                    FixFieldValue::string(b"2").unwrap()
                 );
                 assert_eq!(
                     *response.get_field(49).unwrap(),
-                    FixFieldValue::String(COMPANY_ID.to_string())
+                    FixFieldValue::string(COMPANY_ID.as_bytes()).unwrap()
                 );
                 assert!(response.get_field(112).is_none());
             }
@@ -835,11 +838,11 @@ mod test {
             EventOutbound::Message(response) => {
                 assert_eq!(
                     *response.get_field(35).unwrap(),
-                    FixFieldValue::String("A".to_string())
+                    FixFieldValue::string(b"A").unwrap()
                 );
                 assert_eq!(
                     *response.get_field(49).unwrap(),
-                    FixFieldValue::String(COMPANY_ID.to_string())
+                    FixFieldValue::string(COMPANY_ID.as_bytes()).unwrap()
                 );
                 assert!(response.get_field(112).is_none());
             }

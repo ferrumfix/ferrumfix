@@ -197,7 +197,10 @@ impl Message {
 
     /// Adds a string field to `self`.
     pub fn add_str<K: Into<i64>, S: Into<String>>(&mut self, tag: K, value: S) {
-        self.add_field(tag, slr::FixFieldValue::String(value.into()))
+        self.add_field(
+            tag,
+            slr::FixFieldValue::string(value.into().as_bytes()).unwrap(),
+        )
     }
 
     /// Adds an integer field to `self`.
@@ -211,7 +214,7 @@ impl Message {
 
     pub fn msg_type(&self) -> Option<&str> {
         match self.fields.get(&35) {
-            Some(FixFieldValue::String(s)) => Some(s.as_str()),
+            Some(FixFieldValue::Atom(val::Atomic::String(s))) => Some(s.as_str()),
             _ => None,
         }
     }
