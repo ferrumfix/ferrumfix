@@ -46,7 +46,7 @@ pub trait Config: Clone {
 /// Without [`ConfigPrettyPrint`]:
 ///
 /// ```json
-/// {"Header":{"BeginString":"FIX.4.4","MsgType":"W","MsgSeqNum":"4567","SenderCompID":"SENDER","TargetCompID":"TARGET","SendingTime":"20160802-21:14:38.717"},"Body":{"SecurityIDSource":"8","SecurityID":"ESU6","MDReqID":"789","NoMDEntries":[{"MDEntryType":"0","MDEntryPx":"1.50","MDEntrySize":"75","MDEntryTime":"21:14:38.688"},{"MDEntryType":"1","MDEntryPx":"1.75","MDEntrySize":"25","MDEntryTime":"21:14:38.688"}]},"Trailer":{}}
+/// {"Header":{"...":"..."},"Body":{"...":"..."},"Trailer":{}}
 /// ```
 #[derive(Debug, Clone)]
 pub struct ConfigPrettyPrint;

@@ -22,10 +22,15 @@
 //! Please check out the [README](https://github.com/neysofu/fefix/) for more
 //! general information regarding FerrumFIX.
 
+#![warn(clippy::non_ascii_literal)]
 #![deny(
     unused,
     missing_debug_implementations,
-    clippy::useless_conversion
+    clippy::useless_conversion,
+    clippy::missing_panics_docs,
+    clippy::mixed_case_hex_literals,
+    clippy::needless_bool,
+    clippy::needless_lifetimes
 )]
 
 /// A handly macro for quick and dirty debugging. It reports the caller location
