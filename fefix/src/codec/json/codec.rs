@@ -1,6 +1,6 @@
 use crate::backend::value as val;
 use crate::backend::{Backend, FixFieldValue};
-use crate::codec::json::Config;
+use crate::codec::json::{Config, Configurable};
 use crate::codec::*;
 use crate::Dictionary;
 use serde_json::json;
@@ -9,7 +9,7 @@ use std::fmt;
 
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]
-pub struct Codec<T, Z> {
+pub struct Codec<T, Z = Configurable> {
     dictionaries: HashMap<String, Dictionary>,
     message: T,
     config: Z,

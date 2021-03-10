@@ -1,6 +1,6 @@
 use crate::buffering::Buffer;
+use crate::codec::tagvalue::{utils, Config, Configurable, DecodeError};
 use crate::codec::Encoding;
-use crate::codec::tagvalue::{Config, DecodeError, utils};
 use crate::dbglog;
 
 /// An immutable view over the raw contents of a FIX message.
@@ -31,6 +31,7 @@ impl AgnosticMessage {
     ///
     /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
     /// let codec = &mut CodecAgnostic::<Configurable>::default();
+    /// codec.config_mut().set_separator(b'|');
     /// let message = codec.decode(data).unwrap();
     ///
     /// assert_eq!(message.begin_string(), b"FIX.4.2");
@@ -39,7 +40,8 @@ impl AgnosticMessage {
         unsafe { std::slice::from_raw_parts(self.begin_string.0, self.begin_string.1) }
     }
 
-    /// Returns an immutable reference to the body contents of `self`. In this context, "body" means all fields besides
+    /// Returns an immutable reference to the body contents of `self`. In this
+    /// context, "body" means all fields besides
     ///
     /// - `BeginString <8>`;
     /// - `BodyLength <9>`;
@@ -54,6 +56,7 @@ impl AgnosticMessage {
     ///
     /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
     /// let codec = &mut CodecAgnostic::<Configurable>::default();
+    /// codec.config_mut().set_separator(b'|');
     /// let message = codec.decode(data).unwrap();
     ///
     /// assert_eq!(message.body().len(), 42);
@@ -72,7 +75,7 @@ impl AgnosticMessage {
 /// - Non `Latin-1` -compatible encoding.
 /// - Custom application-level encryption mechanism.
 #[derive(Debug)]
-pub struct CodecAgnostic<Z>
+pub struct CodecAgnostic<Z = Configurable>
 where
     Z: Config,
 {
@@ -87,9 +90,9 @@ where
     /// Returns an immutable reference to the [`Config`] used by `self`.
     ///
     /// ```
-    /// use fefix::codec::tagvalue::CodecAgnostic;
+    /// use fefix::codec::tagvalue::{CodecAgnostic, Config, Configurable};
     ///
-    /// let mut codec = CodecAgnostic::default();
+    /// let mut codec = CodecAgnostic::<Configurable>::default();
     /// assert_eq!(codec.config().separator(), 0x1); // SOH
     /// ```
     pub fn config(&self) -> &Z {
@@ -99,9 +102,9 @@ where
     /// Returns a mutable reference to the [`Config`] used by `self`.
     ///
     /// ```
-    /// use fefix::codec::tagvalue::CodecAgnostic;
+    /// use fefix::codec::tagvalue::{CodecAgnostic, Config, Configurable};
     ///
-    /// let mut codec = CodecAgnostic::default();
+    /// let mut codec = CodecAgnostic::<Configurable>::default();
     /// *codec.config_mut() = Configurable::default().with_separator(b'|');
     /// assert_eq!(codec.config().separator(), b'|');
     /// ```
@@ -187,7 +190,9 @@ mod test {
     use crate::codec::tagvalue::Configurable;
 
     fn config_vertical_bar() -> Configurable {
-        Configurable::default().with_separator(b'|')
+        let mut config = Configurable::default();
+        config.set_separator(b'|');
+        config
     }
 
     #[test]

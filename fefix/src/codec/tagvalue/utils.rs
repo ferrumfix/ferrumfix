@@ -18,12 +18,6 @@ pub const FIELD_CHECKSUM_LEN_IN_BYTES: usize = 7;
 /// Parses an `u8` from `digits` and returns the result.
 ///
 /// No error detection is performed. Values less than 100 must be zero-padded.
-///
-/// ```
-/// assert_eq!(parse_u8_from_decimal(b"000"), 0);
-/// assert_eq!(parse_u8_from_decimal(b"042"), 42);
-/// assert_eq!(parse_u8_from_decimal(b"255"), 255);
-/// ```
 pub fn parse_u8_from_decimal(digits: [u8; 3]) -> u8 {
     digits[0]
         .wrapping_sub(b'0')

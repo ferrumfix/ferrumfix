@@ -55,14 +55,17 @@ pub struct Configurable {
 }
 
 impl Configurable {
+    pub fn set_separator(&mut self, separator: u8) {
+        self.separator = separator;
+    }
+
     pub fn with_separator(mut self, separator: u8) -> Self {
         self.separator = separator;
         self
     }
 
-    pub fn with_verify_checksum(mut self, verify: bool) -> Self {
+    pub fn set_verify_checksum(&mut self, verify: bool) {
         self.verify_checksum = verify;
-        self
     }
 }
 
@@ -83,7 +86,7 @@ impl Config for Configurable {
 impl Default for Configurable {
     fn default() -> Self {
         Self {
-            separator: b'|',
+            separator: 0x1, // SOH
             verify_checksum: true,
         }
     }

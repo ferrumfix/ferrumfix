@@ -189,7 +189,7 @@ impl DataType {
             "UTCDATE" => DataType::UtcDateOnly,
             "UTCDATEONLY" => DataType::UtcDateOnly,
             "UTCTIMEONLY" => DataType::UtcTimeOnly,
-            "UTCTIMESTAMP" => DataType::String,
+            "UTCTIMESTAMP" => DataType::UtcTimestamp,
             "SEQNUM" => DataType::Int,
             "TIME" => DataType::UtcTimestamp,
             "XMLDATA" => DataType::XmlData,

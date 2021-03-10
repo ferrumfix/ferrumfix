@@ -347,7 +347,7 @@ impl Dictionary {
     ///
     /// let dict = Dictionary::from_version(Version::Fix44);
     ///
-    /// let field1 = dict.field(112).unwrap();
+    /// let field1 = dict.field_by_tag(112).unwrap();
     /// let field2 = dict.field_by_name("TestReqID").unwrap();
     /// assert_eq!(field1.name(), field2.name());
     /// ```

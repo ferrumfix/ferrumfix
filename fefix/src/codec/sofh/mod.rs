@@ -58,11 +58,14 @@ impl Frame {
     /// # Examples
     ///
     /// ```
-    /// use fefix::codec::Decoder;
-    /// use fefix::codec::sofh::Codec;
+    /// use fefix::codec::Encoding;
+    /// use fefix::codec::sofh::{Codec, EncodingType};
     ///
-    /// let frame = Codec::decode(&[0, 0, 0, 0, 0, 1, 42]).unwrap();
-    /// let encoding_type = frame.encoding_type().into();
+    /// let codec = &mut Codec::default();
+    /// // Message_Length ->       -----------
+    /// // Encoding_Type ->                    ----------
+    /// let frame = codec.decode(&[0, 0, 0, 6, 0xF5, 0x00]).unwrap();
+    /// let encoding_type = EncodingType::from(frame.encoding_type());
     /// assert_eq!(encoding_type, EncodingType::Json);
     /// ```
     pub fn encoding_type(&self) -> u16 {
@@ -75,10 +78,14 @@ impl Frame {
     /// # Examples
     ///
     /// ```
-    /// use fefix::codec::Decoder;
+    /// use fefix::codec::Encoding;
     /// use fefix::codec::sofh::Codec;
     ///
-    /// let frame = Codec::decode(&[0, 0, 0, 1, 0, 0, 42]).unwrap();
+    /// let codec = &mut Codec::default();
+    /// // Message_Length ->       -----------
+    /// // Encoding_Type ->                    ---------
+    /// // Message ->                                    --
+    /// let frame = codec.decode(&[0, 0, 0, 7, 0x0, 0x0, 42]).unwrap();
     /// let payload = frame.payload();
     /// assert_eq!(payload, &[42]);
     /// ```
@@ -141,8 +148,8 @@ impl Encoding<Frame> for Codec {
         let encoding_type = get_field_encoding_type(data);
         self.frame = Frame {
             encoding_type,
-            buffer: data.as_ptr(),
-            buffer_len: data.len(),
+            buffer: (&data[HEADER_SIZE_IN_BYTES..]).as_ptr(),
+            buffer_len: data.len() - HEADER_SIZE_IN_BYTES,
         };
         Ok(&self.frame)
     }
@@ -194,7 +201,7 @@ impl CodecBuffered {
         Self::with_capacity(1024)
     }
 
-    /// Creates a new [`Codec`](Codec) with a buffer large enough to
+    /// Creates a new [`Codec`] with a buffer large enough to
     /// hold `capacity` amounts of bytes without reallocating.
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
@@ -211,9 +218,9 @@ impl CodecBuffered {
     /// # Examples
     ///
     /// ```
-    /// use fefix::codec::sofh::Codec;
+    /// use fefix::codec::sofh::CodecBuffered;
     ///
-    /// let parser = Codec::with_capacity(8192);
+    /// let parser = CodecBuffered::with_capacity(8192);
     /// assert_eq!(parser.capacity(), 8192);
     /// ```
     pub fn capacity(&self) -> usize {

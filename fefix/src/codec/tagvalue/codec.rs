@@ -1,7 +1,7 @@
 use crate::backend::value as val;
 use crate::backend::{slr, Backend, FixFieldValue, Version};
 use crate::buffering::Buffer;
-use crate::codec::tagvalue::{utils, CodecAgnostic, Config, DecodeError, EncodeError, TagLookup};
+use crate::codec::tagvalue::{utils, CodecAgnostic, Config, Configurable, DecodeError, EncodeError, TagLookup};
 use crate::codec::{Encoding, StreamingDecoder};
 use crate::dbglog;
 use crate::dictionary::Dictionary;
@@ -11,7 +11,7 @@ use std::str;
 
 /// Easy-to-use [`Encoding`] that accomodates for most use cases.
 #[derive(Debug)]
-pub struct Codec<T, Z>
+pub struct Codec<T, Z = Configurable>
 where
     Z: Config,
 {
@@ -146,7 +146,7 @@ fn encode_field(tag: val::TagNum, value: &FixFieldValue, write: &mut impl Buffer
 ///
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
 #[derive(Debug)]
-pub struct CodecBuffered<T, Z>
+pub struct CodecBuffered<T, Z = Configurable>
 where
     Z: Config,
 {
@@ -371,7 +371,8 @@ mod test {
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
     fn encoder() -> Codec<slr::Message, impl Config> {
-        let config = Configurable::default().with_separator(b'|');
+        let mut config = Configurable::default();
+        config.set_separator(b'|');
         Codec::new(config)
     }
 
@@ -380,9 +381,9 @@ mod test {
     }
 
     fn encoder_slash_no_verify() -> Codec<slr::Message, impl Config> {
-        let config = Configurable::default()
-            .with_separator(b'|')
-            .with_verify_checksum(false);
+        let mut config = Configurable::default();
+        config.set_separator(b'|');
+        config.set_verify_checksum(false);
         Codec::new(config)
     }
 
@@ -393,8 +394,9 @@ mod test {
     #[test]
     fn can_parse_simple_message() {
         let message = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
-        let config = Configurable::default().with_separator(b'|');
-        let mut codec = Codec::<slr::Message, _>::new(config);
+        let mut config = Configurable::default();
+        config.set_separator(b'|');
+        let mut codec = Codec::<slr::Message>::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_ok());
     }
@@ -412,10 +414,10 @@ mod test {
     #[test]
     fn skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
-        let config = Configurable::default()
-            .with_separator(b'|')
-            .with_verify_checksum(false);
-        let mut codec = Codec::<slr::Message, _>::new(config);
+        let mut config = Configurable::default();
+        config.set_separator(b'|');
+        config.set_verify_checksum(false);
+        let mut codec = Codec::<slr::Message>::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_ok());
     }
@@ -423,10 +425,10 @@ mod test {
     #[test]
     fn no_skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
-        let config = Configurable::default()
-            .with_separator(b'|')
-            .with_verify_checksum(true);
-        let mut codec = Codec::<slr::Message, _>::new(config);
+        let mut config = Configurable::default();
+        config.set_separator(b'|');
+        config.set_verify_checksum(true);
+        let mut codec = Codec::<slr::Message>::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
     }
@@ -458,8 +460,9 @@ mod test {
     #[test]
     fn message_without_final_separator() {
         let message = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
-        let config = Configurable::default().with_separator(b'|');
-        let mut codec = Codec::<slr::Message, _>::new(config);
+        let mut config = Configurable::default();
+        config.set_separator(b'|');
+        let mut codec = Codec::<slr::Message>::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
     }
