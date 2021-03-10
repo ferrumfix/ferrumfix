@@ -7,14 +7,14 @@ use std::fmt;
 use std::str;
 use std::time::SystemTime;
 
+pub mod field_value;
 pub mod fix42;
 mod seqdump;
 pub mod slr;
-pub mod field_value;
 
-pub use seqdump::PushyMessage;
-pub use field_value::FieldValue;
 use field_value as val;
+pub use field_value::FieldValue;
+pub use seqdump::PushyMessage;
 
 pub trait FieldRef<U> {
     fn tag(&self) -> u32;

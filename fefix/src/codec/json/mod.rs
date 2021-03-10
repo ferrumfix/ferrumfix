@@ -2,11 +2,11 @@
 
 use std::fmt;
 
-mod config;
 mod codec;
+mod config;
 
 pub use codec::Codec;
-pub use config::{Config, Configurable, ConfigPrettyPrint};
+pub use config::{Config, ConfigPrettyPrint, Configurable};
 
 /// The type returned in the event of an error when encoding a FIX JSON message.
 #[derive(Copy, Clone, Debug)]

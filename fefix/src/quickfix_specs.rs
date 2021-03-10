@@ -1,6 +1,6 @@
 use crate::AppVersion;
-use std::borrow::Cow;
 use rust_embed::RustEmbed;
+use std::borrow::Cow;
 
 #[derive(RustEmbed)]
 #[folder = "resources/quickfix/"]
@@ -31,7 +31,8 @@ pub fn quickfix_spec(version: AppVersion) -> Cow<'static, str> {
         AppVersion::Fix50SP1 => SPEC_FIX_50SP1,
         AppVersion::Fix50SP2 => SPEC_FIX_50SP2,
         AppVersion::Fixt11 => SPEC_FIXT_11,
-    }).into()
+    })
+    .into()
 }
 
 #[cfg(test)]

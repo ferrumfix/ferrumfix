@@ -255,7 +255,7 @@ impl DataType {
 
     /// Returns `true` if and only if `self` is a "base type", i.e. a primitive;
     /// returns `false` otherwise.
-    /// 
+    ///
     /// # Examples
     ///
     /// ```
@@ -273,7 +273,7 @@ impl DataType {
 
     /// Returns the primitive [`DataType`] from which `self` is derived. If
     /// `self` is primitive already, returns `self` unchanged.
-    /// 
+    ///
     /// # Examples
     ///
     /// ```

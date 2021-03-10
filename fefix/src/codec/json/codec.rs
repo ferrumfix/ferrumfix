@@ -1,7 +1,7 @@
-use crate::backend::{Backend, FixFieldValue, FieldValue};
+use crate::backend::{Backend, FieldValue, FixFieldValue};
+use crate::buffering::Buffer;
 use crate::json::{Config, Configurable};
 use crate::{Dictionary, Encoding};
-use crate::buffering::Buffer;
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
@@ -234,9 +234,9 @@ impl fmt::Display for DecodeError {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::AppVersion;
     use crate::backend::slr;
     use crate::json::ConfigPrettyPrint;
+    use crate::AppVersion;
     use serde_json::*;
 
     const MESSAGE_SIMPLE: &str = r#"
