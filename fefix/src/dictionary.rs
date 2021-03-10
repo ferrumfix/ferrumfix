@@ -819,34 +819,32 @@ mod quickfix {
     }
 
     impl<'a> QuickFixReader<'a> {
-        pub fn new(
-            xml_document: &'a roxmltree::Document<'a>,
-        ) -> Result<Dictionary, ParseDictionaryError> {
+        pub fn new(xml_document: &'a roxmltree::Document<'a>) -> ParseResult<Dictionary> {
             let mut reader = Self::empty(&xml_document)?;
             for child in reader.node_with_fields.children() {
                 if child.is_element() {
-                    reader.add_field(child);
+                    reader.add_field(child)?;
                 }
             }
             for child in reader.node_with_components.children() {
                 if child.is_element() {
-                    reader.add_component(child);
+                    reader.add_component(child)?;
                 }
             }
             for child in reader.node_with_messages.children() {
                 if child.is_element() {
-                    reader.add_message(child);
+                    reader.add_message(child)?;
                 }
             }
             // `StandardHeader` and `StandardTrailer` are defined in ad-hoc
             // sections of the XML files. They're always there, even if
             // potentially empty (FIX 5.0+).
-            reader.add_component_with_name(reader.node_with_header, "StandardHeader");
-            reader.add_component_with_name(reader.node_with_trailer, "StandardTrailer");
+            reader.add_component_with_name(reader.node_with_header, "StandardHeader")?;
+            reader.add_component_with_name(reader.node_with_trailer, "StandardTrailer")?;
             Ok(reader.dict)
         }
 
-        fn empty(xml_document: &'a roxmltree::Document<'a>) -> Result<Self, ParseDictionaryError> {
+        fn empty(xml_document: &'a roxmltree::Document<'a>) -> ParseResult<Self> {
             let root = xml_document.root_element();
             let find_tagged_child = |tag: &str| {
                 root.children()
@@ -883,9 +881,9 @@ mod quickfix {
 
         /// Reads a [`FieldData`](FieldData) definition from `node` and
         /// updates `self`.
-        fn add_field(&mut self, node: roxmltree::Node) {
+        fn add_field(&mut self, node: roxmltree::Node) -> ParseResult<()> {
             let iid = self.dict.fields.len() as u32;
-            let field = self.import_field(node);
+            let field = self.import_field(node)?;
             self.dict
                 .symbol_table
                 .insert(Key::FieldByName(field.name.clone()), iid);
@@ -893,13 +891,14 @@ mod quickfix {
                 .symbol_table
                 .insert(Key::FieldByTag(field.tag as u32), iid);
             self.dict.fields.push(field);
+            Ok(())
         }
 
         /// Reads a [`MessageData`](MessageData) definition from `node` and
         /// updates `self`.
-        fn add_message(&mut self, node: roxmltree::Node) {
+        fn add_message(&mut self, node: roxmltree::Node) -> ParseResult<()> {
             let iid = self.dict.messages.len() as u32;
-            let message = self.import_message(node);
+            let message = self.import_message(node)?;
             self.dict
                 .symbol_table
                 .insert(Key::MessageByName(message.name.clone()), iid);
@@ -908,41 +907,57 @@ mod quickfix {
                 iid,
             );
             self.dict.messages.push(message);
+            Ok(())
         }
 
         /// Reads a [`ComponentData`](ComponentData) definition from `node` and
         /// updates `self`.
-        fn add_component(&mut self, node: roxmltree::Node) {
-            let name = node.attribute("name").unwrap().to_string();
-            self.add_component_with_name(node, name);
+        fn add_component(&mut self, node: roxmltree::Node) -> ParseResult<()> {
+            let name = node
+                .attribute("name")
+                .ok_or(ParseDictionaryError::InvalidFormat)?
+                .to_string();
+            self.add_component_with_name(node, name)?;
+            Ok(())
         }
 
-        fn add_component_with_name<S: AsRef<str>>(&mut self, node: roxmltree::Node, name: S) {
+        fn add_component_with_name<S: AsRef<str>>(
+            &mut self,
+            node: roxmltree::Node,
+            name: S,
+        ) -> ParseResult<()> {
             let iid = self.dict.components.len();
             let component =
-                ComponentData::definition_from_node_with_name(&mut self.dict, node, name.as_ref());
+                ComponentData::definition_from_node_with_name(&mut self.dict, node, name.as_ref())?;
             self.dict
                 .symbol_table
                 .insert(Key::ComponentByName(name.as_ref().to_string()), iid as u32);
             self.dict.components.push(component);
+            Ok(())
         }
 
-        fn import_message(&mut self, node: roxmltree::Node) -> MessageData {
+        fn import_message(&mut self, node: roxmltree::Node) -> ParseResult<MessageData> {
             debug_assert_eq!(node.tag_name().name(), "message");
-            let category_iid = CategoryData::get_or_create_iid_from_ref(&mut self.dict, node);
+            let category_iid = CategoryData::get_or_create_iid_from_ref(&mut self.dict, node)?;
             let layout_start = self.dict.layout_items.len() as u32;
             for child in node.children() {
                 if child.is_element() {
                     // We don't need to generate new IID's because we're dealing
                     // with ranges.
-                    let data = LayoutItemData::save_definition(&mut self.dict, child);
+                    let data = LayoutItemData::save_definition(&mut self.dict, child)?;
                     self.dict.layout_items.push(data);
                 }
             }
             let layout_end = self.dict.layout_items.len() as u32;
-            MessageData {
-                name: node.attribute("name").unwrap().to_string(),
-                msg_type: node.attribute("msgtype").unwrap().to_string(),
+            Ok(MessageData {
+                name: node
+                    .attribute("name")
+                    .ok_or(ParseDictionaryError::InvalidFormat)?
+                    .to_string(),
+                msg_type: node
+                    .attribute("msgtype")
+                    .ok_or(ParseDictionaryError::InvalidFormat)?
+                    .to_string(),
                 component_id: 0,
                 category_iid,
                 section_id: String::new(),
@@ -951,16 +966,23 @@ mod quickfix {
                 required: true,
                 elaboration: None,
                 description: String::new(),
-            }
+            })
         }
 
-        fn import_field(&mut self, node: roxmltree::Node) -> FieldData {
+        fn import_field(&mut self, node: roxmltree::Node) -> ParseResult<FieldData> {
             debug_assert_eq!(node.tag_name().name(), "field");
             let data_type_iid = DatatypeData::get_or_create_iid_from_ref(&mut self.dict, node);
             let value_restrictions = value_restrictions_from_node(node, data_type_iid);
-            FieldData {
-                name: node.attribute("name").unwrap().to_string(),
-                tag: node.attribute("number").unwrap().parse().unwrap(),
+            Ok(FieldData {
+                name: node
+                    .attribute("name")
+                    .ok_or(ParseDictionaryError::InvalidFormat)?
+                    .to_string(),
+                tag: node
+                    .attribute("number")
+                    .ok_or(ParseDictionaryError::InvalidFormat)?
+                    .parse()
+                    .map_err(|_| ParseDictionaryError::InvalidFormat)?,
                 data_type_iid: data_type_iid,
                 associated_data_tag: None,
                 value_restrictions,
@@ -969,7 +991,7 @@ mod quickfix {
                 base_category_abbr_name: None,
                 base_category_id: None,
                 description: None,
-            }
+            })
         }
     }
 
@@ -978,30 +1000,35 @@ mod quickfix {
             dict: &mut Dictionary,
             node: roxmltree::Node,
             name: S,
-        ) -> Self {
+        ) -> ParseResult<Self> {
             let layout_start = dict.layout_items.len() as u32;
             for child in node.children() {
                 if child.is_element() {
                     // We don't need IID's because we're dealing with ranges.
-                    let item = LayoutItemData::save_definition(dict, child);
+                    let item = LayoutItemData::save_definition(dict, child)?;
                     dict.layout_items.push(item);
                 }
             }
             let layout_end = dict.layout_items.len() as u32;
-            ComponentData {
+            Ok(ComponentData {
                 id: 0,
                 component_type: ComponentType::Block,
                 layout_items_iid_range: layout_start..layout_end,
                 category_iid: 0, // FIXME
                 name: name.as_ref().to_string(),
                 abbr_name: None,
-            }
+            })
         }
 
-        fn get_or_create_iid_from_ref(dict: &mut Dictionary, node: roxmltree::Node) -> InternalId {
+        fn get_or_create_iid_from_ref(
+            dict: &mut Dictionary,
+            node: roxmltree::Node,
+        ) -> ParseResult<InternalId> {
             debug_assert_eq!(node.tag_name().name(), "component");
-            let name = node.attribute("name").unwrap();
-            match dict.symbol(KeyRef::ComponentByName(name)) {
+            let name = node
+                .attribute("name")
+                .ok_or(ParseDictionaryError::InvalidFormat)?;
+            Ok(match dict.symbol(KeyRef::ComponentByName(name)) {
                 Some(x) => *x,
                 None => {
                     let iid = dict.data_types.len() as u32;
@@ -1018,7 +1045,7 @@ mod quickfix {
                         .insert(Key::ComponentByName(name.to_string()), iid);
                     iid
                 }
-            }
+            })
         }
     }
 
@@ -1076,7 +1103,7 @@ mod quickfix {
     }
 
     impl LayoutItemData {
-        fn save_definition(dict: &mut Dictionary, node: roxmltree::Node) -> Self {
+        fn save_definition(dict: &mut Dictionary, node: roxmltree::Node) -> ParseResult<Self> {
             // This processing step requires on fields being already present in
             // the dictionary.
             debug_assert_ne!(dict.fields.len(), 0);
@@ -1090,7 +1117,7 @@ mod quickfix {
                 }
                 "component" => {
                     // Components may *not* be already present.
-                    let component_iid = ComponentData::get_or_create_iid_from_ref(dict, node);
+                    let component_iid = ComponentData::get_or_create_iid_from_ref(dict, node)?;
                     LayoutItemKindData::Component(component_iid)
                 }
                 "group" => {
@@ -1106,15 +1133,18 @@ mod quickfix {
                     panic!("Invalid tag!")
                 }
             };
-            LayoutItemData { required, kind }
+            Ok(LayoutItemData { required, kind })
         }
     }
 
     impl CategoryData {
-        fn get_or_create_iid_from_ref(dict: &mut Dictionary, node: roxmltree::Node) -> InternalId {
+        fn get_or_create_iid_from_ref(
+            dict: &mut Dictionary,
+            node: roxmltree::Node,
+        ) -> ParseResult<InternalId> {
             debug_assert_eq!(node.tag_name().name(), "message");
-            let name = node.attribute("msgcat").unwrap();
-            match dict.symbol(KeyRef::CategoryByName(name)) {
+            let name = node.attribute("msgcat").ok_or(ParseError::InvalidFormat)?;
+            Ok(match dict.symbol(KeyRef::CategoryByName(name)) {
                 Some(x) => *x,
                 None => {
                     let iid = dict.categories.len() as u32;
@@ -1126,9 +1156,12 @@ mod quickfix {
                         .insert(Key::CategoryByName(name.to_string()), iid);
                     iid
                 }
-            }
+            })
         }
     }
+
+    type ParseError = ParseDictionaryError;
+    type ParseResult<T> = Result<T, ParseError>;
 
     /// The error type that can arise when decoding a QuickFIX Dictionary.
     #[derive(Clone, Debug)]
