@@ -3,7 +3,6 @@ use crate::backend::{slr, Backend, FixFieldValue, Version};
 use crate::buffering::Buffer;
 use crate::codec::tagvalue::{utils, CodecAgnostic, Config, Configurable, DecodeError, EncodeError, TagLookup};
 use crate::codec::{Encoding, StreamingDecoder};
-use crate::dbglog;
 use crate::dictionary::Dictionary;
 use crate::DataType;
 use std::fmt::Debug;

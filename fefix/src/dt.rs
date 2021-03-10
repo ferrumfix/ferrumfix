@@ -150,13 +150,14 @@ impl DataType {
     /// was found. The query is case-sensitive.
     ///
     /// # Examples
+    ///
     /// ```
     /// use fefix::DataType;
     ///
     /// assert_eq!(DataType::from_quickfix_name("AMT"), Some(DataType::Amt));
+    /// assert_eq!(DataType::from_quickfix_name("Amt"), None);
     /// assert_eq!(DataType::from_quickfix_name("MONTHYEAR"), Some(DataType::MonthYear));
     /// assert_eq!(DataType::from_quickfix_name(""), None);
-    /// assert_eq!(DataType::from_quickfix_name("Amt"), None);
     /// ```
     pub fn from_quickfix_name<S: AsRef<str>>(name: S) -> Option<Self> {
         // https://github.com/quickfix/quickfix/blob/b6760f55ac6a46306b4e081bb13b65e6220ab02d/src/C%2B%2B/DataDictionary.cpp#L646-L680
@@ -254,12 +255,14 @@ impl DataType {
 
     /// Returns `true` if and only if `self` is a "base type", i.e. a primitive;
     /// returns `false` otherwise.
+    /// 
+    /// # Examples
     ///
     /// ```
     /// use fefix::DataType;
     ///
-    /// assert!(DataType::Int.is_base_type());
-    /// assert!(!DataType::Amt.is_base_type());
+    /// assert_eq!(DataType::Float.is_base_type(), true);
+    /// assert_eq!(DataType::Price.is_base_type(), false);
     /// ```
     pub fn is_base_type(&self) -> bool {
         match self {
@@ -270,6 +273,15 @@ impl DataType {
 
     /// Returns the primitive [`DataType`] from which `self` is derived. If
     /// `self` is primitive already, returns `self` unchanged.
+    /// 
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::DataType;
+    ///
+    /// assert_eq!(DataType::Float.base_type(), DataType::Float);
+    /// assert_eq!(DataType::Price.base_type(), DataType::Float);
+    /// ```
     pub fn base_type(&self) -> Self {
         let dt = match self {
             Self::Char | Self::Boolean => Self::Char,
@@ -337,6 +349,13 @@ mod test {
             } else {
                 assert_ne!(dt.base_type(), dt);
             }
+        }
+    }
+
+    #[test]
+    fn base_type_is_actually_base_type() {
+        for dt in DataType::iter_all() {
+            assert!(dt.base_type().is_base_type());
         }
     }
 }

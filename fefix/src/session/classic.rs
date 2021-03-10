@@ -623,10 +623,10 @@ mod initiator {
             futures_lite::stream::empty()
         }
 
-        pub fn notify<'a>(
-            &'a mut self,
+        pub fn notify(
+            &mut self,
             _event: slr::Message,
-        ) -> impl Iterator<Item = EventOutbound> + 'a {
+        ) -> impl Iterator<Item = EventOutbound> {
             std::iter::empty()
         }
     }

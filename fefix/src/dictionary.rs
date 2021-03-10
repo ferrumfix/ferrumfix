@@ -62,7 +62,7 @@ enum KeyRef<'a> {
 }
 
 impl Key {
-    fn as_ref<'a>(&'a self) -> KeyRef<'a> {
+    fn as_ref(&self) -> KeyRef {
         match self {
             Key::Abbreviation(s) => KeyRef::Abbreviation(s.as_str()),
             Key::CategoryByName(s) => KeyRef::CategoryByName(s.as_str()),

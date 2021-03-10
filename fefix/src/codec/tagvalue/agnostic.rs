@@ -1,7 +1,6 @@
 use crate::buffering::Buffer;
 use crate::codec::tagvalue::{utils, Config, Configurable, DecodeError};
 use crate::codec::Encoding;
-use crate::dbglog;
 
 /// An immutable view over the raw contents of a FIX message.
 ///

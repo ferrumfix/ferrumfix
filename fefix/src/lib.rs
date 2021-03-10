@@ -22,7 +22,6 @@
 //! Please check out the [README](https://github.com/neysofu/fefix/) for more
 //! general information regarding FerrumFIX.
 
-#![warn(clippy::non_ascii_literal)]
 #![deny(
     unused,
     missing_debug_implementations,
@@ -33,16 +32,7 @@
     clippy::needless_lifetimes
 )]
 
-/// A handly macro for quick and dirty debugging. It reports the caller location
-/// in the form of file plus line, and it also supports `format!` -like arguments.
-#[macro_export]
-macro_rules! dbglog {
-    ($($arg:tt)*) => {{
-        if std::cfg!(debug_assertions) {
-            std::eprintln!("[{}:{}] {}", std::file!(), std::line!(), std::format!($($arg)*));
-        }
-    }}
-}
+mod utils;
 
 pub mod backend;
 pub mod buffering;
@@ -55,6 +45,7 @@ pub mod session;
 mod stream_iterator;
 pub mod transport;
 
+pub use crate::codec::{fast, json, sofh, tagvalue, Encoding, StreamingDecoder};
 pub use dictionary::{Dictionary, MsgType};
 pub use dt::DataType;
 pub use fefix_derive::*;
