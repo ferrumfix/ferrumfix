@@ -1,17 +1,13 @@
+//! Concrete representation of FIX datatypes across all encodings.
+
 use crate::DataType;
-use std::collections::BTreeMap;
 use std::convert::TryInto;
 use std::fmt::{self, Write};
 use std::io;
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum Field {
-    Atomic(Atomic),
-    Group(Vec<BTreeMap<i64, Field>>),
-}
+use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Atomic {
+pub enum FieldValue<'a> {
     Char(Char),
     Boolean(Boolean),
     Float(Float),
@@ -39,9 +35,10 @@ pub enum Atomic {
     UtcTimestamp(UtcTimestamp),
     XmlData(XmlData),
     Country(Country),
+    Phantom(PhantomData<&'a [u8]>),
 }
 
-impl Atomic {
+impl<'a> FieldValue<'a> {
     pub fn decode(dt: DataType, data: &[u8]) -> Option<Self> {
         match dt {
             DataType::Int => {
@@ -64,7 +61,7 @@ impl Atomic {
                 if data.len() != 2 {
                     None
                 } else {
-                    Some(Atomic::Country(Country(data.try_into().unwrap())))
+                    Some(FieldValue::Country(Country(data.try_into().unwrap())))
                 }
             }
             DataType::Exchange => Some(Self::Exchange(Exchange(
@@ -82,7 +79,7 @@ impl Atomic {
                 Some(Self::seq_num(n))
             }
             DataType::String => Some(Self::string(std::str::from_utf8(data).unwrap().to_string())),
-            DataType::XmlData => Some(Atomic::XmlData(XmlData(
+            DataType::XmlData => Some(FieldValue::XmlData(XmlData(
                 std::str::from_utf8(data).unwrap().to_string().into_bytes(),
             ))),
             _ => unimplemented!(),
@@ -122,7 +119,7 @@ impl Atomic {
     }
 }
 
-impl fmt::Display for Atomic {
+impl<'a> fmt::Display for FieldValue<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Boolean(Boolean(b)) => {

@@ -1,4 +1,3 @@
-use super::value as val;
 use super::Backend;
 use super::FixFieldValue;
 use super::*;
@@ -38,14 +37,14 @@ impl PushyMessage {
 
     pub fn msg_type(&self) -> Option<&str> {
         match self.get_field(35u32) {
-            Some(FixFieldValue::Atom(val::Atomic::String(s))) => Some(s.as_str()),
+            Some(FixFieldValue::Atom(val::FieldValue::String(s))) => Some(s.as_str()),
             _ => None,
         }
     }
 
     pub fn seq_num(&self) -> Option<u64> {
         match self.get_field(34u32) {
-            Some(FixFieldValue::Atom(val::Atomic::Int(val::Int(n)))) => Some(*n as u64),
+            Some(FixFieldValue::Atom(val::FieldValue::Int(val::Int(n)))) => Some(*n as u64),
             _ => None,
         }
     }

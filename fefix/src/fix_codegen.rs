@@ -145,11 +145,11 @@ mod docs {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::backend::Version;
+    use crate::AppVersion;
 
     #[test]
     fn fix_v42_syntax() {
-        let fix_v42 = Dictionary::from_version(Version::Fix42);
+        let fix_v42 = Dictionary::from_version(AppVersion::Fix42);
         let code = codegen(&fix_v42);
         assert!(syn::parse_file(code.as_str()).is_ok());
     }

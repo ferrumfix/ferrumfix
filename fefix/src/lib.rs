@@ -34,6 +34,7 @@
 
 mod utils;
 
+mod app_version;
 pub mod backend;
 pub mod buffering;
 pub mod codec;
@@ -41,15 +42,18 @@ mod dictionary;
 mod dt;
 pub mod engines;
 mod fix_codegen;
+mod quickfix_specs;
 pub mod session;
 mod stream_iterator;
 pub mod transport;
 
 pub use crate::codec::{fast, json, sofh, tagvalue, Encoding, StreamingDecoder};
+pub use app_version::AppVersion;
 pub use dictionary::{Dictionary, MsgType};
 pub use dt::DataType;
 pub use fefix_derive::*;
 pub use fix_codegen::codegen;
+pub use quickfix_specs::quickfix_spec;
 pub use stream_iterator::StreamIterator;
 
 #[cfg(expose_openssl)]

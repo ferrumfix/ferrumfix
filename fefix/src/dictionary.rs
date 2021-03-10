@@ -1,7 +1,7 @@
 //! Access to FIX Dictionary reference and message specifications.
 
-use crate::backend::Version;
-use crate::DataType;
+use crate::AppVersion;
+use crate::{quickfix_spec, DataType};
 use quickfix::{ParseDictionaryError, QuickFixReader};
 use std::collections::HashMap;
 use std::fmt;
@@ -235,8 +235,9 @@ impl Dictionary {
 
     /// Creates a new [`Dictionary`](Dictionary) according to the specification of
     /// `version`.
-    pub fn from_version(version: Version) -> Self {
-        Dictionary::save_definition_spec(version.get_quickfix_spec()).unwrap()
+    pub fn from_version(version: AppVersion) -> Self {
+        let spec = quickfix_spec(version);
+        Dictionary::save_definition_spec(spec).unwrap()
     }
 
     /// Creates a new empty FIX Dictionary with `FIX.???` as its version string.
@@ -1174,7 +1175,7 @@ mod quickfix {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::backend::Version;
+    use crate::AppVersion;
     use quickcheck::QuickCheck;
     use std::collections::HashSet;
     use std::convert::TryInto;
@@ -1195,7 +1196,7 @@ mod test {
 
     #[test]
     fn fixt11_quickfix_is_ok() {
-        let dict = Dictionary::from_version(Version::Fixt11);
+        let dict = Dictionary::from_version(AppVersion::Fixt11);
         let msg_heartbeat = dict.message_by_name("Heartbeat").unwrap();
         assert_eq!(msg_heartbeat.msg_type(), "0");
         assert_eq!(msg_heartbeat.name(), "Heartbeat".to_string());
@@ -1210,14 +1211,14 @@ mod test {
 
     #[test]
     fn dictionary_save_definition_spec_is_ok() {
-        for version in Version::all() {
+        for version in AppVersion::all() {
             Dictionary::from_version(version);
         }
     }
 
     #[test]
     fn all_datatypes_are_used_at_least_once() {
-        for version in Version::all() {
+        for version in AppVersion::all() {
             let dict = Dictionary::from_version(version);
             let datatypes_count = dict.iter_datatypes().count();
             let mut datatypes = HashSet::new();
@@ -1230,7 +1231,7 @@ mod test {
 
     #[test]
     fn at_least_one_datatype() {
-        for version in Version::all() {
+        for version in AppVersion::all() {
             let dict = Dictionary::from_version(version);
             assert!(dict.iter_datatypes().count() >= 1);
         }
@@ -1238,7 +1239,7 @@ mod test {
 
     #[test]
     fn std_header_and_trailer_always_present() {
-        for version in Version::all() {
+        for version in AppVersion::all() {
             let dict = Dictionary::from_version(version);
             let std_header = dict.component_by_name("StandardHeader");
             let std_trailer = dict.component_by_name("StandardTrailer");
@@ -1248,7 +1249,7 @@ mod test {
 
     #[test]
     fn fix44_field_28_has_three_variants() {
-        let dict = Dictionary::from_version(Version::Fix44);
+        let dict = Dictionary::from_version(AppVersion::Fix44);
         let field_28 = dict.field_by_tag(28).unwrap();
         assert_eq!(field_28.name(), "IOITransType");
         assert_eq!(field_28.enums().unwrap().count(), 3);
@@ -1256,7 +1257,7 @@ mod test {
 
     #[test]
     fn fix44_field_36_has_no_variants() {
-        let dict = Dictionary::from_version(Version::Fix44);
+        let dict = Dictionary::from_version(AppVersion::Fix44);
         let field_36 = dict.field_by_tag(36).unwrap();
         assert_eq!(field_36.name(), "NewSeqNo");
         assert!(field_36.enums().is_none());
@@ -1264,7 +1265,7 @@ mod test {
 
     #[test]
     fn fix44_field_167_has_eucorp_variant() {
-        let dict = Dictionary::from_version(Version::Fix44);
+        let dict = Dictionary::from_version(AppVersion::Fix44);
         let field_167 = dict.field_by_tag(167).unwrap();
         assert_eq!(field_167.name(), "SecurityType");
         assert!(field_167.enums().unwrap().any(|e| e.value() == "EUCORP"));

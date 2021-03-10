@@ -1,6 +1,5 @@
 //! A schema-less, [`HashMap`]-backed internal representation for FIX messages.
 
-use super::value as val;
 use crate::backend::*;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -170,12 +169,6 @@ impl StreamIterator for FieldsIterator {
     }
 }
 
-impl ReadFields for Message {
-    fn get_field(&self, msg_type: u32) -> Option<&slr::FixFieldValue> {
-        self.fields.get(&msg_type)
-    }
-}
-
 impl<'a> Iterator for &'a Message {
     type Item = slr::FixFieldValue;
 
@@ -214,14 +207,14 @@ impl Message {
 
     pub fn msg_type(&self) -> Option<&str> {
         match self.fields.get(&35) {
-            Some(FixFieldValue::Atom(val::Atomic::String(s))) => Some(s.as_str()),
+            Some(FixFieldValue::Atom(val::FieldValue::String(s))) => Some(s.as_str()),
             _ => None,
         }
     }
 
     pub fn seq_num(&self) -> Option<u64> {
         match self.fields.get(&34) {
-            Some(FixFieldValue::Atom(val::Atomic::Int(val::Int(n)))) => Some(*n as u64),
+            Some(FixFieldValue::Atom(val::FieldValue::Int(val::Int(n)))) => Some(*n as u64),
             _ => None,
         }
     }

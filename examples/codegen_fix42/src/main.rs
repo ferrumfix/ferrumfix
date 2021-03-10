@@ -1,8 +1,7 @@
-use fefix::backend::Version;
-use fefix::Dictionary;
+use fefix::{AppVersion, Dictionary};
 
 fn main() {
-    let dict = Dictionary::from_version(Version::Fix42);
+    let dict = Dictionary::from_version(AppVersion::Fix42);
     let code = fefix::codegen(&dict);
     println!("{}", code);
 }

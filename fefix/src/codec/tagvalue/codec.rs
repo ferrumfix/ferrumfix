@@ -1,10 +1,9 @@
-use crate::backend::value as val;
-use crate::backend::{slr, Backend, FixFieldValue, Version};
+use crate::backend::{field_value::TagNum, slr, Backend, FieldValue, FixFieldValue};
 use crate::buffering::Buffer;
 use crate::tagvalue::{
     utils, CodecAgnostic, Config, Configurable, DecodeError, EncodeError, TagLookup,
 };
-use crate::{DataType, Dictionary, Encoding, StreamingDecoder};
+use crate::{AppVersion, DataType, Dictionary, Encoding, StreamingDecoder};
 use std::fmt::Debug;
 use std::str;
 
@@ -27,7 +26,7 @@ where
 {
     /// Builds a new [`Codec`] encoding device with a FIX 4.4 dictionary.
     pub fn new(config: Z) -> Self {
-        Self::with_dict(Dictionary::from_version(Version::Fix44), config)
+        Self::with_dict(Dictionary::from_version(AppVersion::Fix44), config)
     }
 
     /// Creates a new codec for the tag-value format. `dict` is used to parse messages.
@@ -112,7 +111,12 @@ where
             message
                 .for_each::<(), _>(|tag, value| {
                     if tag != 8 {
-                        encode_field((tag as u16).into(), value, buffer, self.config.separator());
+                        encode_field(
+                            TagNum::from(tag as u16),
+                            value,
+                            buffer,
+                            self.config.separator(),
+                        );
                     }
                     Ok(())
                 })
@@ -124,7 +128,7 @@ where
     }
 }
 
-fn encode_field(tag: val::TagNum, value: &FixFieldValue, write: &mut impl Buffer, separator: u8) {
+fn encode_field(tag: TagNum, value: &FixFieldValue, write: &mut impl Buffer, separator: u8) {
     write.extend_from_slice(tag.to_string().as_bytes());
     write.extend_from_slice(&[b'=']);
     match &value {
@@ -162,7 +166,7 @@ where
 {
     /// Builds a new `Codec` encoding device with a FIX 4.4 dictionary.
     pub fn new(config: Z) -> Self {
-        Self::with_dict(Dictionary::from_version(Version::Fix44), config)
+        Self::with_dict(Dictionary::from_version(AppVersion::Fix44), config)
     }
 
     /// Creates a new codec for the tag-value format. `dict` is used to parse messages.
@@ -295,7 +299,7 @@ where
         let mut field_value = FixFieldValue::from(0i64);
         match datatype {
             Ok(DataType::Data) => {
-                field_value = FixFieldValue::Atom(val::Atomic::Data(
+                field_value = FixFieldValue::Atom(FieldValue::Data(
                     self.data[self.cursor..self.cursor + self.data_field_length].to_vec(),
                 ));
                 self.cursor += self.data_field_length + 1;
@@ -335,8 +339,8 @@ fn read_field_value(datatype: DataType, buf: &[u8]) -> Result<FixFieldValue, Dec
     debug_assert!(!buf.is_empty());
     Ok(match datatype {
         DataType::Char => FixFieldValue::from(buf[0] as char),
-        DataType::Data => FixFieldValue::Atom(val::Atomic::Data(buf.to_vec())),
-        DataType::Float => FixFieldValue::Atom(val::Atomic::float(
+        DataType::Data => FixFieldValue::Atom(FieldValue::Data(buf.to_vec())),
+        DataType::Float => FixFieldValue::Atom(FieldValue::float(
             str::from_utf8(buf)
                 .map_err(|_| DecodeError::Syntax)?
                 .parse::<f32>()

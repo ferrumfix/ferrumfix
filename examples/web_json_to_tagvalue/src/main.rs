@@ -1,7 +1,7 @@
 //! Starts an HTTP server on any open port and listens for JSON FIX messages.
 
-use fefix::backend::{self, slr, Version};
-use fefix::{json, tagvalue, Dictionary, Encoding};
+use fefix::backend::{self, slr};
+use fefix::{json, tagvalue, AppVersion, Dictionary, Encoding};
 
 #[tokio::main]
 async fn main() -> tide::Result<()> {
@@ -32,7 +32,7 @@ impl State {
 
 impl Default for State {
     fn default() -> Self {
-        let dictionary = Dictionary::from_version(Version::Fix42);
+        let dictionary = Dictionary::from_version(AppVersion::Fix42);
         Self {
             codec: json::Codec::new(dictionary, json::ConfigPrettyPrint),
         }
@@ -54,7 +54,7 @@ async fn serve_json_relay(mut req: tide::Request<State>) -> tide::Result {
         let mut config = tagvalue::Configurable::default();
         config.set_separator(b'|');
         let mut encoder = tagvalue::Codec::<slr::Message>::with_dict(
-            Dictionary::from_version(Version::Fix42),
+            Dictionary::from_version(AppVersion::Fix42),
             config,
         );
         encoder.encode(&mut buffer, &message).unwrap();
@@ -105,13 +105,13 @@ mod test {
         let mut response: Response = server.respond(req).await.unwrap();
         let body_tagvalue = response.take_body().into_string().await.unwrap();
         let mut decoder_json = json::Codec::<slr::Message, json::ConfigPrettyPrint>::new(
-            Dictionary::from_version(Version::Fix42),
+            Dictionary::from_version(AppVersion::Fix42),
             json::ConfigPrettyPrint,
         );
         let mut config = tagvalue::Configurable::default();
         config.set_separator(b'|');
         let mut decoder_tagvalue = tagvalue::Codec::<slr::Message>::with_dict(
-            Dictionary::from_version(Version::Fix42),
+            Dictionary::from_version(AppVersion::Fix42),
             config,
         );
         let msg_json = decoder_json.decode(body_json.as_bytes()).unwrap();

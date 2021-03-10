@@ -1,5 +1,4 @@
-use crate::backend::value as val;
-use crate::backend::{Backend, FixFieldValue};
+use crate::backend::{Backend, FixFieldValue, FieldValue};
 use crate::json::{Config, Configurable};
 use crate::{Dictionary, Encoding};
 use crate::buffering::Buffer;
@@ -35,7 +34,7 @@ where
 
     fn translate(&self, dict: &Dictionary, field: &FixFieldValue) -> serde_json::Value {
         match field {
-            FixFieldValue::Atom(val::Atomic::String(c)) => {
+            FixFieldValue::Atom(FieldValue::String(c)) => {
                 serde_json::Value::String(c.as_str().to_string())
             }
             FixFieldValue::Group(array) => {
@@ -113,7 +112,7 @@ where
         B: Buffer,
     {
         let dictionary =
-            if let Some(FixFieldValue::Atom(val::Atomic::String(fix_version))) = message.field(8) {
+            if let Some(FixFieldValue::Atom(FieldValue::String(fix_version))) = message.field(8) {
                 self.dictionaries
                     .get(fix_version.as_str())
                     .ok_or(Self::EncodeError::Dictionary)?
@@ -235,6 +234,7 @@ impl fmt::Display for DecodeError {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::AppVersion;
     use crate::backend::slr;
     use crate::json::ConfigPrettyPrint;
     use serde_json::*;
@@ -280,7 +280,7 @@ mod test {
     "#;
 
     fn dict_fix44() -> Dictionary {
-        Dictionary::from_version(crate::backend::Version::Fix44)
+        Dictionary::from_version(AppVersion::Fix44)
     }
 
     fn encoder_fix44() -> Codec<slr::Message, impl Config> {

@@ -2,7 +2,6 @@
 //! and performance characteristics.
 
 use crate::StreamIterator;
-use rust_embed::RustEmbed;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::str;
@@ -11,25 +10,11 @@ use std::time::SystemTime;
 pub mod fix42;
 mod seqdump;
 pub mod slr;
-pub mod value;
+pub mod field_value;
 
 pub use seqdump::PushyMessage;
-use value as val;
-
-/// An interface for backends that allow field lookup by tag.
-pub trait ReadFields {
-    /// Returns an immutable reference to the field tagged `tag`, if defined.
-    fn get_field(&self, tag: u32) -> Option<&FixFieldValue>;
-}
-
-impl<'a, T> ReadFields for &'a T
-where
-    T: ReadFields,
-{
-    fn get_field(&self, tag: u32) -> Option<&FixFieldValue> {
-        T::get_field(self, tag)
-    }
-}
+pub use field_value::FieldValue;
+use field_value as val;
 
 pub trait FieldRef<U> {
     fn tag(&self) -> u32;
@@ -95,7 +80,7 @@ pub trait Backend<U = FixFieldValue> {
 /// An owned value of a FIX field.
 #[derive(Clone, Debug, PartialEq)]
 pub enum FixFieldValue {
-    Atom(val::Atomic),
+    Atom(val::FieldValue<'static>),
     Group(Vec<BTreeMap<i64, FixFieldValue>>),
 }
 
@@ -103,11 +88,11 @@ impl FixFieldValue {
     pub fn string(data: &[u8]) -> Option<Self> {
         str::from_utf8(data)
             .ok()
-            .map(|s| Self::Atom(val::Atomic::string(s.to_string())))
+            .map(|s| Self::Atom(val::FieldValue::string(s.to_string())))
     }
 
     pub fn as_length(&self) -> Option<usize> {
-        if let Self::Atom(val::Atomic::Length(length)) = self {
+        if let Self::Atom(val::FieldValue::Length(length)) = self {
             Some((*length).into())
         } else {
             None
@@ -115,7 +100,7 @@ impl FixFieldValue {
     }
 
     pub fn as_int(&self) -> Option<i64> {
-        if let Self::Atom(val::Atomic::Int(x)) = self {
+        if let Self::Atom(val::FieldValue::Int(x)) = self {
             Some((*x).into())
         } else {
             None
@@ -123,7 +108,7 @@ impl FixFieldValue {
     }
 
     pub fn as_str(&self) -> Option<&str> {
-        if let Self::Atom(val::Atomic::String(s)) = self {
+        if let Self::Atom(val::FieldValue::String(s)) = self {
             Some(s.as_str())
         } else {
             None
@@ -133,19 +118,19 @@ impl FixFieldValue {
 
 impl From<i64> for FixFieldValue {
     fn from(v: i64) -> Self {
-        FixFieldValue::Atom(val::Atomic::int(v as i64))
+        FixFieldValue::Atom(val::FieldValue::int(v as i64))
     }
 }
 
 impl From<String> for FixFieldValue {
     fn from(v: String) -> Self {
-        FixFieldValue::Atom(val::Atomic::string(v))
+        FixFieldValue::Atom(val::FieldValue::string(v))
     }
 }
 
 impl From<f64> for FixFieldValue {
     fn from(v: f64) -> Self {
-        FixFieldValue::Atom(val::Atomic::float(v as f32))
+        FixFieldValue::Atom(val::FieldValue::float(v as f32))
     }
 }
 
@@ -157,7 +142,7 @@ impl From<(u8, u16)> for FixFieldValue {
 
 impl From<char> for FixFieldValue {
     fn from(v: char) -> Self {
-        FixFieldValue::Atom(val::Atomic::char(v))
+        FixFieldValue::Atom(val::FieldValue::char(v))
     }
 }
 
@@ -169,7 +154,7 @@ impl From<usize> for FixFieldValue {
 
 impl From<Vec<u8>> for FixFieldValue {
     fn from(v: Vec<u8>) -> Self {
-        FixFieldValue::Atom(val::Atomic::Data(v))
+        FixFieldValue::Atom(val::FieldValue::Data(v))
     }
 }
 
@@ -188,108 +173,5 @@ impl From<u8> for FixFieldValue {
 impl From<SystemTime> for FixFieldValue {
     fn from(v: SystemTime) -> Self {
         FixFieldValue::from(v.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64)
-    }
-}
-
-/// Which [`Dictionary`](fefix::Dictionary) version to use.
-#[derive(Copy, Debug, Clone)]
-#[non_exhaustive]
-pub enum Version {
-    Fix40,
-    Fix41,
-    Fix42,
-    Fix43,
-    Fix44,
-    Fix50,
-    Fix50SP1,
-    Fix50SP2,
-    Fixt11,
-}
-
-impl Version {
-    /// Returns a [`String`](String) with the QuickFIX definition file for `self`
-    /// as its
-    /// content. The QuickFix definition files are extracted and decompressed
-    /// from the binary without filesystem access.
-    pub fn get_quickfix_spec(&self) -> String {
-        let filename = match self {
-            Version::Fix40 => "FIX-4.0.xml",
-            Version::Fix41 => "FIX-4.1.xml",
-            Version::Fix42 => "FIX-4.2.xml",
-            Version::Fix43 => "FIX-4.3.xml",
-            Version::Fix44 => "FIX-4.4.xml",
-            Version::Fix50 => "FIX-5.0.xml",
-            Version::Fix50SP1 => "FIX-5.0-SP1.xml",
-            Version::Fix50SP2 => "FIX-5.0-SP2.xml",
-            Version::Fixt11 => "FIXT-1.1.xml",
-        };
-        let xml_spec = QuickFixDicts::get(filename).expect(filename);
-        std::str::from_utf8(&*xml_spec).unwrap().to_string()
-    }
-
-    #[cfg(test)]
-    pub(crate) fn all() -> impl Iterator<Item = Self> {
-        vec![
-            Version::Fix40,
-            Version::Fix41,
-            Version::Fix42,
-            Version::Fix43,
-            Version::Fix44,
-            Version::Fix50,
-            Version::Fix50SP1,
-            Version::Fix50SP2,
-            Version::Fixt11,
-        ]
-        .into_iter()
-    }
-}
-
-impl fmt::Display for Version {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let as_str = match self {
-            Version::Fix40 => "FIX-4.0",
-            Version::Fix41 => "FIX-4.1",
-            Version::Fix42 => "FIX-4.2",
-            Version::Fix43 => "FIX-4.3",
-            Version::Fix44 => "FIX-4.4",
-            Version::Fix50 => "FIX-5.0",
-            Version::Fix50SP1 => "FIX-5.0-SP1",
-            Version::Fix50SP2 => "FIX-5.0-SP2",
-            Version::Fixt11 => "FIXT-1.1",
-        };
-        write!(f, "{}", as_str)
-    }
-}
-
-#[derive(RustEmbed)]
-#[folder = "resources/quickfix/"]
-struct QuickFixDicts;
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use std::collections::HashSet;
-
-    #[test]
-    fn all_versions_have_quickfix_spec() {
-        assert!(Version::all()
-            .map(|version| version.get_quickfix_spec())
-            .all(|spec| spec.len() > 0));
-    }
-
-    #[test]
-    fn all_versions_have_different_quickfix_spec() {
-        let mut set: HashSet<String> = HashSet::default();
-        Version::all()
-            .map(|version| set.insert(version.get_quickfix_spec()))
-            .count();
-        assert_eq!(set.len(), Version::all().count());
-    }
-
-    #[test]
-    fn all_versions_have_xml_valid_quickfix_spec() {
-        assert!(Version::all()
-            .map(|version| version.get_quickfix_spec())
-            .all(|spec| roxmltree::Document::parse(spec.as_str()).is_ok()));
     }
 }
