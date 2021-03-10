@@ -58,8 +58,8 @@ impl Frame {
     /// # Examples
     ///
     /// ```
-    /// use fefix::codec::Encoding;
-    /// use fefix::codec::sofh::{Codec, EncodingType};
+    /// use fefix::Encoding;
+    /// use fefix::sofh::{Codec, EncodingType};
     ///
     /// let codec = &mut Codec::default();
     /// // Message_Length ->       -----------
@@ -78,8 +78,8 @@ impl Frame {
     /// # Examples
     ///
     /// ```
-    /// use fefix::codec::Encoding;
-    /// use fefix::codec::sofh::Codec;
+    /// use fefix::Encoding;
+    /// use fefix::sofh::Codec;
     ///
     /// let codec = &mut Codec::default();
     /// // Message_Length ->       -----------
@@ -218,7 +218,7 @@ impl CodecBuffered {
     /// # Examples
     ///
     /// ```
-    /// use fefix::codec::sofh::CodecBuffered;
+    /// use fefix::sofh::CodecBuffered;
     ///
     /// let parser = CodecBuffered::with_capacity(8192);
     /// assert_eq!(parser.capacity(), 8192);
@@ -294,7 +294,7 @@ impl StreamingDecoder<Frame> for CodecBuffered {
 mod test {
     use super::*;
     use crate::codec::FramelessError;
-    use crate::codec::StreamingDecoder;
+    use crate::StreamingDecoder;
 
     fn _frames_with_increasing_length() -> impl Iterator<Item = Vec<u8>> {
         std::iter::once(()).enumerate().map(|(i, ())| {

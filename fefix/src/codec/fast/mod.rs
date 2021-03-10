@@ -2,8 +2,7 @@
 
 use crate::backend::slr;
 use crate::buffering::Buffer;
-use crate::codec::Encoding;
-use crate::dictionary::Dictionary;
+use crate::{Dictionary, Encoding};
 use bitvec::vec::BitVec;
 use codec::decode_stop_bit_bitvec;
 use errors::Error;

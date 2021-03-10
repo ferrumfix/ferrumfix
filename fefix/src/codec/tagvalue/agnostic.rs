@@ -1,6 +1,6 @@
 use crate::buffering::Buffer;
-use crate::codec::tagvalue::{utils, Config, Configurable, DecodeError};
-use crate::codec::Encoding;
+use crate::tagvalue::{utils, Config, Configurable, DecodeError};
+use crate::Encoding;
 
 /// An immutable view over the raw contents of a FIX message.
 ///
@@ -25,8 +25,8 @@ impl AgnosticMessage {
     /// `self`.
     ///
     /// ```
-    /// use fefix::codec::Encoding;
-    /// use fefix::codec::tagvalue::{CodecAgnostic, Configurable};
+    /// use fefix::Encoding;
+    /// use fefix::tagvalue::{CodecAgnostic, Configurable};
     ///
     /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
     /// let codec = &mut CodecAgnostic::<Configurable>::default();
@@ -50,8 +50,8 @@ impl AgnosticMessage {
     /// technically part of `StandardHeader` and `StandardTrailer`.
     ///
     /// ```
-    /// use fefix::codec::Encoding;
-    /// use fefix::codec::tagvalue::{CodecAgnostic, Configurable};
+    /// use fefix::Encoding;
+    /// use fefix::tagvalue::{CodecAgnostic, Configurable};
     ///
     /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
     /// let codec = &mut CodecAgnostic::<Configurable>::default();
@@ -89,7 +89,7 @@ where
     /// Returns an immutable reference to the [`Config`] used by `self`.
     ///
     /// ```
-    /// use fefix::codec::tagvalue::{CodecAgnostic, Config, Configurable};
+    /// use fefix::tagvalue::{CodecAgnostic, Config, Configurable};
     ///
     /// let mut codec = CodecAgnostic::<Configurable>::default();
     /// assert_eq!(codec.config().separator(), 0x1); // SOH
@@ -101,7 +101,7 @@ where
     /// Returns a mutable reference to the [`Config`] used by `self`.
     ///
     /// ```
-    /// use fefix::codec::tagvalue::{CodecAgnostic, Config, Configurable};
+    /// use fefix::tagvalue::{CodecAgnostic, Config, Configurable};
     ///
     /// let mut codec = CodecAgnostic::<Configurable>::default();
     /// *codec.config_mut() = Configurable::default().with_separator(b'|');
@@ -186,7 +186,7 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::codec::tagvalue::Configurable;
+    use crate::tagvalue::Configurable;
 
     fn config_vertical_bar() -> Configurable {
         let mut config = Configurable::default();

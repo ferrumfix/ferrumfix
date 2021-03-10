@@ -1,8 +1,8 @@
 use crate::backend::value as val;
 use crate::backend::{Backend, FixFieldValue};
-use crate::codec::json::{Config, Configurable};
-use crate::codec::*;
-use crate::Dictionary;
+use crate::json::{Config, Configurable};
+use crate::{Dictionary, Encoding};
+use crate::buffering::Buffer;
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
@@ -236,7 +236,7 @@ impl fmt::Display for DecodeError {
 mod test {
     use super::*;
     use crate::backend::slr;
-    use crate::codec::json::ConfigPrettyPrint;
+    use crate::json::ConfigPrettyPrint;
     use serde_json::*;
 
     const MESSAGE_SIMPLE: &str = r#"

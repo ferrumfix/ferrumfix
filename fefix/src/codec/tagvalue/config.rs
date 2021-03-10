@@ -1,4 +1,4 @@
-use crate::codec::tagvalue::{TagLookup, TagLookupPredetermined};
+use crate::tagvalue::{TagLookup, TagLookupPredetermined};
 
 /// The [`Config`](Config) pattern allows deep customization of encoding
 /// and decoding behavior without relying on runtime settings. By using this

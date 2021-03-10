@@ -1,10 +1,7 @@
 //! Starts an HTTP server on any open port and listens for JSON FIX messages.
 
 use fefix::backend::{self, slr, Version};
-use fefix::codec::json;
-use fefix::codec::tagvalue;
-use fefix::codec::Encoding;
-use fefix::Dictionary;
+use fefix::{json, tagvalue, Dictionary, Encoding};
 
 #[tokio::main]
 async fn main() -> tide::Result<()> {

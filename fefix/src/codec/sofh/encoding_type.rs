@@ -14,7 +14,7 @@
 /// `u16`. This may cause unusual behavior e.g.:
 ///
 /// ```
-/// use fefix::codec::sofh::EncodingType;
+/// use fefix::sofh::EncodingType;
 ///
 /// assert_eq!(EncodingType::Unknown(0xF500), EncodingType::Json);
 /// ```
@@ -76,7 +76,7 @@ impl EncodingType {
     /// assumed, as mandated by the SOFH specification.
     ///
     /// ```
-    /// use fefix::codec::sofh::EncodingType;
+    /// use fefix::sofh::EncodingType;
     ///
     /// assert_eq!(EncodingType::from_bytes([0xF0, 0x00]), EncodingType::TagValue);
     /// assert_eq!(EncodingType::from_bytes([0xFA, 0x42]), EncodingType::Fast(0x42));
@@ -89,7 +89,7 @@ impl EncodingType {
     /// assumed, as mandated by the SOFH specification.
     ///
     /// ```
-    /// use fefix::codec::sofh::EncodingType;
+    /// use fefix::sofh::EncodingType;
     ///
     /// assert_eq!(EncodingType::TagValue.to_bytes(), [0xF0, 0x00]);
     /// assert_eq!(EncodingType::Fast(0x42).to_bytes(), [0xFA, 0x42]);

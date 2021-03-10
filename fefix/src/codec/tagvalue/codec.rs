@@ -1,10 +1,10 @@
 use crate::backend::value as val;
 use crate::backend::{slr, Backend, FixFieldValue, Version};
 use crate::buffering::Buffer;
-use crate::codec::tagvalue::{utils, CodecAgnostic, Config, Configurable, DecodeError, EncodeError, TagLookup};
-use crate::codec::{Encoding, StreamingDecoder};
-use crate::dictionary::Dictionary;
-use crate::DataType;
+use crate::tagvalue::{
+    utils, CodecAgnostic, Config, Configurable, DecodeError, EncodeError, TagLookup,
+};
+use crate::{DataType, Dictionary, Encoding, StreamingDecoder};
 use std::fmt::Debug;
 use std::str;
 
@@ -365,7 +365,7 @@ fn read_field_value(datatype: DataType, buf: &[u8]) -> Result<FixFieldValue, Dec
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::codec::tagvalue::{ConfigFastDefault, Configurable};
+    use crate::tagvalue::{ConfigFastDefault, Configurable};
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
