@@ -9,7 +9,6 @@
 //! Please refer to https://www.fixtrading.org/standards/fix-sofh/ for more
 //! information.
 
-use crate::buffering::Buffer;
 use std::convert::TryInto;
 use std::default::Default;
 use std::io;
@@ -28,13 +27,20 @@ const HEADER_SIZE_IN_BYTES: usize = 6;
 /// This type is returned in a borrowed form from
 /// [`sofh::Codec::decode`](sofh::Codec::decode) and
 /// there is no owned version of this type.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Frame<'a> {
     encoding_type: u16,
     payload: &'a [u8],
 }
 
 impl<'a> Frame<'a> {
+    pub fn new(encoding_type: u16, payload: &[u8]) -> Frame {
+        Frame {
+            encoding_type,
+            payload,
+        }
+    }
+
     /// Returns the 16-bits encoding type of `self`. You may want to
     /// convert this value to an [`EncodingType`], which allows
     /// for nice pattern matching.
@@ -42,13 +48,9 @@ impl<'a> Frame<'a> {
     /// # Examples
     ///
     /// ```
-    /// use fefix::Encoding;
-    /// use fefix::sofh::{Codec, EncodingType};
+    /// use fefix::sofh::{EncodingType, Frame};
     ///
-    /// let codec = &mut Codec::default();
-    /// // Message_Length ->       -----------
-    /// // Encoding_Type ->                    ----------
-    /// let frame = codec.decode(&[0, 0, 0, 6, 0xF5, 0x00]).unwrap();
+    /// let frame = Frame::new(0xF500, &[]);
     /// let encoding_type = EncodingType::from(frame.encoding_type());
     /// assert_eq!(encoding_type, EncodingType::Json);
     /// ```
@@ -62,19 +64,41 @@ impl<'a> Frame<'a> {
     /// # Examples
     ///
     /// ```
-    /// use fefix::Encoding;
-    /// use fefix::sofh::Codec;
+    /// use fefix::sofh::Frame;
     ///
-    /// let codec = &mut Codec::default();
-    /// // Message_Length ->       -----------
-    /// // Encoding_Type ->                    ---------
-    /// // Message ->                                    --
-    /// let frame = codec.decode(&[0, 0, 0, 7, 0x0, 0x0, 42]).unwrap();
-    /// let payload = frame.payload();
-    /// assert_eq!(payload, &[42]);
+    /// let frame = Frame::new(0x0, &[42]);
+    /// assert_eq!(frame.payload(), &[42]);
     /// ```
     pub fn payload(&self) -> &[u8] {
         self.payload
+    }
+
+    /// Deserializes [Self] from `data`. Returns [None] if invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::sofh::Frame;
+    ///
+    /// use fefix::sofh::Frame;
+    ///
+    /// // Message_Length ->            -----------
+    /// // Encoding_Type ->                         ---------
+    /// // Message ->                                         --
+    /// let frame = Frame::from_bytes(&[0, 0, 0, 7, 0x0, 0x0, 42]).unwrap();
+    /// assert_eq!(frame.payload(), &[42]);
+    /// ```
+    pub fn from_bytes(data: &[u8]) -> Option<Frame> {
+        if data.len() < HEADER_SIZE_IN_BYTES
+            || data.len() != get_field_message_length(data) as usize
+        {
+            None
+        } else {
+            Some(Self::new(
+                get_field_encoding_type(data),
+                &data[HEADER_SIZE_IN_BYTES..],
+            ))
+        }
     }
 }
 
@@ -104,20 +128,6 @@ impl Codec {
             buffer_additional_len: 0,
             codec: self,
         }
-    }
-
-    pub fn encode<B>(&mut self, buffer: &mut B, frame: &Frame) -> Result<usize, EncodeError>
-    where
-        B: Buffer,
-    {
-        let len = frame.payload().len();
-        let body_len: u32 = len.try_into().map_err(|_| EncodeError::TooLong)?;
-        let field_message_length = body_len.to_be_bytes();
-        let field_encoding_type = frame.encoding_type().to_be_bytes();
-        buffer.extend_from_slice(&field_message_length[..]);
-        buffer.extend_from_slice(&field_encoding_type[..]);
-        buffer.extend_from_slice(frame.payload());
-        Ok(buffer.as_slice().len())
     }
 }
 
@@ -256,7 +266,7 @@ where
     }
 }
 
-pub fn decode(data: &[u8]) -> Result<Frame, DecodeError> {
+fn decode(data: &[u8]) -> Result<Frame, DecodeError> {
     if data.len() < HEADER_SIZE_IN_BYTES || data.len() != get_field_message_length(data) as usize {
         return Err(DecodeError::InvalidMessageLength);
     }

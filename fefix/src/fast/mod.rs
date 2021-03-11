@@ -2,7 +2,7 @@
 
 use crate::buffering::Buffer;
 use crate::tagvalue::MessageRnd;
-use crate::{Dictionary, Encoding};
+use crate::Dictionary;
 use bitvec::vec::BitVec;
 use codec::decode_stop_bit_bitvec;
 use errors::Error;
@@ -43,11 +43,8 @@ impl Fast {
     }
 }
 
-impl Encoding<MessageRnd> for Fast {
-    type DecodeError = Error;
-    type EncodeError = Error;
-
-    fn decode(&mut self, mut source: &[u8]) -> Result<&MessageRnd, Error> {
+impl Fast {
+    pub fn decode(&mut self, mut source: &[u8]) -> Result<&MessageRnd, Error> {
         let _presence_map = decode_stop_bit_bitvec(&mut source).unwrap();
         let mut presence_by_field: BitVec = BitVec::new();
         let message = MessageRnd::new();
@@ -104,7 +101,7 @@ impl Encoding<MessageRnd> for Fast {
         Ok(&self.message)
     }
 
-    fn encode<B>(&mut self, buffer: &mut B, _message: &MessageRnd) -> Result<usize, Error>
+    pub fn encode<B>(&mut self, buffer: &mut B, _message: &MessageRnd) -> Result<usize, Error>
     where
         B: Buffer,
     {

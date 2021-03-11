@@ -39,3 +39,9 @@ pub enum EncodeError {
     /// message.
     TooLong,
 }
+
+impl From<io::Error> for EncodeError {
+    fn from(_err: io::Error) -> Self {
+        Self::TooLong
+    }
+}
