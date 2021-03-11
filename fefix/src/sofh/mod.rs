@@ -293,7 +293,7 @@ impl StreamingDecoder<Frame> for CodecBuffered {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::codec::FramelessError;
+    use crate::FramelessError;
     use crate::StreamingDecoder;
 
     fn _frames_with_increasing_length() -> impl Iterator<Item = Vec<u8>> {

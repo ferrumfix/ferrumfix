@@ -43,7 +43,7 @@ impl<'a> RawFrame<'a> {
     /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
     /// let message = decoder.decode(data).unwrap();
     ///
-    /// assert_eq!(message.body().len(), 42);
+    /// assert_eq!(message.payload().len(), 42);
     /// ```
     pub fn payload(&self) -> &[u8] {
         self.body
