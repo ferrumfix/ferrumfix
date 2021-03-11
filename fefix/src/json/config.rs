@@ -1,5 +1,5 @@
 /// Configuration interface for [`json::Codec`](Codec).
-pub trait Config: Clone {
+pub trait Configure: Clone + Default {
     /// This setting indicates that all encoded messages should be "prettified",
     /// i.e. the JSON code will not be compressed and instead it will have
     /// indentation and other whitespace that favors human readability. Some
@@ -12,8 +12,8 @@ pub trait Config: Clone {
     }
 }
 
-/// A [`Config`](Config) that "pretty-prints", i.e. always returns `true` from
-/// [`Config::pretty_print`](Config::pretty_print).
+/// A [`Configure`](Configure) that "pretty-prints", i.e. always returns `true` from
+/// [`Configure::pretty_print`](Configure::pretty_print).
 ///
 /// # Output examples
 ///
@@ -48,36 +48,36 @@ pub trait Config: Clone {
 /// ```json
 /// {"Header":{"...":"..."},"Body":{"...":"..."},"Trailer":{}}
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ConfigPrettyPrint;
 
-impl Config for ConfigPrettyPrint {
+impl Configure for ConfigPrettyPrint {
     #[inline(always)]
     fn pretty_print(&self) -> bool {
         true
     }
 }
 
-/// A [`Config`](Config) that can be read from a file and modified at runtime.
+/// A [`Configure`](Configure) that can be read from a file and modified at runtime.
 #[derive(Debug, Clone)]
-pub struct Configurable {
+pub struct Config {
     pretty_print: bool,
 }
 
-impl Configurable {
-    /// Creates a [`Configurable`](Configurable) with default settings.
+impl Config {
+    /// Creates a [`Config`](Config) with default settings.
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Enables [`Config::pretty_print`](Config::pretty_print) if and only if
+    /// Enables [`Configure::pretty_print`](Configure::pretty_print) if and only if
     /// `pretty_print` is true; otherwise it disables pretty-printing.
     pub fn set_pretty_print(&mut self, pretty_print: bool) {
         self.pretty_print = pretty_print;
     }
 }
 
-impl Default for Configurable {
+impl Default for Config {
     fn default() -> Self {
         Self {
             pretty_print: false,
@@ -85,7 +85,7 @@ impl Default for Configurable {
     }
 }
 
-impl Config for Configurable {
+impl Configure for Config {
     fn pretty_print(&self) -> bool {
         self.pretty_print
     }

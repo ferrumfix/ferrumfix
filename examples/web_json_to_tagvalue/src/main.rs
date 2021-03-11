@@ -50,7 +50,7 @@ async fn serve_json_relay(mut req: tide::Request<State>) -> tide::Result {
     };
     let mut buffer = Vec::new();
     let body_response = {
-        let mut config = tagvalue::Configurable::default();
+        let mut config = tagvalue::Config::default();
         config.set_separator(b'|');
         let mut encoder =
             tagvalue::Codec::with_dict(Dictionary::from_version(AppVersion::Fix42), config);
@@ -110,7 +110,7 @@ mod test {
             Dictionary::from_version(AppVersion::Fix42),
             json::ConfigPrettyPrint,
         );
-        let mut config = tagvalue::Configurable::default();
+        let mut config = tagvalue::Config::default();
         config.set_separator(b'|');
         let mut decoder_tagvalue =
             tagvalue::Codec::with_dict(Dictionary::from_version(AppVersion::Fix42), config);

@@ -19,7 +19,7 @@ mod taglookup;
 mod utils;
 
 pub use codec::{Codec, CodecBuffered};
-pub use config::{Config, ConfigFastDefault, Configurable};
+pub use config::{Configure, ConfigFastDefault, Config};
 pub use message_rnd::{Field, MessageRnd};
 pub use message_seq::MessageSeq;
 pub use raw::{RawDecoder, RawEncoder, RawFrame};

@@ -1,13 +1,16 @@
 use crate::tagvalue::{TagLookup, TagLookupPredetermined};
 
-/// The [`Config`] pattern allows deep customization of encoding
+const SOH: u8 = 0x1;
+
+/// The [`Configure`] pattern allows deep customization of encoding
 /// and decoding behavior without relying on runtime settings. By using this
 /// trait and specializing the behavior of particular methods, users can change
 /// the behavior of the FIX encoder without incurring in performance loss.
 ///
 /// # Naming conventions
+///
 /// Implementors of this trait should start with `Config`.
-pub trait Config: Clone + Default {
+pub trait Configure: Clone + Default {
     type TagLookup: TagLookup;
 
     /// The delimiter character, which terminates every tag-value pair including
@@ -16,7 +19,7 @@ pub trait Config: Clone + Default {
     /// ASCII 0x1 (SOH) is the default separator character.
     #[inline]
     fn separator(&self) -> u8 {
-        0x1
+        SOH
     }
 
     #[inline]
@@ -36,25 +39,13 @@ pub trait Config: Clone + Default {
     }
 }
 
-/// A [`Config`] for [`Codec`] with default configuration
-/// options.
-///
-/// This configurator uses [`ChecksumAlgoDefault`] as a checksum algorithm and
-/// [`TagLookupPredetermined`] for its dynamic tag lookup logic.
-#[derive(Debug, Default, Clone)]
-pub struct ConfigFastDefault;
-
-impl Config for ConfigFastDefault {
-    type TagLookup = TagLookupPredetermined;
-}
-
 #[derive(Debug, Copy, Clone)]
-pub struct Configurable {
+pub struct Config {
     separator: u8,
     verify_checksum: bool,
 }
 
-impl Configurable {
+impl Config {
     pub fn set_separator(&mut self, separator: u8) {
         self.separator = separator;
     }
@@ -69,7 +60,7 @@ impl Configurable {
     }
 }
 
-impl Config for Configurable {
+impl Configure for Config {
     type TagLookup = TagLookupPredetermined;
 
     #[inline]
@@ -83,11 +74,23 @@ impl Config for Configurable {
     }
 }
 
-impl Default for Configurable {
+impl Default for Config {
     fn default() -> Self {
         Self {
-            separator: 0x1, // SOH
+            separator: SOH,
             verify_checksum: true,
         }
     }
+}
+
+/// A [`Configure`] for [`Codec`] with default configuration
+/// options.
+///
+/// This configurator uses [`ChecksumAlgoDefault`] as a checksum algorithm and
+/// [`TagLookupPredetermined`] for its dynamic tag lookup logic.
+#[derive(Debug, Default, Clone)]
+pub struct ConfigFastDefault;
+
+impl Configure for ConfigFastDefault {
+    type TagLookup = TagLookupPredetermined;
 }

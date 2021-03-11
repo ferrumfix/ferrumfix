@@ -1,18 +1,18 @@
-use crate::backend::{field_value::TagNum, Backend, FieldValue};
+use crate::backend::{field_value::TagNum, FieldValue};
 use crate::buffering::Buffer;
 use crate::tagvalue::{
-    message_rnd::Field, utils, Config, Configurable, DecodeError, EncodeError, FixFieldValue,
+    message_rnd::Field, utils, Config, Configure, DecodeError, EncodeError, FixFieldValue,
     MessageRnd, MessageSeq, RawDecoder, TagLookup,
 };
 use crate::{AppVersion, DataType, Dictionary};
+use std::fmt::Debug;
 use std::str;
-use std::{fmt::Debug, marker::PhantomData};
 
 /// Easy-to-use [`Encoding`] that accomodates for most use cases.
 #[derive(Debug)]
-pub struct Codec<Z = Configurable>
+pub struct Codec<Z = Config>
 where
-    Z: Config,
+    Z: Configure,
 {
     dict: Dictionary,
     message: MessageRnd,
@@ -21,7 +21,7 @@ where
 
 impl<Z> Codec<Z>
 where
-    Z: Config,
+    Z: Configure,
 {
     /// Builds a new [`Codec`] encoding device with a FIX 4.4 dictionary.
     pub fn new(config: Z) -> Self {
@@ -38,21 +38,21 @@ where
     }
 
     /// Turns `self` into a [`CodecBuffered`] by allocating an internal buffer.
-    //pub fn buffered(self) -> CodecBuffered<T, Z> {
-    //    CodecBuffered {
-    //        buffer: Vec::new(),
-    //        buffer_relevant_len: 0,
-    //        buffer_additional_len: 0,
-    //        codec: self,
-    //    }
-    //}
+    pub fn buffered(self) -> CodecBuffered<Z> {
+        CodecBuffered {
+            buffer: Vec::new(),
+            buffer_relevant_len: 0,
+            buffer_additional_len: 0,
+            codec: self,
+        }
+    }
 
-    /// Returns an immutable reference to the [`Config`] used by `self`.
+    /// Returns an immutable reference to the [`Configure`] used by `self`.
     pub fn config(&self) -> &Z {
         &self.config
     }
 
-    /// Returns a mutable reference to the [`Config`] used by `self`.
+    /// Returns a mutable reference to the [`Configure`] used by `self`.
     pub fn config_mut(&mut self) -> &mut Z {
         &mut self.config
     }
@@ -98,24 +98,22 @@ where
     {
         let body_writer = |buffer: &mut B| {
             let start_i = buffer.as_slice().len();
-            message
-                .for_each::<(), _>(|tag, value| {
-                    if tag != 8 {
-                        encode_field(
-                            TagNum::from(tag as u16),
-                            value,
-                            buffer,
-                            self.config.separator(),
-                        );
-                    }
-                    Ok(())
-                })
-                .unwrap();
+            // Skips `BeginString`.
+            for (tag, value) in message.fields().skip(1) {
+                encode_field(
+                    TagNum::from(tag as u16),
+                    value,
+                    buffer,
+                    self.config.separator(),
+                );
+            }
             buffer.as_slice().len() - start_i
         };
         let begin_string = message
-            .field(8u32)
+            .fields_in_std_header()
+            .next()
             .unwrap()
+            .1
             .as_str()
             .unwrap()
             .as_bytes();
@@ -144,21 +142,19 @@ fn encode_field(tag: TagNum, value: &FixFieldValue, write: &mut impl Buffer, sep
 ///
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
 #[derive(Debug)]
-pub struct CodecBuffered<T, Z = Configurable>
+pub struct CodecBuffered<Z = Config>
 where
-    Z: Config,
+    Z: Configure,
 {
     buffer: Vec<u8>,
     buffer_relevant_len: usize,
     buffer_additional_len: usize,
     codec: Codec<Z>,
-    phantom: PhantomData<T>,
 }
 
-impl<T, Z> CodecBuffered<T, Z>
+impl<Z> CodecBuffered<Z>
 where
-    T: Default + Backend,
-    Z: Config,
+    Z: Configure,
 {
     /// Builds a new `Codec` encoding device with a FIX 4.4 dictionary.
     pub fn new(config: Z) -> Self {
@@ -172,7 +168,6 @@ where
             buffer_relevant_len: 0,
             buffer_additional_len: 0,
             codec: Codec::with_dict(dict.clone(), config.clone()),
-            phantom: PhantomData::default(),
         }
     }
 }
@@ -180,7 +175,7 @@ where
 //impl<T, Z> StreamingDecoder<T> for CodecBuffered<T, Z>
 //where
 //    T: Backend + Default,
-//    Z: Config,
+//    Z: Configure,
 //{
 //    type Error = DecodeError;
 //
@@ -216,7 +211,7 @@ where
 
 struct FieldIter<'a, Z>
 where
-    Z: Config,
+    Z: Configure,
 {
     data: &'a [u8],
     cursor: usize,
@@ -227,7 +222,7 @@ where
 
 impl<'a, Z> FieldIter<'a, Z>
 where
-    Z: Config,
+    Z: Configure,
 {
     fn new(data: &'a [u8], config: &'a Z, dictionary: &'a Dictionary) -> Self {
         Self {
@@ -242,7 +237,7 @@ where
 
 impl<'a, Z> Iterator for &mut FieldIter<'a, Z>
 where
-    Z: Config,
+    Z: Configure,
 {
     type Item = Result<Field, DecodeError>;
 
@@ -342,22 +337,22 @@ fn read_field_value(datatype: DataType, buf: &[u8]) -> Result<FixFieldValue, Dec
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::tagvalue::{ConfigFastDefault, Configurable};
+    use crate::tagvalue::{Config, ConfigFastDefault};
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
-    fn encoder() -> Codec<impl Config> {
-        let mut config = Configurable::default();
+    fn encoder() -> Codec<impl Configure> {
+        let mut config = Config::default();
         config.set_separator(b'|');
         Codec::new(config)
     }
 
-    fn encoder_with_soh() -> Codec<impl Config> {
+    fn encoder_with_soh() -> Codec<impl Configure> {
         Codec::new(ConfigFastDefault)
     }
 
-    fn encoder_slash_no_verify() -> Codec<impl Config> {
-        let mut config = Configurable::default();
+    fn encoder_slash_no_verify() -> Codec<impl Configure> {
+        let mut config = Config::default();
         config.set_separator(b'|');
         config.set_verify_checksum(false);
         Codec::new(config)
@@ -370,7 +365,7 @@ mod test {
     #[test]
     fn can_parse_simple_message() {
         let message = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
-        let mut config = Configurable::default();
+        let mut config = Config::default();
         config.set_separator(b'|');
         let mut codec = Codec::new(config);
         let result = codec.decode(message.as_bytes());
@@ -390,7 +385,7 @@ mod test {
     #[test]
     fn skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
-        let mut config = Configurable::default();
+        let mut config = Config::default();
         config.set_separator(b'|');
         config.set_verify_checksum(false);
         let mut codec = Codec::new(config);
@@ -401,7 +396,7 @@ mod test {
     #[test]
     fn no_skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
-        let mut config = Configurable::default();
+        let mut config = Config::default();
         config.set_separator(b'|');
         config.set_verify_checksum(true);
         let mut codec = Codec::new(config);
@@ -436,7 +431,7 @@ mod test {
     #[test]
     fn message_without_final_separator() {
         let message = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
-        let mut config = Configurable::default();
+        let mut config = Config::default();
         config.set_separator(b'|');
         let mut codec = Codec::new(config);
         let result = codec.decode(message.as_bytes());

@@ -6,7 +6,7 @@ mod codec;
 mod config;
 
 pub use codec::Codec;
-pub use config::{Config, ConfigPrettyPrint, Configurable};
+pub use config::{Configure, ConfigPrettyPrint, Config};
 
 /// The type returned in the event of an error when encoding a FIX JSON message.
 #[derive(Copy, Clone, Debug)]

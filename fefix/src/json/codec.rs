@@ -1,6 +1,6 @@
 use crate::backend::FieldValue;
 use crate::buffering::Buffer;
-use crate::json::{Config, Configurable};
+use crate::json::{Configure, Config};
 use crate::tagvalue::{FixFieldValue, MessageRnd, MessageSeq};
 use crate::Dictionary;
 use serde_json::json;
@@ -9,7 +9,7 @@ use std::fmt;
 
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]
-pub struct Codec<Z = Configurable> {
+pub struct Codec<Z = Config> {
     dictionaries: HashMap<String, Dictionary>,
     message: MessageRnd,
     config: Z,
@@ -17,11 +17,11 @@ pub struct Codec<Z = Configurable> {
 
 impl<Z> Codec<Z>
 where
-    Z: Config,
+    Z: Configure,
 {
     /// Creates a new codec. `dict` serves as a reference for data type inference
     /// of incoming messages' fields. `config` handles encoding details. See the
-    /// [`Config`](Config) trait for more information.
+    /// [`Configure`](Configure) trait for more information.
     pub fn new(dict: Dictionary, config: Z) -> Self {
         let mut dictionaries = HashMap::new();
         dictionaries.insert(dict.get_version().to_string(), dict);
@@ -61,7 +61,7 @@ where
 
 impl<Z> Codec<Z>
 where
-    Z: Config,
+    Z: Configure,
 {
     pub fn decode(&mut self, data: &[u8]) -> Result<&MessageRnd, DecodeError> {
         let value: serde_json::Value =
@@ -128,30 +128,41 @@ where
         let mut map_header = json!({});
         let mut map_body = json!({});
         let mut map_trailer = json!({});
-        message.for_each::<EncodeError, _>(|field_tag, field_value| {
+        for (field_tag, field_value) in message.fields_in_std_header() {
+            let field = dictionary
+                .field_by_tag(field_tag)
+                .ok_or(EncodeError::Dictionary)?;
+            let field_name = field.name().to_string();
+            debug_assert!(component_std_header.contains_field(&field));
+            let field_value = self.translate(dictionary, field_value);
+            map_header
+                .as_object_mut()
+                .unwrap()
+                .insert(field_name, field_value);
+        }
+        for (field_tag, field_value) in message.fields_in_std_header() {
             let field = dictionary
                 .field_by_tag(field_tag)
                 .ok_or(EncodeError::Dictionary)?;
             let field_name = field.name().to_string();
             let field_value = self.translate(dictionary, field_value);
-            if component_std_header.contains_field(&field) {
-                map_header
-                    .as_object_mut()
-                    .unwrap()
-                    .insert(field_name, field_value);
-            } else if component_std_traler.contains_field(&field) {
-                map_trailer
-                    .as_object_mut()
-                    .unwrap()
-                    .insert(field_name, field_value);
-            } else {
-                map_body
-                    .as_object_mut()
-                    .unwrap()
-                    .insert(field_name, field_value);
-            }
-            Ok(())
-        })?;
+            map_body
+                .as_object_mut()
+                .unwrap()
+                .insert(field_name, field_value);
+        }
+        for (field_tag, field_value) in message.fields_in_std_header() {
+            let field = dictionary
+                .field_by_tag(field_tag)
+                .ok_or(EncodeError::Dictionary)?;
+            debug_assert!(component_std_traler.contains_field(&field));
+            let field_name = field.name().to_string();
+            let field_value = self.translate(dictionary, field_value);
+            map_trailer
+                .as_object_mut()
+                .unwrap()
+                .insert(field_name, field_value);
+        }
         let value = json!({
             "Header": map_header,
             "Body": map_body,
@@ -237,29 +248,29 @@ mod test {
     use crate::json::ConfigPrettyPrint;
     use crate::AppVersion;
 
-//    const MESSAGE_SIMPLE: &str = r#"
-//{
-//    "Header": {
-//        "BeginString": "FIX.4.4",
-//        "MsgType": "W",
-//        "MsgSeqNum": "4567",
-//        "SenderCompID": "SENDER",
-//        "TargetCompID": "TARGET",
-//        "SendingTime": "20160802-21:14:38.717"
-//    },
-//    "Body": {
-//        "SecurityIDSource": "8",
-//        "SecurityID": "ESU6",
-//        "MDReqID": "789",
-//        "NoMDEntries": [
-//            { "MDEntryType": "0", "MDEntryPx": "1.50", "MDEntrySize": "75", "MDEntryTime": "21:14:38.688" },
-//            { "MDEntryType": "1", "MDEntryPx": "1.75", "MDEntrySize": "25", "MDEntryTime": "21:14:38.688" }
-//        ]
-//    },
-//    "Trailer": {
-//    }
-//}
-//    "#;
+    //    const MESSAGE_SIMPLE: &str = r#"
+    //{
+    //    "Header": {
+    //        "BeginString": "FIX.4.4",
+    //        "MsgType": "W",
+    //        "MsgSeqNum": "4567",
+    //        "SenderCompID": "SENDER",
+    //        "TargetCompID": "TARGET",
+    //        "SendingTime": "20160802-21:14:38.717"
+    //    },
+    //    "Body": {
+    //        "SecurityIDSource": "8",
+    //        "SecurityID": "ESU6",
+    //        "MDReqID": "789",
+    //        "NoMDEntries": [
+    //            { "MDEntryType": "0", "MDEntryPx": "1.50", "MDEntrySize": "75", "MDEntryTime": "21:14:38.688" },
+    //            { "MDEntryType": "1", "MDEntryPx": "1.75", "MDEntrySize": "25", "MDEntryTime": "21:14:38.688" }
+    //        ]
+    //    },
+    //    "Trailer": {
+    //    }
+    //}
+    //    "#;
 
     const MESSAGE_WITHOUT_HEADER: &str = r#"
 {
@@ -281,7 +292,7 @@ mod test {
         Dictionary::from_version(AppVersion::Fix44)
     }
 
-    fn encoder_fix44() -> Codec<impl Config> {
+    fn encoder_fix44() -> Codec<impl Configure> {
         Codec::new(dict_fix44(), ConfigPrettyPrint)
     }
 
