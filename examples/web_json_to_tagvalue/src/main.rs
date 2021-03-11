@@ -1,6 +1,5 @@
 //! Starts an HTTP server on any open port and listens for JSON FIX messages.
 
-use fefix::backend::Backend;
 use fefix::{json, tagvalue, tagvalue::MessageSeq, AppVersion, Dictionary};
 
 #[tokio::main]
@@ -56,7 +55,7 @@ async fn serve_json_relay(mut req: tide::Request<State>) -> tide::Result {
         let mut encoder =
             tagvalue::Codec::with_dict(Dictionary::from_version(AppVersion::Fix42), config);
         let msg = &mut MessageSeq::default();
-        Backend::for_each::<(), _>(message, |tag, value| {
+        message.for_each::<(), _>(|tag, value| {
             msg.add_field(tag, value.clone());
             Ok(())
         })

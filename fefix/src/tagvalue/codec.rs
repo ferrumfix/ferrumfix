@@ -114,7 +114,7 @@ where
             buffer.as_slice().len() - start_i
         };
         let begin_string = message
-            .get_field(8u32)
+            .field(8u32)
             .unwrap()
             .as_str()
             .unwrap()

@@ -1,6 +1,6 @@
 use crate::tagvalue::{TagLookup, TagLookupPredetermined};
 
-/// The [`Config`](Config) pattern allows deep customization of encoding
+/// The [`Config`] pattern allows deep customization of encoding
 /// and decoding behavior without relying on runtime settings. By using this
 /// trait and specializing the behavior of particular methods, users can change
 /// the behavior of the FIX encoder without incurring in performance loss.
