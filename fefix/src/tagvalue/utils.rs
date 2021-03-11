@@ -54,8 +54,7 @@ pub fn checksum_digits(message: &[u8]) -> [u8; 3] {
 
 pub fn verify_checksum(message: &[u8]) -> Result<(), DecodeError> {
     let nominal_checksum = parse_u8_from_decimal(checksum_digits(message));
-    let actual_checksum =
-        checksum_10(&message[..message.len() - FIELD_CHECKSUM_LEN_IN_BYTES]);
+    let actual_checksum = checksum_10(&message[..message.len() - FIELD_CHECKSUM_LEN_IN_BYTES]);
     if nominal_checksum != actual_checksum {
         dbglog!(
             "CheckSum mismatch: expected {:03} but is {:03}.",
@@ -106,16 +105,7 @@ where
     buffer.extend_from_slice(b"8=");
     buffer.extend_from_slice(begin_string);
     buffer.extend_from_slice(&[
-        separator,
-        b'9',
-        b'=',
-        b'0',
-        b'0',
-        b'0',
-        b'0',
-        b'0',
-        b'0',
-        separator,
+        separator, b'9', b'=', b'0', b'0', b'0', b'0', b'0', b'0', separator,
     ]);
     let body_length_writable_range = buffer.as_slice().len() - 7..buffer.as_slice().len() - 1;
     let body_length = body_writer(buffer);

@@ -1,5 +1,5 @@
-use crate::tagvalue::FixFieldValue;
 use crate::backend::field_value as val;
+use crate::tagvalue::FixFieldValue;
 
 #[derive(Debug, Clone)]
 pub struct PushyMessage {

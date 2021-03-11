@@ -1,7 +1,8 @@
 use crate::backend::{field_value::TagNum, Backend, FieldValue};
 use crate::buffering::Buffer;
 use crate::tagvalue::{
-    slr, utils, Config, Configurable, DecodeError, EncodeError, PushyMessage, RawDecoder, TagLookup, FixFieldValue
+    slr, utils, Config, Configurable, DecodeError, EncodeError, FixFieldValue, PushyMessage,
+    RawDecoder, TagLookup,
 };
 use crate::{AppVersion, DataType, Dictionary};
 use std::str;

@@ -1,9 +1,9 @@
 //! FIX message in-memory representations, each tuned for specific operations
 //! and performance characteristics.
 
+use crate::tagvalue::FixFieldValue;
 use crate::StreamIterator;
 use std::fmt;
-use crate::tagvalue::FixFieldValue;
 
 pub mod field_value;
 

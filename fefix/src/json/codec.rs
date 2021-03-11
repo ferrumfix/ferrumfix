@@ -1,7 +1,7 @@
 use crate::backend::{Backend, FieldValue};
-use crate::tagvalue::{FixFieldValue};
 use crate::buffering::Buffer;
 use crate::json::{Config, Configurable};
+use crate::tagvalue::FixFieldValue;
 use crate::{Dictionary, Encoding};
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap};

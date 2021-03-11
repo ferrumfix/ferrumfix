@@ -1,10 +1,10 @@
 //! A schema-less, [`HashMap`]-backed internal representation for FIX messages.
 
-use crate::backend::*;
 use crate::backend::field_value as val;
+use crate::backend::*;
+use crate::tagvalue::slr;
 use crate::tagvalue::FixFieldValue;
 use crate::StreamIterator;
-use crate::tagvalue::slr;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq)]
