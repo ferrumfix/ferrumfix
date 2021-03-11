@@ -1,6 +1,11 @@
 //! A schema-less, [`HashMap`]-backed internal representation for FIX messages.
 
 use crate::backend::*;
+use crate::backend::field_value as val;
+use crate::tagvalue::FixFieldValue;
+use crate::StreamIterator;
+use crate::tagvalue::slr;
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Field {
@@ -219,6 +224,13 @@ impl Message {
         }
     }
 
+    pub fn iter_fields_seq(&self) -> MessageIterFields {
+        MessageIterFields {
+            message: self,
+            i: 0,
+        }
+    }
+
     pub fn test_indicator(&self) -> Option<bool> {
         let y = FixFieldValue::from('Y');
         let n = FixFieldValue::from('N');
@@ -229,3 +241,23 @@ impl Message {
         }
     }
 }
+
+#[derive(Debug)]
+pub struct MessageIterFields<'a> {
+    message: &'a Message,
+    i: usize,
+}
+
+//impl<'a> Iterator for MessageIterFields<'a> {
+//    type Item = (u32, &'a FixFieldValue);
+//
+//    fn next(&mut self) -> Option<Self::Item> {
+//        if self.i >= self.message.fields.len() {
+//            None
+//        } else {
+//            let field = &self.message.fields[self.i];
+//            self.i += 1;
+//            Some((field.0, field.1))
+//        }
+//    }
+//}

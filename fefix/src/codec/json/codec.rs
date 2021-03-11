@@ -1,4 +1,5 @@
-use crate::backend::{Backend, FieldValue, FixFieldValue};
+use crate::backend::{Backend, FieldValue};
+use crate::tagvalue::{FixFieldValue};
 use crate::buffering::Buffer;
 use crate::json::{Config, Configurable};
 use crate::{Dictionary, Encoding};
@@ -234,8 +235,8 @@ impl fmt::Display for DecodeError {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::backend::slr;
     use crate::json::ConfigPrettyPrint;
+    use crate::tagvalue::slr;
     use crate::AppVersion;
     use serde_json::*;
 

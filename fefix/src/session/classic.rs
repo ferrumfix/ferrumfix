@@ -12,7 +12,8 @@
 //! [`Acceptor`] abstract over such details and present users with a single entry
 //! point, namely [`Initiator::feed`] and [`Acceptor::feed`].
 
-use crate::backend::{slr, FixFieldValue};
+use crate::tagvalue::slr;
+use crate::tagvalue::FixFieldValue;
 use boolinator::Boolinator;
 use futures_lite::prelude::*;
 use std::cmp::Ordering;
@@ -718,7 +719,7 @@ pub mod errs {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::backend::FixFieldValue;
+    use crate::tagvalue::FixFieldValue;
 
     const COMPANY_ID: &str = "FOOBAR-INC";
 

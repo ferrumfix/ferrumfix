@@ -48,7 +48,7 @@ impl Config for ConfigFastDefault {
     type TagLookup = TagLookupPredetermined;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Configurable {
     separator: u8,
     verify_checksum: bool,

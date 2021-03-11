@@ -1,11 +1,11 @@
-use crate::backend::{field_value::TagNum, slr, Backend, FieldValue, FixFieldValue};
+use crate::backend::{field_value::TagNum, Backend, FieldValue};
 use crate::buffering::Buffer;
 use crate::tagvalue::{
-    utils, CodecAgnostic, Config, Configurable, DecodeError, EncodeError, TagLookup,
+    slr, utils, Config, Configurable, DecodeError, EncodeError, PushyMessage, RawDecoder, TagLookup, FixFieldValue
 };
-use crate::{AppVersion, DataType, Dictionary, Encoding, StreamingDecoder};
-use std::fmt::Debug;
+use crate::{AppVersion, DataType, Dictionary};
 use std::str;
+use std::{fmt::Debug, marker::PhantomData};
 
 /// Easy-to-use [`Encoding`] that accomodates for most use cases.
 #[derive(Debug)]
@@ -14,14 +14,14 @@ where
     Z: Config,
 {
     dict: Dictionary,
-    message: T,
-    agnostic_codec: CodecAgnostic<Z>,
+    message: slr::Message,
     config: Z,
+    phantom: PhantomData<T>,
 }
 
 impl<T, Z> Codec<T, Z>
 where
-    T: Default,
+    T: Default + Backend,
     Z: Config,
 {
     /// Builds a new [`Codec`] encoding device with a FIX 4.4 dictionary.
@@ -31,13 +31,11 @@ where
 
     /// Creates a new codec for the tag-value format. `dict` is used to parse messages.
     pub fn with_dict(dict: Dictionary, config: Z) -> Self {
-        let mut agnostic_codec = CodecAgnostic::<Z>::default();
-        *agnostic_codec.config_mut() = config.clone();
         Self {
             dict,
-            agnostic_codec,
-            message: T::default(),
+            message: slr::Message::default(),
             config,
+            phantom: PhantomData::default(),
         }
     }
 
@@ -60,30 +58,24 @@ where
     pub fn config_mut(&mut self) -> &mut Z {
         &mut self.config
     }
-}
 
-impl<T, Z> Encoding<T> for Codec<T, Z>
-where
-    T: Backend,
-    Z: Config,
-{
-    type DecodeError = DecodeError;
-    type EncodeError = EncodeError;
-
-    fn decode(&mut self, data: &[u8]) -> Result<&T, Self::DecodeError> {
+    pub fn decode(&mut self, data: &[u8]) -> Result<&slr::Message, DecodeError> {
+        let decoder = RawDecoder::new()
+            .with_separator(self.config.separator())
+            .with_checksum_verification(self.config.verify_checksum());
         // Take care of `BeginString`, `BodyLength` and `CheckSum`.
-        let agnostic_message = self.agnostic_codec.decode(data)?;
-        let begin_string = agnostic_message.begin_string();
-        let body = agnostic_message.body();
+        let frame = decoder.decode(data)?;
+        let begin_string = frame.begin_string();
+        let body = frame.payload();
         // Empty the message.
         self.message.clear();
         let mut fields = &mut FieldIter::new(body, &self.config, &self.dict);
         // Deserialize `MsgType(35)`.
         let msg_type = {
-            let mut f = fields.next().ok_or(Self::DecodeError::Syntax)??;
+            let mut f = fields.next().ok_or(DecodeError::Syntax)??;
             if f.tag() != 35 {
                 dbglog!("Expected MsgType (35), got ({}) instead.", f.tag());
-                return Err(Self::DecodeError::Syntax);
+                return Err(DecodeError::Syntax);
             }
             f.take_value()
         };
@@ -102,7 +94,11 @@ where
         Ok(&self.message)
     }
 
-    fn encode<B>(&mut self, buffer: &mut B, message: &T) -> Result<usize, Self::EncodeError>
+    pub fn encode<B>(
+        &mut self,
+        buffer: &mut B,
+        message: &PushyMessage,
+    ) -> Result<usize, EncodeError>
     where
         B: Buffer,
     {
@@ -123,8 +119,13 @@ where
                 .unwrap();
             buffer.as_slice().len() - start_i
         };
-        let begin_string = message.field(8).unwrap().as_str().unwrap().as_bytes();
-        utils::encode(&self.config, begin_string, body_writer, buffer)
+        let begin_string = message
+            .get_field(8u32)
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .as_bytes();
+        utils::encode_raw(begin_string, body_writer, buffer, self.config.separator())
     }
 }
 
@@ -161,7 +162,7 @@ where
 
 impl<T, Z> CodecBuffered<T, Z>
 where
-    T: Default,
+    T: Default + Backend,
     Z: Config,
 {
     /// Builds a new `Codec` encoding device with a FIX 4.4 dictionary.
@@ -180,66 +181,42 @@ where
     }
 }
 
-impl<T, Z> Encoding<T> for CodecBuffered<T, Z>
-where
-    T: Backend + Default,
-    Z: Config,
-{
-    type DecodeError = DecodeError;
-    type EncodeError = EncodeError;
-
-    fn decode(&mut self, data: &[u8]) -> Result<&T, Self::DecodeError> {
-        self.codec.decode(data)
-    }
-
-    fn encode<B>(
-        &mut self,
-        buffer: &mut B,
-        message: &T,
-    ) -> std::result::Result<usize, Self::EncodeError>
-    where
-        B: Buffer,
-    {
-        self.codec.encode(buffer, message)
-    }
-}
-
-impl<T, Z> StreamingDecoder<T> for CodecBuffered<T, Z>
-where
-    T: Backend + Default,
-    Z: Config,
-{
-    type Error = DecodeError;
-
-    fn supply_buffer(&mut self) -> (&mut usize, &mut [u8]) {
-        // 512 bytes at a time. Not optimal, but a reasonable default.
-        let len = 512;
-        self.buffer.resize(self.buffer_relevant_len + len, 0);
-        (
-            &mut self.buffer_additional_len,
-            &mut self.buffer[self.buffer_relevant_len..self.buffer_relevant_len + len],
-        )
-    }
-
-    fn attempt_decoding(&mut self) -> Result<Option<&T>, Self::Error> {
-        self.buffer_relevant_len += self.buffer_additional_len;
-        assert!(self.buffer_relevant_len <= self.buffer.len());
-        if self.buffer_relevant_len < 10 {
-            Ok(None)
-        } else if &self.buffer[self.buffer_relevant_len - 7..self.buffer_relevant_len - 3] == b"10="
-        {
-            self.codec
-                .decode(&self.buffer[..self.buffer_relevant_len])
-                .map(|message| Some(message))
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn get(&self) -> &T {
-        &self.codec.message
-    }
-}
+//impl<T, Z> StreamingDecoder<T> for CodecBuffered<T, Z>
+//where
+//    T: Backend + Default,
+//    Z: Config,
+//{
+//    type Error = DecodeError;
+//
+//    fn supply_buffer(&mut self) -> (&mut usize, &mut [u8]) {
+//        // 512 bytes at a time. Not optimal, but a reasonable default.
+//        let len = 512;
+//        self.buffer.resize(self.buffer_relevant_len + len, 0);
+//        (
+//            &mut self.buffer_additional_len,
+//            &mut self.buffer[self.buffer_relevant_len..self.buffer_relevant_len + len],
+//        )
+//    }
+//
+//    fn attempt_decoding(&mut self) -> Result<Option<&T>, Self::Error> {
+//        self.buffer_relevant_len += self.buffer_additional_len;
+//        assert!(self.buffer_relevant_len <= self.buffer.len());
+//        if self.buffer_relevant_len < 10 {
+//            Ok(None)
+//        } else if &self.buffer[self.buffer_relevant_len - 7..self.buffer_relevant_len - 3] == b"10="
+//        {
+//            self.codec
+//                .decode(&self.buffer[..self.buffer_relevant_len])
+//                .map(|message| Some(message))
+//        } else {
+//            Ok(None)
+//        }
+//    }
+//
+//    fn get(&self) -> &T {
+//        &self.codec.message
+//    }
+//}
 
 struct FieldIter<'a, Z>
 where

@@ -1,9 +1,9 @@
-use super::Backend;
-use super::FixFieldValue;
-use super::*;
+use crate::tagvalue::FixFieldValue;
+use crate::backend::field_value as val;
 
 #[derive(Debug, Clone)]
 pub struct PushyMessage {
+    begin_string: Vec<u8>,
     fields: Vec<(u32, FixFieldValue)>,
     iter: FieldsIterator,
 }
@@ -58,34 +58,8 @@ impl PushyMessage {
             _ => Some(false),
         }
     }
-}
 
-impl Backend for PushyMessage {
-    type Error = ();
-    type Iter = FieldsIterator;
-    type IterItem = TaggedField;
-
-    fn field(&self, tag: u32) -> Option<&FixFieldValue> {
-        self.fields
-            .iter()
-            .find(|(t, _)| *t == tag)
-            .map(|(_, value)| value)
-    }
-
-    fn clear(&mut self) {
-        self.fields.clear();
-    }
-
-    fn len(&self) -> usize {
-        self.fields.len()
-    }
-
-    fn insert(&mut self, tag: u32, value: FixFieldValue) -> Result<(), Self::Error> {
-        self.fields.push((tag, value));
-        Ok(())
-    }
-
-    fn for_each<E, F>(&self, mut f: F) -> Result<(), E>
+    pub fn for_each<E, F>(&self, mut f: F) -> Result<(), E>
     where
         F: FnMut(u32, &FixFieldValue) -> Result<(), E>,
     {
@@ -94,15 +68,12 @@ impl Backend for PushyMessage {
         }
         Ok(())
     }
-
-    fn iter_fields(&mut self) -> &mut Self::Iter {
-        &mut self.iter
-    }
 }
 
 impl Default for PushyMessage {
     fn default() -> Self {
         Self {
+            begin_string: Vec::new(),
             fields: Vec::new(),
             iter: FieldsIterator {
                 message: std::ptr::null(),
@@ -122,36 +93,9 @@ pub struct TaggedField {
     value: FixFieldValue,
 }
 
-impl FieldRef<FixFieldValue> for TaggedField {
-    fn tag(&self) -> u32 {
-        self.tag
-    }
-
-    fn value(&self) -> &FixFieldValue {
-        &self.value
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct FieldsIterator {
     message: *const PushyMessage,
     field_i: usize,
     tagged_field: TaggedField,
-}
-
-impl StreamIterator for FieldsIterator {
-    type Item = TaggedField;
-
-    fn advance(&mut self) {
-        self.field_i += 1;
-    }
-
-    fn get(&self) -> Option<&Self::Item> {
-        let message = unsafe { &*self.message };
-        if self.field_i < message.fields.len() {
-            Some(&self.tagged_field)
-        } else {
-            None
-        }
-    }
 }

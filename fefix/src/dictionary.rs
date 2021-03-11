@@ -250,9 +250,9 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::backend::Version;
+    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(Version::Fix44);
+    /// let dict = Dictionary::from_version(AppVersion::Fix44);
     /// assert_eq!(dict.get_version(), "FIX.4.4");
     /// ```
     pub fn get_version(&self) -> &str {
@@ -275,9 +275,9 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::backend::Version;
+    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(Version::Fix44);
+    /// let dict = Dictionary::from_version(AppVersion::Fix44);
     ///
     /// let msg1 = dict.message_by_name("Heartbeat").unwrap();
     /// let msg2 = dict.message_by_msgtype("0").unwrap();
@@ -293,9 +293,9 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::backend::Version;
+    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(Version::Fix44);
+    /// let dict = Dictionary::from_version(AppVersion::Fix44);
     ///
     /// let msg1 = dict.message_by_msgtype("0").unwrap();
     /// let msg2 = dict.message_by_name("Heartbeat").unwrap();
@@ -327,9 +327,9 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::backend::Version;
+    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(Version::Fix44);
+    /// let dict = Dictionary::from_version(AppVersion::Fix44);
     ///
     /// let dt = dict.datatype_by_name("String").unwrap();
     /// assert_eq!(dt.name(), "String");
@@ -344,9 +344,9 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::backend::Version;
+    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(Version::Fix44);
+    /// let dict = Dictionary::from_version(AppVersion::Fix44);
     ///
     /// let field1 = dict.field_by_tag(112).unwrap();
     /// let field2 = dict.field_by_name("TestReqID").unwrap();
@@ -370,9 +370,9 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::backend::Version;
+    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(Version::Fix42);
+    /// let dict = Dictionary::from_version(AppVersion::Fix42);
     /// // FIX 4.2 defines 19 datatypes.
     /// assert_eq!(dict.iter_datatypes().count(), 19);
     /// ```
@@ -385,9 +385,9 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::backend::Version;
+    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(Version::Fix44);
+    /// let dict = Dictionary::from_version(AppVersion::Fix44);
     /// let msg = dict.iter_messages().find(|m| m.name() == "MarketDataRequest");
     /// assert_eq!(msg.unwrap().msg_type(), "V");
     /// ```

@@ -1,6 +1,6 @@
 //! FIX Adapted for Streaming (FAST) support.
 
-use crate::backend::slr;
+use crate::tagvalue::slr;
 use crate::buffering::Buffer;
 use crate::{Dictionary, Encoding};
 use bitvec::vec::BitVec;

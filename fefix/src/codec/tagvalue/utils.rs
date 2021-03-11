@@ -1,5 +1,5 @@
 use crate::buffering::Buffer;
-use crate::tagvalue::{Config, DecodeError, EncodeError};
+use crate::tagvalue::{DecodeError, EncodeError};
 use std::convert::TryInto;
 use std::ops::Range;
 
@@ -27,7 +27,16 @@ pub fn parse_u8_from_decimal(digits: [u8; 3]) -> u8 {
 }
 
 /// Returns the `CheckSum <10>` value of `data`.
-pub fn calculate_checksum(data: &[u8]) -> u8 {
+///
+/// # Examples
+///
+/// ```
+/// use fefix::tagvalue::checksum_10;
+///
+/// assert_eq!(checksum_10(b""), 0x0);
+/// assert_eq!(checksum_10(b"hunter2"), 0xc8);
+/// ```
+pub fn checksum_10(data: &[u8]) -> u8 {
     let mut value = 0u8;
     for byte in data {
         value = value.wrapping_add(*byte);
@@ -46,7 +55,7 @@ pub fn checksum_digits(message: &[u8]) -> [u8; 3] {
 pub fn verify_checksum(message: &[u8]) -> Result<(), DecodeError> {
     let nominal_checksum = parse_u8_from_decimal(checksum_digits(message));
     let actual_checksum =
-        calculate_checksum(&message[..message.len() - FIELD_CHECKSUM_LEN_IN_BYTES]);
+        checksum_10(&message[..message.len() - FIELD_CHECKSUM_LEN_IN_BYTES]);
     if nominal_checksum != actual_checksum {
         dbglog!(
             "CheckSum mismatch: expected {:03} but is {:03}.",
@@ -82,14 +91,13 @@ pub fn verify_body_length(
     }
 }
 
-pub fn encode<Z, B, F>(
-    config: &Z,
+pub fn encode_raw<B, F>(
     begin_string: &[u8],
     body_writer: F,
     buffer: &mut B,
+    separator: u8,
 ) -> Result<usize, EncodeError>
 where
-    Z: Config,
     B: Buffer,
     F: Fn(&mut B) -> usize,
 {
@@ -98,7 +106,7 @@ where
     buffer.extend_from_slice(b"8=");
     buffer.extend_from_slice(begin_string);
     buffer.extend_from_slice(&[
-        config.separator(),
+        separator,
         b'9',
         b'=',
         b'0',
@@ -107,7 +115,7 @@ where
         b'0',
         b'0',
         b'0',
-        config.separator(),
+        separator,
     ]);
     let body_length_writable_range = buffer.as_slice().len() - 7..buffer.as_slice().len() - 1;
     let body_length = body_writer(buffer);
@@ -136,7 +144,7 @@ where
         slice[5] = (body_length % 10) as u8 + b'0';
     }
     {
-        let checksum = calculate_checksum(&buffer.as_slice()[start_i..]);
+        let checksum = checksum_10(&buffer.as_slice()[start_i..]);
         buffer.extend_from_slice(&[
             b'1',
             b'0',
@@ -144,7 +152,7 @@ where
             (checksum / 100) + b'0',
             ((checksum / 10) % 10) + b'0',
             (checksum % 10) + b'0',
-            config.separator(),
+            separator,
         ]);
     }
     Ok(buffer.as_slice().len())
@@ -232,10 +240,10 @@ mod test {
 
     #[test]
     fn edges_cases_of_checksum_calculation() {
-        assert_eq!(calculate_checksum(&[]), 0);
-        assert_eq!(calculate_checksum(&[1]), 1);
-        assert_eq!(calculate_checksum(&[128, 127]), 255);
-        assert_eq!(calculate_checksum(&[128, 128]), 0);
+        assert_eq!(checksum_10(&[]), 0);
+        assert_eq!(checksum_10(&[1]), 1);
+        assert_eq!(checksum_10(&[128, 127]), 255);
+        assert_eq!(checksum_10(&[128, 128]), 0);
     }
 
     #[test]
