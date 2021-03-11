@@ -2,13 +2,13 @@ use crate::backend::field_value as val;
 use crate::tagvalue::FixFieldValue;
 
 #[derive(Debug, Clone)]
-pub struct PushyMessage {
+pub struct MessageSeq {
     begin_string: Vec<u8>,
     fields: Vec<(u32, FixFieldValue)>,
     iter: FieldsIterator,
 }
 
-impl PushyMessage {
+impl MessageSeq {
     /// Creates a new [`Message`] without any fields.
     pub fn new() -> Self {
         Self::default()
@@ -70,7 +70,7 @@ impl PushyMessage {
     }
 }
 
-impl Default for PushyMessage {
+impl Default for MessageSeq {
     fn default() -> Self {
         Self {
             begin_string: Vec::new(),
@@ -95,7 +95,7 @@ pub struct TaggedField {
 
 #[derive(Debug, Clone)]
 pub struct FieldsIterator {
-    message: *const PushyMessage,
+    message: *const MessageSeq,
     field_i: usize,
     tagged_field: TaggedField,
 }

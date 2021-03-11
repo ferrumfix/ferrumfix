@@ -2,7 +2,6 @@
 
 use crate::backend::field_value as val;
 use crate::backend::*;
-use crate::tagvalue::slr;
 use crate::tagvalue::FixFieldValue;
 use crate::StreamIterator;
 use std::collections::BTreeMap;
@@ -39,12 +38,12 @@ impl Field {
 
 /// FIX message, backed by an associative array.
 #[derive(Debug, Clone)]
-pub struct Message {
+pub struct MessageRnd {
     pub fields: BTreeMap<u32, FixFieldValue>,
     iter: FieldsIterator,
 }
 
-impl Backend for Message {
+impl Backend for MessageRnd {
     type Error = ();
     type Iter = FieldsIterator;
     type IterItem = ();
@@ -90,7 +89,7 @@ impl Backend for Message {
     }
 }
 
-impl Default for Message {
+impl Default for MessageRnd {
     fn default() -> Self {
         Self {
             fields: BTreeMap::new(),
@@ -99,13 +98,13 @@ impl Default for Message {
     }
 }
 
-impl PartialEq for Message {
+impl PartialEq for MessageRnd {
     fn eq(&self, other: &Self) -> bool {
         self.fields == other.fields
     }
 }
 
-impl<'a> Backend for &'a mut Message {
+impl<'a> Backend for &'a mut MessageRnd {
     type Error = ();
     type Iter = FieldsIterator;
     type IterItem = ();
@@ -174,22 +173,22 @@ impl StreamIterator for FieldsIterator {
     }
 }
 
-impl<'a> Iterator for &'a Message {
-    type Item = slr::FixFieldValue;
+impl<'a> Iterator for &'a MessageRnd {
+    type Item = FixFieldValue;
 
     fn next(&mut self) -> Option<Self::Item> {
         None
     }
 }
 
-impl Message {
+impl MessageRnd {
     /// Creates a new [`Message`] without any fields.
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Adds a field to `self`.
-    pub fn add_field<K: Into<i64>>(&mut self, tag: K, value: slr::FixFieldValue) {
+    pub fn add_field<K: Into<i64>>(&mut self, tag: K, value: FixFieldValue) {
         self.fields.insert(tag.into() as u32, value);
     }
 
@@ -197,16 +196,16 @@ impl Message {
     pub fn add_str<K: Into<i64>, S: Into<String>>(&mut self, tag: K, value: S) {
         self.add_field(
             tag,
-            slr::FixFieldValue::string(value.into().as_bytes()).unwrap(),
+            FixFieldValue::string(value.into().as_bytes()).unwrap(),
         )
     }
 
     /// Adds an integer field to `self`.
     pub fn add_int<K: Into<i64>>(&mut self, tag: K, value: i64) {
-        self.add_field(tag, slr::FixFieldValue::from(value))
+        self.add_field(tag, FixFieldValue::from(value))
     }
 
-    pub fn get_field<K: Into<i64>>(&self, tag: K) -> Option<&slr::FixFieldValue> {
+    pub fn get_field<K: Into<i64>>(&self, tag: K) -> Option<&FixFieldValue> {
         self.fields.get(&(tag.into() as u32))
     }
 
@@ -244,7 +243,7 @@ impl Message {
 
 #[derive(Debug)]
 pub struct MessageIterFields<'a> {
-    message: &'a Message,
+    message: &'a MessageRnd,
     i: usize,
 }
 

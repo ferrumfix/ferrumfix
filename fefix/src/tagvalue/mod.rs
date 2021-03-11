@@ -12,16 +12,17 @@ use std::time::SystemTime;
 
 mod codec;
 mod config;
+mod message_rnd;
+mod message_seq;
 mod raw;
-mod seqdump;
-pub mod slr;
 mod taglookup;
 mod utils;
 
 pub use codec::{Codec, CodecBuffered};
 pub use config::{Config, ConfigFastDefault, Configurable};
+pub use message_rnd::{Field, MessageRnd};
+pub use message_seq::MessageSeq;
 pub use raw::{RawDecoder, RawEncoder, RawFrame};
-pub use seqdump::PushyMessage;
 pub use taglookup::{TagLookup, TagLookupPredetermined};
 pub use utils::{checksum_10, encode_raw};
 

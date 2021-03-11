@@ -1,7 +1,7 @@
 use crate::backend::{field_value::TagNum, Backend, FieldValue};
 use crate::buffering::Buffer;
 use crate::tagvalue::{
-    slr, utils, Config, Configurable, DecodeError, EncodeError, FixFieldValue, PushyMessage,
+    MessageRnd, message_rnd::Field, utils, Config, Configurable, DecodeError, EncodeError, FixFieldValue, MessageSeq,
     RawDecoder, TagLookup,
 };
 use crate::{AppVersion, DataType, Dictionary};
@@ -15,7 +15,7 @@ where
     Z: Config,
 {
     dict: Dictionary,
-    message: slr::Message,
+    message: MessageRnd,
     config: Z,
     phantom: PhantomData<T>,
 }
@@ -34,7 +34,7 @@ where
     pub fn with_dict(dict: Dictionary, config: Z) -> Self {
         Self {
             dict,
-            message: slr::Message::default(),
+            message: MessageRnd::default(),
             config,
             phantom: PhantomData::default(),
         }
@@ -60,7 +60,7 @@ where
         &mut self.config
     }
 
-    pub fn decode(&mut self, data: &[u8]) -> Result<&slr::Message, DecodeError> {
+    pub fn decode(&mut self, data: &[u8]) -> Result<&MessageRnd, DecodeError> {
         let decoder = RawDecoder::new()
             .with_separator(self.config.separator())
             .with_checksum_verification(self.config.verify_checksum());
@@ -98,7 +98,7 @@ where
     pub fn encode<B>(
         &mut self,
         buffer: &mut B,
-        message: &PushyMessage,
+        message: &MessageSeq,
     ) -> Result<usize, EncodeError>
     where
         B: Buffer,
@@ -249,7 +249,7 @@ impl<'a, Z> Iterator for &mut FieldIter<'a, Z>
 where
     Z: Config,
 {
-    type Item = Result<slr::Field, DecodeError>;
+    type Item = Result<Field, DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.cursor >= self.data.len() {
@@ -309,7 +309,7 @@ where
             Err(_) => (),
         }
         debug_assert_eq!(self.data[self.cursor - 1], self.config.separator());
-        Some(Ok(slr::Field::new(tag, field_value)))
+        Some(Ok(Field::new(tag, field_value)))
     }
 }
 
@@ -351,17 +351,17 @@ mod test {
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
-    fn encoder() -> Codec<slr::Message, impl Config> {
+    fn encoder() -> Codec<MessageRnd, impl Config> {
         let mut config = Configurable::default();
         config.set_separator(b'|');
         Codec::new(config)
     }
 
-    fn encoder_with_soh() -> Codec<slr::Message, impl Config> {
+    fn encoder_with_soh() -> Codec<MessageRnd, impl Config> {
         Codec::new(ConfigFastDefault)
     }
 
-    fn encoder_slash_no_verify() -> Codec<slr::Message, impl Config> {
+    fn encoder_slash_no_verify() -> Codec<MessageRnd, impl Config> {
         let mut config = Configurable::default();
         config.set_separator(b'|');
         config.set_verify_checksum(false);
@@ -377,7 +377,7 @@ mod test {
         let message = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
         let mut config = Configurable::default();
         config.set_separator(b'|');
-        let mut codec = Codec::<slr::Message>::new(config);
+        let mut codec = Codec::<MessageRnd>::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_ok());
     }
@@ -398,7 +398,7 @@ mod test {
         let mut config = Configurable::default();
         config.set_separator(b'|');
         config.set_verify_checksum(false);
-        let mut codec = Codec::<slr::Message>::new(config);
+        let mut codec = Codec::<MessageRnd>::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_ok());
     }
@@ -409,7 +409,7 @@ mod test {
         let mut config = Configurable::default();
         config.set_separator(b'|');
         config.set_verify_checksum(true);
-        let mut codec = Codec::<slr::Message>::new(config);
+        let mut codec = Codec::<MessageRnd>::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
     }
@@ -443,7 +443,7 @@ mod test {
         let message = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
         let mut config = Configurable::default();
         config.set_separator(b'|');
-        let mut codec = Codec::<slr::Message>::new(config);
+        let mut codec = Codec::<MessageRnd>::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
     }

@@ -1,7 +1,7 @@
 //! FIX Adapted for Streaming (FAST) support.
 
 use crate::buffering::Buffer;
-use crate::tagvalue::slr;
+use crate::tagvalue::MessageRnd;
 use crate::{Dictionary, Encoding};
 use bitvec::vec::BitVec;
 use codec::decode_stop_bit_bitvec;
@@ -24,7 +24,7 @@ pub use template::*;
 pub struct Fast {
     dict: Dictionary,
     templates: HashMap<String, Template>,
-    message: slr::Message,
+    message: MessageRnd,
 }
 
 impl Fast {
@@ -33,7 +33,7 @@ impl Fast {
         Fast {
             dict: Dictionary::empty(),
             templates: HashMap::new(),
-            message: slr::Message::new(),
+            message: MessageRnd::new(),
         }
     }
 
@@ -43,14 +43,14 @@ impl Fast {
     }
 }
 
-impl Encoding<slr::Message> for Fast {
+impl Encoding<MessageRnd> for Fast {
     type DecodeError = Error;
     type EncodeError = Error;
 
-    fn decode(&mut self, mut source: &[u8]) -> Result<&slr::Message, Error> {
+    fn decode(&mut self, mut source: &[u8]) -> Result<&MessageRnd, Error> {
         let _presence_map = decode_stop_bit_bitvec(&mut source).unwrap();
         let mut presence_by_field: BitVec = BitVec::new();
-        let message = slr::Message::new();
+        let message = MessageRnd::new();
         for field in self.templates.get("").unwrap().iter_items() {
             if let template::FieldType::Primitive(_f) = &field.kind() {
                 presence_by_field.push(field.is_mandatory());
@@ -104,7 +104,7 @@ impl Encoding<slr::Message> for Fast {
         Ok(&self.message)
     }
 
-    fn encode<B>(&mut self, buffer: &mut B, _message: &slr::Message) -> Result<usize, Error>
+    fn encode<B>(&mut self, buffer: &mut B, _message: &MessageRnd) -> Result<usize, Error>
     where
         B: Buffer,
     {

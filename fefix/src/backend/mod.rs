@@ -30,9 +30,9 @@ pub trait Backend<U = FixFieldValue> {
     ///
     /// ```
     /// use fefix::backend::Backend;
-    /// use fefix::backend::PushyMessage;
+    /// use fefix::backend::MessageSeq;
     ///
-    /// let mut message = PushyMessage::default();
+    /// let mut message = MessageSeq::default();
     /// assert_eq!(message.len(), 0);
     /// message.insert(35, FixFieldValue::String("A")).unwrap();
     /// assert_eq!(message.len(), 1);
@@ -48,9 +48,9 @@ pub trait Backend<U = FixFieldValue> {
     ///
     /// ```
     /// use fefix::backend::Backend;
-    /// use fefix::backend::PushyMessage;
+    /// use fefix::backend::MessageSeq;
     ///
-    /// let mut message = PushyMessage::default();
+    /// let mut message = MessageSeq::default();
     /// assert_eq!(message.len(), 0);
     /// message.insert(8, FixFieldValue::String("FIX.4.4")).unwrap();
     /// message.insert(35, FixFieldValue::String("D")).unwrap();

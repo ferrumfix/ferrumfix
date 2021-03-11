@@ -12,8 +12,8 @@
 //! [`Acceptor`] abstract over such details and present users with a single entry
 //! point, namely [`Initiator::feed`] and [`Acceptor::feed`].
 
-use crate::tagvalue::slr;
 use crate::tagvalue::FixFieldValue;
+use crate::tagvalue::MessageRnd;
 use boolinator::Boolinator;
 use futures_lite::prelude::*;
 use std::cmp::Ordering;
@@ -222,14 +222,14 @@ mod acceptor {
     #[non_exhaustive]
     pub enum EventInbound {
         HeartbeatIsDue,
-        IncomingMessage(slr::Message),
+        IncomingMessage(MessageRnd),
         Terminated,
     }
 
     #[derive(Clone, Debug)]
     pub enum EventOutbound {
         Terminate,
-        Message(slr::Message),
+        Message(MessageRnd),
     }
 
     /// A FIX Session acceptor.
@@ -297,13 +297,13 @@ mod acceptor {
             outbound_events
         }
 
-        fn feed_incoming_message(&mut self, message: slr::Message, to: &mut Vec<EventOutbound>) {
+        fn feed_incoming_message(&mut self, message: MessageRnd, to: &mut Vec<EventOutbound>) {
             let msg_type = message.msg_type();
             // Check `TestMessageIndicator(464)`.
             match (self.config.environment, message.test_indicator()) {
                 (Environment::ProductionDisallowTest, Some(true)) => {
                     // Generate Logout!
-                    let mut msg = slr::Message::new();
+                    let mut msg = MessageRnd::new();
                     msg.add_str(35, "5");
                     msg.add_str(49, self.config.company_id.as_str());
                     msg.add_int(7, self.seq_numbers().next_inbound() as i64);
@@ -326,7 +326,7 @@ mod acceptor {
                 // See §4.5.3.
                 Err(SeqNumberError::NoSeqNum) => {
                     // Generate Logout!
-                    let mut msg = slr::Message::new();
+                    let mut msg = MessageRnd::new();
                     msg.add_str(35, "5");
                     msg.add_str(49, self.config.company_id.as_str());
                     msg.add_int(7, self.seq_numbers().next_inbound() as i64);
@@ -338,7 +338,7 @@ mod acceptor {
                 // Refer to specs. §4.8 for more information.
                 Err(SeqNumberError::Recover) => {
                     // Begin message recovery.
-                    let mut response = slr::Message::new();
+                    let mut response = MessageRnd::new();
                     response.add_str(35, "2");
                     response.add_str(49, self.config.company_id.as_str());
                     response.add_int(7, self.seq_numbers().next_inbound() as i64);
@@ -362,7 +362,7 @@ mod acceptor {
                 if self.state == State::Active {
                     return;
                 }
-                let mut response = slr::Message::new();
+                let mut response = MessageRnd::new();
                 // TODO: add other details to response message.
                 response.add_field(35, FixFieldValue::string(b"A").unwrap());
                 response.add_field(
@@ -375,9 +375,9 @@ mod acceptor {
             }
         }
 
-        fn generate_error_seqnum_too_low(&mut self) -> slr::Message {
+        fn generate_error_seqnum_too_low(&mut self) -> MessageRnd {
             let error_message = errs::msg_seq_num(self.seq_numbers().next_inbound());
-            let mut response = slr::Message::new();
+            let mut response = MessageRnd::new();
             response.add_str(35, "5");
             response.add_str(49, self.config.company_id.as_str());
             response.add_int(7, self.seq_numbers().next_outbound() as i64);
@@ -385,8 +385,8 @@ mod acceptor {
             add_time_to_msg(response)
         }
 
-        fn generate_heartbeat_message(&mut self) -> slr::Message {
-            let mut heartbeat = slr::Message::new();
+        fn generate_heartbeat_message(&mut self) -> MessageRnd {
+            let mut heartbeat = MessageRnd::new();
             heartbeat.add_str(35, "0");
             heartbeat.add_str(49, self.config.company_id.as_str());
             heartbeat.add_int(7, self.seq_numbers().next_outbound() as i64);
@@ -394,7 +394,7 @@ mod acceptor {
         }
     }
 
-    fn add_time_to_msg(mut msg: slr::Message) -> slr::Message {
+    fn add_time_to_msg(mut msg: MessageRnd) -> MessageRnd {
         // https://www.onixs.biz/fix-dictionary/4.4/index.html#UTCTimestamp.
         let time = chrono::Utc::now();
         let timestamp = time.format("%Y%m%d-%H:%M:%S.%.3f");
@@ -487,8 +487,8 @@ mod initiator {
         }
     }
 
-    //impl<S: Stream<Item = slr::Message> + Unpin> Stream for Session<S> {
-    //    type Item = slr::Message;
+    //impl<S: Stream<Item = Message> + Unpin> Stream for Session<S> {
+    //    type Item = Message;
 
     //    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     //        let heartbeat = sleep(self.initiator.heartbeat());
@@ -514,7 +514,7 @@ mod initiator {
     pub struct Initiator {
         config: Configuration,
         seq_numbers: SeqNumbers,
-        notifications: Vec<slr::Message>,
+        notifications: Vec<MessageRnd>,
     }
 
     impl Initiator {
@@ -528,8 +528,8 @@ mod initiator {
 
         pub async fn session(
             self,
-            events: impl Stream<Item = slr::Message> + Unpin,
-        ) -> impl Stream<Item = slr::Message> {
+            events: impl Stream<Item = MessageRnd> + Unpin,
+        ) -> impl Stream<Item = MessageRnd> {
             let _events = events.into_future();
             let heartbeat_sleep = tokio::time::sleep(Duration::from_secs(1)).fuse();
             tokio::pin!(heartbeat_sleep);
@@ -554,8 +554,8 @@ mod initiator {
             Instant::now()
         }
 
-        pub fn initiate(&mut self) -> slr::Message {
-            let mut msg = slr::Message::new();
+        pub fn initiate(&mut self) -> MessageRnd {
+            let mut msg = MessageRnd::new();
             msg.add_str(35, "A".to_string());
             msg.add_str(49, self.config.company_id_from.clone());
             msg.add_str(56, self.config.company_id_to.clone());
@@ -565,10 +565,10 @@ mod initiator {
             msg
         }
 
-        pub async fn terminate(&mut self) -> std::result::Result<(), Vec<slr::Message>> {
+        pub async fn terminate(&mut self) -> std::result::Result<(), Vec<MessageRnd>> {
             let test_request_id = Uuid::new_v4().to_string();
             // Send `TestRequest` to ensure we didn't miss any messages.
-            let mut msg = slr::Message::new();
+            let mut msg = MessageRnd::new();
             msg.add_str(35, "1".to_string());
             msg.add_str(49, self.config.company_id_from.clone());
             msg.add_str(56, self.config.company_id_to.clone());
@@ -586,7 +586,7 @@ mod initiator {
             // TODO: check seq number.
             // TODO: resend missed messages.
             // Finally send `Logout`.
-            let mut msg = slr::Message::new();
+            let mut msg = MessageRnd::new();
             msg.add_str(35, "5".to_string());
             msg.add_str(49, self.config.company_id_from.clone());
             msg.add_str(56, self.config.company_id_to.clone());
@@ -597,15 +597,15 @@ mod initiator {
             Ok(())
         }
 
-        async fn send_message(&mut self, msg: slr::Message) {
+        async fn send_message(&mut self, msg: MessageRnd) {
             self.notifications.push(msg);
         }
 
-        pub async fn next_msg(&mut self) -> slr::Message {
+        pub async fn next_msg(&mut self) -> MessageRnd {
             unimplemented!()
         }
 
-        pub fn feed_event(&mut self, event: slr::Message) {
+        pub fn feed_event(&mut self, event: MessageRnd) {
             match event.msg_type() {
                 Some("A") => (),
                 Some("0") => (),
@@ -619,12 +619,12 @@ mod initiator {
             }
         }
 
-        pub async fn notifications(&mut self) -> impl Stream<Item = slr::Message> {
+        pub async fn notifications(&mut self) -> impl Stream<Item = MessageRnd> {
             // FIXME
             futures_lite::stream::empty()
         }
 
-        pub fn notify(&mut self, _event: slr::Message) -> impl Iterator<Item = EventOutbound> {
+        pub fn notify(&mut self, _event: MessageRnd) -> impl Iterator<Item = EventOutbound> {
             std::iter::empty()
         }
     }
@@ -758,7 +758,7 @@ mod test {
     /// > Respond with Logon(35=A) acknowledgement message.
     #[tokio::test]
     async fn testcase_1s_a_1() {
-        let mut msg = slr::Message::new();
+        let mut msg = MessageRnd::new();
         msg.add_str(35, "A".to_string());
         msg.add_int(108, 30);
         msg.add_int(34, 1);
@@ -790,7 +790,7 @@ mod test {
     /// > If MsgSeqNum(34) > NextNumIn send ResendRequest(35=2).
     #[tokio::test]
     async fn testcase_1s_a_2() {
-        let mut msg = slr::Message::new();
+        let mut msg = MessageRnd::new();
         msg.add_str(35, "A".to_string());
         msg.add_int(108, 30);
         msg.add_int(34, 42);
@@ -825,7 +825,7 @@ mod test {
     /// Logout(35=5) would consume a MsgSeqNum(34)).
     #[tokio::test]
     async fn testcase_1s_b() {
-        let mut msg = slr::Message::new();
+        let mut msg = MessageRnd::new();
         msg.add_str(35, "A".to_string());
         msg.add_int(108, 30);
         msg.add_int(34, 1);
@@ -860,7 +860,7 @@ mod test {
     /// > 2. Disconnect.
     #[test]
     fn testcase_2s() {
-        let mut msg = slr::Message::new();
+        let mut msg = MessageRnd::new();
         msg.add_str(35, "0".to_string());
         msg.add_int(108, 30);
         msg.add_int(34, 1);

@@ -236,7 +236,7 @@ impl fmt::Display for DecodeError {
 mod test {
     use super::*;
     use crate::json::ConfigPrettyPrint;
-    use crate::tagvalue::slr;
+    use crate::tagvalue::MessageRnd;
     use crate::AppVersion;
     use serde_json::*;
 
@@ -284,7 +284,7 @@ mod test {
         Dictionary::from_version(AppVersion::Fix44)
     }
 
-    fn encoder_fix44() -> Codec<slr::Message, impl Config> {
+    fn encoder_fix44() -> Codec<MessageRnd, impl Config> {
         Codec::new(dict_fix44(), ConfigPrettyPrint)
     }
 
