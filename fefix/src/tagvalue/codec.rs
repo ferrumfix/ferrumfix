@@ -1,8 +1,8 @@
 use crate::backend::{field_value::TagNum, Backend, FieldValue};
 use crate::buffering::Buffer;
 use crate::tagvalue::{
-    MessageRnd, message_rnd::Field, utils, Config, Configurable, DecodeError, EncodeError, FixFieldValue, MessageSeq,
-    RawDecoder, TagLookup,
+    message_rnd::Field, utils, Config, Configurable, DecodeError, EncodeError, FixFieldValue,
+    MessageRnd, MessageSeq, RawDecoder, TagLookup,
 };
 use crate::{AppVersion, DataType, Dictionary};
 use std::str;
@@ -10,19 +10,17 @@ use std::{fmt::Debug, marker::PhantomData};
 
 /// Easy-to-use [`Encoding`] that accomodates for most use cases.
 #[derive(Debug)]
-pub struct Codec<T, Z = Configurable>
+pub struct Codec<Z = Configurable>
 where
     Z: Config,
 {
     dict: Dictionary,
     message: MessageRnd,
     config: Z,
-    phantom: PhantomData<T>,
 }
 
-impl<T, Z> Codec<T, Z>
+impl<Z> Codec<Z>
 where
-    T: Default + Backend,
     Z: Config,
 {
     /// Builds a new [`Codec`] encoding device with a FIX 4.4 dictionary.
@@ -36,19 +34,18 @@ where
             dict,
             message: MessageRnd::default(),
             config,
-            phantom: PhantomData::default(),
         }
     }
 
     /// Turns `self` into a [`CodecBuffered`] by allocating an internal buffer.
-    pub fn buffered(self) -> CodecBuffered<T, Z> {
-        CodecBuffered {
-            buffer: Vec::new(),
-            buffer_relevant_len: 0,
-            buffer_additional_len: 0,
-            codec: self,
-        }
-    }
+    //pub fn buffered(self) -> CodecBuffered<T, Z> {
+    //    CodecBuffered {
+    //        buffer: Vec::new(),
+    //        buffer_relevant_len: 0,
+    //        buffer_additional_len: 0,
+    //        codec: self,
+    //    }
+    //}
 
     /// Returns an immutable reference to the [`Config`] used by `self`.
     pub fn config(&self) -> &Z {
@@ -95,11 +92,7 @@ where
         Ok(&self.message)
     }
 
-    pub fn encode<B>(
-        &mut self,
-        buffer: &mut B,
-        message: &MessageSeq,
-    ) -> Result<usize, EncodeError>
+    pub fn encode<B>(&mut self, buffer: &mut B, message: &MessageSeq) -> Result<usize, EncodeError>
     where
         B: Buffer,
     {
@@ -158,7 +151,8 @@ where
     buffer: Vec<u8>,
     buffer_relevant_len: usize,
     buffer_additional_len: usize,
-    codec: Codec<T, Z>,
+    codec: Codec<Z>,
+    phantom: PhantomData<T>,
 }
 
 impl<T, Z> CodecBuffered<T, Z>
@@ -178,6 +172,7 @@ where
             buffer_relevant_len: 0,
             buffer_additional_len: 0,
             codec: Codec::with_dict(dict.clone(), config.clone()),
+            phantom: PhantomData::default(),
         }
     }
 }
@@ -351,17 +346,17 @@ mod test {
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
-    fn encoder() -> Codec<MessageRnd, impl Config> {
+    fn encoder() -> Codec<impl Config> {
         let mut config = Configurable::default();
         config.set_separator(b'|');
         Codec::new(config)
     }
 
-    fn encoder_with_soh() -> Codec<MessageRnd, impl Config> {
+    fn encoder_with_soh() -> Codec<impl Config> {
         Codec::new(ConfigFastDefault)
     }
 
-    fn encoder_slash_no_verify() -> Codec<MessageRnd, impl Config> {
+    fn encoder_slash_no_verify() -> Codec<impl Config> {
         let mut config = Configurable::default();
         config.set_separator(b'|');
         config.set_verify_checksum(false);
@@ -377,7 +372,7 @@ mod test {
         let message = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
         let mut config = Configurable::default();
         config.set_separator(b'|');
-        let mut codec = Codec::<MessageRnd>::new(config);
+        let mut codec = Codec::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_ok());
     }
@@ -398,7 +393,7 @@ mod test {
         let mut config = Configurable::default();
         config.set_separator(b'|');
         config.set_verify_checksum(false);
-        let mut codec = Codec::<MessageRnd>::new(config);
+        let mut codec = Codec::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_ok());
     }
@@ -409,7 +404,7 @@ mod test {
         let mut config = Configurable::default();
         config.set_separator(b'|');
         config.set_verify_checksum(true);
-        let mut codec = Codec::<MessageRnd>::new(config);
+        let mut codec = Codec::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
     }
@@ -443,7 +438,7 @@ mod test {
         let message = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
         let mut config = Configurable::default();
         config.set_separator(b'|');
-        let mut codec = Codec::<MessageRnd>::new(config);
+        let mut codec = Codec::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
     }

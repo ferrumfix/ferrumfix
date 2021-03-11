@@ -194,10 +194,7 @@ impl MessageRnd {
 
     /// Adds a string field to `self`.
     pub fn add_str<K: Into<i64>, S: Into<String>>(&mut self, tag: K, value: S) {
-        self.add_field(
-            tag,
-            FixFieldValue::string(value.into().as_bytes()).unwrap(),
-        )
+        self.add_field(tag, FixFieldValue::string(value.into().as_bytes()).unwrap())
     }
 
     /// Adds an integer field to `self`.

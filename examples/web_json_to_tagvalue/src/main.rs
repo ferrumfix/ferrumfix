@@ -1,9 +1,7 @@
 //! Starts an HTTP server on any open port and listens for JSON FIX messages.
 
 use fefix::backend::Backend;
-use fefix::{
-    json, tagvalue, tagvalue::MessageRnd, tagvalue::MessageSeq, AppVersion, Dictionary, Encoding,
-};
+use fefix::{json, tagvalue, tagvalue::MessageSeq, AppVersion, Dictionary};
 
 #[tokio::main]
 async fn main() -> tide::Result<()> {
@@ -23,7 +21,7 @@ fn server() -> tide::Server<State> {
 /// case, JSON (en/de)coding devices.
 #[derive(Clone)]
 struct State {
-    codec: json::Codec<tagvalue::MessageRnd, json::ConfigPrettyPrint>,
+    codec: json::Codec<json::ConfigPrettyPrint>,
 }
 
 impl State {
@@ -55,10 +53,8 @@ async fn serve_json_relay(mut req: tide::Request<State>) -> tide::Result {
     let body_response = {
         let mut config = tagvalue::Configurable::default();
         config.set_separator(b'|');
-        let mut encoder = tagvalue::Codec::<MessageRnd>::with_dict(
-            Dictionary::from_version(AppVersion::Fix42),
-            config,
-        );
+        let mut encoder =
+            tagvalue::Codec::with_dict(Dictionary::from_version(AppVersion::Fix42), config);
         let msg = &mut MessageSeq::default();
         Backend::for_each::<(), _>(message, |tag, value| {
             msg.add_field(tag, value.clone());
@@ -111,16 +107,14 @@ mod test {
         req.set_body(body_json);
         let mut response: Response = server.respond(req).await.unwrap();
         let body_tagvalue = response.take_body().into_string().await.unwrap();
-        let mut decoder_json = json::Codec::<MessageRnd, json::ConfigPrettyPrint>::new(
+        let mut decoder_json = json::Codec::<json::ConfigPrettyPrint>::new(
             Dictionary::from_version(AppVersion::Fix42),
             json::ConfigPrettyPrint,
         );
         let mut config = tagvalue::Configurable::default();
         config.set_separator(b'|');
-        let mut decoder_tagvalue = tagvalue::Codec::<MessageRnd>::with_dict(
-            Dictionary::from_version(AppVersion::Fix42),
-            config,
-        );
+        let mut decoder_tagvalue =
+            tagvalue::Codec::with_dict(Dictionary::from_version(AppVersion::Fix42), config);
         let msg_json = decoder_json.decode(body_json.as_bytes()).unwrap();
         println!("{}", body_tagvalue);
         let msg_tagvalue = decoder_tagvalue.decode(body_tagvalue.as_bytes()).unwrap();

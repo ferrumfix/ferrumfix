@@ -1,23 +1,22 @@
 use crate::backend::{Backend, FieldValue};
 use crate::buffering::Buffer;
 use crate::json::{Config, Configurable};
-use crate::tagvalue::FixFieldValue;
-use crate::{Dictionary, Encoding};
+use crate::tagvalue::{FixFieldValue, MessageRnd};
+use crate::Dictionary;
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]
-pub struct Codec<T, Z = Configurable> {
+pub struct Codec<Z = Configurable> {
     dictionaries: HashMap<String, Dictionary>,
-    message: T,
+    message: MessageRnd,
     config: Z,
 }
 
-impl<T, Z> Codec<T, Z>
+impl<Z> Codec<Z>
 where
-    T: Default,
     Z: Config,
 {
     /// Creates a new codec. `dict` serves as a reference for data type inference
@@ -28,7 +27,7 @@ where
         dictionaries.insert(dict.get_version().to_string(), dict);
         Self {
             dictionaries,
-            message: T::default(),
+            message: MessageRnd::default(),
             config,
         }
     }
@@ -60,38 +59,34 @@ where
     }
 }
 
-impl<Z, T> Encoding<T> for Codec<T, Z>
+impl<Z> Codec<Z>
 where
-    T: Backend + Default,
     Z: Config,
 {
-    type DecodeError = DecodeError;
-    type EncodeError = EncoderError;
-
-    fn decode(&mut self, data: &[u8]) -> Result<&T, Self::DecodeError> {
+    pub fn decode(&mut self, data: &[u8]) -> Result<&MessageRnd, DecodeError> {
         let value: serde_json::Value =
-            serde_json::from_reader(data).map_err(|_| Self::DecodeError::Syntax)?;
+            serde_json::from_reader(data).map_err(|_| DecodeError::Syntax)?;
         let header = value
             .get("Header")
             .and_then(|v| v.as_object())
-            .ok_or(Self::DecodeError::Schema)?;
+            .ok_or(DecodeError::Schema)?;
         let body = value
             .get("Body")
             .and_then(|v| v.as_object())
-            .ok_or(Self::DecodeError::Schema)?;
+            .ok_or(DecodeError::Schema)?;
         let trailer = value
             .get("Trailer")
             .and_then(|v| v.as_object())
-            .ok_or(Self::DecodeError::Schema)?;
+            .ok_or(DecodeError::Schema)?;
         let begin_string = header
             .get("BeginString")
             .and_then(|v| v.as_str())
-            .ok_or(Self::DecodeError::Schema)?;
+            .ok_or(DecodeError::Schema)?;
         let dictionary = self
             .dictionaries
             .get(begin_string)
-            .ok_or(Self::DecodeError::InvalidMsgType)?;
-        let mut message = T::default();
+            .ok_or(DecodeError::InvalidMsgType)?;
+        let mut message = MessageRnd::default();
         let mut decode_field = |name: &str, value: &serde_json::Value| {
             decode_field(dictionary, name, value).map(|(tag, field)| message.insert(tag, field))
         };
@@ -108,7 +103,11 @@ where
         Ok(&self.message)
     }
 
-    fn encode<B>(&mut self, mut buffer: &mut B, message: &T) -> Result<usize, Self::EncodeError>
+    pub fn encode<B>(
+        &mut self,
+        mut buffer: &mut B,
+        message: &MessageRnd,
+    ) -> Result<usize, EncodeError>
     where
         B: Buffer,
     {
@@ -116,9 +115,9 @@ where
             if let Some(FixFieldValue::Atom(FieldValue::String(fix_version))) = message.field(8) {
                 self.dictionaries
                     .get(fix_version.as_str())
-                    .ok_or(Self::EncodeError::Dictionary)?
+                    .ok_or(EncodeError::Dictionary)?
             } else {
-                return Err(Self::EncodeError::Dictionary);
+                return Err(EncodeError::Dictionary);
             };
         let component_std_header = dictionary
             .component_by_name("StandardHeader")
@@ -129,10 +128,10 @@ where
         let mut map_header = json!({});
         let mut map_body = json!({});
         let mut map_trailer = json!({});
-        message.for_each::<Self::EncodeError, _>(|field_tag, field_value| {
+        Backend::for_each::<EncodeError, _>(message, |field_tag, field_value| {
             let field = dictionary
                 .field_by_tag(field_tag)
-                .ok_or(Self::EncodeError::Dictionary)?;
+                .ok_or(EncodeError::Dictionary)?;
             let field_name = field.name().to_string();
             let field_value = self.translate(dictionary, field_value);
             if component_std_header.contains_field(&field) {
@@ -206,7 +205,7 @@ fn decode_component_block(
 
 /// The type returned in the event of an error when encoding a FIX JSON message.
 #[derive(Copy, Clone, Debug)]
-pub enum EncoderError {
+pub enum EncodeError {
     /// The type returned in case there is an inconsistency between
     /// `BeginString`, `MsgType`, fields presence and other encoding rules as
     /// establised by the dictionary.
@@ -236,7 +235,6 @@ impl fmt::Display for DecodeError {
 mod test {
     use super::*;
     use crate::json::ConfigPrettyPrint;
-    use crate::tagvalue::MessageRnd;
     use crate::AppVersion;
     use serde_json::*;
 
@@ -284,7 +282,7 @@ mod test {
         Dictionary::from_version(AppVersion::Fix44)
     }
 
-    fn encoder_fix44() -> Codec<MessageRnd, impl Config> {
+    fn encoder_fix44() -> Codec<impl Config> {
         Codec::new(dict_fix44(), ConfigPrettyPrint)
     }
 
@@ -293,9 +291,9 @@ mod test {
         let mut decoder = encoder_fix44();
         let mut encoder = encoder_fix44();
         let json_value_before: Value = from_str(MESSAGE_SIMPLE).unwrap();
-        let message = Encoding::decode(&mut decoder, &mut MESSAGE_SIMPLE.as_bytes()).unwrap();
+        let message = decoder.decode(&mut MESSAGE_SIMPLE.as_bytes()).unwrap();
         let mut buffer = Vec::<u8>::new();
-        Encoding::encode(&mut encoder, &mut buffer, &message).unwrap();
+        encoder.encode(&mut buffer, &message).unwrap();
         let json_value_after: Value = from_slice(&buffer[..]).unwrap();
         assert_eq!(json_value_before, json_value_after);
     }
@@ -303,7 +301,7 @@ mod test {
     #[test]
     fn message_without_header() {
         let mut encoder = encoder_fix44();
-        let result = Encoding::decode(&mut encoder, &mut MESSAGE_WITHOUT_HEADER.as_bytes());
+        let result = encoder.decode(&mut MESSAGE_WITHOUT_HEADER.as_bytes());
         match result {
             Err(DecodeError::Schema) => (),
             _ => panic!(),
@@ -313,7 +311,7 @@ mod test {
     #[test]
     fn invalid_json() {
         let mut encoder = encoder_fix44();
-        let result = Encoding::decode(&mut encoder, &mut "this is invalid JSON".as_bytes());
+        let result = encoder.decode(&mut "this is invalid JSON".as_bytes());
         match result {
             Err(DecodeError::Syntax) => (),
             _ => panic!(),
