@@ -3,6 +3,41 @@
 use crate::dictionary::{Component, Dictionary, Field, LayoutItem, LayoutItemKind};
 use inflector::Inflector;
 
+/// Generates Rust code for a module that contains field tag mnemonics. The
+/// module contains `pub const` definitions for all fields, and allows access to
+/// tag numbers via names (to reduce magic numbers in code).
+///
+/// # Examples
+///
+/// ```
+/// use fefix::{AppVersion, Dictionary, codegen_tag_mnemonics};
+///
+/// let dict = Dictionary::from_version(AppVersion::Fixt11);
+/// let code = codegen_tag_mnemonics(&dict);
+///
+/// println!("{}", code);
+/// // pub const BEGIN_STRING: u32 = 8;
+/// // pub const CHECK_SUM: u32 = 10;
+/// // ...
+/// ```
+pub fn codegen_tag_mnemonics(dict: &Dictionary) -> String {
+    let field_tags: Vec<String> = dict
+        .iter_fields()
+        .map(|field| {
+            let name = field.name().to_screaming_snake_case();
+            let tag = field.tag().to_string();
+            format!("pub const {}: u32 = {};", name, tag)
+        })
+        .collect();
+    let code = format!(r#"![allow(dead_code)]
+
+{field_tags}
+"#,
+        field_tags = field_tags.join("\n"),
+    );
+    code
+}
+
 pub fn codegen(dict: &Dictionary) -> String {
     let component_defs: Vec<String> = dict
         .iter_components()
@@ -152,5 +187,14 @@ mod test {
         let fix_v42 = Dictionary::from_version(AppVersion::Fix42);
         let code = codegen(&fix_v42);
         assert!(syn::parse_file(code.as_str()).is_ok());
+    }
+
+    #[test]
+    fn syntax_of_field_tags_is_ok() {
+        for version in AppVersion::all() {
+            let dict = Dictionary::from_version(version);
+            let code = codegen_tag_mnemonics(&dict);
+            assert!(syn::parse_file(code.as_str()).is_ok());
+        }
     }
 }

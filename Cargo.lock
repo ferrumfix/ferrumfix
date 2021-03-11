@@ -502,6 +502,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "codegen_webserver"
+version = "0.1.0"
+dependencies = [
+ "fefix",
+ "tide",
+ "tokio",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

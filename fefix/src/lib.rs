@@ -54,7 +54,7 @@ pub use app_version::AppVersion;
 pub use dictionary::{Dictionary, MsgType};
 pub use dt::DataType;
 pub use fefix_derive::*;
-pub use fix_codegen::codegen;
+pub use fix_codegen::{codegen, codegen_tag_mnemonics};
 pub use quickfix_specs::quickfix_spec;
 pub use stream_iterator::StreamIterator;
 
