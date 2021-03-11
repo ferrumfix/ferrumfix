@@ -1,5 +1,4 @@
 use fefix::sofh::CodecBuffered;
-use fefix::StreamingDecoder;
 
 use std::io;
 use std::net;
@@ -9,7 +8,7 @@ fn main() -> io::Result<()> {
     print_listening(listener.local_addr()?);
     let reader = listener.accept()?.0;
     let parser = CodecBuffered::new();
-    let mut frames = parser.frames_streamiter(reader);
+    let mut frames = parser.read_frames(reader);
     while let Ok(frame) = frames.next() {
         let frame = frame.as_ref().unwrap();
         let payload = std::str::from_utf8(frame.payload()).unwrap();
