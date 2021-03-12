@@ -14,7 +14,7 @@ mod codec;
 mod config;
 mod message_rnd;
 mod message_seq;
-mod raw;
+mod raw_codec;
 mod taglookup;
 mod utils;
 
@@ -22,7 +22,7 @@ pub use codec::{Codec, CodecBuffered};
 pub use config::{Configure, Config};
 pub use message_rnd::{Field, MessageRnd};
 pub use message_seq::MessageSeq;
-pub use raw::{RawDecoder, RawDecoderBuffered, RawEncoder, RawFrame};
+pub use raw_codec::{RawDecoder, RawDecoderBuffered, RawEncoder, RawFrame};
 pub use taglookup::{TagLookup, TagLookupSingleAppVersion};
 pub use utils::{checksum_10, encode_raw};
 
