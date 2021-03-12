@@ -49,7 +49,7 @@ impl Config {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::Config;
+    /// use fefix::tagvalue::{Config, Configure};
     ///
     /// let config = &mut Config::default();
     /// assert_eq!(config.separator(), 0x1);
@@ -70,7 +70,7 @@ impl Config {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::Config;
+    /// use fefix::tagvalue::{Config, Configure};
     ///
     /// let config = &mut Config::default();
     /// assert_eq!(config.verify_checksum(), true);
