@@ -1,5 +1,5 @@
 use crate::buffering::Buffer;
-use crate::tagvalue::{utils, DecodeError};
+use crate::tagvalue::{utils, Config, Configure, DecodeError};
 use std::ops::Range;
 
 /// An immutable view over the raw contents of a FIX message.
@@ -14,9 +14,10 @@ impl<'a> RawFrame<'a> {
     /// `self`.
     ///
     /// ```
-    /// use fefix::tagvalue::RawDecoder;
+    /// use fefix::tagvalue::{Config, RawDecoder};
     ///
-    /// let decoder = RawDecoder::new().with_separator(b'|');
+    /// let mut decoder = RawDecoder::<Config>::new();
+    /// decoder.config_mut().set_separator(b'|');
     /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
     /// let message = decoder.decode(data).unwrap();
     ///
@@ -37,9 +38,10 @@ impl<'a> RawFrame<'a> {
     /// technically part of `StandardHeader` and `StandardTrailer`.
     ///
     /// ```
-    /// use fefix::tagvalue::RawDecoder;
+    /// use fefix::tagvalue::{Config, RawDecoder};
     ///
-    /// let decoder = RawDecoder::new().with_separator(b'|');
+    /// let mut decoder = RawDecoder::<Config>::new();
+    /// decoder.config_mut().set_separator(b'|');
     /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
     /// let message = decoder.decode(data).unwrap();
     ///
@@ -59,39 +61,114 @@ impl<'a> RawFrame<'a> {
 /// # Examples
 ///
 /// ```
-/// use fefix::tagvalue::RawEncoder;
+/// use fefix::tagvalue::{Config, RawEncoder};
 ///
-/// let encoder = &mut RawEncoder::from_buffer(Vec::new());
-/// encoder.set_separator(b'|');
+/// let encoder = &mut RawEncoder::<_, Config>::from_buffer(Vec::new());
+/// encoder.config_mut().set_separator(b'|');
 /// encoder.set_begin_string(b"FIX.4.4");
 /// encoder.extend_from_slice(b"35=0|49=A|56=B|34=12|52=20100304-07:59:30|");
 /// let data = encoder.finalize();
 /// assert_eq!(data, b"8=FIX.4.4|9=000042|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=216|");
 /// ```
 #[derive(Debug, Clone)]
-pub struct RawEncoder<B = Vec<u8>>
+pub struct RawEncoder<B = Vec<u8>, C = Config>
 where
     B: Buffer,
+    C: Configure,
 {
     buffer: B,
     body_start_i: usize,
-    separator: u8,
+    config: C,
 }
 
-impl<B> RawEncoder<B>
+impl<B, C> RawEncoder<B, C>
 where
     B: Buffer,
+    C: Configure,
 {
     pub fn from_buffer(buffer: B) -> Self {
         Self {
             buffer,
             body_start_i: 0,
-            separator: 0x1,
+            config: C::default(),
         }
     }
 
-    pub fn set_separator(&mut self, separator: u8) {
-        self.separator = separator;
+    /// Returns an immutable reference to the [`Configure`] implementor used by
+    /// `self`.
+    pub fn config(&self) -> &C {
+        &self.config
+    }
+
+    /// Returns a mutable reference to the [`Configure`] implementor used by
+    /// `self`.
+    pub fn config_mut(&mut self) -> &mut C {
+        &mut self.config
+    }
+
+    /// Sets the `BeginString (8)` field in the FIX message. This method must be
+    /// called first during the encoding phase. Any of the following will result
+    /// in invalid FIX messages:
+    ///
+    /// - Not calling [`RawEncoder::set_begin_string`].
+    /// - Calling [`RawEncoder::set_begin_string`] multiple times.
+    /// - Calling [`RawEncoder::set_begin_string`] before any other
+    /// [`RawEncoder`] methods.
+    ///
+    /// # Examples
+    /// ```
+    /// use fefix::tagvalue::{Config, RawEncoder};
+    ///
+    /// let encoder = &mut RawEncoder::<_, Config>::from_buffer(Vec::new());
+    /// encoder.set_begin_string(b"FIX.4.4");
+    /// encoder.extend_from_slice(b"...");
+    /// let data = encoder.finalize();
+    /// assert!(data.starts_with(b"8=FIX.4.4"));
+    /// ```
+    pub fn set_begin_string(&mut self, begin_string: &[u8]) {
+        self.buffer.clear();
+        // First, write `BeginString(8)`.
+        self.buffer.extend_from_slice(b"8=");
+        self.buffer.extend_from_slice(begin_string);
+        self.buffer.extend_from_slice(&[
+            self.config.separator(),
+            b'9',
+            b'=',
+            b'0',
+            b'0',
+            b'0',
+            b'0',
+            b'0',
+            b'0',
+            self.config.separator(),
+        ]);
+        self.body_start_i = self.buffer.len();
+    }
+
+    /// Adds `data` to the payload part of the FIX message.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::tagvalue::{Config, RawEncoder};
+    ///
+    /// let encoder = &mut RawEncoder::<_, Config>::from_buffer(Vec::new());
+    /// encoder.config_mut();
+    /// encoder.set_begin_string(b"FIX.4.2");
+    /// encoder.extend_from_slice(b"1=fake-body|2=foobar|");
+    /// let data = encoder.finalize();
+    /// assert!(data.starts_with(b"8=FIX.4.2"));
+    /// ```
+    pub fn extend_from_slice(&mut self, data: &[u8]) {
+        self.buffer.extend_from_slice(data);
+    }
+
+    /// Writes `CheckSum (10)` and `BodyLength (9)` and then returns an immutable
+    /// reference over the raw FIX message.
+    pub fn finalize(&mut self) -> &[u8] {
+        self.write_body_length();
+        self.write_checksum();
+        self.buffer.as_slice()
     }
 
     fn body_length_writable_range(&self) -> Range<usize> {
@@ -123,133 +200,68 @@ where
             (checksum / 100) + b'0',
             ((checksum / 10) % 10) + b'0',
             (checksum % 10) + b'0',
-            self.separator,
+            self.config.separator(),
         ]);
-    }
-
-    /// Sets the `BeginString (8)` field in the FIX message. This method must be
-    /// called first during the encoding phase. Any of the following will result
-    /// in invalid FIX messages:
-    ///
-    /// - Not calling [`RawEncoder::set_begin_string`].
-    /// - Calling [`RawEncoder::set_begin_string`] multiple times.
-    /// - Calling [`RawEncoder::set_begin_string`] before any other
-    /// [`RawEncoder`] methods.
-    ///
-    /// # Examples
-    /// ```
-    /// use fefix::tagvalue::RawEncoder;
-    ///
-    /// let encoder = &mut RawEncoder::from_buffer(Vec::new());
-    /// encoder.set_begin_string(b"FIX.4.4");
-    /// encoder.extend_from_slice(b"...");
-    /// let data = encoder.finalize();
-    /// assert!(data.starts_with(b"8=FIX.4.4"));
-    /// ```
-    pub fn set_begin_string(&mut self, begin_string: &[u8]) {
-        self.buffer.clear();
-        // First, write `BeginString(8)`.
-        self.buffer.extend_from_slice(b"8=");
-        self.buffer.extend_from_slice(begin_string);
-        self.buffer.extend_from_slice(&[
-            self.separator,
-            b'9',
-            b'=',
-            b'0',
-            b'0',
-            b'0',
-            b'0',
-            b'0',
-            b'0',
-            self.separator,
-        ]);
-        self.body_start_i = self.buffer.len();
-    }
-
-    /// Adds `data` to the payload part of the FIX message.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use fefix::tagvalue::RawEncoder;
-    ///
-    /// let encoder = &mut RawEncoder::from_buffer(Vec::new());
-    /// encoder.set_separator(b'|');
-    /// encoder.set_begin_string(b"FIX.4.2");
-    /// encoder.extend_from_slice(b"1=fake-body|2=foobar|");
-    /// let data = encoder.finalize();
-    /// assert!(data.starts_with(b"8=FIX.4.2"));
-    /// ```
-    pub fn extend_from_slice(&mut self, data: &[u8]) {
-        self.buffer.extend_from_slice(data);
-    }
-
-    /// Writes `CheckSum (10)` and `BodyLength (9)` and then returns an immutable
-    /// reference over the raw FIX message.
-    pub fn finalize(&mut self) -> &[u8] {
-        self.write_body_length();
-        self.write_checksum();
-        self.buffer.as_slice()
     }
 }
 
-/// An [`Encoding`] that does as minimal parsing as possible and operates over
-/// [`AgnosticMessage`] values.
+/// A bare-bones FIX decoder for low-level message handling.
 ///
-/// Content-agnostic operations are only useful for complex and/or unusual needs,
-/// e.g.:
-///
-/// - Non `Latin-1` -compatible encoding.
-/// - Custom application-level encryption mechanism.
-#[derive(Debug, Clone)]
-pub struct RawDecoder {
-    separator: u8,
-    verify_checksum: bool,
+/// [`RawDecoder`] is the fundamental building block for building higher-level
+/// FIX decoder. It allows for decoding of arbitrary payloads and only "hides"
+/// `BodyLength (9)` and `CheckSum (10)` to the final user. Everything else is
+/// left to the user to deal with.
+#[derive(Debug, Clone, Default)]
+pub struct RawDecoder<C = Config>
+where
+    C: Configure,
+{
+    config: C,
 }
 
-impl RawDecoder {
+impl<C> RawDecoder<C>
+where
+    C: Configure,
+{
     pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn with_separator(&mut self, separator: u8) -> Self {
-        self.separator = separator;
-        self.clone()
+    pub fn with_config(config: C) -> Self {
+        Self { config }
     }
 
-    pub fn with_checksum_verification(&mut self, verify: bool) -> Self {
-        self.verify_checksum = verify;
-        self.clone()
+    /// Returns an immutable reference to the [`Configure`] implementor used by
+    /// `self`.
+    pub fn config(&self) -> &C {
+        &self.config
+    }
+
+    /// Returns a mutable reference to the [`Configure`] implementor used by
+    /// `self`.
+    pub fn config_mut(&mut self) -> &mut C {
+        &mut self.config
     }
 
     pub fn decode<'a>(&self, data: &'a [u8]) -> Result<RawFrame<'a>, DecodeError> {
         if data.len() < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
             return Err(DecodeError::Syntax);
         }
-        let header_indices = utils::parse_header_indices(data, self.separator)?;
+        let header_indices = parse_header_indices(data, self.config.separator())?;
         utils::verify_body_length(
             data,
             header_indices.start_of_body(),
             header_indices.body().len(),
         )?;
-        if self.verify_checksum {
+        if self.config.verify_checksum() {
             utils::verify_checksum(data)?;
         }
-        let begin_string = &data[header_indices.begin_string_value()];
+        let begin_string = &data[header_indices.begin_string_range()];
         let contents = &data[header_indices.body()];
         Ok(RawFrame {
             begin_string,
             body: contents,
         })
-    }
-}
-
-impl Default for RawDecoder {
-    fn default() -> Self {
-        Self {
-            separator: 0x1, // SOH
-            verify_checksum: true,
-        }
     }
 }
 
@@ -305,16 +317,93 @@ where
 //    }
 //}
 
+// Information regarding the indices of "important" parts of the FIX message.
+struct HeaderIndices {
+    indexes_of_equal_sign: [usize; 2],
+    indexes_of_separator: [usize; 2],
+    body_length: usize,
+}
+
+impl HeaderIndices {
+    fn empty() -> Self {
+        Self {
+            indexes_of_equal_sign: [0, 0],
+            indexes_of_separator: [0, 0],
+            body_length: 0,
+        }
+    }
+
+    fn is_valid(&self) -> bool {
+        // Let's check that we got valid values for everything we need.
+        self.indexes_of_equal_sign[0] != 0
+            || self.indexes_of_equal_sign[1] != 0
+            || self.indexes_of_separator[0] != 0
+            || self.indexes_of_separator[1] != 0
+    }
+
+    pub fn start_of_body(&self) -> usize {
+        // The body starts at the character immediately after the separator of
+        // `BodyLength`.
+        self.indexes_of_separator[1] + 1
+    }
+
+    pub fn begin_string_range(&self) -> Range<usize> {
+        self.indexes_of_equal_sign[0] + 1..self.indexes_of_separator[0]
+    }
+
+    pub fn body(&self) -> Range<usize> {
+        let start = self.start_of_body();
+        start..start + self.body_length
+    }
+}
+
+fn parse_header_indices(data: &[u8], separator: u8) -> Result<HeaderIndices, DecodeError> {
+    // Branchless decoding. It feels weird if you're not used to it. Note
+    // that we only care about the first two fields, after which we jump
+    // right to `BodyLength` and `CheckSum` verification. In this specific
+    // context, everything in the middle is considered part of the body
+    // (even though e.g. `MsgType` is the third field and is part of
+    // `StandardHeader`): we simply don't care about that distinction. The
+    // only fields that matter here are `BeginString`, `BodyLength`, and
+    // `CheckSum`.
+    let mut header_indices = HeaderIndices::empty();
+    let mut field_i = 0;
+    let mut i = 0;
+    while field_i < 2 && i < data.len() {
+        let byte = data[i];
+        let is_equal_sign = byte == b'=';
+        let is_separator = byte == separator;
+        header_indices.indexes_of_equal_sign[field_i] =
+            [header_indices.indexes_of_equal_sign[field_i], i][is_equal_sign as usize];
+        header_indices.indexes_of_separator[field_i] =
+            [header_indices.indexes_of_separator[field_i], i][is_separator as usize];
+        i += 1;
+        field_i += is_separator as usize;
+        // We should reset the value in case it's the equal sign.
+        header_indices.body_length = [
+            (header_indices.body_length * 10 + byte.wrapping_sub(b'0') as usize)
+                * !is_equal_sign as usize,
+            header_indices.body_length,
+        ][is_separator as usize];
+    }
+    if !header_indices.is_valid() {
+        Err(DecodeError::Syntax)
+    } else {
+        debug_assert!(header_indices.indexes_of_separator[1] < data.len());
+        Ok(header_indices)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
 
     fn new_decoder() -> RawDecoder {
-        RawDecoder::new().with_separator(b'|')
+        RawDecoder::with_config(Config::default().with_separator(b'|'))
     }
 
     #[test]
-    fn agnostic_simple_message() {
+    fn decode_simple_message() {
         let decoder = new_decoder();
         let msg = b"8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
         let frame = decoder.decode(msg).unwrap();
@@ -323,7 +412,14 @@ mod test {
     }
 
     #[test]
-    fn empty_body() {
+    fn decode_without_checksum_verification() {
+        let decoder = new_decoder();
+        let msg = b"8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=000|";
+        assert!(decoder.decode(msg).is_err());
+    }
+
+    #[test]
+    fn decode_empty_body() {
         let decoder = new_decoder();
         let msg = b"8=FIX.FOOBAR|9=0|10=225|";
         let frame = decoder.decode(msg).unwrap();
@@ -334,16 +430,15 @@ mod test {
     #[test]
     fn edge_cases_dont_cause_panic() {
         let decoder = new_decoder();
-        decoder.decode(b"8=FIX.FOOBAR|9=0|10=225|").ok();
-        decoder.decode(b"8=|9=0|10=225|").ok();
-        decoder.decode(b"8=|9=0|10=|").ok();
-        decoder.decode(b"8====|9=0|10=|").ok();
-        decoder.decode(b"|||9=0|10=|").ok();
-        decoder.decode(b"9999999999999").ok();
-        decoder.decode(b"-9999999999999").ok();
-        decoder.decode(b"==============").ok();
-        decoder.decode(b"9999999999999|").ok();
-        decoder.decode(b"|999999999999=|").ok();
-        decoder.decode(b"|999=999999999999999999|=").ok();
+        assert!(decoder.decode(b"8=|9=0|10=225|").is_err());
+        assert!(decoder.decode(b"8=|9=0|10=|").is_err());
+        assert!(decoder.decode(b"8====|9=0|10=|").is_err());
+        assert!(decoder.decode(b"|||9=0|10=|").is_err());
+        assert!(decoder.decode(b"9999999999999").is_err());
+        assert!(decoder.decode(b"-9999999999999").is_err());
+        assert!(decoder.decode(b"==============").is_err());
+        assert!(decoder.decode(b"9999999999999|").is_err());
+        assert!(decoder.decode(b"|999999999999=|").is_err());
+        assert!(decoder.decode(b"|999=999999999999999999|=").is_err());
     }
 }

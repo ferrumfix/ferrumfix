@@ -59,9 +59,9 @@ where
     }
 
     pub fn decode(&mut self, data: &[u8]) -> Result<&MessageRnd, DecodeError> {
-        let decoder = RawDecoder::new()
+        let decoder = RawDecoder::with_config(Config::default()
             .with_separator(self.config.separator())
-            .with_checksum_verification(self.config.verify_checksum());
+            .with_checksum_verification(self.config.verify_checksum()));
         // Take care of `BeginString`, `BodyLength` and `CheckSum`.
         let frame = decoder.decode(data)?;
         let begin_string = frame.begin_string();

@@ -80,6 +80,11 @@ impl Config {
     pub fn set_verify_checksum(&mut self, verify: bool) {
         self.verify_checksum = verify;
     }
+
+    pub fn with_checksum_verification(mut self, verify: bool) -> Self {
+        self.verify_checksum = verify;
+        self
+    }
 }
 
 impl Configure for Config {

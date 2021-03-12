@@ -1,7 +1,6 @@
 use crate::buffering::Buffer;
 use crate::tagvalue::{DecodeError, EncodeError};
 use std::convert::TryInto;
-use std::ops::Range;
 
 // A tag-value message can't possibly be shorter than 14 characters.
 // I haven't checked, but it's possible that this is actually a
@@ -146,82 +145,6 @@ where
         ]);
     }
     Ok(buffer.as_slice().len())
-}
-
-pub struct HeaderIndices {
-    indexes_of_equal_sign: [usize; 2],
-    indexes_of_separator: [usize; 2],
-    body_length: usize,
-}
-
-impl HeaderIndices {
-    fn empty() -> Self {
-        Self {
-            indexes_of_equal_sign: [0, 0],
-            indexes_of_separator: [0, 0],
-            body_length: 0,
-        }
-    }
-
-    fn is_valid(&self) -> bool {
-        // Let's check that we got valid values for everything we need.
-        self.indexes_of_equal_sign[0] != 0
-            || self.indexes_of_equal_sign[1] != 0
-            || self.indexes_of_separator[0] != 0
-            || self.indexes_of_separator[1] != 0
-    }
-
-    pub fn start_of_body(&self) -> usize {
-        // The body starts at the character immediately after the separator of
-        // `BodyLength`.
-        self.indexes_of_separator[1] + 1
-    }
-
-    pub fn begin_string_value(&self) -> Range<usize> {
-        self.indexes_of_equal_sign[0] + 1..self.indexes_of_separator[0]
-    }
-
-    pub fn body(&self) -> Range<usize> {
-        let start = self.start_of_body();
-        start..start + self.body_length
-    }
-}
-
-pub fn parse_header_indices(data: &[u8], separator: u8) -> Result<HeaderIndices, DecodeError> {
-    // Branchless decoding. It feels weird if you're not used to it. Note
-    // that we only care about the first two fields, after which we jump
-    // right to `BodyLength` and `CheckSum` verification. In this specific
-    // context, everything in the middle is considered part of the body
-    // (even though e.g. `MsgType` is the third field and is part of
-    // `StandardHeader`): we simply don't care about that distinction. The
-    // only fields that matter here are `BeginString`, `BodyLength`, and
-    // `CheckSum`.
-    let mut header_indices = HeaderIndices::empty();
-    let mut field_i = 0;
-    let mut i = 0;
-    while field_i < 2 && i < data.len() {
-        let byte = data[i];
-        let is_equal_sign = byte == b'=';
-        let is_separator = byte == separator;
-        header_indices.indexes_of_equal_sign[field_i] =
-            [header_indices.indexes_of_equal_sign[field_i], i][is_equal_sign as usize];
-        header_indices.indexes_of_separator[field_i] =
-            [header_indices.indexes_of_separator[field_i], i][is_separator as usize];
-        i += 1;
-        field_i += is_separator as usize;
-        // We should reset the value in case it's the equal sign.
-        header_indices.body_length = [
-            (header_indices.body_length * 10 + byte.wrapping_sub(b'0') as usize)
-                * !is_equal_sign as usize,
-            header_indices.body_length,
-        ][is_separator as usize];
-    }
-    if !header_indices.is_valid() {
-        Err(DecodeError::Syntax)
-    } else {
-        debug_assert!(header_indices.indexes_of_separator[1] < data.len());
-        Ok(header_indices)
-    }
 }
 
 #[cfg(test)]
