@@ -12,6 +12,11 @@ pub trait Buffer: io::Write {
     /// Returns a mutable reference to the contents of the buffer.
     fn as_mut_slice(&mut self) -> &mut [u8];
 
+    /// Returns the length of the contents of the buffer.
+    fn len(&self) -> usize {
+        self.as_slice().len()
+    }
+
     /// Returns the number of bytes that `self` can hold without reallocating.
     fn capacity(&self) -> usize;
 

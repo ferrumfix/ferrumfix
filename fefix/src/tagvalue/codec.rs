@@ -1,5 +1,6 @@
 use crate::backend::{field_value::TagNum, FieldValue};
 use crate::buffering::Buffer;
+use crate::tags::fix44 as tags;
 use crate::tagvalue::{
     message_rnd::Field, utils, Config, Configure, DecodeError, EncodeError, FixFieldValue,
     MessageRnd, MessageSeq, RawDecoder, TagLookup,
@@ -71,7 +72,7 @@ where
         // Deserialize `MsgType(35)`.
         let msg_type = {
             let mut f = fields.next().ok_or(DecodeError::Syntax)??;
-            if f.tag() != 35 {
+            if f.tag() != tags::MSG_TYPE {
                 dbglog!("Expected MsgType (35), got ({}) instead.", f.tag());
                 return Err(DecodeError::Syntax);
             }
@@ -80,7 +81,7 @@ where
         self.message
             .insert(8, FixFieldValue::string(begin_string).unwrap())
             .unwrap();
-        self.message.insert(35, msg_type).unwrap();
+        self.message.insert(tags::MSG_TYPE, msg_type).unwrap();
         // Iterate over all the other fields and store them to the message.
         for field_result in &mut fields {
             let mut field = field_result?;
@@ -337,7 +338,7 @@ fn read_field_value(datatype: DataType, buf: &[u8]) -> Result<FixFieldValue, Dec
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::tagvalue::{Config, ConfigFastDefault};
+    use crate::tagvalue::Config;
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
@@ -348,7 +349,7 @@ mod test {
     }
 
     fn encoder_with_soh() -> Codec<impl Configure> {
-        Codec::new(ConfigFastDefault)
+        Codec::new(Config::default())
     }
 
     fn encoder_slash_no_verify() -> Codec<impl Configure> {

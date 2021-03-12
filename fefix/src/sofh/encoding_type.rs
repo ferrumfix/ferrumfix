@@ -1,6 +1,6 @@
 /// Sum type for all SOFH encoding types.
 ///
-/// Each variant has a predetermined value or range of values, as specified by
+/// Each variant has a SingleAppVersion value or range of values, as specified by
 /// the official guidelines. This type is marked with `#[non_exhaustive]` to
 /// support new encoding types without breaking compatibility;
 /// [`EncodingType::Unknown`] can represent all values that are

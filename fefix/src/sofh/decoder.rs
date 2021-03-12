@@ -76,7 +76,9 @@ where
 
     ///
     pub fn current_frame(&self) -> Frame {
-        Frame::decode(&self.buffer.as_slice()[..self.buffer_actual_len]).unwrap()
+        let slice = &self.buffer.as_slice()[..self.buffer_actual_len];
+        let decode_result = Frame::decode(slice);
+        decode_result.unwrap()
     }
 
     pub fn read_frames<R>(self, reader: R) -> Frames<T, R>

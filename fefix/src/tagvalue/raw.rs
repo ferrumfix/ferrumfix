@@ -1,6 +1,6 @@
-use std::ops::Range;
-
+use crate::buffering::Buffer;
 use crate::tagvalue::{utils, DecodeError};
+use std::ops::Range;
 
 /// An immutable view over the raw contents of a FIX message.
 #[derive(Debug)]
@@ -50,20 +50,56 @@ impl<'a> RawFrame<'a> {
     }
 }
 
+/// A buffered, content-agnostic FIX encoder.
+///
+/// [`RawEncoder`] is the fundamental building block for building higher-level
+/// FIX encoders. It allows for encoding of arbitrary payloads and takes care of
+/// `BodyLength (9)` and `CheckSum (10)`.
+///
+/// # Examples
+///
+/// ```
+/// use fefix::tagvalue::RawEncoder;
+///
+/// let encoder = &mut RawEncoder::from_buffer(Vec::new());
+/// encoder.set_separator(b'|');
+/// encoder.set_begin_string(b"FIX.4.4");
+/// encoder.extend_from_slice(b"35=0|49=A|56=B|34=12|52=20100304-07:59:30|");
+/// let data = encoder.finalize();
+/// assert_eq!(data, b"8=FIX.4.4|9=000042|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=216|");
+/// ```
 #[derive(Debug, Clone)]
-pub struct RawEncoder {
-    buffer: Vec<u8>,
+pub struct RawEncoder<B = Vec<u8>>
+where
+    B: Buffer,
+{
+    buffer: B,
     body_start_i: usize,
     separator: u8,
 }
 
-impl RawEncoder {
+impl<B> RawEncoder<B>
+where
+    B: Buffer,
+{
+    pub fn from_buffer(buffer: B) -> Self {
+        Self {
+            buffer,
+            body_start_i: 0,
+            separator: 0x1,
+        }
+    }
+
+    pub fn set_separator(&mut self, separator: u8) {
+        self.separator = separator;
+    }
+
     fn body_length_writable_range(&self) -> Range<usize> {
         self.body_start_i - 7..self.body_start_i - 1
     }
 
     fn body_length(&self) -> usize {
-        self.buffer.len() - self.body_start_i
+        self.buffer.as_slice().len() - self.body_start_i
     }
 
     fn write_body_length(&mut self) {
@@ -79,7 +115,7 @@ impl RawEncoder {
     }
 
     fn write_checksum(&mut self) {
-        let checksum = utils::checksum_10(&self.buffer[..]);
+        let checksum = utils::checksum_10(self.buffer.as_slice());
         self.buffer.extend_from_slice(&[
             b'1',
             b'0',
@@ -91,6 +127,25 @@ impl RawEncoder {
         ]);
     }
 
+    /// Sets the `BeginString (8)` field in the FIX message. This method must be
+    /// called first during the encoding phase. Any of the following will result
+    /// in invalid FIX messages:
+    ///
+    /// - Not calling [`RawEncoder::set_begin_string`].
+    /// - Calling [`RawEncoder::set_begin_string`] multiple times.
+    /// - Calling [`RawEncoder::set_begin_string`] before any other
+    /// [`RawEncoder`] methods.
+    ///
+    /// # Examples
+    /// ```
+    /// use fefix::tagvalue::RawEncoder;
+    ///
+    /// let encoder = &mut RawEncoder::from_buffer(Vec::new());
+    /// encoder.set_begin_string(b"FIX.4.4");
+    /// encoder.extend_from_slice(b"...");
+    /// let data = encoder.finalize();
+    /// assert!(data.starts_with(b"8=FIX.4.4"));
+    /// ```
     pub fn set_begin_string(&mut self, begin_string: &[u8]) {
         self.buffer.clear();
         // First, write `BeginString(8)`.
@@ -111,10 +166,26 @@ impl RawEncoder {
         self.body_start_i = self.buffer.len();
     }
 
+    /// Adds `data` to the payload part of the FIX message.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::tagvalue::RawEncoder;
+    ///
+    /// let encoder = &mut RawEncoder::from_buffer(Vec::new());
+    /// encoder.set_separator(b'|');
+    /// encoder.set_begin_string(b"FIX.4.2");
+    /// encoder.extend_from_slice(b"1=fake-body|2=foobar|");
+    /// let data = encoder.finalize();
+    /// assert!(data.starts_with(b"8=FIX.4.2"));
+    /// ```
     pub fn extend_from_slice(&mut self, data: &[u8]) {
         self.buffer.extend_from_slice(data);
     }
 
+    /// Writes `CheckSum (10)` and `BodyLength (9)` and then returns an immutable
+    /// reference over the raw FIX message.
     pub fn finalize(&mut self) -> &[u8] {
         self.write_body_length();
         self.write_checksum();
@@ -130,7 +201,7 @@ impl RawEncoder {
 ///
 /// - Non `Latin-1` -compatible encoding.
 /// - Custom application-level encryption mechanism.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct RawDecoder {
     separator: u8,
     verify_checksum: bool,
@@ -143,12 +214,12 @@ impl RawDecoder {
 
     pub fn with_separator(&mut self, separator: u8) -> Self {
         self.separator = separator;
-        *self
+        self.clone()
     }
 
     pub fn with_checksum_verification(&mut self, verify: bool) -> Self {
         self.verify_checksum = verify;
-        *self
+        self.clone()
     }
 
     pub fn decode<'a>(&self, data: &'a [u8]) -> Result<RawFrame<'a>, DecodeError> {
@@ -171,17 +242,6 @@ impl RawDecoder {
             body: contents,
         })
     }
-
-    //pub fn buffered(self, max_size: Option<usize>) -> RawDecoderBuffered {
-    //    RawDecoderBuffered {
-    //        buffer: Vec::new(),
-    //        buffer_len: 0,
-    //        buffer_max_size: max_size.unwrap_or(16000),
-    //        frame: Frame::empty(),
-    //        progress: None,
-    //        decoder: self,
-    //    }
-    //}
 }
 
 impl Default for RawDecoder {
@@ -193,14 +253,37 @@ impl Default for RawDecoder {
     }
 }
 
-//pub struct RawDecoderBuffered {
-//    buffer: Vec<u8>,
-//    buffer_len: usize,
-//    buffer_max_size: usize,
-//    frame: Frame,
-//    progress: Option<HeaderIndices>,
-//    decoder: RawDecoder,
-//}
+#[derive(Debug, Clone)]
+pub struct RawDecoderBuffered<B = Vec<u8>>
+where
+    B: Buffer,
+{
+    buffer: B,
+    buffer_actual_len: usize,
+    _buffer_max_len: usize,
+    decoder: RawDecoder,
+}
+
+impl<B> RawDecoderBuffered<B>
+where
+    B: Buffer,
+{
+    /// Provides a buffer that must be filled before re-attempting to deserialize
+    /// the next [`RawFrame`].
+    pub fn supply_buffer(&mut self) -> &mut [u8] {
+        let data = &self.buffer.as_slice()[..self.buffer_actual_len];
+        let decode_result = self.decoder.decode(data).map(|_| ());
+        match decode_result {
+            Ok(_) => &mut [],
+            Err(_) => todo!("TODO"),
+        }
+    }
+
+    pub fn current_frame(&self) -> Option<RawFrame> {
+        let data = &self.buffer.as_slice()[..self.buffer_actual_len];
+        self.decoder.decode(data).ok()
+    }
+}
 
 //impl StreamingRawDecoder<Frame> for RawDecoderBuffered {
 //    type Error = DecodeError;
