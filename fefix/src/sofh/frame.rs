@@ -25,7 +25,7 @@ impl<'a> Frame<'a> {
     /// use fefix::sofh::Frame;
     ///
     /// let frame = Frame::new(0xF500, b"{}");
-    /// assert_eq!(frame.message().len, 2);
+    /// assert_eq!(frame.message().len(), 2);
     /// ```
     pub fn new(encoding_type: u16, message: &[u8]) -> Frame {
         Frame {
@@ -76,7 +76,7 @@ impl<'a> Frame<'a> {
     /// // Message_Length ->            -----------
     /// // Encoding_Type ->                         ---------
     /// // Message ->                                         --
-    /// let frame = Frame::from_bytes(&[0, 0, 0, 7, 0x0, 0x0, 42]).unwrap();
+    /// let frame = Frame::decode(&[0, 0, 0, 7, 0x0, 0x0, 42]).unwrap();
     /// assert_eq!(frame.message(), &[42]);
     /// ```
     pub fn decode(data: &[u8]) -> Result<Frame, Error> {
@@ -95,7 +95,7 @@ impl<'a> Frame<'a> {
         } else if data.len() < message_len {
             // The header is fine, we just need to wait for the whole message.
             Err(Error::Incomplete {
-                needed: message_len - data.len()
+                needed: message_len - data.len(),
             })
         } else {
             Ok(Self::new(
@@ -117,7 +117,7 @@ impl<'a> Frame<'a> {
     /// // Encoding_Type ->                         ---------
     /// // Message ->                                         --
     /// let bytes = &[0, 0, 0, 7, 0x0, 0x0, 42];
-    /// let frame = Frame::from_bytes(bytes).unwrap();
+    /// let frame = Frame::decode(bytes).unwrap();
     /// let buffer = &mut Vec::new();
     /// frame.encode(buffer).unwrap();
     /// assert_eq!(&buffer[..], bytes);
@@ -127,7 +127,7 @@ impl<'a> Frame<'a> {
         W: io::Write,
     {
         let len = self.message().len();
-        writer.write_all(&(len as u32).to_be_bytes())?;
+        writer.write_all(&((len + HEADER_SIZE_IN_BYTES) as u32).to_be_bytes())?;
         writer.write_all(&self.encoding_type().to_be_bytes())?;
         writer.write_all(self.message())?;
         Ok(HEADER_SIZE_IN_BYTES + len)
@@ -150,7 +150,7 @@ mod test {
     //fn decoder_returns_error_when_frame_has_len_lt_6() {
     //    for len in 0..6 {
     //        let header = encode_header(len, 0x4324);
-    //        let frame = Frame::from_bytes(&header[..]);
+    //        let frame = Frame::decode(&header[..]);
     //        assert!(frame.is_none());
     //    }
     //}
@@ -159,7 +159,7 @@ mod test {
     //fn decoder_accepts_frame_with_len_6() {
     //    let header = encode_header(6, 0x4324);
     //    for len in 0..6 {
-    //        let frame = Frame::from_bytes(&header[..]);
+    //        let frame = Frame::decode(&header[..]);
     //        assert!(frame.is_some());
     //    }
     //}
