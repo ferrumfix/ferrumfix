@@ -47,6 +47,7 @@ mod quickfix_specs;
 pub mod session;
 pub mod sofh;
 mod stream_iterator;
+pub mod tags;
 pub mod tagvalue;
 pub mod transport;
 

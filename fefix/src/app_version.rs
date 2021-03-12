@@ -16,7 +16,8 @@ pub enum AppVersion {
 }
 
 impl AppVersion {
-    pub fn all() -> impl Iterator<Item = Self> {
+    /// Returns an [`Iterator`] over all [`AppVersion`] variants.
+    pub fn iter_all() -> impl Iterator<Item = Self> {
         vec![
             AppVersion::Fix40,
             AppVersion::Fix41,

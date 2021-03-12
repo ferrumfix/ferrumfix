@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::io;
 use std::ops::Range;
+use std::sync::Arc;
 
 /// Value for the field `MsgType (35)`.
 #[derive(Copy, Debug, Clone, PartialEq, Eq, Hash)]
@@ -129,6 +130,11 @@ impl<'a> PartialEq for dyn SymbolTableIndex + 'a {
 /// layer.
 #[derive(Clone, Debug)]
 pub struct Dictionary {
+    inner: Arc<DictionaryData>,
+}
+
+#[derive(Clone, Debug)]
+struct DictionaryData {
     version: String,
     symbol_table: HashMap<Key, InternalId>,
     abbreviations: Vec<AbbreviatonData>,
@@ -178,7 +184,7 @@ fn display_layout_item(indent: u32, item: LayoutItem, f: &mut fmt::Formatter) ->
 
 impl fmt::Display for Dictionary {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "<fix type='FIX' version='{}'>", self.version)?;
+        writeln!(f, "<fix type='FIX' version='{}'>", self.inner.version)?;
         {
             writeln!(f, " <header>")?;
             let std_header = self.component_by_name("StandardHeader").unwrap();
@@ -216,20 +222,28 @@ impl fmt::Display for Dictionary {
     }
 }
 
+impl DictionaryData {
+    fn symbol(&self, pkey: KeyRef) -> Option<&u32> {
+        self.symbol_table.get(&pkey as &dyn SymbolTableIndex)
+    }
+}
+
 impl Dictionary {
     /// Creates a new empty FIX Dictionary named `version`.
     fn new<S: ToString>(version: S) -> Self {
         Dictionary {
-            version: version.to_string(),
-            symbol_table: HashMap::new(),
-            abbreviations: Vec::new(),
-            data_types: Vec::new(),
-            fields: Vec::new(),
-            components: Vec::new(),
-            messages: Vec::new(),
-            layout_items: Vec::new(),
-            categories: Vec::new(),
-            header: Vec::new(),
+            inner: Arc::new(DictionaryData {
+                version: version.to_string(),
+                symbol_table: HashMap::new(),
+                abbreviations: Vec::new(),
+                data_types: Vec::new(),
+                fields: Vec::new(),
+                components: Vec::new(),
+                messages: Vec::new(),
+                layout_items: Vec::new(),
+                categories: Vec::new(),
+                header: Vec::new(),
+            }),
         }
     }
 
@@ -256,18 +270,18 @@ impl Dictionary {
     /// assert_eq!(dict.get_version(), "FIX.4.4");
     /// ```
     pub fn get_version(&self) -> &str {
-        self.version.as_str()
+        self.inner.version.as_str()
     }
 
     fn symbol(&self, pkey: KeyRef) -> Option<&u32> {
-        self.symbol_table.get(&pkey as &dyn SymbolTableIndex)
+        self.inner.symbol(pkey)
     }
 
     /// Return the known abbreviation for `term` -if any- according to the
     /// documentation of this FIX Dictionary.
     pub fn abbreviation_for<S: AsRef<str>>(&self, term: S) -> Option<Abbreviation> {
         self.symbol(KeyRef::Abbreviation(term.as_ref()))
-            .map(|iid| self.abbreviations.get(*iid as usize).unwrap())
+            .map(|iid| self.inner.abbreviations.get(*iid as usize).unwrap())
             .map(move |data| Abbreviation(self, data))
     }
 
@@ -285,7 +299,7 @@ impl Dictionary {
     /// ```
     pub fn message_by_name<S: AsRef<str>>(&self, name: S) -> Option<Message> {
         self.symbol(KeyRef::MessageByName(name.as_ref()))
-            .map(|iid| self.messages.get(*iid as usize).unwrap())
+            .map(|iid| self.inner.messages.get(*iid as usize).unwrap())
             .map(|data| Message(self, data))
     }
 
@@ -305,14 +319,14 @@ impl Dictionary {
         self.symbol(KeyRef::MessageByMsgType(MsgType::from_bytes(
             msgtype.as_ref().as_bytes(),
         )?))
-        .map(|iid| self.messages.get(*iid as usize).unwrap())
+        .map(|iid| self.inner.messages.get(*iid as usize).unwrap())
         .map(|data| Message(self, data))
     }
 
     /// Returns the [`Component`] named `name`, if any.
     pub fn component_by_name<S: AsRef<str>>(&self, name: S) -> Option<Component> {
         self.symbol(KeyRef::ComponentByName(name.as_ref()))
-            .map(|iid| self.components.get(*iid as usize).unwrap())
+            .map(|iid| self.inner.components.get(*iid as usize).unwrap())
             .map(|data| Component(self, data))
     }
 
@@ -336,7 +350,7 @@ impl Dictionary {
     /// ```
     pub fn datatype_by_name<S: AsRef<str>>(&self, name: S) -> Option<Datatype> {
         self.symbol(KeyRef::DatatypeByName(name.as_ref()))
-            .map(|iid| self.data_types.get(*iid as usize).unwrap())
+            .map(|iid| self.inner.data_types.get(*iid as usize).unwrap())
             .map(|data| Datatype(self, data))
     }
 
@@ -354,14 +368,14 @@ impl Dictionary {
     /// ```
     pub fn field_by_tag(&self, tag: u32) -> Option<Field> {
         self.symbol(KeyRef::FieldByTag(tag))
-            .map(|iid| self.fields.get(*iid as usize).unwrap())
+            .map(|iid| self.inner.fields.get(*iid as usize).unwrap())
             .map(|data| Field(self, data))
     }
 
     /// Returns the [`Field`] named `name`, if any.
     pub fn field_by_name<S: AsRef<str>>(&self, name: S) -> Option<Field> {
         self.symbol(KeyRef::FieldByName(name.as_ref()))
-            .map(|iid| self.fields.get(*iid as usize).unwrap())
+            .map(|iid| self.inner.fields.get(*iid as usize).unwrap())
             .map(|data| Field(self, data))
     }
 
@@ -377,7 +391,10 @@ impl Dictionary {
     /// assert_eq!(dict.iter_datatypes().count(), 19);
     /// ```
     pub fn iter_datatypes(&self) -> impl Iterator<Item = Datatype> {
-        self.data_types.iter().map(move |data| Datatype(self, data))
+        self.inner
+            .data_types
+            .iter()
+            .map(move |data| Datatype(self, data))
     }
 
     /// Returns an [`Iterator`](Iterator) over this [`Dictionary`]'s messages. Items are in
@@ -392,13 +409,17 @@ impl Dictionary {
     /// assert_eq!(msg.unwrap().msg_type(), "V");
     /// ```
     pub fn iter_messages(&self) -> impl Iterator<Item = Message> {
-        self.messages.iter().map(move |data| Message(&self, data))
+        self.inner
+            .messages
+            .iter()
+            .map(move |data| Message(&self, data))
     }
 
     /// Returns an [`Iterator`] over this [`Dictionary`]'s categories. Items are
     /// in no particular order.
     pub fn iter_categories(&self) -> impl Iterator<Item = Category> {
-        self.categories
+        self.inner
+            .categories
             .iter()
             .map(move |data| Category(&self, data))
     }
@@ -406,13 +427,14 @@ impl Dictionary {
     /// Returns an [`Iterator`] over this [`Dictionary`]'s fields. Items are
     /// in no particular order.
     pub fn iter_fields(&self) -> impl Iterator<Item = Field> {
-        self.fields.iter().map(move |data| Field(&self, data))
+        self.inner.fields.iter().map(move |data| Field(&self, data))
     }
 
     /// Returns an [`Iterator`] over this [`Dictionary`]'s components. Items are in
     /// no particular order.
     pub fn iter_components(&self) -> impl Iterator<Item = Component> {
-        self.components
+        self.inner
+            .components
             .iter()
             .map(move |data| Component(&self, data))
     }
@@ -489,14 +511,19 @@ impl<'a> Component<'a> {
 
     /// Returns the [`Category`] to which `self` belongs.
     pub fn category(&self) -> Category {
-        let data = self.0.categories.get(self.1.category_iid as usize).unwrap();
+        let data = self
+            .0
+            .inner
+            .categories
+            .get(self.1.category_iid as usize)
+            .unwrap();
         Category(self.0, data)
     }
 
     pub fn items(&self) -> impl Iterator<Item = LayoutItem> {
         let start = self.1.layout_items_iid_range.start as usize;
         let end = self.1.layout_items_iid_range.end as usize;
-        self.0.layout_items[start..end]
+        self.0.inner.layout_items[start..end]
             .iter()
             .map(move |data| LayoutItem(self.0, data))
     }
@@ -660,6 +687,7 @@ impl<'a> Field<'a> {
     pub fn data_type(&self) -> Datatype {
         let data = self
             .0
+            .inner
             .data_types
             .get(self.1.data_type_iid as usize)
             .unwrap();
@@ -708,24 +736,31 @@ impl<'a> LayoutItem<'a> {
         match &self.1.kind {
             LayoutItemKindData::Component(n) => LayoutItemKind::Component(Component(
                 self.0,
-                self.0.components.get(*n as usize).unwrap(),
+                self.0.inner.components.get(*n as usize).unwrap(),
             )),
             LayoutItemKindData::Group(_range) => {
                 LayoutItemKind::Group // FIXME
             }
             LayoutItemKindData::Field(n) => {
-                LayoutItemKind::Field(Field(self.0, self.0.fields.get(*n as usize).unwrap()))
+                LayoutItemKind::Field(Field(self.0, self.0.inner.fields.get(*n as usize).unwrap()))
             }
         }
     }
 
     pub fn tag_text(&self) -> &str {
         match &self.1.kind {
-            LayoutItemKindData::Component(n) => {
-                self.0.components.get(*n as usize).unwrap().name.as_str()
-            }
+            LayoutItemKindData::Component(n) => self
+                .0
+                .inner
+                .components
+                .get(*n as usize)
+                .unwrap()
+                .name
+                .as_str(),
             LayoutItemKindData::Group(_range) => "",
-            LayoutItemKindData::Field(n) => self.0.fields.get(*n as usize).unwrap().name.as_str(),
+            LayoutItemKindData::Field(n) => {
+                self.0.inner.fields.get(*n as usize).unwrap().name.as_str()
+            }
         }
     }
 }
@@ -782,7 +817,7 @@ impl<'a> Message<'a> {
     pub fn layout(&self) -> impl Iterator<Item = LayoutItem> {
         let start = self.1.layout_items.start as usize;
         let end = self.1.layout_items.end as usize;
-        self.0.layout_items[start..end]
+        self.0.inner.layout_items[start..end]
             .iter()
             .map(move |data| LayoutItem(self.0, data))
     }
@@ -816,7 +851,7 @@ mod quickfix {
         node_with_components: roxmltree::Node<'a, 'a>,
         node_with_messages: roxmltree::Node<'a, 'a>,
         node_with_fields: roxmltree::Node<'a, 'a>,
-        dict: Dictionary,
+        dict: DictionaryData,
     }
 
     impl<'a> QuickFixReader<'a> {
@@ -842,7 +877,9 @@ mod quickfix {
             // potentially empty (FIX 5.0+).
             reader.add_component_with_name(reader.node_with_header, "StandardHeader")?;
             reader.add_component_with_name(reader.node_with_trailer, "StandardTrailer")?;
-            Ok(reader.dict)
+            Ok(Dictionary {
+                inner: Arc::new(reader.dict),
+            })
         }
 
         fn empty(xml_document: &'a roxmltree::Document<'a>) -> ParseResult<Self> {
@@ -876,7 +913,7 @@ mod quickfix {
                 node_with_messages: find_tagged_child("messages")?,
                 node_with_components: find_tagged_child("components")?,
                 node_with_fields: find_tagged_child("fields")?,
-                dict: Dictionary::new(version),
+                dict: (*Dictionary::new(version).inner).clone(),
             })
         }
 
@@ -998,7 +1035,7 @@ mod quickfix {
 
     impl ComponentData {
         fn definition_from_node_with_name<S: AsRef<str>>(
-            dict: &mut Dictionary,
+            dict: &mut DictionaryData,
             node: roxmltree::Node,
             name: S,
         ) -> ParseResult<Self> {
@@ -1022,7 +1059,7 @@ mod quickfix {
         }
 
         fn get_or_create_iid_from_ref(
-            dict: &mut Dictionary,
+            dict: &mut DictionaryData,
             node: roxmltree::Node,
         ) -> ParseResult<InternalId> {
             debug_assert_eq!(node.tag_name().name(), "component");
@@ -1074,7 +1111,10 @@ mod quickfix {
     }
 
     impl DatatypeData {
-        fn get_or_create_iid_from_ref(dict: &mut Dictionary, node: roxmltree::Node) -> InternalId {
+        fn get_or_create_iid_from_ref(
+            dict: &mut DictionaryData,
+            node: roxmltree::Node,
+        ) -> InternalId {
             // References should only happen at <field> tags.
             debug_assert_eq!(node.tag_name().name(), "field");
             let datatype = {
@@ -1104,7 +1144,7 @@ mod quickfix {
     }
 
     impl LayoutItemData {
-        fn save_definition(dict: &mut Dictionary, node: roxmltree::Node) -> ParseResult<Self> {
+        fn save_definition(dict: &mut DictionaryData, node: roxmltree::Node) -> ParseResult<Self> {
             // This processing step requires on fields being already present in
             // the dictionary.
             debug_assert_ne!(dict.fields.len(), 0);
@@ -1140,7 +1180,7 @@ mod quickfix {
 
     impl CategoryData {
         fn get_or_create_iid_from_ref(
-            dict: &mut Dictionary,
+            dict: &mut DictionaryData,
             node: roxmltree::Node,
         ) -> ParseResult<InternalId> {
             debug_assert_eq!(node.tag_name().name(), "message");
@@ -1211,14 +1251,14 @@ mod test {
 
     #[test]
     fn dictionary_save_definition_spec_is_ok() {
-        for version in AppVersion::all() {
+        for version in AppVersion::iter_all() {
             Dictionary::from_version(version);
         }
     }
 
     #[test]
     fn all_datatypes_are_used_at_least_once() {
-        for version in AppVersion::all() {
+        for version in AppVersion::iter_all() {
             let dict = Dictionary::from_version(version);
             let datatypes_count = dict.iter_datatypes().count();
             let mut datatypes = HashSet::new();
@@ -1231,7 +1271,7 @@ mod test {
 
     #[test]
     fn at_least_one_datatype() {
-        for version in AppVersion::all() {
+        for version in AppVersion::iter_all() {
             let dict = Dictionary::from_version(version);
             assert!(dict.iter_datatypes().count() >= 1);
         }
@@ -1239,7 +1279,7 @@ mod test {
 
     #[test]
     fn std_header_and_trailer_always_present() {
-        for version in AppVersion::all() {
+        for version in AppVersion::iter_all() {
             let dict = Dictionary::from_version(version);
             let std_header = dict.component_by_name("StandardHeader");
             let std_trailer = dict.component_by_name("StandardTrailer");

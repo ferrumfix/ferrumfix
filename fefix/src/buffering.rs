@@ -21,6 +21,12 @@ pub trait Buffer: io::Write {
     /// Appends the contents of `extend` onto `self`, growing the buffer if
     /// necessary.
     fn extend_from_slice(&mut self, extend: &[u8]);
+
+    fn resize(&mut self, new_len: usize, filler: u8) {
+        for _ in 0..new_len - self.as_slice().len() {
+            self.extend_from_slice(&[filler]);
+        }
+    }
 }
 
 /// A [`Vec`] -backed [`Buffer`] implementation.

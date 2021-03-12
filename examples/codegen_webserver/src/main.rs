@@ -35,7 +35,7 @@ impl State {
         let mut state = State {
             dictionaries: HashMap::new(),
         };
-        for version in AppVersion::all() {
+        for version in AppVersion::iter_all() {
             let dict = Dictionary::from_version(version);
             state.dictionaries.insert(version, dict);
         }

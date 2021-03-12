@@ -29,7 +29,7 @@ pub fn codegen_tag_mnemonics(dict: &Dictionary) -> String {
             format!("pub const {}: u32 = {};", name, tag)
         })
         .collect();
-    let code = format!(r#"![allow(dead_code)]
+    let code = format!(r#"#![allow(dead_code)]
 
 {field_tags}
 "#,
@@ -191,10 +191,11 @@ mod test {
 
     #[test]
     fn syntax_of_field_tags_is_ok() {
-        for version in AppVersion::all() {
+        for version in AppVersion::iter_all() {
+            println!("{}", version);
             let dict = Dictionary::from_version(version);
             let code = codegen_tag_mnemonics(&dict);
-            assert!(syn::parse_file(code.as_str()).is_ok());
+            syn::parse_file(code.as_str()).unwrap();
         }
     }
 }
