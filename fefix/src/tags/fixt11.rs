@@ -1,3 +1,5 @@
+//! Tag mnemonics for FIXT 1.1.
+
 #![allow(dead_code)]
 
 pub const BEGIN_SEQ_NO: u32 = 7;

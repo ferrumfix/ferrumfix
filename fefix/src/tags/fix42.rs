@@ -1,3 +1,5 @@
+//! Tag mnemonics for FIX 4.2.
+
 #![allow(dead_code)]
 
 pub const ACCOUNT: u32 = 1;

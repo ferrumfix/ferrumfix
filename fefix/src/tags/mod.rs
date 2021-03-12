@@ -1,3 +1,5 @@
+//! Tag mnemonics to avoid using magic numbers in code.
+
 pub mod fix40;
 pub mod fix41;
 pub mod fix42;
