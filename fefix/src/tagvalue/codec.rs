@@ -9,7 +9,7 @@ use crate::{AppVersion, DataType, Dictionary};
 use std::fmt::Debug;
 use std::str;
 
-/// Easy-to-use [`Encoding`] that accomodates for most use cases.
+/// FIX message encoder and decoder.
 #[derive(Debug)]
 pub struct Codec<Z = Config>
 where
@@ -29,7 +29,8 @@ where
         Self::with_dict(Dictionary::from_version(AppVersion::Fix44), config)
     }
 
-    /// Creates a new codec for the tag-value format. `dict` is used to parse messages.
+    /// Creates a new codec for the tag-value format. `dict` is used to parse
+    /// messages.
     pub fn with_dict(dict: Dictionary, config: Z) -> Self {
         Self {
             dict,
@@ -49,19 +50,59 @@ where
     }
 
     /// Returns an immutable reference to the [`Configure`] used by `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::tagvalue::{Config, Configure, Codec};
+    ///
+    /// let codec = &mut Codec::new(Config::default());
+    /// assert_eq!(codec.config().separator(), 0x1);
+    /// ```
     pub fn config(&self) -> &Z {
         &self.config
     }
 
     /// Returns a mutable reference to the [`Configure`] used by `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::tagvalue::{Config, Configure, Codec};
+    ///
+    /// let codec = &mut Codec::new(Config::default());
+    /// codec.config_mut().set_separator(b'|');
+    /// assert_eq!(codec.config().separator(), b'|');
+    /// ```
     pub fn config_mut(&mut self) -> &mut Z {
         &mut self.config
     }
 
+    /// Decodes `data` and returns an immutable reference to the obtained
+    /// message.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::tagvalue::{Config, Codec};
+    /// use fefix::tags::fix42 as tags;
+    ///
+    /// let codec = &mut Codec::new(Config::default());
+    /// let data = b"8=FIX.4.2\x019=42\x0135=0\x0149=A\x0156=B\x0134=12\x0152=20100304-07:59:30\x0110=185\x01";
+    /// let message = codec.decode(data).unwrap();
+    /// assert_eq!(
+    ///     message
+    ///         .field(tags::SENDER_COMP_ID)
+    ///         .and_then(|field| field.as_str()),
+    ///     Some("A")
+    /// );
+    /// ```
     pub fn decode(&mut self, data: &[u8]) -> Result<&MessageRnd, DecodeError> {
-        let decoder = RawDecoder::with_config(Config::default()
-            .with_separator(self.config.separator())
-            .with_checksum_verification(self.config.verify_checksum()));
+        let decoder = RawDecoder::with_config(
+            Config::default()
+                .with_separator(self.config.separator())
+                .with_checksum_verification(self.config.verify_checksum()),
+        );
         // Take care of `BeginString`, `BodyLength` and `CheckSum`.
         let frame = decoder.decode(data)?;
         let begin_string = frame.begin_string();
@@ -79,7 +120,10 @@ where
             f.take_value()
         };
         self.message
-            .insert(8, FixFieldValue::string(begin_string).unwrap())
+            .insert(
+                tags::BEGIN_STRING,
+                FixFieldValue::string(begin_string).unwrap(),
+            )
             .unwrap();
         self.message.insert(tags::MSG_TYPE, msg_type).unwrap();
         // Iterate over all the other fields and store them to the message.
