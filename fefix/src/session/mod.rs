@@ -12,6 +12,7 @@
 //! [`Acceptor`] abstract over such details and present users with a single entry
 //! point, namely [`Initiator::feed`] and [`Acceptor::feed`].
 
+use crate::tags::fix44 as tags;
 use crate::tagvalue::FixFieldValue;
 use crate::tagvalue::MessageRnd;
 use futures_lite::prelude::*;
@@ -166,11 +167,11 @@ mod acceptor {
                 (Environment::ProductionDisallowTest, Some(true)) => {
                     // Generate Logout!
                     let mut msg = MessageRnd::new();
-                    msg.add_str(35, "5");
-                    msg.add_str(49, self.config.company_id.as_str());
-                    msg.add_int(7, self.seq_numbers().next_inbound() as i64);
-                    msg.add_int(16, message.seq_num().unwrap() as i64);
-                    msg.add_str(58, errs::production_env());
+                    msg.add_str(tags::MSG_TYPE, "5");
+                    msg.add_str(tags::SENDER_COMP_ID, self.config.company_id.as_str());
+                    msg.add_int(tags::BEGIN_SEQ_NO, self.seq_numbers().next_inbound() as i64);
+                    msg.add_int(tags::END_SEQ_NO, message.seq_num().unwrap() as i64);
+                    msg.add_str(tags::TEXT, errs::production_env());
                     to.push(EventOutbound::Message(add_time_to_msg(msg)));
                     return;
                 }
@@ -189,11 +190,14 @@ mod acceptor {
                 Err(SeqNumberError::NoSeqNum) => {
                     // Generate Logout!
                     let mut msg = MessageRnd::new();
-                    msg.add_str(35, "5");
-                    msg.add_str(49, self.config.company_id.as_str());
-                    msg.add_int(7, self.seq_numbers().next_inbound() as i64);
-                    msg.add_int(16, message.seq_num().unwrap() as i64);
-                    msg.add_str(58, errs::missing_field("MsgSeqNum", 34));
+                    msg.add_str(tags::MSG_TYPE, "5");
+                    msg.add_str(tags::SENDER_COMP_ID, self.config.company_id.as_str());
+                    msg.add_int(tags::BEGIN_SEQ_NO, self.seq_numbers().next_inbound() as i64);
+                    msg.add_int(tags::END_SEQ_NO, message.seq_num().unwrap() as i64);
+                    msg.add_str(
+                        tags::TEXT,
+                        errs::missing_field("MsgSeqNum", tags::MSG_SEQ_NUM),
+                    );
                     to.push(EventOutbound::Message(add_time_to_msg(msg)));
                     return;
                 }
@@ -201,10 +205,10 @@ mod acceptor {
                 Err(SeqNumberError::Recover) => {
                     // Begin message recovery.
                     let mut response = MessageRnd::new();
-                    response.add_str(35, "2");
-                    response.add_str(49, self.config.company_id.as_str());
-                    response.add_int(7, self.seq_numbers().next_inbound() as i64);
-                    response.add_int(16, message.seq_num().unwrap() as i64);
+                    response.add_str(tags::MSG_TYPE, "2");
+                    response.add_str(tags::SENDER_COMP_ID, self.config.company_id.as_str());
+                    response.add_int(tags::BEGIN_SEQ_NO, self.seq_numbers().next_inbound() as i64);
+                    response.add_int(tags::END_SEQ_NO, message.seq_num().unwrap() as i64);
                     self.seq_numbers.incr_outbound();
                     // TODO: add other details to response message.
                     to.push(EventOutbound::Message(add_time_to_msg(response)));
@@ -226,9 +230,9 @@ mod acceptor {
                 }
                 let mut response = MessageRnd::new();
                 // TODO: add other details to response message.
-                response.add_field(35, FixFieldValue::string(b"A").unwrap());
+                response.add_field(tags::MSG_TYPE, FixFieldValue::string(b"A").unwrap());
                 response.add_field(
-                    49,
+                    tags::SENDER_COMP_ID,
                     FixFieldValue::string(self.config.company_id.as_bytes()).unwrap(),
                 );
                 self.seq_numbers.incr_outbound();
@@ -240,18 +244,24 @@ mod acceptor {
         fn generate_error_seqnum_too_low(&mut self) -> MessageRnd {
             let error_message = errs::msg_seq_num(self.seq_numbers().next_inbound());
             let mut response = MessageRnd::new();
-            response.add_str(35, "5");
-            response.add_str(49, self.config.company_id.as_str());
-            response.add_int(7, self.seq_numbers().next_outbound() as i64);
-            response.add_str(58, error_message);
+            response.add_str(tags::MSG_TYPE, "5");
+            response.add_str(tags::SENDER_COMP_ID, self.config.company_id.as_str());
+            response.add_int(
+                tags::TARGET_COMP_ID,
+                self.seq_numbers().next_outbound() as i64,
+            );
+            response.add_str(tags::TEXT, error_message);
             add_time_to_msg(response)
         }
 
         fn generate_heartbeat_message(&mut self) -> MessageRnd {
             let mut heartbeat = MessageRnd::new();
-            heartbeat.add_str(35, "0");
-            heartbeat.add_str(49, self.config.company_id.as_str());
-            heartbeat.add_int(7, self.seq_numbers().next_outbound() as i64);
+            heartbeat.add_str(tags::MSG_TYPE, "0");
+            heartbeat.add_str(tags::SENDER_COMP_ID, self.config.company_id.as_str());
+            heartbeat.add_int(
+                tags::BEGIN_SEQ_NO,
+                self.seq_numbers().next_outbound() as i64,
+            );
             add_time_to_msg(heartbeat)
         }
     }
@@ -260,7 +270,7 @@ mod acceptor {
         // https://www.onixs.biz/fix-dictionary/4.4/index.html#UTCTimestamp.
         let time = chrono::Utc::now();
         let timestamp = time.format("%Y%m%d-%H:%M:%S.%.3f");
-        msg.add_str(52, timestamp.to_string());
+        msg.add_str(tags::SENDING_TIME, timestamp.to_string());
         msg
     }
 
@@ -418,12 +428,12 @@ mod initiator {
 
         pub fn initiate(&mut self) -> MessageRnd {
             let mut msg = MessageRnd::new();
-            msg.add_str(35, "A".to_string());
-            msg.add_str(49, self.config.company_id_from.clone());
-            msg.add_str(56, self.config.company_id_to.clone());
-            msg.add_int(108, 30);
-            msg.add_int(34, self.seq_numbers.next_outbound() as i64);
-            msg.add_int(52, 1337); // TODO
+            msg.add_str(tags::MSG_TYPE, "A".to_string());
+            msg.add_str(tags::SENDER_COMP_ID, self.config.company_id_from.clone());
+            msg.add_str(tags::TARGET_COMP_ID, self.config.company_id_to.clone());
+            msg.add_int(tags::HEART_BT_INT, 30);
+            msg.add_int(tags::MSG_SEQ_NUM, self.seq_numbers.next_outbound() as i64);
+            msg.add_int(tags::SENDING_TIME, 1337); // TODO
             msg
         }
 
@@ -431,30 +441,30 @@ mod initiator {
             let test_request_id = Uuid::new_v4().to_string();
             // Send `TestRequest` to ensure we didn't miss any messages.
             let mut msg = MessageRnd::new();
-            msg.add_str(35, "1".to_string());
-            msg.add_str(49, self.config.company_id_from.clone());
-            msg.add_str(56, self.config.company_id_to.clone());
-            msg.add_int(108, 30);
-            msg.add_str(112, test_request_id.clone());
-            msg.add_int(34, self.seq_numbers.next_inbound() as i64);
-            msg.add_int(52, 1337); // TODO
+            msg.add_str(tags::MSG_TYPE, "1".to_string());
+            msg.add_str(tags::SENDER_COMP_ID, self.config.company_id_from.clone());
+            msg.add_str(tags::TARGET_COMP_ID, self.config.company_id_to.clone());
+            msg.add_int(tags::HEART_BT_INT, 30);
+            msg.add_str(tags::TEST_REQ_ID, test_request_id.clone());
+            msg.add_int(tags::MSG_SEQ_NUM, self.seq_numbers.next_inbound() as i64);
+            msg.add_int(tags::SENDING_TIME, 1337); // TODO
             self.send_message(msg).await;
             // Wait for heartbeat:
             let heartbeat = self.next_msg().await;
             assert_eq!(
-                heartbeat.get_field(112),
+                heartbeat.get_field(tags::TEST_REQ_ID),
                 Some(&FixFieldValue::string(test_request_id.as_bytes()).unwrap())
             );
             // TODO: check seq number.
             // TODO: resend missed messages.
             // Finally send `Logout`.
             let mut msg = MessageRnd::new();
-            msg.add_str(35, "5".to_string());
-            msg.add_str(49, self.config.company_id_from.clone());
-            msg.add_str(56, self.config.company_id_to.clone());
-            msg.add_int(108, 30);
-            msg.add_int(34, self.seq_numbers.next_outbound() as i64);
-            msg.add_int(52, 1337); // FIXME
+            msg.add_str(tags::MSG_TYPE, "5".to_string());
+            msg.add_str(tags::SENDER_COMP_ID, self.config.company_id_from.clone());
+            msg.add_str(tags::TARGET_COMP_ID, self.config.company_id_to.clone());
+            msg.add_int(tags::HEART_BT_INT, 30);
+            msg.add_int(tags::MSG_SEQ_NUM, self.seq_numbers.next_outbound() as i64);
+            msg.add_int(tags::SENDING_TIME, 1337); // FIXME
             self.send_message(msg).await;
             Ok(())
         }
@@ -586,22 +596,22 @@ mod test {
     #[tokio::test]
     async fn testcase_1s_a_1() {
         let mut msg = MessageRnd::new();
-        msg.add_str(35, "A".to_string());
-        msg.add_int(108, 30);
-        msg.add_int(34, 1);
+        msg.add_str(tags::MSG_TYPE, "A".to_string());
+        msg.add_int(tags::HEART_BT_INT, 30);
+        msg.add_int(tags::MSG_SEQ_NUM, 1);
         let mut acceptor = acceptor();
         let mut events = acceptor.notify(EventInbound::IncomingMessage(msg));
         match events.next().unwrap() {
             EventOutbound::Message(response) => {
                 assert_eq!(
-                    *response.get_field(35).unwrap(),
+                    *response.get_field(tags::MSG_TYPE).unwrap(),
                     FixFieldValue::string(b"A").unwrap()
                 );
                 assert_eq!(
-                    *response.get_field(49).unwrap(),
+                    *response.get_field(tags::SENDER_COMP_ID).unwrap(),
                     FixFieldValue::string(COMPANY_ID.as_bytes()).unwrap()
                 );
-                assert!(response.get_field(112).is_none());
+                assert!(response.get_field(tags::TEST_REQ_ID).is_none());
             }
             EventOutbound::Terminate => panic!(),
         }
@@ -618,22 +628,22 @@ mod test {
     #[tokio::test]
     async fn testcase_1s_a_2() {
         let mut msg = MessageRnd::new();
-        msg.add_str(35, "A".to_string());
-        msg.add_int(108, 30);
-        msg.add_int(34, 42);
+        msg.add_str(tags::MSG_TYPE, "A".to_string());
+        msg.add_int(tags::HEART_BT_INT, 30);
+        msg.add_int(tags::MSG_SEQ_NUM, 42);
         let mut acceptor = acceptor();
         let mut events = acceptor.notify(EventInbound::IncomingMessage(msg));
         match events.next().unwrap() {
             EventOutbound::Message(response) => {
                 assert_eq!(
-                    *response.get_field(35).unwrap(),
+                    *response.get_field(tags::MSG_TYPE).unwrap(),
                     FixFieldValue::string(b"2").unwrap()
                 );
                 assert_eq!(
-                    *response.get_field(49).unwrap(),
+                    *response.get_field(tags::SENDER_COMP_ID).unwrap(),
                     FixFieldValue::string(COMPANY_ID.as_bytes()).unwrap()
                 );
-                assert!(response.get_field(112).is_none());
+                assert!(response.get_field(tags::TEST_REQ_ID).is_none());
             }
             EventOutbound::Terminate => panic!(),
         }
@@ -653,23 +663,23 @@ mod test {
     #[tokio::test]
     async fn testcase_1s_b() {
         let mut msg = MessageRnd::new();
-        msg.add_str(35, "A".to_string());
-        msg.add_int(108, 30);
-        msg.add_int(34, 1);
+        msg.add_str(tags::MSG_TYPE, "A".to_string());
+        msg.add_int(tags::HEART_BT_INT, 30);
+        msg.add_int(tags::MSG_SEQ_NUM, 1);
         let mut acceptor = acceptor();
         let mut events = acceptor.notify(EventInbound::IncomingMessage(msg.clone()));
         // First Logon message is fine.
         match events.next().unwrap() {
             EventOutbound::Message(response) => {
                 assert_eq!(
-                    *response.get_field(35).unwrap(),
+                    *response.get_field(tags::MSG_TYPE).unwrap(),
                     FixFieldValue::string(b"A").unwrap()
                 );
                 assert_eq!(
-                    *response.get_field(49).unwrap(),
+                    *response.get_field(tags::SENDER_COMP_ID).unwrap(),
                     FixFieldValue::string(COMPANY_ID.as_bytes()).unwrap()
                 );
-                assert!(response.get_field(112).is_none());
+                assert!(response.get_field(tags::TEST_REQ_ID).is_none());
             }
             EventOutbound::Terminate => panic!(),
         }
@@ -688,9 +698,9 @@ mod test {
     #[test]
     fn testcase_2s() {
         let mut msg = MessageRnd::new();
-        msg.add_str(35, "0".to_string());
-        msg.add_int(108, 30);
-        msg.add_int(34, 1);
+        msg.add_str(tags::MSG_TYPE, "0".to_string());
+        msg.add_int(tags::HEART_BT_INT, 30);
+        msg.add_int(tags::MSG_SEQ_NUM, 1);
         let mut acceptor = acceptor();
         let mut events = acceptor.notify(EventInbound::IncomingMessage(msg));
         // First Logon message is fine.
