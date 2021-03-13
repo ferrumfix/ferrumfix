@@ -73,3 +73,27 @@ impl HeartbeatRule {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn heartebeat_validation() {
+        let rule_exact_1 = HeartbeatRule::Exact(Duration::from_secs(1));
+        let rule_range_5_30 =
+            HeartbeatRule::Range(Duration::from_secs(5)..=Duration::from_secs(30));
+        let rule_any = HeartbeatRule::Any;
+        assert!(rule_exact_1.validate(&Duration::from_secs(1)).is_ok());
+        assert!(!rule_exact_1.validate(&Duration::from_secs(2)).is_ok());
+        assert!(!rule_exact_1.validate(&Duration::from_secs(0)).is_ok());
+        assert!(rule_range_5_30.validate(&Duration::from_secs(5)).is_ok());
+        assert!(rule_range_5_30.validate(&Duration::from_secs(10)).is_ok());
+        assert!(rule_range_5_30.validate(&Duration::from_secs(30)).is_ok());
+        assert!(!rule_range_5_30.validate(&Duration::from_secs(0)).is_ok());
+        assert!(!rule_range_5_30.validate(&Duration::from_secs(4)).is_ok());
+        assert!(!rule_range_5_30.validate(&Duration::from_secs(60)).is_ok());
+        assert!(rule_any.validate(&Duration::from_secs(1)).is_ok());
+        assert!(!rule_any.validate(&Duration::from_secs(0)).is_ok());
+    }
+}
