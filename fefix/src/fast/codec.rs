@@ -274,15 +274,6 @@ mod test {
         *value == expected_value
     }
 
-    #[quickcheck]
-    fn encode_then_decode_i32(expected_value: i32) -> bool {
-        let mut bytes: Vec<u8> = Vec::new();
-        expected_value.serialize(&mut bytes).unwrap();
-        let value = &mut 0i32;
-        value.deserialize(&mut &bytes[..]).unwrap();
-        *value == expected_value
-    }
-
     #[test]
     fn encode_i32_example() {
         let mut bytes: Vec<u8> = Vec::new();
