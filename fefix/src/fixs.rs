@@ -1,7 +1,6 @@
+//! FIX-over-TLS (FIXS) utilities.
+
 use crate::openssl::ssl::*;
-use std::net::{SocketAddr, TcpListener};
-use std::path::Path;
-use std::sync::Arc;
 
 /// Which version of FIX-over-TLS (FIXS) to use.
 #[derive(Debug, Copy, Clone)]
@@ -10,14 +9,14 @@ pub enum Version {
 }
 
 impl Version {
-    /// Returns an [`Iterator`](Iterator) over the suggested ciphersuites for TLS,
+    /// Returns an [`Iterator`] over the suggested ciphersuites for TLS,
     /// according to `self` version. The ciphersuites are specified in IANA format.
     ///
     /// ```
-    /// use fefix::transport::fixs::Version;
+    /// use fefix::fixs::Version;
     ///
     /// let version = Version::V1Draft;
-    /// let mut ciphersuites_iana = version.recommended_cs_iana(false);
+    /// let ciphersuites_iana = &mut version.recommended_cs_iana(false);
     /// assert!(ciphersuites_iana.any(|cs| cs == "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"));
     /// ```
     pub fn recommended_cs_iana(&self, psk: bool) -> impl Iterator<Item = &str> {
@@ -30,17 +29,17 @@ impl Version {
         .copied()
     }
 
-    /// Returns an [`Iterator`](Iterator) over the suggested ciphersuites for TLS,
+    /// Returns an [`Iterator`] over the suggested ciphersuites for TLS,
     /// according to `self` version. The ciphersuites are specified in OpenSSL's
     /// format.
     ///
     /// # Examples:
     ///
     /// ```
-    /// use fefix::transport::fixs::Version;
+    /// use fefix::fixs::Version;
     ///
     /// let version = Version::V1Draft;
-    /// let mut ciphersuites_openssl = version.recommended_cs_openssl(false);
+    /// let ciphersuites_openssl = &mut version.recommended_cs_openssl(false);
     /// assert!(ciphersuites_openssl.any(|cs| cs == "DHE-RSA-AES128-GCM-SHA256"));
     /// ```
     ///
@@ -60,11 +59,7 @@ impl Version {
             .map(|s| *ciphersuites::IANA_TO_OPENSSL.get(s).unwrap())
     }
 
-    pub fn recommended_connector(&self) -> SslConnectorBuilder {
-        self.private_recommended_connector()
-    }
-
-    fn private_recommended_connector(&self) -> SslConnectorBuilder {
+    pub fn recommended_connector_builder(&self) -> SslConnectorBuilder {
         let mut context = SslConnector::builder(SslMethod::tls()).unwrap();
         match self {
             Version::V1Draft => {
@@ -91,11 +86,7 @@ impl Version {
         context
     }
 
-    pub fn recommended_acceptor(&self) -> SslAcceptorBuilder {
-        self.private_recommended_acceptor()
-    }
-
-    fn private_recommended_acceptor(&self) -> SslAcceptorBuilder {
+    pub fn recommended_acceptor_builder(&self) -> SslAcceptorBuilder {
         let mut context = SslAcceptor::mozilla_intermediate_v5(SslMethod::tls()).unwrap();
         match self {
             Version::V1Draft => {
@@ -122,26 +113,6 @@ impl Version {
             .unwrap();
         context
     }
-
-    pub fn fixua_acceptor(&self, config: FixuaConfig) -> (TcpListener, Arc<SslAcceptor>) {
-        let tcp_listener = TcpListener::bind(config.address).unwrap();
-        let mut acceptor = Version::V1Draft.recommended_acceptor();
-        acceptor
-            .set_private_key_file(config.key, SslFiletype::PEM)
-            .unwrap();
-        acceptor
-            .set_certificate_file(config.cert, SslFiletype::PEM)
-            .unwrap();
-        let acceptor = Arc::new(acceptor.build());
-        (tcp_listener, acceptor)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct FixuaConfig<'a> {
-    pub cert: &'a Path,
-    pub key: &'a Path,
-    pub address: SocketAddr,
 }
 
 const V1_DRAFT_RECOMMENDED_CIPHERSUITES: &[&str] = &[
@@ -434,11 +405,11 @@ mod test {
 
     #[test]
     fn v1draft_acceptor_is_ok() {
-        Version::V1Draft.recommended_acceptor();
+        Version::V1Draft.recommended_acceptor_builder();
     }
 
     #[test]
     fn v1draft_connector_is_ok() {
-        Version::V1Draft.recommended_connector();
+        Version::V1Draft.recommended_connector_builder();
     }
 }
