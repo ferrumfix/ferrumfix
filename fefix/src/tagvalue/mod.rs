@@ -10,9 +10,9 @@ use std::fmt::Debug;
 use std::io;
 use std::time::SystemTime;
 
-mod encoder;
 mod config;
 mod decoder;
+mod encoder;
 pub mod field_value;
 mod message_rnd;
 mod message_seq;
@@ -22,9 +22,9 @@ mod raw_frame;
 mod taglookup;
 mod utils;
 
-pub use encoder::Encoder;
 pub use config::{Config, Configure};
 pub use decoder::{Decoder, DecoderBuffered};
+pub use encoder::Encoder;
 pub use message_rnd::{Field, MessageRnd};
 pub use message_seq::MessageSeq;
 pub use raw_decoder::{RawDecoder, RawDecoderBuffered};

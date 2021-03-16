@@ -54,11 +54,12 @@ async fn serve_json_relay(mut req: tide::Request<State>) -> tide::Result {
     let mut buffer = Vec::new();
     let body_response = {
         let msg = &mut MessageSeq::default();
-        message.for_each::<(), _>(|tag, value| {
-            msg.add_field(tag, value.clone());
-            Ok(())
-        })
-        .unwrap();
+        message
+            .for_each::<(), _>(|tag, value| {
+                msg.add_field(tag, value.clone());
+                Ok(())
+            })
+            .unwrap();
         encoder.encode(&mut buffer, &msg).unwrap();
         let buffer_string = std::str::from_utf8(&buffer[..]).unwrap();
         buffer_string

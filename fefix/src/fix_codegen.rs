@@ -29,7 +29,8 @@ pub fn codegen_tag_mnemonics(dict: &Dictionary) -> String {
             format!("pub const {}: u32 = {};", name, tag)
         })
         .collect();
-    let code = format!(r#"#![allow(dead_code)]
+    let code = format!(
+        r#"#![allow(dead_code)]
 
 {field_tags}
 "#,

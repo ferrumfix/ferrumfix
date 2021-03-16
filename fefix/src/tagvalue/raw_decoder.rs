@@ -98,12 +98,12 @@ where
                 //let required_len = indices.body().end;
                 //self.buffer.extend_from_slice(&[0; required_len]);
                 &mut self.buffer.as_mut_slice()[len..]
-            },
+            }
             Err(DecodeError::Incomplete) => {
                 let start = self.buffer.as_slice().len();
                 self.buffer.extend_from_slice(&[0; 7]);
                 &mut self.buffer.as_mut_slice()[start..]
-            },
+            }
             Err(_) => &mut [],
         }
     }

@@ -1,7 +1,6 @@
 use crate::buffering::Buffer;
 use crate::tagvalue::{
-    field_value::TagNum, utils, Config, Configure,
-    EncodeError, FixFieldValue, MessageSeq,
+    field_value::TagNum, utils, Config, Configure, EncodeError, FixFieldValue, MessageSeq,
 };
 use crate::{AppVersion, Dictionary};
 use std::fmt::Debug;
@@ -28,10 +27,7 @@ where
     /// Creates a new codec for the tag-value format. `dict` is used to parse
     /// messages.
     pub fn with_dict(dict: Dictionary, config: C) -> Self {
-        Self {
-            dict,
-            config,
-        }
+        Self { dict, config }
     }
 
     /// Returns an immutable reference to the [`Configure`] used by `self`.

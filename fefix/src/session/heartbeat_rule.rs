@@ -1,7 +1,7 @@
 use super::errs;
+use boolinator::Boolinator;
 use std::ops::RangeInclusive;
 use std::time::Duration;
-use boolinator::Boolinator;
 
 /// Rules placed on the expected heartbeat interval via out-of-band rules of
 /// engatement.
