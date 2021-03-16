@@ -12,22 +12,15 @@
 //! [`Acceptor`] abstract over such details and present users with a single entry
 //! point, namely [`Initiator::feed`] and [`Acceptor::feed`].
 
-use crate::tags::fix44 as tags;
-use crate::tagvalue::FixFieldValue;
-use crate::tagvalue::MessageRnd;
-use futures_lite::prelude::*;
-use std::time::Duration;
-use uuid::Uuid;
-
-mod acceptor;
+mod connection;
 mod errs;
 mod heartbeat_rule;
-mod initiator;
+mod resend_request_range;
 mod seq_numbers;
 
-pub use acceptor::{Acceptor, Configuration, EventInbound, EventOutbound};
+pub use connection::*;
 pub use heartbeat_rule::HeartbeatRule;
-pub use initiator::Initiator;
+pub use resend_request_range::ResendRequestRange;
 pub use seq_numbers::{SeqNumberError, SeqNumbers};
 
 /// An indicator for the kind of environment relative to a FIX Connection.
@@ -90,146 +83,5 @@ impl From<u32> for SessionRejectReason {
             18 => Self::InvalidUnsupportedAppVersion,
             _ => Self::Other,
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::tagvalue::FixFieldValue;
-
-    const COMPANY_ID: &str = "FOOBAR-INC";
-
-    fn acceptor() -> Acceptor {
-        let mut config = Configuration::new(COMPANY_ID.to_string());
-        config.with_hb_rule(HeartbeatRule::Any);
-        config.with_environment(Environment::ProductionDisallowTest);
-        config.acceptor()
-    }
-
-    /// Condition:
-    ///
-    /// > Valid Logon(35=A) request message received.
-    ///
-    /// Expected behavior:
-    ///
-    /// > Respond with Logon(35=A) acknowledgement message.
-    #[tokio::test]
-    async fn testcase_1s_a_1() {
-        let mut msg = MessageRnd::new();
-        msg.add_str(tags::MSG_TYPE, "A".to_string());
-        msg.add_int(tags::HEART_BT_INT, 30);
-        msg.add_int(tags::MSG_SEQ_NUM, 1);
-        let mut acceptor = acceptor();
-        let mut events = acceptor.notify(EventInbound::IncomingMessage(msg));
-        match events.next().unwrap() {
-            EventOutbound::Message(response) => {
-                assert_eq!(
-                    *response.get_field(tags::MSG_TYPE).unwrap(),
-                    FixFieldValue::string(b"A").unwrap()
-                );
-                assert_eq!(
-                    *response.get_field(tags::SENDER_COMP_ID).unwrap(),
-                    FixFieldValue::string(COMPANY_ID.as_bytes()).unwrap()
-                );
-                assert!(response.get_field(tags::TEST_REQ_ID).is_none());
-            }
-            EventOutbound::Terminate => panic!(),
-        }
-        assert!(events.next().is_none());
-    }
-
-    /// Condition:
-    ///
-    /// > Valid Logon(35=A) request message received.
-    ///
-    /// Expected behavior:
-    ///
-    /// > If MsgSeqNum(34) > NextNumIn send ResendRequest(35=2).
-    #[tokio::test]
-    async fn testcase_1s_a_2() {
-        let mut msg = MessageRnd::new();
-        msg.add_str(tags::MSG_TYPE, "A".to_string());
-        msg.add_int(tags::HEART_BT_INT, 30);
-        msg.add_int(tags::MSG_SEQ_NUM, 42);
-        let mut acceptor = acceptor();
-        let mut events = acceptor.notify(EventInbound::IncomingMessage(msg));
-        match events.next().unwrap() {
-            EventOutbound::Message(response) => {
-                assert_eq!(
-                    *response.get_field(tags::MSG_TYPE).unwrap(),
-                    FixFieldValue::string(b"2").unwrap()
-                );
-                assert_eq!(
-                    *response.get_field(tags::SENDER_COMP_ID).unwrap(),
-                    FixFieldValue::string(COMPANY_ID.as_bytes()).unwrap()
-                );
-                assert!(response.get_field(tags::TEST_REQ_ID).is_none());
-            }
-            EventOutbound::Terminate => panic!(),
-        }
-        assert!(events.next().is_none());
-    }
-
-    /// Condition:
-    ///
-    /// > Logon(35=A) message received with duplicate identity (e.g. same IP,
-    /// port, SenderCompID(49), TargetCompID(56), etc. as existing connection).
-    ///
-    /// Expected behavior:
-    ///
-    /// > 1. Generate an error condition in test output.
-    /// > 2. Disconnect without sending a message (Note: sending a Reject or
-    /// Logout(35=5) would consume a MsgSeqNum(34)).
-    #[tokio::test]
-    async fn testcase_1s_b() {
-        let mut msg = MessageRnd::new();
-        msg.add_str(tags::MSG_TYPE, "A".to_string());
-        msg.add_int(tags::HEART_BT_INT, 30);
-        msg.add_int(tags::MSG_SEQ_NUM, 1);
-        let mut acceptor = acceptor();
-        let mut events = acceptor.notify(EventInbound::IncomingMessage(msg.clone()));
-        // First Logon message is fine.
-        match events.next().unwrap() {
-            EventOutbound::Message(response) => {
-                assert_eq!(
-                    *response.get_field(tags::MSG_TYPE).unwrap(),
-                    FixFieldValue::string(b"A").unwrap()
-                );
-                assert_eq!(
-                    *response.get_field(tags::SENDER_COMP_ID).unwrap(),
-                    FixFieldValue::string(COMPANY_ID.as_bytes()).unwrap()
-                );
-                assert!(response.get_field(tags::TEST_REQ_ID).is_none());
-            }
-            EventOutbound::Terminate => panic!(),
-        }
-        // The second one is ignored.
-        assert!(events.next().is_none());
-    }
-
-    /// Condition:
-    ///
-    /// > First message received is not a Logon(35=A) message.
-    ///
-    /// Expected behavior:
-    ///
-    /// > 1. Log an error “First message not a logon”.
-    /// > 2. Disconnect.
-    #[test]
-    fn testcase_2s() {
-        let mut msg = MessageRnd::new();
-        msg.add_str(tags::MSG_TYPE, "0".to_string());
-        msg.add_int(tags::HEART_BT_INT, 30);
-        msg.add_int(tags::MSG_SEQ_NUM, 1);
-        let mut acceptor = acceptor();
-        let mut events = acceptor.notify(EventInbound::IncomingMessage(msg));
-        // First Logon message is fine.
-        match events.next().unwrap() {
-            EventOutbound::Terminate => (),
-            _ => assert!(false),
-        };
-        // The second one is ignored.
-        assert!(events.next().is_none());
     }
 }

@@ -3,11 +3,10 @@ use std::ops::RangeInclusive;
 use std::time::Duration;
 use boolinator::Boolinator;
 
-/// The acceptor should convey the rules placed on the expected heartbeat
-/// interval via out-of-band rules of engagement when such rules are required by
-/// the acceptor.
+/// Rules placed on the expected heartbeat interval via out-of-band rules of
+/// engatement.
 ///
-/// Please note that [`HeartbeatRule`](HeartbeatRule) is marked with
+/// Please note that [`HeartbeatRule`] is marked with
 /// `#[non_exhaustive]`, which future-proofs the enumeration type in case more
 /// variants are added.
 ///

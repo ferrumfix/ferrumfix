@@ -39,7 +39,6 @@ pub mod backend;
 pub mod buffering;
 mod dictionary;
 mod dt;
-pub mod engines;
 pub mod fast;
 mod fix_codegen;
 pub mod json;

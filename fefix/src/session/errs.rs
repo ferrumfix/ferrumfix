@@ -1,3 +1,5 @@
+//! Generators for common `Text (58) values`.
+
 #![allow(dead_code)]
 
 pub fn heartbeat_exact(secs: u64) -> String {
