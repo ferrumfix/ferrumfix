@@ -1,6 +1,6 @@
 use crate::session::{errs, Environment, ResendRequestRange, SeqNumberError, SeqNumbers};
 use crate::tags;
-use crate::tagvalue::{FixFieldValue, MessageRnd};
+use crate::tagvalue::{FixFieldValue, Message};
 use std::time::Duration;
 
 #[derive(Debug, Clone)]
@@ -8,16 +8,16 @@ pub enum Event {
     TransportError,
     MissedHeartbeat,
     HeartbeatIsDue,
-    Inbound(MessageRnd),
-    Outbound(MessageRnd),
+    Inbound(Message),
+    Outbound(Message),
     Garbled,
 }
 
 #[derive(Debug, Clone)]
 pub enum Response {
     TerminateTransport,
-    Inbound(MessageRnd),
-    Outbound(MessageRnd),
+    Inbound(Message),
+    Outbound(Message),
     Resend {
         range: ResendRequestRange,
     },
@@ -74,9 +74,9 @@ impl FixConnectionBuilder {
 
 #[allow(dead_code)]
 impl FixConnection {
-    fn generate_error_seqnum_too_low(&mut self) -> MessageRnd {
+    fn generate_error_seqnum_too_low(&mut self) -> Message {
         let error_message = errs::msg_seq_num(self.seq_numbers().next_inbound());
-        let mut response = MessageRnd::new();
+        let mut response = Message::new();
         response.add_str(tags::MSG_TYPE, "5");
         response.add_str(tags::SENDER_COMP_ID, self.sender_comp_id());
         response.add_int(
@@ -106,7 +106,7 @@ impl FixConnection {
         self.enqueue(Response::TerminateTransport);
     }
 
-    fn on_inbound_message(&mut self, _message: MessageRnd) {
+    fn on_inbound_message(&mut self, _message: Message) {
         self.seq_numbers_mut().next_outbound();
     }
 
@@ -139,7 +139,7 @@ impl FixConnection {
         self.queue.push(Response::LogGarbled);
     }
 
-    fn on_message(&mut self, msg: MessageRnd) {
+    fn on_message(&mut self, msg: Message) {
         let seq_numbers = self.seq_numbers();
         let env = self.environment();
         // Check `TestMessageIndicator(464)`.
@@ -186,7 +186,7 @@ impl FixConnection {
     }
 
     fn on_heartbeat_is_due(&mut self) {
-        let mut msg = MessageRnd::new();
+        let mut msg = Message::new();
         msg.add_str(tags::MSG_TYPE, "0");
         msg.add_str(tags::SENDER_COMP_ID, self.sender_comp_id());
         msg.add_str(tags::TARGET_COMP_ID, self.target_comp_id());
@@ -194,8 +194,8 @@ impl FixConnection {
         self.enqueue(Response::Outbound(msg))
     }
 
-    fn on_message_in_wrong_env(&mut self, _message: MessageRnd) {
-        let mut msg = MessageRnd::new();
+    fn on_message_in_wrong_env(&mut self, _message: Message) {
+        let mut msg = Message::new();
         msg.add_str(tags::MSG_TYPE, "5");
         msg.add_str(tags::SENDER_COMP_ID, self.sender_comp_id());
         msg.add_str(tags::TARGET_COMP_ID, self.target_comp_id());
@@ -203,8 +203,8 @@ impl FixConnection {
         self.enqueue(Response::Outbound(add_time_to_msg(msg)));
     }
 
-    fn on_message_without_seq_num(&mut self, _message: MessageRnd) {
-        let mut msg = MessageRnd::new();
+    fn on_message_without_seq_num(&mut self, _message: Message) {
+        let mut msg = Message::new();
         msg.add_str(tags::MSG_TYPE, "5");
         msg.add_str(tags::SENDER_COMP_ID, self.sender_comp_id());
         msg.add_str(tags::TARGET_COMP_ID, self.target_comp_id());
@@ -216,8 +216,8 @@ impl FixConnection {
         self.enqueue(Response::Outbound(add_time_to_msg(msg)));
     }
 
-    fn on_message_with_low_seqnum(&mut self, _message: MessageRnd) {
-        let mut msg = MessageRnd::new();
+    fn on_message_with_low_seqnum(&mut self, _message: Message) {
+        let mut msg = Message::new();
         msg.add_str(tags::MSG_TYPE, "5");
         msg.add_str(tags::SENDER_COMP_ID, self.sender_comp_id());
         msg.add_str(tags::TARGET_COMP_ID, self.target_comp_id());
@@ -229,8 +229,8 @@ impl FixConnection {
         self.enqueue(Response::Outbound(add_time_to_msg(msg)));
     }
 
-    fn on_message_with_high_seqnum(&mut self, message: MessageRnd) {
-        let mut msg = MessageRnd::new();
+    fn on_message_with_high_seqnum(&mut self, message: Message) {
+        let mut msg = Message::new();
         // Standard header.
         msg.add_str(tags::MSG_TYPE, "2");
         msg.add_str(tags::SENDER_COMP_ID, self.sender_comp_id());
@@ -241,19 +241,23 @@ impl FixConnection {
         self.enqueue(Response::Outbound(add_time_to_msg(msg)));
     }
 
-    fn on_logon(&mut self, _message: MessageRnd) {
-        let mut response = MessageRnd::new();
+    fn on_logon(&mut self, _message: Message) {
+        let mut response = Message::new();
         // TODO: add other details to response message.
-        response.add_field(35, FixFieldValue::string(b"A").unwrap());
-        response.add_field(
-            49,
-            FixFieldValue::string(self.sender_comp_id().as_bytes()).unwrap(),
-        );
+        response
+            .add_field(tags::MSG_TYPE, FixFieldValue::string(b"A").unwrap())
+            .unwrap();
+        response
+            .add_field(
+                tags::SENDER_COMP_ID,
+                FixFieldValue::string(self.sender_comp_id().as_bytes()).unwrap(),
+            )
+            .unwrap();
         self.seq_numbers_mut().incr_outbound();
         self.enqueue(Response::Outbound(add_time_to_msg(response)));
     }
 
-    fn on_resend_request(&mut self, message: MessageRnd) {
+    fn on_resend_request(&mut self, message: Message) {
         let start_seq_no = message
             .field(tags::BEGIN_SEQ_NO)
             .and_then(|f| f.as_int().map(|x| x as usize))
@@ -270,12 +274,12 @@ impl FixConnection {
         self.enqueue(Response::TerminateTransport);
     }
 
-    fn on_application_message(&mut self, message: MessageRnd) {
+    fn on_application_message(&mut self, message: Message) {
         self.enqueue(Response::Inbound(message));
     }
 }
 
-pub fn add_time_to_msg(mut msg: MessageRnd) -> MessageRnd {
+pub fn add_time_to_msg(mut msg: Message) -> Message {
     // https://www.onixs.biz/fix-dictionary/4.4/index.html#UTCTimestamp.
     let time = chrono::Utc::now();
     let timestamp = time.format("%Y%m%d-%H:%M:%S.%.3f");

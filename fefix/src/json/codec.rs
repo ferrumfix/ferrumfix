@@ -1,6 +1,6 @@
 use crate::buffering::Buffer;
 use crate::json::{Config, Configure};
-use crate::tagvalue::{field_value::FieldValue, FixFieldValue, MessageRnd, MessageSeq};
+use crate::tagvalue::{field_value::FieldValue, FixFieldValue, Message};
 use crate::Dictionary;
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap};
@@ -10,7 +10,7 @@ use std::fmt;
 #[derive(Debug, Clone)]
 pub struct Codec<Z = Config> {
     dictionaries: HashMap<String, Dictionary>,
-    message: MessageRnd,
+    message: Message,
     config: Z,
 }
 
@@ -26,7 +26,7 @@ where
         dictionaries.insert(dict.get_version().to_string(), dict);
         Self {
             dictionaries,
-            message: MessageRnd::default(),
+            message: Message::new(),
             config,
         }
     }
@@ -62,7 +62,7 @@ impl<Z> Codec<Z>
 where
     Z: Configure,
 {
-    pub fn decode(&mut self, data: &[u8]) -> Result<&MessageRnd, DecodeError> {
+    pub fn decode(&mut self, data: &[u8]) -> Result<&Message, DecodeError> {
         let value: serde_json::Value =
             serde_json::from_reader(data).map_err(|_| DecodeError::Syntax)?;
         let header = value
@@ -85,9 +85,10 @@ where
             .dictionaries
             .get(begin_string)
             .ok_or(DecodeError::InvalidMsgType)?;
-        let mut message = MessageRnd::default();
+        let message = &mut self.message;
+        message.clear();
         let mut decode_field = |name: &str, value: &serde_json::Value| {
-            decode_field(dictionary, name, value).map(|(tag, field)| message.insert(tag, field))
+            decode_field(dictionary, name, value).map(|(tag, field)| message.add_field(tag, field))
         };
         for (key, value) in header.iter() {
             decode_field(key, value)?.unwrap();
@@ -98,15 +99,10 @@ where
         for (key, value) in trailer.iter() {
             decode_field(key, value)?.unwrap();
         }
-        self.message = message;
         Ok(&self.message)
     }
 
-    pub fn encode<B>(
-        &mut self,
-        mut buffer: &mut B,
-        message: &MessageSeq,
-    ) -> Result<usize, EncodeError>
+    pub fn encode<B>(&mut self, mut buffer: &mut B, message: &Message) -> Result<usize, EncodeError>
     where
         B: Buffer,
     {

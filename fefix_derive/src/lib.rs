@@ -15,7 +15,7 @@ pub fn derive_tsr_message(input: TokenStream) -> TokenStream {
         crate_path: CratePath::Relative,
         message_structure: darling_context,
     };
-    let gen = context.gen_get_field();
+    let gen = context.gen_field();
     //gen.extend(context.gen_set_field());
     //gen.extend(context.gen_transforms());
     gen.into()
@@ -94,7 +94,7 @@ impl GeneratorContext {
         gen
     }
 
-    fn gen_get_field(&self) -> TokenStream2 {
+    fn gen_field(&self) -> TokenStream2 {
         let crate_name = self.crate_path();
         let match_body = self
             .message_structure
@@ -119,7 +119,7 @@ impl GeneratorContext {
         let name = &self.message_structure.ident;
         let gen = quote! {
             impl #name {
-                fn get_field(&self, tag: u32) -> ::std::option::Option<#crate_name::backend::FixFieldValue> {
+                fn field(&self, tag: u32) -> ::std::option::Option<#crate_name::backend::FixFieldValue> {
                     match tag {
                         #(#match_body),*,
                         _ => None,

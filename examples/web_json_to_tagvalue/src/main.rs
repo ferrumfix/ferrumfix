@@ -1,6 +1,6 @@
 //! Starts an HTTP server on any open port and listens for JSON FIX messages.
 
-use fefix::{json, tagvalue, tagvalue::MessageSeq, AppVersion, Dictionary};
+use fefix::{json, tagvalue, tagvalue::Message, AppVersion, Dictionary};
 
 #[tokio::main]
 async fn main() -> tide::Result<()> {
@@ -53,13 +53,10 @@ async fn serve_json_relay(mut req: tide::Request<State>) -> tide::Result {
     };
     let mut buffer = Vec::new();
     let body_response = {
-        let msg = &mut MessageSeq::default();
-        message
-            .for_each::<(), _>(|tag, value| {
-                msg.add_field(tag, value.clone());
-                Ok(())
-            })
-            .unwrap();
+        let msg = &mut Message::new();
+        for (tag, value) in message.fields() {
+            msg.add_field(tag, value.clone()).unwrap();
+        }
         encoder.encode(&mut buffer, &msg).unwrap();
         let buffer_string = std::str::from_utf8(&buffer[..]).unwrap();
         buffer_string
@@ -117,9 +114,9 @@ mod test {
         let msg_json = decoder_json.decode(body_json.as_bytes()).unwrap();
         println!("{}", body_tagvalue);
         let msg_tagvalue = decoder_tagvalue.decode(body_tagvalue.as_bytes()).unwrap();
-        assert_eq!(msg_json.get_field(8), msg_tagvalue.get_field(8));
-        assert_eq!(msg_json.get_field(35), msg_tagvalue.get_field(35));
-        assert_eq!(msg_json.get_field(49), msg_tagvalue.get_field(49));
-        assert_eq!(msg_json.get_field(56), msg_tagvalue.get_field(56));
+        assert_eq!(msg_json.field(8), msg_tagvalue.field(8));
+        assert_eq!(msg_json.field(35), msg_tagvalue.field(35));
+        assert_eq!(msg_json.field(49), msg_tagvalue.field(49));
+        assert_eq!(msg_json.field(56), msg_tagvalue.field(56));
     }
 }

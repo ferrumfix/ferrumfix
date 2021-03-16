@@ -1,7 +1,7 @@
 //! FIX Adapted for Streaming (FAST) support.
 
 use crate::buffering::Buffer;
-use crate::tagvalue::MessageRnd;
+use crate::tagvalue::Message;
 use crate::Dictionary;
 use bitvec::vec::BitVec;
 use codec::decode_stop_bit_bitvec;
@@ -24,16 +24,17 @@ pub use template::*;
 pub struct Fast {
     dict: Dictionary,
     templates: HashMap<String, Template>,
-    message: MessageRnd,
+    message: Message,
 }
 
 impl Fast {
     /// Builds a new `TagValue` encoding device with an empty FIX dictionary.
     pub fn new() -> Self {
+        let dict = Dictionary::empty();
         Fast {
-            dict: Dictionary::empty(),
+            dict,
             templates: HashMap::new(),
-            message: MessageRnd::new(),
+            message: Message::new(),
         }
     }
 
@@ -44,10 +45,10 @@ impl Fast {
 }
 
 impl Fast {
-    pub fn decode(&mut self, mut source: &[u8]) -> Result<&MessageRnd, Error> {
+    pub fn decode(&mut self, mut source: &[u8]) -> Result<&Message, Error> {
         let _presence_map = decode_stop_bit_bitvec(&mut source).unwrap();
         let mut presence_by_field: BitVec = BitVec::new();
-        let message = MessageRnd::new();
+        let message = Message::new();
         for field in self.templates.get("").unwrap().iter_items() {
             if let template::FieldType::Primitive(_f) = &field.kind() {
                 presence_by_field.push(field.is_mandatory());
@@ -101,7 +102,7 @@ impl Fast {
         Ok(&self.message)
     }
 
-    pub fn encode<B>(&mut self, buffer: &mut B, _message: &MessageRnd) -> Result<usize, Error>
+    pub fn encode<B>(&mut self, buffer: &mut B, _message: &Message) -> Result<usize, Error>
     where
         B: Buffer,
     {

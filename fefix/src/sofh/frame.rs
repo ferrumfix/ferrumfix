@@ -96,7 +96,7 @@ impl<'a> Frame<'a> {
                 needed: HEADER_SIZE_IN_BYTES - data.len(),
             });
         }
-        let message_len = get_field_message_length(data) as usize;
+        let message_len = field_message_length(data) as usize;
         if message_len < HEADER_SIZE_IN_BYTES {
             // We have enough data to decode the header, but the Message_Length
             // field is invalid.
@@ -108,7 +108,7 @@ impl<'a> Frame<'a> {
             })
         } else {
             Ok(Self::new(
-                get_field_encoding_type(data),
+                field_encoding_type(data),
                 &data[HEADER_SIZE_IN_BYTES..],
             ))
         }
@@ -144,11 +144,11 @@ impl<'a> Frame<'a> {
     }
 }
 
-fn get_field_message_length(data: &[u8]) -> u32 {
+fn field_message_length(data: &[u8]) -> u32 {
     u32::from_be_bytes(data[0..4].try_into().unwrap())
 }
 
-fn get_field_encoding_type(data: &[u8]) -> u16 {
+fn field_encoding_type(data: &[u8]) -> u16 {
     u16::from_be_bytes(data[4..6].try_into().unwrap())
 }
 

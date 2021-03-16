@@ -1,7 +1,7 @@
 use crate::tags;
 use crate::tagvalue::{
-    field_value::FieldValue, Config, Configure, DecodeError, Field, FixFieldValue, MessageRnd,
-    RawDecoder, TagLookup,
+    field_value::FieldValue, Config, Configure, DecodeError, FixFieldValue, Message, RawDecoder,
+    TagLookup,
 };
 use crate::{AppVersion, DataType, Dictionary};
 use std::fmt::Debug;
@@ -14,7 +14,7 @@ where
     C: Configure,
 {
     dict: Dictionary,
-    message: MessageRnd,
+    message: Message,
     raw_decoder: RawDecoder<C>,
 }
 
@@ -32,7 +32,7 @@ where
     pub fn with_dict(dict: Dictionary, config: C) -> Self {
         Self {
             dict,
-            message: MessageRnd::default(),
+            message: Message::new(),
             raw_decoder: RawDecoder::with_config(config),
         }
     }
@@ -93,7 +93,7 @@ where
     ///     Some("A")
     /// );
     /// ```
-    pub fn decode(&mut self, data: &[u8]) -> Result<&MessageRnd, DecodeError> {
+    pub fn decode(&mut self, data: &[u8]) -> Result<&Message, DecodeError> {
         self.message.clear();
         // Take care of `BeginString`, `BodyLength` and `CheckSum`.
         let frame = self.raw_decoder.decode(data)?;
@@ -103,27 +103,26 @@ where
         let mut fields = &mut FieldIter::new(body, &config, &self.dict);
         // Deserialize `MsgType(35)`.
         let msg_type = {
-            let mut f = fields.next().ok_or(DecodeError::Syntax)??;
-            if f.tag() != tags::MSG_TYPE {
-                dbglog!("Expected MsgType (35), got ({}) instead.", f.tag());
+            let (tag, field_value) = fields.next().ok_or(DecodeError::Syntax)??;
+            if tag != tags::MSG_TYPE {
+                dbglog!("Expected MsgType (35), got ({}) instead.", tag);
                 return Err(DecodeError::Syntax);
             }
-            f.take_value()
+            field_value
         };
         self.message
-            .insert(
+            .add_field(
                 tags::BEGIN_STRING,
                 FixFieldValue::string(begin_string).unwrap(),
             )
             .unwrap();
-        self.message.insert(tags::MSG_TYPE, msg_type).unwrap();
+        self.message.add_field(tags::MSG_TYPE, msg_type).unwrap();
         // Iterate over all the other fields and store them to the message.
+        println!("new iter");
         for field_result in &mut fields {
-            let mut field = field_result?;
-            dbglog!("Finished parsing field <{}>.", field.tag());
-            self.message
-                .insert(field.tag(), field.take_value())
-                .unwrap();
+            let (tag, field_value) = field_result?;
+            println!("tag is {}", tag);
+            self.message.add_field(tag, field_value).unwrap();
         }
         Ok(&self.message)
     }
@@ -195,7 +194,7 @@ where
     }
 
     ///
-    pub fn current_message(&self) -> &MessageRnd {
+    pub fn current_message(&self) -> &Message {
         unimplemented!()
     }
 }
@@ -230,7 +229,7 @@ impl<'a, C> Iterator for &mut FieldIter<'a, C>
 where
     C: Configure,
 {
-    type Item = Result<Field, DecodeError>;
+    type Item = Result<(u32, FixFieldValue), DecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.cursor >= self.data.len() {
@@ -254,7 +253,6 @@ where
         debug_assert_eq!(self.data[self.cursor - 1], b'=');
         debug_assert!(tag > 0);
         let datatype = self.tag_lookup.lookup(tag);
-        dbglog!("Parsing a field with data type '{:?}'.", &datatype);
         let mut field_value = FixFieldValue::from(0i64);
         match datatype {
             Ok(DataType::Data) => {
@@ -265,11 +263,6 @@ where
                 debug_assert_eq!(self.data[self.cursor - 1], self.config.separator());
             }
             Ok(datatype) => {
-                dbglog!(
-                    "Parsing the field value of <{}> (residual data as lossy UTF-8 is '{}').",
-                    tag,
-                    String::from_utf8_lossy(&self.data[self.cursor..]),
-                );
                 if let Some(separator_i) = &self.data[self.cursor..]
                     .iter()
                     .position(|byte| *byte == self.config.separator())
@@ -290,7 +283,7 @@ where
             Err(_) => (),
         }
         debug_assert_eq!(self.data[self.cursor - 1], self.config.separator());
-        Some(Ok(Field::new(tag, field_value)))
+        Some(Ok((tag, field_value)))
     }
 }
 
@@ -395,11 +388,11 @@ mod test {
         codec.config_mut().set_verify_checksum(false);
         let message = codec.decode(&mut RANDOM_MESSAGES[0].as_bytes()).unwrap();
         assert_eq!(
-            message.get_field(8),
+            message.field(8),
             Some(&FixFieldValue::string(b"FIX.4.2").unwrap())
         );
         assert_eq!(
-            message.get_field(35),
+            message.field(35),
             Some(&FixFieldValue::string(b"0").unwrap())
         );
     }

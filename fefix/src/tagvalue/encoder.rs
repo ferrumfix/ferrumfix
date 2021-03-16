@@ -1,6 +1,6 @@
 use crate::buffering::Buffer;
 use crate::tagvalue::{
-    field_value::TagNum, utils, Config, Configure, EncodeError, FixFieldValue, MessageSeq,
+    field_value::TagNum, utils, Config, Configure, EncodeError, FixFieldValue, Message,
 };
 use crate::{AppVersion, Dictionary};
 use std::fmt::Debug;
@@ -59,7 +59,7 @@ where
         &mut self.config
     }
 
-    pub fn encode<B>(&mut self, buffer: &mut B, message: &MessageSeq) -> Result<usize, EncodeError>
+    pub fn encode<B>(&mut self, buffer: &mut B, message: &Message) -> Result<usize, EncodeError>
     where
         B: Buffer,
     {
