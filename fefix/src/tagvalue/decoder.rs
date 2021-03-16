@@ -1,51 +1,39 @@
-use crate::buffering::Buffer;
 use crate::tags;
 use crate::tagvalue::{
-    field_value::TagNum, field_value::FieldValue,
-    message_rnd::Field, utils, Config, Configure, DecodeError, EncodeError, FixFieldValue,
-    MessageRnd, MessageSeq, RawDecoder, TagLookup,
+    field_value::FieldValue, Config, Configure, DecodeError, Field, FixFieldValue, MessageRnd,
+    RawDecoder, TagLookup,
 };
 use crate::{AppVersion, DataType, Dictionary};
 use std::fmt::Debug;
 use std::str;
 
-/// FIX message encoder and decoder.
+/// FIX message decoder.
 #[derive(Debug)]
-pub struct Codec<Z = Config>
+pub struct Decoder<C = Config>
 where
-    Z: Configure,
+    C: Configure,
 {
     dict: Dictionary,
     message: MessageRnd,
-    config: Z,
+    raw_decoder: RawDecoder<C>,
 }
 
-impl<Z> Codec<Z>
+impl<C> Decoder<C>
 where
-    Z: Configure,
+    C: Configure,
 {
     /// Builds a new [`Codec`] encoding device with a FIX 4.4 dictionary.
-    pub fn new(config: Z) -> Self {
+    pub fn new(config: C) -> Self {
         Self::with_dict(Dictionary::from_version(AppVersion::Fix44), config)
     }
 
     /// Creates a new codec for the tag-value format. `dict` is used to parse
     /// messages.
-    pub fn with_dict(dict: Dictionary, config: Z) -> Self {
+    pub fn with_dict(dict: Dictionary, config: C) -> Self {
         Self {
             dict,
             message: MessageRnd::default(),
-            config,
-        }
-    }
-
-    /// Turns `self` into a [`CodecBuffered`] by allocating an internal buffer.
-    pub fn buffered(self) -> CodecBuffered<Z> {
-        CodecBuffered {
-            buffer: Vec::new(),
-            buffer_relevant_len: 0,
-            buffer_additional_len: 0,
-            codec: self,
+            raw_decoder: RawDecoder::with_config(config),
         }
     }
 
@@ -59,8 +47,8 @@ where
     /// let codec = &mut Codec::new(Config::default());
     /// assert_eq!(codec.config().separator(), 0x1);
     /// ```
-    pub fn config(&self) -> &Z {
-        &self.config
+    pub fn config(&self) -> &C {
+        self.raw_decoder.config()
     }
 
     /// Returns a mutable reference to the [`Configure`] used by `self`.
@@ -74,8 +62,16 @@ where
     /// codec.config_mut().set_separator(b'|');
     /// assert_eq!(codec.config().separator(), b'|');
     /// ```
-    pub fn config_mut(&mut self) -> &mut Z {
-        &mut self.config
+    pub fn config_mut(&mut self) -> &mut C {
+        self.raw_decoder.config_mut()
+    }
+
+    /// Turns `self` into a [`DecoderBuffered`] by allocating an internal buffer.
+    pub fn buffered(self) -> DecoderBuffered<C> {
+        DecoderBuffered {
+            buffer: Vec::new(),
+            decoder: self,
+        }
     }
 
     /// Decodes `data` and returns an immutable reference to the obtained
@@ -98,18 +94,13 @@ where
     /// );
     /// ```
     pub fn decode(&mut self, data: &[u8]) -> Result<&MessageRnd, DecodeError> {
-        let decoder = RawDecoder::with_config(
-            Config::default()
-                .with_separator(self.config.separator())
-                .with_checksum_verification(self.config.verify_checksum()),
-        );
+        self.message.clear();
         // Take care of `BeginString`, `BodyLength` and `CheckSum`.
-        let frame = decoder.decode(data)?;
+        let frame = self.raw_decoder.decode(data)?;
         let begin_string = frame.begin_string();
         let body = frame.payload();
-        // Empty the message.
-        self.message.clear();
-        let mut fields = &mut FieldIter::new(body, &self.config, &self.dict);
+        let config = self.config().clone();
+        let mut fields = &mut FieldIter::new(body, &config, &self.dict);
         // Deserialize `MsgType(35)`.
         let msg_type = {
             let mut f = fields.next().ok_or(DecodeError::Syntax)??;
@@ -136,44 +127,6 @@ where
         }
         Ok(&self.message)
     }
-
-    pub fn encode<B>(&mut self, buffer: &mut B, message: &MessageSeq) -> Result<usize, EncodeError>
-    where
-        B: Buffer,
-    {
-        let body_writer = |buffer: &mut B| {
-            let start_i = buffer.as_slice().len();
-            // Skips `BeginString`.
-            for (tag, value) in message.fields().skip(1) {
-                encode_field(
-                    TagNum::from(tag as u16),
-                    value,
-                    buffer,
-                    self.config.separator(),
-                );
-            }
-            buffer.as_slice().len() - start_i
-        };
-        let begin_string = message
-            .fields_in_std_header()
-            .next()
-            .unwrap()
-            .1
-            .as_str()
-            .unwrap()
-            .as_bytes();
-        utils::encode_raw(begin_string, body_writer, buffer, self.config.separator())
-    }
-}
-
-fn encode_field(tag: TagNum, value: &FixFieldValue, write: &mut impl Buffer, separator: u8) {
-    write.extend_from_slice(tag.to_string().as_bytes());
-    write.extend_from_slice(&[b'=']);
-    match &value {
-        FixFieldValue::Group(_) => panic!("Can't encode a group!"),
-        FixFieldValue::Atom(field) => write.extend_from_slice(field.to_string().as_bytes()),
-    };
-    write.extend_from_slice(&[separator]);
 }
 
 /// A (de)serializer for the classic FIX tag-value encoding.
@@ -187,102 +140,95 @@ fn encode_field(tag: TagNum, value: &FixFieldValue, write: &mut impl Buffer, sep
 ///
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
 #[derive(Debug)]
-pub struct CodecBuffered<Z = Config>
+pub struct DecoderBuffered<C = Config>
 where
-    Z: Configure,
+    C: Configure,
 {
     buffer: Vec<u8>,
-    buffer_relevant_len: usize,
-    buffer_additional_len: usize,
-    codec: Codec<Z>,
+    decoder: Decoder<C>,
 }
 
-impl<Z> CodecBuffered<Z>
+impl<C> DecoderBuffered<C>
 where
-    Z: Configure,
+    C: Configure,
 {
-    /// Builds a new `Codec` encoding device with a FIX 4.4 dictionary.
-    pub fn new(config: Z) -> Self {
-        Self::with_dict(Dictionary::from_version(AppVersion::Fix44), config)
+    /// Returns an immutable reference to the [`Configure`] used by `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::tagvalue::{Config, Configure, Codec};
+    ///
+    /// let codec = &mut Codec::new(Config::default()).buffered();
+    /// assert_eq!(codec.config().separator(), 0x1);
+    /// ```
+    pub fn config(&self) -> &C {
+        self.decoder.config()
     }
 
-    /// Creates a new codec for the tag-value format. `dict` is used to parse messages.
-    pub fn with_dict(dict: Dictionary, config: Z) -> Self {
-        Self {
-            buffer: Vec::new(),
-            buffer_relevant_len: 0,
-            buffer_additional_len: 0,
-            codec: Codec::with_dict(dict.clone(), config.clone()),
+    /// Returns a mutable reference to the [`Configure`] used by `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::tagvalue::{Config, Configure, Codec};
+    ///
+    /// let codec = &mut Codec::new(Config::default()).buffered();
+    /// codec.config_mut().set_separator(b'|');
+    /// assert_eq!(codec.config().separator(), b'|');
+    /// ```
+    pub fn config_mut(&mut self) -> &mut C {
+        self.decoder.config_mut()
+    }
+
+    pub fn supply_buffer(&mut self) -> &mut [u8] {
+        if self.buffer.len() < 15 {
+            self.buffer.extend_from_slice(&[0; 15]);
+            &mut self.buffer[..]
+        } else {
+            unimplemented!()
         }
     }
+
+    pub fn attempt_decoding(&mut self) -> Result<(), DecodeError> {
+        unimplemented!()
+    }
+
+    ///
+    pub fn current_message(&self) -> &MessageRnd {
+        unimplemented!()
+    }
 }
 
-//impl<T, Z> StreamingDecoder<T> for CodecBuffered<T, Z>
-//where
-//    T: Backend + Default,
-//    Z: Configure,
-//{
-//    type Error = DecodeError;
-//
-//    fn supply_buffer(&mut self) -> (&mut usize, &mut [u8]) {
-//        // 512 bytes at a time. Not optimal, but a reasonable default.
-//        let len = 512;
-//        self.buffer.resize(self.buffer_relevant_len + len, 0);
-//        (
-//            &mut self.buffer_additional_len,
-//            &mut self.buffer[self.buffer_relevant_len..self.buffer_relevant_len + len],
-//        )
-//    }
-//
-//    fn attempt_decoding(&mut self) -> Result<Option<&T>, Self::Error> {
-//        self.buffer_relevant_len += self.buffer_additional_len;
-//        assert!(self.buffer_relevant_len <= self.buffer.len());
-//        if self.buffer_relevant_len < 10 {
-//            Ok(None)
-//        } else if &self.buffer[self.buffer_relevant_len - 7..self.buffer_relevant_len - 3] == b"10="
-//        {
-//            self.codec
-//                .decode(&self.buffer[..self.buffer_relevant_len])
-//                .map(|message| Some(message))
-//        } else {
-//            Ok(None)
-//        }
-//    }
-//
-//    fn get(&self) -> &T {
-//        &self.codec.message
-//    }
-//}
-
-struct FieldIter<'a, Z>
+struct FieldIter<'a, C>
 where
-    Z: Configure,
+    C: Configure,
 {
     data: &'a [u8],
     cursor: usize,
-    config: &'a Z,
-    tag_lookup: Z::TagLookup,
+    config: &'a C,
+    tag_lookup: C::TagLookup,
     data_field_length: usize,
 }
 
-impl<'a, Z> FieldIter<'a, Z>
+impl<'a, C> FieldIter<'a, C>
 where
-    Z: Configure,
+    C: Configure,
 {
-    fn new(data: &'a [u8], config: &'a Z, dictionary: &'a Dictionary) -> Self {
+    fn new(data: &'a [u8], config: &'a C, dictionary: &'a Dictionary) -> Self {
         Self {
             data,
             cursor: 0,
             config,
-            tag_lookup: Z::TagLookup::from_dict(dictionary),
+            tag_lookup: C::TagLookup::from_dict(dictionary),
             data_field_length: 0,
         }
     }
 }
 
-impl<'a, Z> Iterator for &mut FieldIter<'a, Z>
+impl<'a, C> Iterator for &mut FieldIter<'a, C>
 where
-    Z: Configure,
+    C: Configure,
 {
     type Item = Result<Field, DecodeError>;
 
@@ -386,34 +332,19 @@ mod test {
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
-    fn encoder() -> Codec<impl Configure> {
-        let mut config = Config::default();
-        config.set_separator(b'|');
-        Codec::new(config)
-    }
-
-    fn encoder_with_soh() -> Codec<impl Configure> {
-        Codec::new(Config::default())
-    }
-
-    fn encoder_slash_no_verify() -> Codec<impl Configure> {
-        let mut config = Config::default();
-        config.set_separator(b'|');
-        config.set_verify_checksum(false);
-        Codec::new(config)
-    }
-
     fn with_soh(msg: &str) -> String {
         msg.split("|").collect::<Vec<&str>>().join("\x01")
+    }
+
+    fn decoder() -> Decoder<Config> {
+        Decoder::new(Config::default().with_separator(b'|'))
     }
 
     #[test]
     fn can_parse_simple_message() {
         let message = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
-        let mut config = Config::default();
-        config.set_separator(b'|');
-        let mut codec = Codec::new(config);
-        let result = codec.decode(message.as_bytes());
+        let decoder = &mut decoder();
+        let result = decoder.decode(message.as_bytes());
         assert!(result.is_ok());
     }
 
@@ -430,11 +361,9 @@ mod test {
     #[test]
     fn skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
-        let mut config = Config::default();
-        config.set_separator(b'|');
-        config.set_verify_checksum(false);
-        let mut codec = Codec::new(config);
-        let result = codec.decode(message.as_bytes());
+        let decoder = &mut decoder();
+        decoder.config_mut().set_verify_checksum(false);
+        let result = decoder.decode(message.as_bytes());
         assert!(result.is_ok());
     }
 
@@ -444,7 +373,7 @@ mod test {
         let mut config = Config::default();
         config.set_separator(b'|');
         config.set_verify_checksum(true);
-        let mut codec = Codec::new(config);
+        let mut codec = Decoder::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
     }
@@ -453,7 +382,8 @@ mod test {
     fn assortment_of_random_messages_is_ok() {
         for msg_with_vertical_bar in RANDOM_MESSAGES {
             let message = with_soh(msg_with_vertical_bar);
-            let mut codec = encoder_with_soh();
+            let mut codec = decoder();
+            codec.config_mut().set_separator(0x1);
             let result = codec.decode(message.as_bytes());
             result.unwrap();
         }
@@ -461,7 +391,8 @@ mod test {
 
     #[test]
     fn heartbeat_message_fields_are_ok() {
-        let mut codec = encoder_slash_no_verify();
+        let mut codec = decoder();
+        codec.config_mut().set_verify_checksum(false);
         let message = codec.decode(&mut RANDOM_MESSAGES[0].as_bytes()).unwrap();
         assert_eq!(
             message.get_field(8),
@@ -478,7 +409,7 @@ mod test {
         let message = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
         let mut config = Config::default();
         config.set_separator(b'|');
-        let mut codec = Codec::new(config);
+        let mut codec = Decoder::new(config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
     }
@@ -486,7 +417,7 @@ mod test {
     #[test]
     fn message_must_end_with_separator() {
         let msg = "8=FIX.4.2|9=41|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127";
-        let mut codec = encoder();
+        let mut codec = decoder();
         let result = codec.decode(&mut msg.as_bytes());
         assert_eq!(result, Err(DecodeError::Syntax));
     }
@@ -494,7 +425,7 @@ mod test {
     #[test]
     fn message_without_checksum() {
         let msg = "8=FIX.4.4|9=37|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|";
-        let mut codec = encoder();
+        let mut codec = decoder();
         let result = codec.decode(&mut msg.as_bytes());
         assert_eq!(result, Err(DecodeError::Syntax));
     }
@@ -502,7 +433,7 @@ mod test {
     #[test]
     fn message_without_standard_header() {
         let msg = "35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=000|";
-        let mut codec = encoder();
+        let mut codec = decoder();
         let result = codec.decode(&mut msg.as_bytes());
         assert_eq!(result, Err(DecodeError::Syntax));
     }
@@ -510,7 +441,7 @@ mod test {
     #[test]
     fn detect_incorrect_checksum() {
         let msg = "8=FIX.4.2|9=43|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=146|";
-        let mut codec = encoder();
+        let mut codec = decoder();
         let result = codec.decode(&mut msg.as_bytes());
         assert_eq!(result, Err(DecodeError::Syntax));
     }

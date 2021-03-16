@@ -10,20 +10,26 @@ use std::fmt::Debug;
 use std::io;
 use std::time::SystemTime;
 
-mod codec;
+mod encoder;
 mod config;
+mod decoder;
 pub mod field_value;
 mod message_rnd;
 mod message_seq;
-mod raw_codec;
+mod raw_decoder;
+mod raw_encoder;
+mod raw_frame;
 mod taglookup;
 mod utils;
 
-pub use codec::{Codec, CodecBuffered};
-pub use config::{Configure, Config};
+pub use encoder::Encoder;
+pub use config::{Config, Configure};
+pub use decoder::{Decoder, DecoderBuffered};
 pub use message_rnd::{Field, MessageRnd};
 pub use message_seq::MessageSeq;
-pub use raw_codec::{RawDecoder, RawDecoderBuffered, RawEncoder, RawFrame};
+pub use raw_decoder::{RawDecoder, RawDecoderBuffered};
+pub use raw_encoder::RawEncoder;
+pub use raw_frame::RawFrame;
 pub use taglookup::{TagLookup, TagLookupSingleAppVersion};
 pub use utils::{checksum_10, encode_raw};
 
@@ -34,6 +40,7 @@ type EncodeError = ();
 #[derive(Clone, Debug, PartialEq)]
 pub enum DecodeError {
     FieldPresence,
+    Incomplete,
     Syntax,
 }
 

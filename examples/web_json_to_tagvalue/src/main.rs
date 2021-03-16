@@ -20,7 +20,8 @@ fn server() -> tide::Server<State> {
 /// case, JSON (en/de)coding devices.
 #[derive(Clone)]
 struct State {
-    codec: json::Codec<json::ConfigPrettyPrint>,
+    decoder: json::Codec<json::ConfigPrettyPrint>,
+    encoder: tagvalue::Encoder,
 }
 
 impl State {
@@ -33,7 +34,8 @@ impl Default for State {
     fn default() -> Self {
         let dictionary = Dictionary::from_version(AppVersion::Fix42);
         Self {
-            codec: json::Codec::new(dictionary, json::ConfigPrettyPrint),
+            decoder: json::Codec::new(dictionary, json::ConfigPrettyPrint),
+            encoder: tagvalue::Encoder::new(tagvalue::Config::default()),
         }
     }
 }
@@ -43,17 +45,14 @@ async fn serve_hello_world(_req: tide::Request<State>) -> tide::Result {
 }
 
 async fn serve_json_relay(mut req: tide::Request<State>) -> tide::Result {
-    let mut decoder = req.state().codec.clone();
+    let decoder = &mut req.state().decoder.clone();
+    let encoder = &mut req.state().encoder.clone();
     let message = {
         let body: Vec<u8> = req.body_bytes().await?;
         decoder.decode(&body[..]).unwrap()
     };
     let mut buffer = Vec::new();
     let body_response = {
-        let mut config = tagvalue::Config::default();
-        config.set_separator(b'|');
-        let mut encoder =
-            tagvalue::Codec::with_dict(Dictionary::from_version(AppVersion::Fix42), config);
         let msg = &mut MessageSeq::default();
         message.for_each::<(), _>(|tag, value| {
             msg.add_field(tag, value.clone());
@@ -113,7 +112,7 @@ mod test {
         let mut config = tagvalue::Config::default();
         config.set_separator(b'|');
         let mut decoder_tagvalue =
-            tagvalue::Codec::with_dict(Dictionary::from_version(AppVersion::Fix42), config);
+            tagvalue::Decoder::with_dict(Dictionary::from_version(AppVersion::Fix42), config);
         let msg_json = decoder_json.decode(body_json.as_bytes()).unwrap();
         println!("{}", body_tagvalue);
         let msg_tagvalue = decoder_tagvalue.decode(body_tagvalue.as_bytes()).unwrap();

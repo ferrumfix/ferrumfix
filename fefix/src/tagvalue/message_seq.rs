@@ -120,16 +120,6 @@ impl MessageSeq {
             .map(|(tag, value)| (*tag, value))
     }
 
-    //pub fn for_each<E, F>(&self, mut f: F) -> Result<(), E>
-    //where
-    //    F: FnMut(u32, &FixFieldValue) -> Result<(), E>,
-    //{
-    //    for (tag, value) in self.fields.iter() {
-    //        f(*tag, value)?;
-    //    }
-    //    Ok(())
-    //}
-
     pub fn to_message_rnd(&self) -> MessageRnd {
         let mut msg = MessageRnd::default();
         for (tag, value) in self.fields.iter() {
