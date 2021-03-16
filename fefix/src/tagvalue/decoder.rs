@@ -118,10 +118,8 @@ where
             .unwrap();
         self.message.add_field(tags::MSG_TYPE, msg_type).unwrap();
         // Iterate over all the other fields and store them to the message.
-        println!("new iter");
         for field_result in &mut fields {
             let (tag, field_value) = field_result?;
-            println!("tag is {}", tag);
             self.message.add_field(tag, field_value).unwrap();
         }
         Ok(&self.message)

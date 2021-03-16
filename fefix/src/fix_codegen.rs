@@ -193,7 +193,6 @@ mod test {
     #[test]
     fn syntax_of_field_tags_is_ok() {
         for version in AppVersion::iter_all() {
-            println!("{}", version);
             let dict = Dictionary::from_version(version);
             let code = codegen_tag_mnemonics(&dict);
             syn::parse_file(code.as_str()).unwrap();
