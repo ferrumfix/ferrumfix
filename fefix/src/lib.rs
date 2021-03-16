@@ -40,6 +40,7 @@ mod dictionary;
 mod dt;
 pub mod fast;
 mod fix_codegen;
+pub mod fixs;
 pub mod json;
 mod quickfix_specs;
 pub mod session;
@@ -47,7 +48,6 @@ pub mod sofh;
 mod stream_iterator;
 pub mod tags;
 pub mod tagvalue;
-pub mod transport;
 
 pub use app_version::AppVersion;
 pub use dictionary::{Dictionary, MsgType};
