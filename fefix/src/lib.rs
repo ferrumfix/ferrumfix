@@ -35,7 +35,6 @@
 mod utils;
 
 mod app_version;
-pub mod backend;
 pub mod buffering;
 mod dictionary;
 mod dt;

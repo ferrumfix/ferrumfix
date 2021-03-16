@@ -3,7 +3,7 @@
 //! This is the original encoding used for FIX messages and also the encoding
 //! currently used by the FIX session layer.
 
-use crate::backend::field_value as val;
+use crate::tagvalue::field_value as val;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::fmt::Debug;
@@ -12,6 +12,7 @@ use std::time::SystemTime;
 
 mod codec;
 mod config;
+pub mod field_value;
 mod message_rnd;
 mod message_seq;
 mod raw_codec;

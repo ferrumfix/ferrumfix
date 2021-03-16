@@ -1,7 +1,6 @@
 //! A schema-less, [`HashMap`]-backed internal representation for FIX messages.
 
-use crate::backend::field_value as val;
-use crate::backend::*;
+use crate::tagvalue::field_value as val;
 use crate::tagvalue::FixFieldValue;
 use crate::StreamIterator;
 use std::collections::HashMap;
@@ -92,16 +91,6 @@ impl Default for MessageRnd {
 impl PartialEq for MessageRnd {
     fn eq(&self, other: &Self) -> bool {
         self.fields == other.fields
-    }
-}
-
-impl FieldRef<FixFieldValue> for () {
-    fn tag(&self) -> u32 {
-        unimplemented!()
-    }
-
-    fn value(&self) -> &FixFieldValue {
-        unimplemented!()
     }
 }
 
