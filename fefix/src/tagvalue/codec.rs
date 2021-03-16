@@ -1,5 +1,5 @@
 use crate::buffering::Buffer;
-use crate::tags::fix44 as tags;
+use crate::tags;
 use crate::tagvalue::{
     field_value::TagNum, field_value::FieldValue,
     message_rnd::Field, utils, Config, Configure, DecodeError, EncodeError, FixFieldValue,

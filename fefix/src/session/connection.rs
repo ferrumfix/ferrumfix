@@ -1,5 +1,5 @@
 use crate::session::{errs, Environment, ResendRequestRange, SeqNumberError, SeqNumbers};
-use crate::tags::fix44 as tags;
+use crate::tags;
 use crate::tagvalue::{FixFieldValue, MessageRnd};
 use std::time::Duration;
 
