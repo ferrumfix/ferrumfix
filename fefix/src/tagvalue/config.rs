@@ -25,11 +25,6 @@ pub trait Configure: Clone + Default {
         Some(65536)
     }
 
-    #[deprecated(note = "BodyLength is mandatory. This method is ignored.")]
-    fn verify_body_length(&self) -> bool {
-        true
-    }
-
     /// Determines wheather or not `CheckSum(10)` should be verified.
     fn verify_checksum(&self) -> bool {
         true
