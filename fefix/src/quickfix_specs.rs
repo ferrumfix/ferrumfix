@@ -1,10 +1,5 @@
 use crate::AppVersion;
-use rust_embed::RustEmbed;
 use std::borrow::Cow;
-
-#[derive(RustEmbed)]
-#[folder = "resources/quickfix/"]
-struct QuickFixDicts;
 
 const SPEC_FIX_40: &str = include_str!("../resources/quickfix/FIX-4.0.xml");
 const SPEC_FIX_41: &str = include_str!("../resources/quickfix/FIX-4.1.xml");
@@ -16,8 +11,10 @@ const SPEC_FIX_50SP1: &str = include_str!("../resources/quickfix/FIX-5.0-SP1.xml
 const SPEC_FIX_50SP2: &str = include_str!("../resources/quickfix/FIX-5.0-SP2.xml");
 const SPEC_FIXT_11: &str = include_str!("../resources/quickfix/FIXT-1.1.xml");
 
-/// Returns a [`String`] with the QuickFIX definition file for `self`
-/// as its content. The QuickFix definition files are extracted and
+/// Returns a string with the QuickFIX definition file for `self`
+/// as its content.
+///
+/// The QuickFix definition files are extracted and
 /// decompressed
 /// from the binary without filesystem access.
 pub fn quickfix_spec(version: AppVersion) -> Cow<'static, str> {
