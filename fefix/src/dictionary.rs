@@ -509,6 +509,18 @@ impl<'a> Component<'a> {
         self.1.name.as_str()
     }
 
+    /// Returns `true` if and only if `self` is a "group" component; `false`
+    /// otherwise.
+    pub fn is_group(&self) -> bool {
+        match self.1.component_type {
+            ComponentType::BlockRepeating => true,
+            ComponentType::ImplicitBlockRepeating => true,
+            ComponentType::OptimisedBlockRepeating => true,
+            ComponentType::OptimisedImplicitBlockRepeating => true,
+            _ => false,
+        }
+    }
+
     /// Returns the [`Category`] to which `self` belongs.
     pub fn category(&self) -> Category {
         let data = self
