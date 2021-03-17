@@ -32,7 +32,7 @@ where
         }
     }
 
-    /// Returns the current buffer capacity of this [`Codec`]. This value is
+    /// Returns the current buffer capacity of this [`Decoder`]. This value is
     /// subject to change after every incoming message.
     ///
     /// # Examples
@@ -40,7 +40,7 @@ where
     /// ```
     /// use fefix::sofh::Decoder;
     ///
-    /// let parser = Decoder::with_capacity(8192);
+    /// let parser = Decoder::from_buffer(Vec::<u8>::with_capacity(8192));
     /// assert_eq!(parser.capacity(), 8192);
     /// ```
     pub fn capacity(&self) -> usize {

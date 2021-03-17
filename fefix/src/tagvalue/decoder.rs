@@ -42,10 +42,10 @@ where
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::{Config, Configure, Codec};
+    /// use fefix::tagvalue::{Config, Configure, Decoder};
     ///
-    /// let codec = &mut Codec::new(Config::default());
-    /// assert_eq!(codec.config().separator(), 0x1);
+    /// let decoder = Decoder::new(Config::default());
+    /// assert_eq!(decoder.config().separator(), 0x1);
     /// ```
     pub fn config(&self) -> &C {
         self.raw_decoder.config()
@@ -56,11 +56,11 @@ where
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::{Config, Configure, Codec};
+    /// use fefix::tagvalue::{Config, Configure, Decoder};
     ///
-    /// let codec = &mut Codec::new(Config::default());
-    /// codec.config_mut().set_separator(b'|');
-    /// assert_eq!(codec.config().separator(), b'|');
+    /// let decoder = &mut Decoder::new(Config::default());
+    /// decoder.config_mut().set_separator(b'|');
+    /// assert_eq!(decoder.config().separator(), b'|');
     /// ```
     pub fn config_mut(&mut self) -> &mut C {
         self.raw_decoder.config_mut()
@@ -80,12 +80,12 @@ where
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::{Config, Codec};
+    /// use fefix::tagvalue::{Config, Decoder};
     /// use fefix::tags::fix42 as tags;
     ///
-    /// let codec = &mut Codec::new(Config::default());
+    /// let decoder = &mut Decoder::new(Config::default());
     /// let data = b"8=FIX.4.2\x019=42\x0135=0\x0149=A\x0156=B\x0134=12\x0152=20100304-07:59:30\x0110=185\x01";
-    /// let message = codec.decode(data).unwrap();
+    /// let message = decoder.decode(data).unwrap();
     /// assert_eq!(
     ///     message
     ///         .field(tags::SENDER_COMP_ID)
@@ -154,10 +154,10 @@ where
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::{Config, Configure, Codec};
+    /// use fefix::tagvalue::{Config, Configure, Decoder};
     ///
-    /// let codec = &mut Codec::new(Config::default()).buffered();
-    /// assert_eq!(codec.config().separator(), 0x1);
+    /// let decoder = Decoder::new(Config::default()).buffered();
+    /// assert_eq!(decoder.config().separator(), 0x1);
     /// ```
     pub fn config(&self) -> &C {
         self.decoder.config()
@@ -168,11 +168,11 @@ where
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::{Config, Configure, Codec};
+    /// use fefix::tagvalue::{Config, Configure, Decoder};
     ///
-    /// let codec = &mut Codec::new(Config::default()).buffered();
-    /// codec.config_mut().set_separator(b'|');
-    /// assert_eq!(codec.config().separator(), b'|');
+    /// let decoder = &mut Decoder::new(Config::default()).buffered();
+    /// decoder.config_mut().set_separator(b'|');
+    /// assert_eq!(decoder.config().separator(), b'|');
     /// ```
     pub fn config_mut(&mut self) -> &mut C {
         self.decoder.config_mut()

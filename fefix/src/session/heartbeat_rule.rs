@@ -15,12 +15,12 @@ use std::time::Duration;
 #[non_exhaustive]
 pub enum HeartbeatRule {
     /// The acceptor requires a specific heartbeat interval, expressed as a
-    /// [`Duration`](std::time::Duration). Please refer to specs. §4.3.5.1 for
+    /// [`Duration`]. Please refer to specs. §4.3.5.1 for
     /// more information.
     Exact(Duration),
     /// The acceptor requires the initiator to specify a heartbeat value within a
-    /// [`RangeInclusive`](std::ops::RangeInclusive) of
-    /// [`Duration`s](std::time::Duration). Please refer to specs. §4.3.5.3 for
+    /// [`RangeInclusive`] of
+    /// [`Duration`s]. Please refer to specs. §4.3.5.3 for
     /// more information.
     Range(RangeInclusive<Duration>),
     /// The acceptor poses no restrictions on the heartbeat interval and the
@@ -38,7 +38,7 @@ impl HeartbeatRule {
     /// Require exact matching with [`HeartbeatRule::Exact`](HeartbeatRule::Exact):
     ///
     /// ```
-    /// use fefix::session::classic::HeartbeatRule;
+    /// use fefix::session::HeartbeatRule;
     /// use std::time::Duration;
     ///
     /// let rule = HeartbeatRule::Exact(Duration::from_secs(30));
@@ -51,7 +51,7 @@ impl HeartbeatRule {
     /// [`HeartbeatRule::Any`](HeartbeatRule::Any):
     ///
     /// ```
-    /// use fefix::session::classic::HeartbeatRule;
+    /// use fefix::session::HeartbeatRule;
     /// use std::time::Duration;
     ///
     /// let rule = HeartbeatRule::Any;
