@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 const DEFAULT_FIELDS_LEN: usize = 64;
 
+/// FIX message container with fast associative and sequential access.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Message {
     fields: HashMap<u32, FixFieldValue>,
