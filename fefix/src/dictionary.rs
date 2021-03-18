@@ -1,5 +1,6 @@
 //! Access to FIX Dictionary reference and message specifications.
 
+use self::symbol_table::{Key, KeyRef, SymbolTable, SymbolTableIndex};
 use crate::AppVersion;
 use crate::{quickfix_spec, DataType};
 use quickfix::{ParseDictionaryError, QuickFixReader};
@@ -37,82 +38,6 @@ impl MsgType {
 
 type InternalId = u32;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-enum Key {
-    #[allow(dead_code)]
-    Abbreviation(String),
-    CategoryByName(String),
-    ComponentByName(String),
-    DatatypeByName(String),
-    FieldByTag(u32),
-    FieldByName(String),
-    MessageByName(String),
-    MessageByMsgType(MsgType),
-}
-
-#[derive(Copy, Debug, Clone, PartialEq, Eq, Hash)]
-enum KeyRef<'a> {
-    Abbreviation(&'a str),
-    CategoryByName(&'a str),
-    ComponentByName(&'a str),
-    DatatypeByName(&'a str),
-    FieldByTag(u32),
-    FieldByName(&'a str),
-    MessageByName(&'a str),
-    MessageByMsgType(MsgType),
-}
-
-impl Key {
-    fn as_ref(&self) -> KeyRef {
-        match self {
-            Key::Abbreviation(s) => KeyRef::Abbreviation(s.as_str()),
-            Key::CategoryByName(s) => KeyRef::CategoryByName(s.as_str()),
-            Key::ComponentByName(s) => KeyRef::ComponentByName(s.as_str()),
-            Key::DatatypeByName(s) => KeyRef::DatatypeByName(s.as_str()),
-            Key::FieldByTag(t) => KeyRef::FieldByTag(*t),
-            Key::FieldByName(s) => KeyRef::FieldByName(s.as_str()),
-            Key::MessageByName(s) => KeyRef::MessageByName(s.as_str()),
-            Key::MessageByMsgType(t) => KeyRef::MessageByMsgType(*t),
-        }
-    }
-}
-
-trait SymbolTableIndex {
-    fn to_key(&self) -> KeyRef;
-}
-
-impl SymbolTableIndex for Key {
-    fn to_key(&self) -> KeyRef {
-        self.as_ref()
-    }
-}
-
-impl<'a> SymbolTableIndex for KeyRef<'a> {
-    fn to_key(&self) -> KeyRef {
-        *self
-    }
-}
-
-impl<'a> std::hash::Hash for dyn SymbolTableIndex + 'a {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.to_key().hash(state);
-    }
-}
-
-impl<'a> std::borrow::Borrow<dyn SymbolTableIndex + 'a> for Key {
-    fn borrow(&self) -> &(dyn SymbolTableIndex + 'a) {
-        self
-    }
-}
-
-impl<'a> Eq for dyn SymbolTableIndex + 'a {}
-
-impl<'a> PartialEq for dyn SymbolTableIndex + 'a {
-    fn eq(&self, other: &dyn SymbolTableIndex) -> bool {
-        self.to_key() == other.to_key()
-    }
-}
-
 /// Specifies business semantics for application-level entities within the FIX
 /// Protocol.
 ///
@@ -136,7 +61,7 @@ pub struct Dictionary {
 #[derive(Clone, Debug)]
 struct DictionaryData {
     version: String,
-    symbol_table: HashMap<Key, InternalId>,
+    symbol_table: SymbolTable,
     abbreviations: Vec<AbbreviatonData>,
     data_types: Vec<DatatypeData>,
     fields: Vec<FieldData>,
@@ -145,41 +70,6 @@ struct DictionaryData {
     layout_items: Vec<LayoutItemData>,
     categories: Vec<CategoryData>,
     header: Vec<FieldData>,
-}
-
-fn display_layout_item(indent: u32, item: LayoutItem, f: &mut fmt::Formatter) -> fmt::Result {
-    for _ in 0..indent {
-        write!(f, " ")?;
-    }
-    match item.kind() {
-        LayoutItemKind::Field(_) => {
-            writeln!(
-                f,
-                "<field name='{}' required='{}' />",
-                item.tag_text(),
-                item.required(),
-            )?;
-        }
-        LayoutItemKind::Group => {
-            writeln!(
-                f,
-                "<group name='{}' required='{}' />",
-                item.tag_text(),
-                item.required(),
-            )?;
-            writeln!(f, "</group>")?;
-        }
-        LayoutItemKind::Component(_c) => {
-            writeln!(
-                f,
-                "<component name='{}' required='{}' />",
-                item.tag_text(),
-                item.required(),
-            )?;
-            writeln!(f, "</component>")?;
-        }
-    }
-    Ok(())
 }
 
 impl fmt::Display for Dictionary {
@@ -220,6 +110,41 @@ impl fmt::Display for Dictionary {
         }
         Ok(())
     }
+}
+
+fn display_layout_item(indent: u32, item: LayoutItem, f: &mut fmt::Formatter) -> fmt::Result {
+    for _ in 0..indent {
+        write!(f, " ")?;
+    }
+    match item.kind() {
+        LayoutItemKind::Field(_) => {
+            writeln!(
+                f,
+                "<field name='{}' required='{}' />",
+                item.tag_text(),
+                item.required(),
+            )?;
+        }
+        LayoutItemKind::Group(_, _fields) => {
+            writeln!(
+                f,
+                "<group name='{}' required='{}' />",
+                item.tag_text(),
+                item.required(),
+            )?;
+            writeln!(f, "</group>")?;
+        }
+        LayoutItemKind::Component(_c) => {
+            writeln!(
+                f,
+                "<component name='{}' required='{}' />",
+                item.tag_text(),
+                item.required(),
+            )?;
+            writeln!(f, "</component>")?;
+        }
+    }
+    Ok(())
 }
 
 impl DictionaryData {
@@ -438,20 +363,92 @@ impl Dictionary {
             .iter()
             .map(move |data| Component(&self, data))
     }
+
+    pub fn to_quickfix_xml(&self) -> String {
+        quickfix::to_quickfix_xml(self)
+    }
 }
 
-#[derive(Clone, Debug)]
-struct CategoryData {
-    /// **Primary key**. A string uniquely identifying this category.
-    name: String,
-    /// The FIXML file name for a Category.
-    fixml_filename: String,
+struct DictionaryBuilder {
+    version: String,
+    symbol_table: HashMap<Key, InternalId>,
+    abbreviations: Vec<AbbreviatonData>,
+    data_types: Vec<DatatypeData>,
+    fields: Vec<FieldData>,
+    components: Vec<ComponentData>,
+    messages: Vec<MessageData>,
+    layout_items: Vec<LayoutItemData>,
+    categories: Vec<CategoryData>,
+    header: Vec<FieldData>,
 }
 
-/// A [`Category`] is a collection of loosely related FIX messages or components
-/// all belonging to the same [`Section`].
-#[derive(Clone, Debug)]
-pub struct Category<'a>(&'a Dictionary, &'a CategoryData);
+impl DictionaryBuilder {
+    pub fn new(version: String) -> Self {
+        Self {
+            version,
+            symbol_table: HashMap::default(),
+            abbreviations: Vec::new(),
+            data_types: Vec::new(),
+            fields: Vec::new(),
+            components: Vec::new(),
+            messages: Vec::new(),
+            layout_items: Vec::new(),
+            categories: Vec::new(),
+            header: Vec::new(),
+        }
+    }
+
+    pub fn symbol(&self, pkey: KeyRef) -> Option<&InternalId> {
+        self.symbol_table.get(&pkey as &dyn SymbolTableIndex)
+    }
+
+    pub fn add_field(&mut self, field: FieldData) -> InternalId {
+        let iid = self.fields.len() as InternalId;
+        self.symbol_table
+            .insert(Key::FieldByName(field.name.clone()), iid);
+        self.symbol_table
+            .insert(Key::FieldByTag(field.tag as u32), iid);
+        self.fields.push(field);
+        iid
+    }
+
+    pub fn add_message(&mut self, message: MessageData) -> InternalId {
+        let iid = self.messages.len() as InternalId;
+        self.symbol_table
+            .insert(Key::MessageByName(message.name.clone()), iid);
+        self.symbol_table.insert(
+            Key::MessageByMsgType(MsgType::from_bytes(message.msg_type.as_bytes()).unwrap()),
+            iid,
+        );
+        self.messages.push(message);
+        iid
+    }
+
+    pub fn add_component(&mut self, component: ComponentData) -> InternalId {
+        let iid = self.components.len() as InternalId;
+        self.symbol_table
+            .insert(Key::ComponentByName(component.name.to_string()), iid);
+        self.components.push(component);
+        iid
+    }
+
+    pub fn build(self) -> Dictionary {
+        Dictionary {
+            inner: Arc::new(DictionaryData {
+                version: self.version,
+                symbol_table: self.symbol_table,
+                abbreviations: self.abbreviations,
+                data_types: self.data_types,
+                fields: self.fields,
+                components: self.components,
+                messages: self.messages,
+                layout_items: self.layout_items,
+                categories: self.categories,
+                header: self.header,
+            }),
+        }
+    }
+}
 
 #[derive(Clone, Debug)]
 struct AbbreviatonData {
@@ -472,6 +469,18 @@ impl<'a> Abbreviation<'a> {
         self.1.abbreviation.as_str()
     }
 }
+#[derive(Clone, Debug)]
+struct CategoryData {
+    /// **Primary key**. A string uniquely identifying this category.
+    name: String,
+    /// The FIXML file name for a Category.
+    fixml_filename: String,
+}
+
+/// A [`Category`] is a collection of loosely related FIX messages or components
+/// all belonging to the same [`Section`].
+#[derive(Clone, Debug)]
+pub struct Category<'a>(&'a Dictionary, &'a CategoryData);
 
 #[derive(Clone, Debug)]
 struct ComponentData {
@@ -714,16 +723,48 @@ pub struct FieldRef {
 }
 
 #[derive(Clone, Debug)]
+#[allow(dead_code)]
 enum LayoutItemKindData {
-    Component(u32),
-    Group(Range<u32>),
-    Field(u32),
+    Component {
+        iid: InternalId,
+    },
+    Group {
+        len_field_iid: InternalId,
+        items: Vec<LayoutItemData>,
+    },
+    Field {
+        iid: InternalId,
+    },
 }
 
 #[derive(Clone, Debug)]
 struct LayoutItemData {
     required: bool,
     kind: LayoutItemKindData,
+}
+
+fn layout_item_kind<'a>(item: &'a LayoutItemKindData, dict: &'a Dictionary) -> LayoutItemKind<'a> {
+    match item {
+        LayoutItemKindData::Component { iid } => LayoutItemKind::Component(Component(
+            dict,
+            dict.inner.components.get(*iid as usize).unwrap(),
+        )),
+        LayoutItemKindData::Group {
+            len_field_iid,
+            items: items_data,
+        } => {
+            let items = items_data
+                .iter()
+                .map(|item_data| LayoutItem(dict, item_data))
+                .collect::<Vec<_>>();
+            let len_field_data = &dict.inner.fields[*len_field_iid as usize];
+            let len_field = Field(dict, len_field_data);
+            LayoutItemKind::Group(len_field, items)
+        }
+        LayoutItemKindData::Field { iid } => {
+            LayoutItemKind::Field(Field(dict, dict.inner.fields.get(*iid as usize).unwrap()))
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -733,7 +774,7 @@ pub struct LayoutItem<'a>(&'a Dictionary, &'a LayoutItemData);
 #[derive(Debug)]
 pub enum LayoutItemKind<'a> {
     Component(Component<'a>),
-    Group,
+    Group(Field<'a>, Vec<LayoutItem<'a>>),
     Field(Field<'a>),
 }
 
@@ -745,34 +786,38 @@ impl<'a> LayoutItem<'a> {
     }
 
     pub fn kind(&self) -> LayoutItemKind {
-        match &self.1.kind {
-            LayoutItemKindData::Component(n) => LayoutItemKind::Component(Component(
-                self.0,
-                self.0.inner.components.get(*n as usize).unwrap(),
-            )),
-            LayoutItemKindData::Group(_range) => {
-                LayoutItemKind::Group // FIXME
-            }
-            LayoutItemKindData::Field(n) => {
-                LayoutItemKind::Field(Field(self.0, self.0.inner.fields.get(*n as usize).unwrap()))
-            }
-        }
+        layout_item_kind(&self.1.kind, self.0)
     }
 
     pub fn tag_text(&self) -> &str {
         match &self.1.kind {
-            LayoutItemKindData::Component(n) => self
+            LayoutItemKindData::Component { iid } => self
                 .0
                 .inner
                 .components
-                .get(*n as usize)
+                .get(*iid as usize)
                 .unwrap()
                 .name
                 .as_str(),
-            LayoutItemKindData::Group(_range) => "",
-            LayoutItemKindData::Field(n) => {
-                self.0.inner.fields.get(*n as usize).unwrap().name.as_str()
-            }
+            LayoutItemKindData::Group {
+                len_field_iid,
+                items: _items,
+            } => self
+                .0
+                .inner
+                .fields
+                .get(*len_field_iid as usize)
+                .unwrap()
+                .name
+                .as_str(),
+            LayoutItemKindData::Field { iid } => self
+                .0
+                .inner
+                .fields
+                .get(*iid as usize)
+                .unwrap()
+                .name
+                .as_str(),
         }
     }
 }
@@ -835,13 +880,6 @@ impl<'a> Message<'a> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct MsgContent {
-    component_id: usize,
-    pub tag_text: String,
-    pub reqd: char,
-}
-
 /// A [`Section`] is a collection of many [`Components`]-s. It has no practical
 /// effect on encoding and decoding of FIX data and it's only used for
 /// documentation and human readability.
@@ -854,8 +892,242 @@ pub struct Value {
     description: Option<String>,
 }
 
+mod symbol_table {
+    use super::InternalId;
+    use super::MsgType;
+    use std::borrow::Borrow;
+    use std::collections::HashMap;
+    use std::hash::Hash;
+
+    pub type SymbolTable = HashMap<Key, InternalId>;
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub enum Key {
+        #[allow(dead_code)]
+        Abbreviation(String),
+        CategoryByName(String),
+        ComponentByName(String),
+        DatatypeByName(String),
+        FieldByTag(u32),
+        FieldByName(String),
+        MessageByName(String),
+        MessageByMsgType(MsgType),
+    }
+
+    #[derive(Copy, Debug, Clone, PartialEq, Eq, Hash)]
+    pub enum KeyRef<'a> {
+        Abbreviation(&'a str),
+        CategoryByName(&'a str),
+        ComponentByName(&'a str),
+        DatatypeByName(&'a str),
+        FieldByTag(u32),
+        FieldByName(&'a str),
+        MessageByName(&'a str),
+        MessageByMsgType(MsgType),
+    }
+
+    impl Key {
+        fn as_ref(&self) -> KeyRef {
+            match self {
+                Key::Abbreviation(s) => KeyRef::Abbreviation(s.as_str()),
+                Key::CategoryByName(s) => KeyRef::CategoryByName(s.as_str()),
+                Key::ComponentByName(s) => KeyRef::ComponentByName(s.as_str()),
+                Key::DatatypeByName(s) => KeyRef::DatatypeByName(s.as_str()),
+                Key::FieldByTag(t) => KeyRef::FieldByTag(*t),
+                Key::FieldByName(s) => KeyRef::FieldByName(s.as_str()),
+                Key::MessageByName(s) => KeyRef::MessageByName(s.as_str()),
+                Key::MessageByMsgType(t) => KeyRef::MessageByMsgType(*t),
+            }
+        }
+    }
+
+    pub trait SymbolTableIndex {
+        fn to_key(&self) -> KeyRef;
+    }
+
+    impl SymbolTableIndex for Key {
+        fn to_key(&self) -> KeyRef {
+            self.as_ref()
+        }
+    }
+
+    impl<'a> SymbolTableIndex for KeyRef<'a> {
+        fn to_key(&self) -> KeyRef {
+            *self
+        }
+    }
+
+    impl<'a> Hash for dyn SymbolTableIndex + 'a {
+        fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+            self.to_key().hash(state);
+        }
+    }
+
+    impl<'a> Borrow<dyn SymbolTableIndex + 'a> for Key {
+        fn borrow(&self) -> &(dyn SymbolTableIndex + 'a) {
+            self
+        }
+    }
+
+    impl<'a> Eq for dyn SymbolTableIndex + 'a {}
+
+    impl<'a> PartialEq for dyn SymbolTableIndex + 'a {
+        fn eq(&self, other: &dyn SymbolTableIndex) -> bool {
+            self.to_key() == other.to_key()
+        }
+    }
+}
+
 mod quickfix {
     use super::*;
+
+    fn write_layout_item<T>(writer: &mut quick_xml::Writer<T>, item: LayoutItem)
+    where
+        T: io::Write,
+    {
+        use quick_xml::events::*;
+        let required = if item.required() { 'Y' } else { 'N' };
+        match item.kind() {
+            LayoutItemKind::Field(_) => {
+                writer
+                    .write_event(Event::Empty(BytesStart::borrowed(
+                        format!("field name='{}' required='{}' ", item.tag_text(), required)
+                            .as_bytes(),
+                        b"field".len(),
+                    )))
+                    .unwrap();
+            }
+            LayoutItemKind::Group(_, fields) => {
+                writer
+                    .write_event(Event::Start(BytesStart::borrowed(
+                        format!("group name='{}' required='{}' ", item.tag_text(), required)
+                            .as_bytes(),
+                        b"group".len(),
+                    )))
+                    .unwrap();
+                for item in fields {
+                    write_layout_item(writer, item);
+                }
+                writer
+                    .write_event(Event::End(BytesEnd::borrowed(b"group")))
+                    .unwrap();
+            }
+            LayoutItemKind::Component(_) => {
+                writer
+                    .write_event(Event::Empty(BytesStart::borrowed(
+                        format!(
+                            "component name='{}' required='{}' ",
+                            item.tag_text(),
+                            required
+                        )
+                        .as_bytes(),
+                        b"component".len(),
+                    )))
+                    .unwrap();
+            }
+        }
+    }
+
+    pub fn to_quickfix_xml(dict: &Dictionary) -> String {
+        use quick_xml::events::*;
+        use quick_xml::Writer;
+        use std::io::Cursor;
+        let mut writer = Writer::new_with_indent(Cursor::new(Vec::new()), b' ', 2);
+        writer
+            .write_event(Event::Start(BytesStart::borrowed_name(b"fix")))
+            .unwrap();
+        writer
+            .write_event(Event::Start(BytesStart::borrowed_name(b"header")))
+            .unwrap();
+        for item in dict.component_by_name("StandardHeader").unwrap().items() {
+            write_layout_item(&mut writer, item);
+        }
+        writer
+            .write_event(Event::End(BytesEnd::borrowed(b"header")))
+            .unwrap();
+        writer
+            .write_event(Event::Start(BytesStart::borrowed_name(b"trailer")))
+            .unwrap();
+        for item in dict.component_by_name("StandardTrailer").unwrap().items() {
+            write_layout_item(&mut writer, item);
+        }
+        writer
+            .write_event(Event::End(BytesEnd::borrowed(b"trailer")))
+            .unwrap();
+        writer
+            .write_event(Event::Start(BytesStart::borrowed_name(b"messages")))
+            .unwrap();
+        for message in dict.iter_messages() {
+            writer
+                .write_event(Event::Start(BytesStart::borrowed(
+                    format!(
+                        "message msgcat='{}' msgtype='{}' name='{}' ",
+                        "FIXME",
+                        message.msg_type(),
+                        message.name()
+                    )
+                    .as_bytes(),
+                    b"message".len(),
+                )))
+                .unwrap();
+            for item in message.layout() {
+                write_layout_item(&mut writer, item);
+            }
+            writer
+                .write_event(Event::End(BytesEnd::borrowed(b"message")))
+                .unwrap();
+        }
+        writer
+            .write_event(Event::End(BytesEnd::borrowed(b"messages")))
+            .unwrap();
+        writer
+            .write_event(Event::Start(BytesStart::borrowed_name(b"components")))
+            .unwrap();
+        for component in dict
+            .iter_components()
+            .filter(|c| c.name() != "StandardHeader" && c.name() != "StandardTrailer")
+        {
+            writer
+                .write_event(Event::Start(BytesStart::borrowed(
+                    format!("component name='{}' ", component.name()).as_bytes(),
+                    "component".len(),
+                )))
+                .unwrap();
+            for item in component.items() {
+                write_layout_item(&mut writer, item);
+            }
+            writer
+                .write_event(Event::End(BytesEnd::borrowed(b"component")))
+                .unwrap();
+        }
+        writer
+            .write_event(Event::End(BytesEnd::borrowed(b"components")))
+            .unwrap();
+        writer
+            .write_event(Event::Start(BytesStart::borrowed_name(b"fields")))
+            .unwrap();
+        for field in dict.iter_fields() {
+            writer
+                .write_event(Event::Empty(BytesStart::borrowed(
+                    format!(
+                        "field name='{}' number='{}' type='{}' ",
+                        field.name(),
+                        field.tag(),
+                        field.data_type().basetype().to_quickfix_name()
+                    )
+                    .as_bytes(),
+                    b"field".len(),
+                )))
+                .unwrap();
+        }
+        writer
+            .write_event(Event::End(BytesEnd::borrowed(b"fields")))
+            .unwrap();
+        writer
+            .write_event(Event::End(BytesEnd::borrowed(b"fix")))
+            .unwrap();
+        String::from_utf8(writer.into_inner().into_inner()).unwrap()
+    }
 
     pub struct QuickFixReader<'a> {
         node_with_header: roxmltree::Node<'a, 'a>,
@@ -863,7 +1135,7 @@ mod quickfix {
         node_with_components: roxmltree::Node<'a, 'a>,
         node_with_messages: roxmltree::Node<'a, 'a>,
         node_with_fields: roxmltree::Node<'a, 'a>,
-        dict: DictionaryData,
+        builder: DictionaryBuilder,
     }
 
     impl<'a> QuickFixReader<'a> {
@@ -871,27 +1143,37 @@ mod quickfix {
             let mut reader = Self::empty(&xml_document)?;
             for child in reader.node_with_fields.children() {
                 if child.is_element() {
-                    reader.add_field(child)?;
+                    import_field(&mut reader.builder, child)?;
                 }
             }
             for child in reader.node_with_components.children() {
                 if child.is_element() {
-                    reader.add_component(child)?;
+                    let name = child
+                        .attribute("name")
+                        .ok_or(ParseDictionaryError::InvalidFormat)?
+                        .to_string();
+                    import_component(&mut reader.builder, child, name)?;
                 }
             }
             for child in reader.node_with_messages.children() {
                 if child.is_element() {
-                    reader.add_message(child)?;
+                    import_message(&mut reader.builder, child)?;
                 }
             }
             // `StandardHeader` and `StandardTrailer` are defined in ad-hoc
             // sections of the XML files. They're always there, even if
             // potentially empty (FIX 5.0+).
-            reader.add_component_with_name(reader.node_with_header, "StandardHeader")?;
-            reader.add_component_with_name(reader.node_with_trailer, "StandardTrailer")?;
-            Ok(Dictionary {
-                inner: Arc::new(reader.dict),
-            })
+            import_component(
+                &mut reader.builder,
+                reader.node_with_header,
+                "StandardHeader",
+            )?;
+            import_component(
+                &mut reader.builder,
+                reader.node_with_trailer,
+                "StandardTrailer",
+            )?;
+            Ok(reader.builder.build())
         }
 
         fn empty(xml_document: &'a roxmltree::Document<'a>) -> ParseResult<Self> {
@@ -911,7 +1193,7 @@ mod quickfix {
             let version_major =
                 root.attribute("major")
                     .ok_or(ParseDictionaryError::InvalidData(
-                        "No majorr version attribute.".to_string(),
+                        "No major version attribute.".to_string(),
                     ))?;
             let version_minor =
                 root.attribute("minor")
@@ -920,182 +1202,143 @@ mod quickfix {
                     ))?;
             let version = format!("{}.{}.{}", version_type, version_major, version_minor);
             Ok(QuickFixReader {
+                builder: DictionaryBuilder::new(version),
                 node_with_header: find_tagged_child("header")?,
                 node_with_trailer: find_tagged_child("trailer")?,
                 node_with_messages: find_tagged_child("messages")?,
                 node_with_components: find_tagged_child("components")?,
                 node_with_fields: find_tagged_child("fields")?,
-                dict: (*Dictionary::new(version).inner).clone(),
-            })
-        }
-
-        /// Reads a [`FieldData`](FieldData) definition from `node` and
-        /// updates `self`.
-        fn add_field(&mut self, node: roxmltree::Node) -> ParseResult<()> {
-            let iid = self.dict.fields.len() as u32;
-            let field = self.import_field(node)?;
-            self.dict
-                .symbol_table
-                .insert(Key::FieldByName(field.name.clone()), iid);
-            self.dict
-                .symbol_table
-                .insert(Key::FieldByTag(field.tag as u32), iid);
-            self.dict.fields.push(field);
-            Ok(())
-        }
-
-        /// Reads a [`MessageData`](MessageData) definition from `node` and
-        /// updates `self`.
-        fn add_message(&mut self, node: roxmltree::Node) -> ParseResult<()> {
-            let iid = self.dict.messages.len() as u32;
-            let message = self.import_message(node)?;
-            self.dict
-                .symbol_table
-                .insert(Key::MessageByName(message.name.clone()), iid);
-            self.dict.symbol_table.insert(
-                Key::MessageByMsgType(MsgType::from_bytes(message.msg_type.as_bytes()).unwrap()),
-                iid,
-            );
-            self.dict.messages.push(message);
-            Ok(())
-        }
-
-        /// Reads a [`ComponentData`](ComponentData) definition from `node` and
-        /// updates `self`.
-        fn add_component(&mut self, node: roxmltree::Node) -> ParseResult<()> {
-            let name = node
-                .attribute("name")
-                .ok_or(ParseDictionaryError::InvalidFormat)?
-                .to_string();
-            self.add_component_with_name(node, name)?;
-            Ok(())
-        }
-
-        fn add_component_with_name<S: AsRef<str>>(
-            &mut self,
-            node: roxmltree::Node,
-            name: S,
-        ) -> ParseResult<()> {
-            let iid = self.dict.components.len();
-            let component =
-                ComponentData::definition_from_node_with_name(&mut self.dict, node, name.as_ref())?;
-            self.dict
-                .symbol_table
-                .insert(Key::ComponentByName(name.as_ref().to_string()), iid as u32);
-            self.dict.components.push(component);
-            Ok(())
-        }
-
-        fn import_message(&mut self, node: roxmltree::Node) -> ParseResult<MessageData> {
-            debug_assert_eq!(node.tag_name().name(), "message");
-            let category_iid = CategoryData::get_or_create_iid_from_ref(&mut self.dict, node)?;
-            let layout_start = self.dict.layout_items.len() as u32;
-            for child in node.children() {
-                if child.is_element() {
-                    // We don't need to generate new IID's because we're dealing
-                    // with ranges.
-                    let data = LayoutItemData::save_definition(&mut self.dict, child)?;
-                    self.dict.layout_items.push(data);
-                }
-            }
-            let layout_end = self.dict.layout_items.len() as u32;
-            Ok(MessageData {
-                name: node
-                    .attribute("name")
-                    .ok_or(ParseDictionaryError::InvalidFormat)?
-                    .to_string(),
-                msg_type: node
-                    .attribute("msgtype")
-                    .ok_or(ParseDictionaryError::InvalidFormat)?
-                    .to_string(),
-                component_id: 0,
-                category_iid,
-                section_id: String::new(),
-                layout_items: layout_start..layout_end,
-                abbr_name: None,
-                required: true,
-                elaboration: None,
-                description: String::new(),
-            })
-        }
-
-        fn import_field(&mut self, node: roxmltree::Node) -> ParseResult<FieldData> {
-            debug_assert_eq!(node.tag_name().name(), "field");
-            let data_type_iid = DatatypeData::get_or_create_iid_from_ref(&mut self.dict, node);
-            let value_restrictions = value_restrictions_from_node(node, data_type_iid);
-            Ok(FieldData {
-                name: node
-                    .attribute("name")
-                    .ok_or(ParseDictionaryError::InvalidFormat)?
-                    .to_string(),
-                tag: node
-                    .attribute("number")
-                    .ok_or(ParseDictionaryError::InvalidFormat)?
-                    .parse()
-                    .map_err(|_| ParseDictionaryError::InvalidFormat)?,
-                data_type_iid: data_type_iid,
-                associated_data_tag: None,
-                value_restrictions,
-                required: true,
-                abbr_name: None,
-                base_category_abbr_name: None,
-                base_category_id: None,
-                description: None,
             })
         }
     }
 
-    impl ComponentData {
-        fn definition_from_node_with_name<S: AsRef<str>>(
-            dict: &mut DictionaryData,
-            node: roxmltree::Node,
-            name: S,
-        ) -> ParseResult<Self> {
-            let layout_start = dict.layout_items.len() as u32;
-            for child in node.children() {
-                if child.is_element() {
-                    // We don't need IID's because we're dealing with ranges.
-                    let item = LayoutItemData::save_definition(dict, child)?;
-                    dict.layout_items.push(item);
-                }
-            }
-            let layout_end = dict.layout_items.len() as u32;
-            Ok(ComponentData {
-                id: 0,
-                component_type: ComponentType::Block,
-                layout_items_iid_range: layout_start..layout_end,
-                category_iid: 0, // FIXME
-                name: name.as_ref().to_string(),
-                abbr_name: None,
-            })
+    fn import_field(
+        builder: &mut DictionaryBuilder,
+        node: roxmltree::Node,
+    ) -> ParseResult<InternalId> {
+        if node.tag_name().name() != "field" {
+            return Err(ParseDictionaryError::InvalidFormat);
         }
+        let data_type_iid = import_datatype(builder, node);
+        let value_restrictions = value_restrictions_from_node(node, data_type_iid);
+        let name = node
+            .attribute("name")
+            .ok_or(ParseDictionaryError::InvalidFormat)?
+            .to_string();
+        let tag = node
+            .attribute("number")
+            .ok_or(ParseDictionaryError::InvalidFormat)?
+            .parse()
+            .map_err(|_| ParseDictionaryError::InvalidFormat)?;
+        let field = FieldData {
+            name,
+            tag,
+            data_type_iid,
+            associated_data_tag: None,
+            value_restrictions,
+            required: true,
+            abbr_name: None,
+            base_category_abbr_name: None,
+            base_category_id: None,
+            description: None,
+        };
+        Ok(builder.add_field(field))
+    }
 
-        fn get_or_create_iid_from_ref(
-            dict: &mut DictionaryData,
-            node: roxmltree::Node,
-        ) -> ParseResult<InternalId> {
-            debug_assert_eq!(node.tag_name().name(), "component");
-            let name = node
+    fn import_message(
+        builder: &mut DictionaryBuilder,
+        node: roxmltree::Node,
+    ) -> ParseResult<InternalId> {
+        debug_assert_eq!(node.tag_name().name(), "message");
+        let category_iid = import_category(builder, node)?;
+        let layout_start = builder.layout_items.len() as u32;
+        for child in node.children() {
+            if child.is_element() {
+                // We don't need to generate new IID's because we're dealing
+                // with ranges.
+                import_layout_item(builder, child)?;
+            }
+        }
+        let layout_end = builder.layout_items.len() as u32;
+        let message = MessageData {
+            name: node
                 .attribute("name")
-                .ok_or(ParseDictionaryError::InvalidFormat)?;
-            Ok(match dict.symbol(KeyRef::ComponentByName(name)) {
-                Some(x) => *x,
-                None => {
-                    let iid = dict.data_types.len() as u32;
-                    let data = ComponentData {
-                        id: 0,
-                        component_type: ComponentType::Block,
-                        layout_items_iid_range: 0..0,
-                        name: name.to_string(),
-                        category_iid: 0, // FIXME
-                        abbr_name: None,
-                    };
-                    dict.components.push(data);
-                    dict.symbol_table
-                        .insert(Key::ComponentByName(name.to_string()), iid);
-                    iid
-                }
-            })
+                .ok_or(ParseDictionaryError::InvalidFormat)?
+                .to_string(),
+            msg_type: node
+                .attribute("msgtype")
+                .ok_or(ParseDictionaryError::InvalidFormat)?
+                .to_string(),
+            component_id: 0,
+            category_iid,
+            section_id: String::new(),
+            layout_items: layout_start..layout_end,
+            abbr_name: None,
+            required: true,
+            elaboration: None,
+            description: String::new(),
+        };
+        Ok(builder.add_message(message))
+    }
+
+    fn import_component<S: AsRef<str>>(
+        builder: &mut DictionaryBuilder,
+        node: roxmltree::Node,
+        name: S,
+    ) -> ParseResult<InternalId> {
+        let layout_start = builder.layout_items.len() as u32;
+        for child in node.children() {
+            if child.is_element() {
+                import_layout_item(builder, child)?;
+            }
+        }
+        let layout_end = builder.layout_items.len() as u32;
+        let component = ComponentData {
+            id: 0,
+            component_type: ComponentType::Block,
+            layout_items_iid_range: layout_start..layout_end,
+            category_iid: 0, // FIXME
+            name: name.as_ref().to_string(),
+            abbr_name: None,
+        };
+        let iid = builder.add_component(component);
+        match builder.symbol(KeyRef::ComponentByName(name.as_ref())) {
+            Some(x) => Ok(*x),
+            None => {
+                builder
+                    .symbol_table
+                    .insert(Key::ComponentByName(name.as_ref().to_string()), iid);
+                Ok(iid)
+            }
+        }
+    }
+
+    fn import_datatype(builder: &mut DictionaryBuilder, node: roxmltree::Node) -> InternalId {
+        // References should only happen at <field> tags.
+        debug_assert_eq!(node.tag_name().name(), "field");
+        let datatype = {
+            // The idenfier that QuickFIX uses for this type.
+            let quickfix_name = node.attribute("type").unwrap();
+            // Translate that into a real datatype.
+            DataType::from_quickfix_name(quickfix_name).unwrap()
+        };
+        // Get the official (not QuickFIX's) name of `datatype`.
+        let name = datatype.name();
+        match builder.symbol(KeyRef::DatatypeByName(name)) {
+            Some(x) => *x,
+            None => {
+                let iid = builder.data_types.len() as u32;
+                let data = DatatypeData {
+                    datatype,
+                    description: String::new(),
+                    examples: Vec::new(),
+                };
+                builder.data_types.push(data);
+                builder
+                    .symbol_table
+                    .insert(Key::DatatypeByName(name.to_string()), iid);
+                iid
+            }
         }
     }
 
@@ -1122,95 +1365,67 @@ mod quickfix {
         }
     }
 
-    impl DatatypeData {
-        fn get_or_create_iid_from_ref(
-            dict: &mut DictionaryData,
-            node: roxmltree::Node,
-        ) -> InternalId {
-            // References should only happen at <field> tags.
-            debug_assert_eq!(node.tag_name().name(), "field");
-            let datatype = {
-                // The idenfier that QuickFIX uses for this type.
-                let quickfix_name = node.attribute("type").unwrap();
-                // Translate that into a real datatype.
-                DataType::from_quickfix_name(quickfix_name).unwrap()
-            };
-            // Get the official (not QuickFIX's) name of `datatype`.
-            let name = datatype.name();
-            match dict.symbol(KeyRef::DatatypeByName(name)) {
-                Some(x) => *x,
-                None => {
-                    let iid = dict.data_types.len() as u32;
-                    let data = DatatypeData {
-                        datatype,
-                        description: String::new(),
-                        examples: Vec::new(),
-                    };
-                    dict.data_types.push(data);
-                    dict.symbol_table
-                        .insert(Key::DatatypeByName(name.to_string()), iid);
-                    iid
+    fn import_layout_item(
+        builder: &mut DictionaryBuilder,
+        node: roxmltree::Node,
+    ) -> ParseResult<InternalId> {
+        // This processing step requires on fields being already present in
+        // the dictionary.
+        debug_assert_ne!(builder.fields.len(), 0);
+        let name = node.attribute("name").unwrap();
+        let required = node.attribute("required").unwrap() == "Y";
+        let tag = node.tag_name().name();
+        let kind = match tag {
+            "field" => {
+                let field_iid = builder.symbol(KeyRef::FieldByName(name)).unwrap();
+                LayoutItemKindData::Field { iid: *field_iid }
+            }
+            "component" => {
+                // Components may *not* be already present.
+                let component_iid = import_component(builder, node, name)?;
+                LayoutItemKindData::Component { iid: component_iid }
+            }
+            "group" => {
+                let len_field_iid = *builder.symbol(KeyRef::FieldByName(name)).unwrap();
+                let mut iids = Vec::new();
+                for child in node.children().filter(|n| n.is_element()) {
+                    iids.push(import_layout_item(builder, child)?);
+                }
+                LayoutItemKindData::Group {
+                    len_field_iid,
+                    items: Vec::new(),
                 }
             }
-        }
+            _ => {
+                return Err(ParseDictionaryError::InvalidFormat);
+            }
+        };
+        let item = LayoutItemData { required, kind };
+        let iid = builder.layout_items.len() as InternalId;
+        builder.layout_items.push(item);
+        Ok(iid)
     }
 
-    impl LayoutItemData {
-        fn save_definition(dict: &mut DictionaryData, node: roxmltree::Node) -> ParseResult<Self> {
-            // This processing step requires on fields being already present in
-            // the dictionary.
-            debug_assert_ne!(dict.fields.len(), 0);
-            let name = node.attribute("name").unwrap();
-            let required = node.attribute("required").unwrap() == "Y";
-            let tag = node.tag_name().name();
-            let kind = match tag {
-                "field" => {
-                    let field_iid = dict.symbol(KeyRef::FieldByName(name)).unwrap();
-                    LayoutItemKindData::Field(*field_iid)
-                }
-                "component" => {
-                    // Components may *not* be already present.
-                    let component_iid = ComponentData::get_or_create_iid_from_ref(dict, node)?;
-                    LayoutItemKindData::Component(component_iid)
-                }
-                "group" => {
-                    let start_range = dict.layout_items.len() as u32;
-                    let items = node
-                        .children()
-                        .filter(|n| n.is_element())
-                        .map(|child| LayoutItemData::save_definition(dict, child))
-                        .count();
-                    LayoutItemKindData::Group(start_range..(start_range + items as u32))
-                }
-                _ => {
-                    panic!("Invalid tag!")
-                }
-            };
-            Ok(LayoutItemData { required, kind })
-        }
-    }
-
-    impl CategoryData {
-        fn get_or_create_iid_from_ref(
-            dict: &mut DictionaryData,
-            node: roxmltree::Node,
-        ) -> ParseResult<InternalId> {
-            debug_assert_eq!(node.tag_name().name(), "message");
-            let name = node.attribute("msgcat").ok_or(ParseError::InvalidFormat)?;
-            Ok(match dict.symbol(KeyRef::CategoryByName(name)) {
-                Some(x) => *x,
-                None => {
-                    let iid = dict.categories.len() as u32;
-                    dict.categories.push(CategoryData {
-                        name: name.to_string(),
-                        fixml_filename: String::new(),
-                    });
-                    dict.symbol_table
-                        .insert(Key::CategoryByName(name.to_string()), iid);
-                    iid
-                }
-            })
-        }
+    fn import_category(
+        builder: &mut DictionaryBuilder,
+        node: roxmltree::Node,
+    ) -> ParseResult<InternalId> {
+        debug_assert_eq!(node.tag_name().name(), "message");
+        let name = node.attribute("msgcat").ok_or(ParseError::InvalidFormat)?;
+        Ok(match builder.symbol(KeyRef::CategoryByName(name)) {
+            Some(x) => *x,
+            None => {
+                let iid = builder.categories.len() as u32;
+                builder.categories.push(CategoryData {
+                    name: name.to_string(),
+                    fixml_filename: String::new(),
+                });
+                builder
+                    .symbol_table
+                    .insert(Key::CategoryByName(name.to_string()), iid);
+                iid
+            }
+        })
     }
 
     type ParseError = ParseDictionaryError;
@@ -1249,6 +1464,7 @@ mod test {
     #[test]
     fn fixt11_quickfix_is_ok() {
         let dict = Dictionary::from_version(AppVersion::Fixt11);
+        println!("{}", dict.to_quickfix_xml());
         let msg_heartbeat = dict.message_by_name("Heartbeat").unwrap();
         assert_eq!(msg_heartbeat.msg_type(), "0");
         assert_eq!(msg_heartbeat.name(), "Heartbeat".to_string());

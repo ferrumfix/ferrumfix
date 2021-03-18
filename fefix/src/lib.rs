@@ -50,7 +50,7 @@ pub mod tags;
 pub mod tagvalue;
 
 pub use app_version::AppVersion;
-pub use dictionary::{Dictionary, MsgType, Category, Component, Field};
+pub use dictionary::{Category, Component, Dictionary, Field, MsgType};
 pub use dt::DataType;
 pub use fefix_derive::*;
 pub use fix_codegen::{codegen, codegen_tag_mnemonics};

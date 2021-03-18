@@ -128,22 +128,22 @@ impl Dictionary {
     ) -> Option<String> {
         let field_name = match item.kind() {
             LayoutItemKind::Component(c) => c.name().to_snake_case(),
-            LayoutItemKind::Group => return None,
+            LayoutItemKind::Group(_, _) => return None,
             LayoutItemKind::Field(f) => f.name().to_snake_case(),
         };
         let field_type = match item.kind() {
             LayoutItemKind::Component(_c) => "()".to_string(),
-            LayoutItemKind::Group => "()".to_string(),
+            LayoutItemKind::Group(_, _) => "()".to_string(),
             LayoutItemKind::Field(f) => f.data_type().basetype().name().to_string(),
         };
         let field_tag = match item.kind() {
             LayoutItemKind::Component(_c) => 1337,
-            LayoutItemKind::Group => 42,
+            LayoutItemKind::Group(_, _) => 42,
             LayoutItemKind::Field(f) => f.tag(),
         };
         let _field_doc = match item.kind() {
             LayoutItemKind::Component(_c) => "///".to_string(),
-            LayoutItemKind::Group => "///".to_string(),
+            LayoutItemKind::Group(_, _) => "///".to_string(),
             LayoutItemKind::Field(f) => docs::gen_field(self.get_version().to_string(), &f),
         };
         Some(format!(

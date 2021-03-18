@@ -201,6 +201,39 @@ impl DataType {
         })
     }
 
+    pub fn to_quickfix_name(&self) -> &str {
+        match self {
+            DataType::Int => "int",
+            DataType::Length => "Length",
+            DataType::Char => "char",
+            DataType::Boolean => "Boolean",
+            DataType::Float => "float",
+            DataType::Amt => "Amt",
+            DataType::Price => "Price",
+            DataType::PriceOffset => "PriceOffset",
+            DataType::Qty => "Qty",
+            DataType::Percentage => "Percentage",
+            DataType::DayOfMonth => "DayOfMonth",
+            DataType::NumInGroup => "NumInGroup",
+            DataType::Language => "Language",
+            DataType::SeqNum => "SeqNum",
+            DataType::TagNum => "TagNum",
+            DataType::String => "String",
+            DataType::Data => "data",
+            DataType::MonthYear => "MonthYear",
+            DataType::Currency => "Currency",
+            DataType::Exchange => "Exchange",
+            DataType::LocalMktDate => "LocalMktDate",
+            DataType::MultipleStringValue => "MultipleStringValue",
+            DataType::UtcTimeOnly => "UTCTimeOnly",
+            DataType::UtcTimestamp => "UTCTimestamp",
+            DataType::UtcDateOnly => "UTCDateOnly",
+            DataType::Country => "Country",
+            DataType::MultipleCharValue => "MultipleCharValue",
+            DataType::XmlData => "XMLData",
+        }
+    }
+
     /// Returns the name of `self`, character by character identical to the name
     /// that appears in the official guidelines. **Generally** primitive datatypes
     /// will use `snake_case` and non-primitive ones will have `PascalCase`, but
