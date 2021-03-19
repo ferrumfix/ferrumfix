@@ -1,4 +1,3 @@
-use crate::buffering::Buffer;
 use crate::tagvalue::{utils, Config, Configure, DecodeError, RawFrame};
 use std::ops::Range;
 
@@ -25,13 +24,9 @@ where
         Self::default()
     }
 
-    pub fn buffered<B>(self, buffer: B) -> RawDecoderBuffered<B, C>
-    where
-        B: Buffer,
-    {
-        assert_eq!(buffer.as_slice().len(), 0);
+    pub fn buffered(self) -> RawDecoderBuffered<C> {
         RawDecoderBuffered {
-            buffer,
+            buffer: Vec::new(),
             decoder: self,
             error: None,
         }
@@ -73,19 +68,17 @@ where
 
 /// A bare-bones FIX decoder for byte streams.
 #[derive(Debug, Clone)]
-pub struct RawDecoderBuffered<B = Vec<u8>, C = Config>
+pub struct RawDecoderBuffered<C = Config>
 where
-    B: Buffer,
     C: Configure,
 {
-    buffer: B,
+    buffer: Vec<u8>,
     decoder: RawDecoder<C>,
     error: Option<DecodeError>,
 }
 
-impl<B, C> RawDecoderBuffered<B, C>
+impl<C> RawDecoderBuffered<C>
 where
-    B: Buffer,
     C: Configure,
 {
     /// Returns an immutable reference to the [`Configure`] implementor used by
@@ -267,16 +260,8 @@ mod test {
 
     fn new_decoder_buffered() -> RawDecoderBuffered {
         let config = Config::default().with_separator(b'|');
-        RawDecoder::with_config(config).buffered(Vec::new())
+        RawDecoder::with_config(config).buffered()
     }
-
-    #[test]
-    #[should_panic]
-    fn cannot_create_raw_decoder_buffered_with_nonempty_buffer() {
-        let decoder = RawDecoder::with_config(Config::default());
-        decoder.buffered(vec![0]);
-    }
-
     #[test]
     fn new_buffered_decoder_has_no_current_frame() {
         let decoder = new_decoder_buffered();

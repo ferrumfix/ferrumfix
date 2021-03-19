@@ -7,6 +7,8 @@ use crate::{AppVersion, DataType, Dictionary};
 use std::fmt::Debug;
 use std::str;
 
+use super::{RawDecoderBuffered, RawFrame};
+
 /// FIX message decoder.
 #[derive(Debug)]
 pub struct Decoder<C = Config>
@@ -68,9 +70,10 @@ where
 
     /// Turns `self` into a [`DecoderBuffered`] by allocating an internal buffer.
     pub fn buffered(self) -> DecoderBuffered<C> {
+        let raw_decoder = self.raw_decoder.clone().buffered();
         DecoderBuffered {
-            buffer: Vec::new(),
             decoder: self,
+            raw_decoder,
         }
     }
 
@@ -94,9 +97,12 @@ where
     /// );
     /// ```
     pub fn decode(&mut self, data: &[u8]) -> Result<&Message, DecodeError> {
-        self.message.clear();
-        // Take care of `BeginString`, `BodyLength` and `CheckSum`.
         let frame = self.raw_decoder.decode(data)?;
+        self.from_frame(frame)
+    }
+
+    fn from_frame(&mut self, frame: RawFrame) -> Result<&Message, DecodeError> {
+        self.message.clear();
         let begin_string = frame.begin_string();
         let body = frame.payload();
         let config = self.config().clone();
@@ -141,8 +147,8 @@ pub struct DecoderBuffered<C = Config>
 where
     C: Configure,
 {
-    buffer: Vec<u8>,
     decoder: Decoder<C>,
+    raw_decoder: RawDecoderBuffered<C>,
 }
 
 impl<C> DecoderBuffered<C>
@@ -179,21 +185,15 @@ where
     }
 
     pub fn supply_buffer(&mut self) -> &mut [u8] {
-        if self.buffer.len() < 15 {
-            self.buffer.extend_from_slice(&[0; 15]);
-            &mut self.buffer[..]
-        } else {
-            unimplemented!()
+        self.raw_decoder.supply_buffer()
+    }
+
+    pub fn current_message(&mut self) -> Result<Option<&Message>, DecodeError> {
+        match self.raw_decoder.current_frame() {
+            Ok(Some(frame)) => self.decoder.from_frame(frame).map(|msg| Some(msg)),
+            Ok(None) => Ok(None),
+            Err(e) => Err(e),
         }
-    }
-
-    pub fn attempt_decoding(&mut self) -> Result<(), DecodeError> {
-        unimplemented!()
-    }
-
-    ///
-    pub fn current_message(&self) -> &Message {
-        unimplemented!()
     }
 }
 
