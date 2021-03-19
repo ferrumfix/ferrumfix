@@ -9,7 +9,7 @@ description = "Code generation for FerrumFIX"
 publish = true
 keywords = ["fix", "fast", "protocol", "finance", "streaming"]
 categories = ["network-programming", "parser-implementations", "encoding"]
-license = "MIT"
+license = "MIT OR Apache-2.0"
 
 [lib]
 name = "fefix_derive"
