@@ -103,10 +103,10 @@ where
         let mut fields = &mut FieldIter::new(body, &config, &self.dict);
         // Deserialize `MsgType(35)`.
         let msg_type = {
-            let (tag, field_value) = fields.next().ok_or(DecodeError::Syntax)??;
+            let (tag, field_value) = fields.next().ok_or(DecodeError::Invalid)??;
             if tag != tags::MSG_TYPE {
                 dbglog!("Expected MsgType (35), got ({}) instead.", tag);
-                return Err(DecodeError::Syntax);
+                return Err(DecodeError::Invalid);
             }
             field_value
         };
@@ -238,7 +238,7 @@ where
             self.cursor += 1;
             if *byte == b'=' {
                 if tag == 0 {
-                    return Some(Err(DecodeError::Syntax));
+                    return Some(Err(DecodeError::Invalid));
                 } else {
                     break;
                 }
@@ -246,7 +246,7 @@ where
             tag = tag * 10 + byte.wrapping_sub(b'0') as u32;
         }
         if self.data.get(self.cursor).is_none() {
-            return Some(Err(DecodeError::Syntax));
+            return Some(Err(DecodeError::Invalid));
         }
         debug_assert_eq!(self.data[self.cursor - 1], b'=');
         debug_assert!(tag > 0);
@@ -275,7 +275,7 @@ where
                     }
                 } else {
                     dbglog!("EOF before expected separator. Error.");
-                    return Some(Err(DecodeError::Syntax));
+                    return Some(Err(DecodeError::Invalid));
                 }
             }
             Err(_) => (),
@@ -292,9 +292,9 @@ fn read_field_value(datatype: DataType, buf: &[u8]) -> Result<FixFieldValue, Dec
         DataType::Data => FixFieldValue::Atom(FieldValue::Data(buf.to_vec())),
         DataType::Float => FixFieldValue::Atom(FieldValue::float(
             str::from_utf8(buf)
-                .map_err(|_| DecodeError::Syntax)?
+                .map_err(|_| DecodeError::Invalid)?
                 .parse::<f32>()
-                .map_err(|_| DecodeError::Syntax)?,
+                .map_err(|_| DecodeError::Invalid)?,
         )),
         DataType::Int => {
             let mut n = 0i64;
@@ -306,7 +306,7 @@ fn read_field_value(datatype: DataType, buf: &[u8]) -> Result<FixFieldValue, Dec
                 } else if *byte == b'-' {
                     n *= -1;
                 } else if *byte != b'+' {
-                    return Err(DecodeError::Syntax);
+                    return Err(DecodeError::Invalid);
                 }
                 multiplier *= 10;
             }
@@ -410,7 +410,7 @@ mod test {
         let msg = "8=FIX.4.2|9=41|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127";
         let mut codec = decoder();
         let result = codec.decode(&mut msg.as_bytes());
-        assert_eq!(result, Err(DecodeError::Syntax));
+        assert_eq!(result, Err(DecodeError::Invalid));
     }
 
     #[test]
@@ -418,7 +418,7 @@ mod test {
         let msg = "8=FIX.4.4|9=37|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|";
         let mut codec = decoder();
         let result = codec.decode(&mut msg.as_bytes());
-        assert_eq!(result, Err(DecodeError::Syntax));
+        assert_eq!(result, Err(DecodeError::Invalid));
     }
 
     #[test]
@@ -426,7 +426,7 @@ mod test {
         let msg = "35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=000|";
         let mut codec = decoder();
         let result = codec.decode(&mut msg.as_bytes());
-        assert_eq!(result, Err(DecodeError::Syntax));
+        assert_eq!(result, Err(DecodeError::Invalid));
     }
 
     #[test]
@@ -434,6 +434,6 @@ mod test {
         let msg = "8=FIX.4.2|9=43|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=146|";
         let mut codec = decoder();
         let result = codec.decode(&mut msg.as_bytes());
-        assert_eq!(result, Err(DecodeError::Syntax));
+        assert_eq!(result, Err(DecodeError::Invalid));
     }
 }

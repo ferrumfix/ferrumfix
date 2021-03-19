@@ -37,8 +37,8 @@ where
     /// ```
     /// use fefix::tagvalue::{Config, Configure, Encoder};
     ///
-    /// let codec = &mut Encoder::new(Config::default());
-    /// assert_eq!(codec.config().separator(), 0x1);
+    /// let encoder = &mut Encoder::new(Config::default());
+    /// assert_eq!(encoder.config().separator(), 0x1);
     /// ```
     pub fn config(&self) -> &C {
         &self.config
@@ -51,9 +51,9 @@ where
     /// ```
     /// use fefix::tagvalue::{Config, Configure, Encoder};
     ///
-    /// let codec = &mut Encoder::new(Config::default());
-    /// codec.config_mut().set_separator(b'|');
-    /// assert_eq!(codec.config().separator(), b'|');
+    /// let encoder = &mut Encoder::new(Config::default());
+    /// encoder.config_mut().set_separator(b'|');
+    /// assert_eq!(encoder.config().separator(), b'|');
     /// ```
     pub fn config_mut(&mut self) -> &mut C {
         &mut self.config

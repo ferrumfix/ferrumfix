@@ -122,11 +122,11 @@ mod test {
     fn config_separator_can_be_changed() {
         let config = &mut Config::default();
         config.set_separator(b'|');
-        assert_eq!(Config::default().separator(), b'|');
+        assert_eq!(config.separator(), b'|');
         config.set_separator(b'^');
-        assert_eq!(Config::default().separator(), b'^');
+        assert_eq!(config.separator(), b'^');
         config.set_separator(0x1);
-        assert_eq!(Config::default().separator(), 0x1);
+        assert_eq!(config.separator(), 0x1);
     }
 
     #[test]
@@ -138,8 +138,8 @@ mod test {
     fn config_checksum_verification_can_be_changed() {
         let config = &mut Config::default();
         config.set_verify_checksum(false);
-        assert_eq!(Config::default().verify_checksum(), false);
+        assert_eq!(config.verify_checksum(), false);
         config.set_verify_checksum(true);
-        assert_eq!(Config::default().verify_checksum(), true);
+        assert_eq!(config.verify_checksum(), true);
     }
 }

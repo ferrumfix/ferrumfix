@@ -2,10 +2,10 @@ use crate::buffering::Buffer;
 use crate::tagvalue::{DecodeError, EncodeError};
 use std::convert::TryInto;
 
-// A tag-value message can't possibly be shorter than 14 characters.
-// I haven't checked, but it's possible that this is actually a
-// conservative heuristic and that we can raise this value.
-pub const MIN_FIX_MESSAGE_LEN_IN_BYTES: usize = 14;
+// A tag-value message can't possibly be shorter than this.
+//
+//   8=?|9=?|35=?|10=???|
+pub const MIN_FIX_MESSAGE_LEN_IN_BYTES: usize = 20;
 
 /// The checksum field is composed of:
 ///  - `10=`       (3 characters)
@@ -55,17 +55,13 @@ pub fn verify_checksum(message: &[u8]) -> Result<(), DecodeError> {
     let nominal_checksum = parse_u8_from_decimal(checksum_digits(message));
     let actual_checksum = checksum_10(&message[..message.len() - FIELD_CHECKSUM_LEN_IN_BYTES]);
     if nominal_checksum != actual_checksum {
-        dbglog!(
-            "CheckSum mismatch: expected {:03} but is {:03}.",
-            actual_checksum,
-            nominal_checksum,
-        );
-        Err(DecodeError::Syntax)
+        Err(DecodeError::CheckSum)
     } else {
         Ok(())
     }
 }
 
+/// Verifies the `BodyLength(9)` field of the FIX message in `data`.
 pub fn verify_body_length(
     data: &[u8],
     start_of_body: usize,
@@ -82,7 +78,7 @@ pub fn verify_body_length(
             body_length,
             nominal_body_length,
         );
-        Err(DecodeError::Syntax)
+        Err(DecodeError::Invalid)
     } else {
         debug_assert!(body_length < data.len());
         Ok(())

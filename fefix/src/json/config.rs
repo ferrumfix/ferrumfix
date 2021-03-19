@@ -103,8 +103,8 @@ mod test {
     }
 
     #[test]
-    fn config_pretty_prints_by_default() {
-        assert_eq!(Config::default().pretty_print(), true);
+    fn config_doesnt_pretty_print_by_default() {
+        assert_eq!(Config::default().pretty_print(), false);
     }
 
     #[test]

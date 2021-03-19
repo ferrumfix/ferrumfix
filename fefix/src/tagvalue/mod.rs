@@ -40,8 +40,9 @@ type EncodeError = ();
 #[derive(Clone, Debug, PartialEq)]
 pub enum DecodeError {
     FieldPresence,
-    Incomplete,
-    Syntax,
+    /// Invalid FIX message syntax.
+    Invalid,
+    CheckSum,
 }
 
 impl fmt::Display for DecodeError {
@@ -58,7 +59,7 @@ impl std::error::Error for DecodeError {
 
 impl From<io::Error> for DecodeError {
     fn from(_err: io::Error) -> Self {
-        Self::Syntax // FIXME
+        Self::Invalid // FIXME
     }
 }
 
