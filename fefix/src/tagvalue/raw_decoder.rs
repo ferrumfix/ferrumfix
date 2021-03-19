@@ -59,6 +59,7 @@ where
     }
 }
 
+/// A bare-bones FIX decoder for byte streams.
 #[derive(Debug, Clone)]
 pub struct RawDecoderBuffered<B = Vec<u8>, C = Config>
 where

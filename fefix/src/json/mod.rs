@@ -1,5 +1,6 @@
-//! JSON encoding for FIX support.
+//! JSON encoding for FIX messages.
 
+use std::error::Error;
 use std::fmt;
 
 mod codec;
@@ -10,11 +11,23 @@ pub use config::{Config, ConfigPrettyPrint, Configure};
 
 /// The type returned in the event of an error when encoding a FIX JSON message.
 #[derive(Copy, Clone, Debug)]
-pub enum EncoderError {
+pub enum EncodeError {
     /// The type returned in case there is an inconsistency between
     /// `BeginString`, `MsgType`, fields presence and other encoding rules as
     /// establised by the dictionary.
     Dictionary,
+}
+
+impl fmt::Display for EncodeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Incosistency between the FIX message and encoding rules as established by the dictionary.")
+    }
+}
+
+impl Error for EncodeError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        None
+    }
 }
 
 /// The type returned in the event of an error when decoding a FIX JSON message.
@@ -32,6 +45,18 @@ pub enum DecodeError {
 
 impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "FIX JSON decoding error.")
+        let err = match self {
+            Self::Schema => "The message is valid JSON, but not a valid FIX message.",
+            Self::Syntax => "Bad JSON syntax.",
+            Self::InvalidMsgType => "Unrecognized message type.",
+            Self::InvalidData => "The data does not conform to the specified message type.",
+        };
+        write!(f, "{}", err)
+    }
+}
+
+impl Error for DecodeError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        None
     }
 }

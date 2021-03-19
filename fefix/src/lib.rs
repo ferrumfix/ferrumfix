@@ -45,42 +45,18 @@ pub mod json;
 mod quickfix_specs;
 pub mod session;
 pub mod sofh;
-mod stream_iterator;
 pub mod tags;
 pub mod tagvalue;
 
 pub use app_version::AppVersion;
-pub use dictionary::{Category, Component, Dictionary, Field, MsgType};
+pub use dictionary::Dictionary;
 pub use dt::DataType;
 pub use fefix_derive::*;
 pub use fix_codegen::{codegen, codegen_tag_mnemonics};
 pub use quickfix_specs::quickfix_spec;
-pub use stream_iterator::StreamIterator;
 
 #[cfg(expose_openssl)]
 pub extern crate openssl;
 
 #[cfg(not(expose_openssl))]
 pub(crate) extern crate openssl;
-
-/// A device that can parse a stream of bytes into messages.
-pub trait StreamingDecoder<M>: Sized {
-    /// The type returned in the event of a deserialization error.
-    type Error;
-
-    /// Returns a mutable slice of bytes to accomodate for new input.
-    ///
-    /// The slice
-    /// can have any non-zero length, depending on how many bytes `self` believes
-    /// is a good guess. All bytes should be set to 0.
-    fn supply_buffer(&mut self) -> (&mut usize, &mut [u8]);
-
-    /// Validates the contents of the internal buffer and possibly caches the
-    /// resulting message. When successful, this method will return a [`Poll`] to
-    /// let the caller know whether more bytes are needed or not.
-    fn attempt_decoding(&mut self) -> Result<Option<&M>, Self::Error>;
-
-    fn get(&self) -> &M {
-        unimplemented!()
-    }
-}

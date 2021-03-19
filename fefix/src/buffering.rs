@@ -1,7 +1,6 @@
 //! Zero-copy buffering utilities.
 
 use std::io;
-
 /// Buffer operations.
 ///
 /// [`Buffer`] differs from [`io::Write`] in several ways:

@@ -9,12 +9,16 @@ const SOH: u8 = 0x1;
 /// Implementors of this trait should start with `Config`.
 pub trait Configure: Clone + Default {
     /// The [`TagLookup`] implementor that will be used during decoding.
+    ///
+    /// This type has no effect on encoding operations.
     type TagLookup: TagLookup;
 
     /// The delimiter character, which terminates every tag-value pair including
     /// the last one.
     ///
     /// ASCII 0x1 (SOH) is the default separator character.
+    ///
+    /// This setting is relevant for both encoding and decoding operations.
     fn separator(&self) -> u8 {
         SOH
     }
@@ -26,6 +30,8 @@ pub trait Configure: Clone + Default {
     }
 
     /// Determines wheather or not `CheckSum(10)` should be verified.
+    ///
+    /// This setting has no effect when encoding FIX messages.
     fn verify_checksum(&self) -> bool {
         true
     }
@@ -100,5 +106,40 @@ impl Default for Config {
             separator: SOH,
             verify_checksum: true,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn config_separator_is_soh_by_default() {
+        assert_eq!(Config::default().separator(), 0x1);
+    }
+
+    #[test]
+    fn config_separator_can_be_changed() {
+        let config = &mut Config::default();
+        config.set_separator(b'|');
+        assert_eq!(Config::default().separator(), b'|');
+        config.set_separator(b'^');
+        assert_eq!(Config::default().separator(), b'^');
+        config.set_separator(0x1);
+        assert_eq!(Config::default().separator(), 0x1);
+    }
+
+    #[test]
+    fn config_verifies_checksum_by_default() {
+        assert_eq!(Config::default().verify_checksum(), true);
+    }
+
+    #[test]
+    fn config_checksum_verification_can_be_changed() {
+        let config = &mut Config::default();
+        config.set_verify_checksum(false);
+        assert_eq!(Config::default().verify_checksum(), false);
+        config.set_verify_checksum(true);
+        assert_eq!(Config::default().verify_checksum(), true);
     }
 }

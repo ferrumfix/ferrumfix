@@ -20,7 +20,7 @@ pub enum HeartbeatRule {
     Exact(Duration),
     /// The acceptor requires the initiator to specify a heartbeat value within a
     /// [`RangeInclusive`] of
-    /// [`Duration`s]. Please refer to specs. §4.3.5.3 for
+    /// [`Duration`s](Duration). Please refer to specs. §4.3.5.3 for
     /// more information.
     Range(RangeInclusive<Duration>),
     /// The acceptor poses no restrictions on the heartbeat interval and the

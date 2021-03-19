@@ -2,6 +2,7 @@ use crate::dictionary::LayoutItemKind;
 use crate::Dictionary;
 use std::collections::HashSet;
 
+/// A utility data structure that helps to parse FIX repeating groups.
 #[derive(Debug, Clone)]
 pub struct GroupDelimiter {
     group_items: HashSet<(String, u32, u32)>,
@@ -10,6 +11,7 @@ pub struct GroupDelimiter {
 }
 
 impl GroupDelimiter {
+    /// Crates a new [`GroupDelimiter`] following the specification of `dictionary`.
     pub fn new(dictionary: Dictionary) -> Self {
         let mut group_items = HashSet::new();
         for message in dictionary.iter_messages() {
@@ -40,14 +42,17 @@ impl GroupDelimiter {
         }
     }
 
+    /// Assumes for all subsequent operations that `self` is parsing `msg_type`.
     pub fn set_msg_type(&mut self, msg_type: &str) {
         self.current_msg_type = msg_type.to_string();
     }
 
+    /// Notifies `self` that currently it's parsing a `group`.
     pub fn enter_group(&mut self, group: u32) {
         self.entered_groups.push(group);
     }
 
+    /// Calculates wheather or not the next `tag` is part of the current group.
     pub fn is_outside_group(&self, tag: u32) -> bool {
         if let Some(group_tag) = self.entered_groups.last() {
             self.group_items

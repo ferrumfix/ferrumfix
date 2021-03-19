@@ -1,10 +1,9 @@
+use super::{Config, Configure, DecodeError, EncodeError};
 use crate::buffering::Buffer;
-use crate::json::{Config, Configure};
 use crate::tagvalue::{field_value::FieldValue, FixFieldValue, Message};
 use crate::Dictionary;
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap};
-use std::fmt;
 
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]
@@ -20,7 +19,7 @@ where
 {
     /// Creates a new codec. `dict` serves as a reference for data type inference
     /// of incoming messages' fields. `config` handles encoding details. See the
-    /// [`Configure`](Configure) trait for more information.
+    /// [`Configure`] trait for more information.
     pub fn new(dict: Dictionary, config: Z) -> Self {
         let mut dictionaries = HashMap::new();
         dictionaries.insert(dict.get_version().to_string(), dict);
@@ -207,34 +206,6 @@ fn decode_component_block(
         group.insert(tag as i64, field);
     }
     Ok(group)
-}
-
-/// The type returned in the event of an error when encoding a FIX JSON message.
-#[derive(Copy, Clone, Debug)]
-pub enum EncodeError {
-    /// The type returned in case there is an inconsistency between
-    /// `BeginString`, `MsgType`, fields presence and other encoding rules as
-    /// establised by the dictionary.
-    Dictionary,
-}
-
-/// The type returned in the event of an error when decoding a FIX JSON message.
-#[derive(Copy, Clone, Debug)]
-pub enum DecodeError {
-    /// Bad JSON syntax.
-    Syntax,
-    /// The message is valid JSON, but not a valid FIX message.
-    Schema,
-    /// Unrecognized message type.
-    InvalidMsgType,
-    /// The data does not conform to the specified message type.
-    InvalidData,
-}
-
-impl fmt::Display for DecodeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "FIX JSON decoding error.")
-    }
 }
 
 #[cfg(test)]

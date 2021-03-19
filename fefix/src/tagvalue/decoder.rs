@@ -22,12 +22,12 @@ impl<C> Decoder<C>
 where
     C: Configure,
 {
-    /// Builds a new [`Codec`] encoding device with a FIX 4.4 dictionary.
+    /// Creates a new [`Decoder`] with a FIX 4.4 dictionary.
     pub fn new(config: C) -> Self {
         Self::with_dict(Dictionary::from_version(AppVersion::Fix44), config)
     }
 
-    /// Creates a new codec for the tag-value format. `dict` is used to parse
+    /// Creates a new [`Decoder`] for the tag-value format. `dict` is used to parse
     /// messages.
     pub fn with_dict(dict: Dictionary, config: C) -> Self {
         Self {

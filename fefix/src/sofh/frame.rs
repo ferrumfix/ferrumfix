@@ -8,8 +8,7 @@ const MAX_MESSAGE_SIZE_IN_BYTES: usize = u32::MAX as usize - HEADER_SIZE_IN_BYTE
 /// An immutable view into a SOFH-enclosed message, complete with its
 /// encoding type tag and message.
 ///
-/// This type is returned in a borrowed form from
-/// [`sofh::Codec::decode`](sofh::Codec::decode) and
+/// This type is returned in a borrowed form during decoding and
 /// there is no owned version of this type.
 #[derive(Debug, Copy, Clone)]
 pub struct Frame<'a> {
@@ -42,7 +41,7 @@ impl<'a> Frame<'a> {
     }
 
     /// Returns the 16-bits encoding type of `self`. You may want to
-    /// convert this value to an [`EncodingType`], which allows
+    /// convert this value to an [`EncodingType`](super::EncodingType), which allows
     /// for nice pattern matching.
     ///
     /// # Examples
@@ -73,7 +72,7 @@ impl<'a> Frame<'a> {
         self.message
     }
 
-    /// Deserializes [`Self`] from `data`. Returns `None` if invalid. Zero-copy.
+    /// Deserializes a [`Frame`] from `data`. Returns an `Err` if invalid. Zero-copy.
     ///
     /// This function ignores trailing bytes that are not part of the message.
     ///
