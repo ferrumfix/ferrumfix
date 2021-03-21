@@ -1,6 +1,6 @@
 use super::{Config, Configure, DecodeError, EncodeError};
 use crate::buffering::Buffer;
-use crate::tagvalue::{field_value::FieldValue, FixFieldValue, Message};
+use crate::tagvalue::{field_value::FieldValue, FixFieldValue, FixMessage};
 use crate::Dictionary;
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap};
@@ -9,7 +9,7 @@ use std::collections::{BTreeMap, HashMap};
 #[derive(Debug, Clone)]
 pub struct Codec<Z = Config> {
     dictionaries: HashMap<String, Dictionary>,
-    message: Message,
+    message: FixMessage,
     config: Z,
 }
 
@@ -25,7 +25,7 @@ where
         dictionaries.insert(dict.get_version().to_string(), dict);
         Self {
             dictionaries,
-            message: Message::new(),
+            message: FixMessage::new(),
             config,
         }
     }
@@ -61,7 +61,7 @@ impl<Z> Codec<Z>
 where
     Z: Configure,
 {
-    pub fn decode(&mut self, data: &[u8]) -> Result<&Message, DecodeError> {
+    pub fn decode(&mut self, data: &[u8]) -> Result<&FixMessage, DecodeError> {
         let value: serde_json::Value =
             serde_json::from_reader(data).map_err(|_| DecodeError::Syntax)?;
         let header = value
@@ -101,7 +101,11 @@ where
         Ok(&self.message)
     }
 
-    pub fn encode<B>(&mut self, mut buffer: &mut B, message: &Message) -> Result<usize, EncodeError>
+    pub fn encode<B>(
+        &mut self,
+        mut buffer: &mut B,
+        message: &FixMessage,
+    ) -> Result<usize, EncodeError>
     where
         B: Buffer,
     {

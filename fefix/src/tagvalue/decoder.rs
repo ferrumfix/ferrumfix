@@ -1,6 +1,6 @@
 use crate::tags;
 use crate::tagvalue::{
-    field_value::FieldValue, Config, Configure, DecodeError, FixFieldValue, Message, RawDecoder,
+    field_value::FieldValue, Config, Configure, DecodeError, FixFieldValue, FixMessage, RawDecoder,
     TagLookup,
 };
 use crate::{AppVersion, DataType, Dictionary};
@@ -16,7 +16,7 @@ where
     C: Configure,
 {
     dict: Dictionary,
-    message: Message,
+    message: FixMessage,
     raw_decoder: RawDecoder<C>,
 }
 
@@ -34,7 +34,7 @@ where
     pub fn with_dict(dict: Dictionary, config: C) -> Self {
         Self {
             dict,
-            message: Message::new(),
+            message: FixMessage::new(),
             raw_decoder: RawDecoder::with_config(config),
         }
     }
@@ -96,12 +96,12 @@ where
     ///     Some("A")
     /// );
     /// ```
-    pub fn decode(&mut self, data: &[u8]) -> Result<&Message, DecodeError> {
+    pub fn decode(&mut self, data: &[u8]) -> Result<&FixMessage, DecodeError> {
         let frame = self.raw_decoder.decode(data)?;
         self.from_frame(frame)
     }
 
-    fn from_frame(&mut self, frame: RawFrame) -> Result<&Message, DecodeError> {
+    fn from_frame(&mut self, frame: RawFrame) -> Result<&FixMessage, DecodeError> {
         self.message.clear();
         let begin_string = frame.begin_string();
         let body = frame.payload();
@@ -188,7 +188,7 @@ where
         self.raw_decoder.supply_buffer()
     }
 
-    pub fn current_message(&mut self) -> Result<Option<&Message>, DecodeError> {
+    pub fn current_message(&mut self) -> Result<Option<&FixMessage>, DecodeError> {
         match self.raw_decoder.current_frame() {
             Ok(Some(frame)) => self.decoder.from_frame(frame).map(|msg| Some(msg)),
             Ok(None) => Ok(None),

@@ -1,7 +1,7 @@
 //! FIX Adapted for Streaming (FAST) support.
 
 use crate::buffering::Buffer;
-use crate::tagvalue::Message;
+use crate::tagvalue::FixMessage;
 use crate::Dictionary;
 use bitvec::vec::BitVec;
 use codec::decode_stop_bit_bitvec;
@@ -24,7 +24,7 @@ pub use template::*;
 pub struct Fast {
     dict: Dictionary,
     templates: HashMap<String, Template>,
-    message: Message,
+    message: FixMessage,
 }
 
 impl Fast {
@@ -34,7 +34,7 @@ impl Fast {
         Fast {
             dict,
             templates: HashMap::new(),
-            message: Message::new(),
+            message: FixMessage::new(),
         }
     }
 
@@ -45,10 +45,10 @@ impl Fast {
 }
 
 impl Fast {
-    pub fn decode(&mut self, mut source: &[u8]) -> Result<&Message, Error> {
+    pub fn decode(&mut self, mut source: &[u8]) -> Result<&FixMessage, Error> {
         let _presence_map = decode_stop_bit_bitvec(&mut source).unwrap();
         let mut presence_by_field: BitVec = BitVec::new();
-        let message = Message::new();
+        let message = FixMessage::new();
         for field in self.templates.get("").unwrap().iter_items() {
             if let template::FieldType::Primitive(_f) = &field.kind() {
                 presence_by_field.push(field.is_mandatory());
@@ -102,7 +102,7 @@ impl Fast {
         Ok(&self.message)
     }
 
-    pub fn encode<B>(&mut self, buffer: &mut B, _message: &Message) -> Result<usize, Error>
+    pub fn encode<B>(&mut self, buffer: &mut B, _message: &FixMessage) -> Result<usize, Error>
     where
         B: Buffer,
     {

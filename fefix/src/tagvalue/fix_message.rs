@@ -6,7 +6,7 @@ const DEFAULT_FIELDS_LEN: usize = 64;
 
 /// FIX message data structure with fast associative and sequential access.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Message {
+pub struct FixMessage {
     fields: HashMap<u32, FixFieldValue>,
     insertion_order: Vec<u32>,
     i_first_cell: usize,
@@ -16,7 +16,7 @@ pub struct Message {
     len_end_trailer: usize,
 }
 
-impl Message {
+impl FixMessage {
     /// Creates a new [`Message`] without any fields.
     ///
     /// # Examples
@@ -172,7 +172,7 @@ impl Message {
 /// This `struct` is created by [`Message::fields`] and its fellow methods.
 #[derive(Debug)]
 pub struct FieldsIter<'a> {
-    message: &'a Message,
+    message: &'a FixMessage,
     i: usize,
     until: usize,
 }
@@ -203,7 +203,7 @@ mod test {
 
     #[test]
     fn new_message_has_no_fields() {
-        let msg = Message::new();
+        let msg = FixMessage::new();
         assert_eq!(msg.fields().count(), 0);
     }
 }

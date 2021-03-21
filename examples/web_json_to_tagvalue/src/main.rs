@@ -1,6 +1,6 @@
 //! Starts an HTTP server on any open port and listens for JSON FIX messages.
 
-use fefix::{json, tagvalue, tagvalue::Message, AppVersion, Dictionary};
+use fefix::{json, tagvalue, tagvalue::FixMessage, AppVersion, Dictionary};
 
 #[tokio::main]
 async fn main() -> tide::Result<()> {
@@ -53,7 +53,7 @@ async fn serve_json_relay(mut req: tide::Request<State>) -> tide::Result {
     };
     let mut buffer = Vec::new();
     let body_response = {
-        let msg = &mut Message::new();
+        let msg = &mut FixMessage::new();
         for (tag, value) in message.fields() {
             msg.add_field(tag, value.clone()).unwrap();
         }
