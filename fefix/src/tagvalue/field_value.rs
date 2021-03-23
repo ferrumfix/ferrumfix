@@ -381,12 +381,24 @@ impl From<char> for Char {
     }
 }
 
+impl From<Char> for char {
+    fn from(c: Char) -> Self {
+        c.0
+    }
+}
+
 impl PrimitiveDataType for Char {}
 
 /// Char field (see definition of "char" above) containing one of two values: 'Y'
 /// = True/Yes, 'N' = False/No.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Boolean(bool);
+
+impl From<Boolean> for bool {
+    fn from(b: Boolean) -> Self {
+        b.0
+    }
+}
 
 impl DerivedDataType for Boolean {
     type Primitive = Char;

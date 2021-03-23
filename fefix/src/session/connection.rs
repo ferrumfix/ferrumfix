@@ -143,7 +143,7 @@ impl FixConnection {
         let seq_numbers = self.seq_numbers();
         let env = self.environment();
         // Check `TestMessageIndicator(464)`.
-        match (env, msg.test_indicator()) {
+        match (env, msg.f_test_indicator()) {
             (Environment::ProductionDisallowTest, Some(true)) => {
                 self.on_message_in_wrong_env(msg);
                 return;
@@ -152,7 +152,7 @@ impl FixConnection {
         };
         // Compare seq. numbers.
         let seqnum_state = msg
-            .seq_num()
+            .f_seq_num()
             .map(|seqnum| seq_numbers.validate_inbound(seqnum))
             .unwrap_or(Err(SeqNumberError::NoSeqNum));
         // Compare the incoming seq. number to the one we expected and act
@@ -175,9 +175,9 @@ impl FixConnection {
             }
         };
         // Detect Logon <A>.
-        if let Some("A") = msg.msg_type() {
+        if let Some("A") = msg.f_msg_type() {
             self.on_logon(msg);
-        } else if msg.msg_type() != Some("A") {
+        } else if msg.f_msg_type() != Some("A") {
             self.enqueue(Response::TerminateTransport);
             return;
         } else {
@@ -236,7 +236,7 @@ impl FixConnection {
         msg.add_str(tags::SENDER_COMP_ID, self.sender_comp_id());
         msg.add_str(tags::TARGET_COMP_ID, self.sender_comp_id());
         msg.add_int(tags::BEGIN_SEQ_NO, self.seq_numbers().next_inbound() as i64);
-        msg.add_int(tags::END_SEQ_NO, message.seq_num().unwrap() as i64);
+        msg.add_int(tags::END_SEQ_NO, message.f_seq_num().unwrap() as i64);
         self.seq_numbers_mut().incr_outbound();
         self.enqueue(Response::Outbound(add_time_to_msg(msg)));
     }

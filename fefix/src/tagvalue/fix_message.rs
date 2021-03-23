@@ -87,30 +87,6 @@ impl FixMessage {
         self.add_field(tag, FixFieldValue::from(value)).unwrap()
     }
 
-    pub fn msg_type(&self) -> Option<&str> {
-        match self.fields.get(&35) {
-            Some(FixFieldValue::Atom(val::FieldValue::String(s))) => Some(s.as_str()),
-            _ => None,
-        }
-    }
-
-    pub fn seq_num(&self) -> Option<u64> {
-        match self.fields.get(&34) {
-            Some(FixFieldValue::Atom(val::FieldValue::Int(val::Int(n)))) => Some(*n as u64),
-            _ => None,
-        }
-    }
-
-    pub fn test_indicator(&self) -> Option<bool> {
-        let y = FixFieldValue::from('Y');
-        let n = FixFieldValue::from('N');
-        match self.fields.get(&464) {
-            Some(f) if *f == y => Some(true),
-            Some(f) if *f == n => Some(false),
-            _ => Some(false),
-        }
-    }
-
     /// Returns an immutable reference to the field value of `tag` in `self`, if
     /// present.
     ///
@@ -126,6 +102,51 @@ impl FixMessage {
     /// ```
     pub fn field(&self, tag: u32) -> Option<&FixFieldValue> {
         self.fields.get(&tag)
+    }
+
+    pub fn field_char(&self, tag: u32) -> Option<char> {
+        match self.field(tag) {
+            Some(FixFieldValue::Atom(val::FieldValue::Char(c))) => Some(c.clone().into()),
+            _ => None,
+        }
+    }
+
+    pub fn field_bytes(&self, tag: u32) -> Option<&[u8]> {
+        match self.field(tag) {
+            Some(FixFieldValue::Atom(val::FieldValue::String(s))) => Some(s.as_str().as_bytes()),
+            _ => None,
+        }
+    }
+
+    pub fn field_bool(&self, tag: u32) -> Option<bool> {
+        match self.field(tag) {
+            Some(FixFieldValue::Atom(val::FieldValue::Boolean(x))) => Some(x.clone().into()),
+            _ => None,
+        }
+    }
+
+    pub fn f_msg_type(&self) -> Option<&str> {
+        match self.fields.get(&35) {
+            Some(FixFieldValue::Atom(val::FieldValue::String(s))) => Some(s.as_str()),
+            _ => None,
+        }
+    }
+
+    pub fn f_seq_num(&self) -> Option<u64> {
+        match self.fields.get(&34) {
+            Some(FixFieldValue::Atom(val::FieldValue::Int(val::Int(n)))) => Some(*n as u64),
+            _ => None,
+        }
+    }
+
+    pub fn f_test_indicator(&self) -> Option<bool> {
+        let y = FixFieldValue::from('Y');
+        let n = FixFieldValue::from('N');
+        match self.fields.get(&464) {
+            Some(f) if *f == y => Some(true),
+            Some(f) if *f == n => Some(false),
+            _ => Some(false),
+        }
     }
 
     /// Creates an [`Iterator`] over all FIX fields in `self`.
