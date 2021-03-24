@@ -1,5 +1,96 @@
-use crate::tagvalue::{utils, Config, Configure, DecodeError, RawFrame};
+use crate::tagvalue::{utils, Config, Configure, DecodeError};
 use std::ops::Range;
+
+/// An immutable view over the raw contents of a FIX message.
+#[derive(Debug)]
+pub struct RawFrame<'a> {
+    data: &'a [u8],
+    begin_string: &'a [u8],
+    payload: &'a [u8],
+    payload_offset: usize,
+}
+
+impl<'a> RawFrame<'a> {
+    fn new(
+        data: &'a [u8],
+        begin_string: &'a [u8],
+        payload_offset: usize,
+        payload_len: usize,
+    ) -> Self {
+        Self {
+            data,
+            begin_string,
+            payload: &data[payload_offset..payload_offset + payload_len],
+            payload_offset,
+        }
+    }
+
+    /// Returns an immutable reference to the raw contents of `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::tagvalue::{Config, RawDecoder};
+    ///
+    /// let mut decoder = RawDecoder::<Config>::new();
+    /// decoder.config_mut().set_separator(b'|');
+    /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
+    /// let message = decoder.decode(data).unwrap();
+    ///
+    /// assert_eq!(message.as_bytes(), data);
+    /// ```
+    pub fn as_bytes(&self) -> &'a [u8] {
+        self.data
+    }
+
+    /// Returns an immutable reference to the `BeginString <8>` field value of
+    /// `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::tagvalue::{Config, RawDecoder};
+    ///
+    /// let mut decoder = RawDecoder::<Config>::new();
+    /// decoder.config_mut().set_separator(b'|');
+    /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
+    /// let message = decoder.decode(data).unwrap();
+    ///
+    /// assert_eq!(message.begin_string(), b"FIX.4.2");
+    /// ```
+    pub fn begin_string(&self) -> &'a [u8] {
+        self.begin_string
+    }
+
+    /// Returns an immutable reference to the body contents of `self`. In this
+    /// context, "body" means all fields besides
+    ///
+    /// - `BeginString <8>`;
+    /// - `BodyLength <9>`;
+    /// - `CheckSum <10>`.
+    ///
+    /// According to this definition, the body may also contain fields that are
+    /// technically part of `StandardHeader` and `StandardTrailer`.
+    ///
+    /// ```
+    /// use fefix::tagvalue::{Config, RawDecoder};
+    ///
+    /// let mut decoder = RawDecoder::<Config>::new();
+    /// decoder.config_mut().set_separator(b'|');
+    /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
+    /// let message = decoder.decode(data).unwrap();
+    ///
+    /// assert_eq!(message.payload().len(), 42);
+    /// ```
+    pub fn payload(&self) -> &'a [u8] {
+        self.payload
+    }
+
+    /// Returns the offset of [`RawFrame::payload`].
+    pub fn payload_offset(&self) -> usize {
+        self.payload_offset
+    }
+}
 
 /// A bare-bones FIX decoder for low-level message handling.
 ///
@@ -60,9 +151,12 @@ where
         if self.config().verify_checksum() {
             utils::verify_checksum(data)?;
         }
-        let begin_string = &data[info.begin_string_range()];
-        let contents = &data[info.body_range()];
-        Ok(RawFrame::new(begin_string, contents))
+        Ok(RawFrame::new(
+            data,
+            &data[info.begin_string_range()],
+            info.body_range().start,
+            info.body_range().len(),
+        ))
     }
 }
 

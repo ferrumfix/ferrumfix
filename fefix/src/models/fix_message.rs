@@ -1,8 +1,11 @@
+use super::{Error, FixFieldAccess, FixFieldsIter};
 use crate::tagvalue::field_value as val;
 use crate::tagvalue::FixFieldValue;
 use std::collections::HashMap;
 
 const DEFAULT_FIELDS_LEN: usize = 64;
+
+type Result<T> = std::result::Result<T, Error>;
 
 /// FIX message data structure with fast associative and sequential access.
 #[derive(Debug, Clone, PartialEq)]
@@ -22,9 +25,9 @@ impl FixMessage {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::Message;
+    /// use fefix::FixMessage;
     ///
-    /// let msg = Message::new();
+    /// let msg = FixMessage::new();
     /// ```
     pub fn new() -> Self {
         Self {
@@ -83,7 +86,7 @@ impl FixMessage {
     /// # Panics
     ///
     /// This function panics if `tag` is a duplicate.
-    pub fn add_int(&mut self, tag: u32, value: i64) {
+    pub fn add_i64(&mut self, tag: u32, value: i64) {
         self.add_field(tag, FixFieldValue::from(value)).unwrap()
     }
 
@@ -93,36 +96,15 @@ impl FixMessage {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::Message;
+    /// use fefix::FixMessage;
     ///
-    /// let message = &mut Message::new();
+    /// let message = &mut FixMessage::new();
     /// assert!(message.field(8).is_none());
     /// message.add_str(8, "FIX.4.4");
     /// assert!(message.field(8).is_some());
     /// ```
     pub fn field(&self, tag: u32) -> Option<&FixFieldValue> {
         self.fields.get(&tag)
-    }
-
-    pub fn field_char(&self, tag: u32) -> Option<char> {
-        match self.field(tag) {
-            Some(FixFieldValue::Atom(val::FieldValue::Char(c))) => Some(c.clone().into()),
-            _ => None,
-        }
-    }
-
-    pub fn field_bytes(&self, tag: u32) -> Option<&[u8]> {
-        match self.field(tag) {
-            Some(FixFieldValue::Atom(val::FieldValue::String(s))) => Some(s.as_str().as_bytes()),
-            _ => None,
-        }
-    }
-
-    pub fn field_bool(&self, tag: u32) -> Option<bool> {
-        match self.field(tag) {
-            Some(FixFieldValue::Atom(val::FieldValue::Boolean(x))) => Some(x.clone().into()),
-            _ => None,
-        }
     }
 
     pub fn f_msg_type(&self) -> Option<&str> {
@@ -149,8 +131,53 @@ impl FixMessage {
         }
     }
 
+    pub fn end_header(&mut self) {}
+}
+
+impl FixFieldAccess for FixMessage {
+    fn field_char(&self, tag: u32) -> Option<char> {
+        match self.field(tag) {
+            Some(FixFieldValue::Atom(val::FieldValue::Char(c))) => Some(c.clone().into()),
+            _ => None,
+        }
+    }
+
+    fn field_data(&self, tag: u32) -> Option<&[u8]> {
+        match self.field(tag) {
+            Some(FixFieldValue::Atom(val::FieldValue::String(s))) => Some(s.as_str().as_bytes()),
+            _ => None,
+        }
+    }
+
+    fn field_bool(&self, tag: u32) -> Option<bool> {
+        match self.field(tag) {
+            Some(FixFieldValue::Atom(val::FieldValue::Boolean(x))) => Some(x.clone().into()),
+            _ => None,
+        }
+    }
+
+    fn field_i64(&self, tag: u32) -> Option<i64> {
+        match self.field(tag) {
+            Some(FixFieldValue::Atom(val::FieldValue::Int(x))) => Some(x.0 as i64),
+            _ => None,
+        }
+    }
+
+    fn field_str(&self, tag: u32) -> Option<&str> {
+        match self.field(tag) {
+            Some(FixFieldValue::Atom(val::FieldValue::String(s))) => Some(s.as_str()),
+            _ => None,
+        }
+    }
+}
+
+impl<'a> FixFieldsIter<&'a FixFieldValue> for &'a FixMessage {
+    type FieldsIter = FieldsIter<'a>;
+    type FieldsIterStdHeader = FieldsIter<'a>;
+    type FieldsIterBody = FieldsIter<'a>;
+
     /// Creates an [`Iterator`] over all FIX fields in `self`.
-    pub fn fields(&self) -> FieldsIter {
+    fn iter_fields(&self) -> Self::FieldsIter {
         FieldsIter {
             message: self,
             i: self.i_first_cell,
@@ -158,10 +185,8 @@ impl FixMessage {
         }
     }
 
-    pub fn end_header(&mut self) {}
-
     /// Returns an [`Iterator`] over all FIX fields in the `StandardHeader`.
-    pub fn fields_in_std_header(&self) -> FieldsIter {
+    fn iter_fields_in_std_header(&self) -> Self::FieldsIterStdHeader {
         FieldsIter {
             message: self,
             i: self.i_first_cell,
@@ -170,16 +195,7 @@ impl FixMessage {
     }
 
     /// Returns an [`Iterator`] over all FIX fields in the body.
-    pub fn fields_in_body(&self) -> FieldsIter {
-        FieldsIter {
-            message: self,
-            i: self.i_first_cell,
-            until: 0,
-        }
-    }
-
-    /// Returns an [`Iterator`] over all FIX fields in the `StandardTrailer`.
-    pub fn fields_in_std_trailer(&self) -> FieldsIter {
+    fn iter_fields_in_body(&self) -> Self::FieldsIterBody {
         FieldsIter {
             message: self,
             i: self.i_first_cell,
@@ -208,23 +224,5 @@ impl<'a> Iterator for FieldsIter<'a> {
         } else {
             None
         }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum Error {
-    Duplicate,
-}
-
-pub type Result<T> = std::result::Result<T, Error>;
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn new_message_has_no_fields() {
-        let msg = FixMessage::new();
-        assert_eq!(msg.fields().count(), 0);
     }
 }

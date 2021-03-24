@@ -42,6 +42,7 @@ pub mod fast;
 mod fix_codegen;
 pub mod fixs;
 pub mod json;
+mod models;
 mod quickfix_specs;
 pub mod session;
 pub mod sofh;
@@ -53,6 +54,9 @@ pub use dictionary::Dictionary;
 pub use dt::DataType;
 pub use fefix_derive::*;
 pub use fix_codegen::{codegen, codegen_tag_mnemonics};
+pub use models::{
+    FieldsIter, FixFieldAccess, FixFieldsIter, FixMessage, FixMessageRef, FixMessageRefBuilder,
+};
 pub use quickfix_specs::quickfix_spec;
 
 #[cfg(expose_openssl)]

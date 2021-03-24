@@ -1,8 +1,8 @@
 //! FIX Adapted for Streaming (FAST) support.
 
 use crate::buffering::Buffer;
-use crate::tagvalue::FixMessage;
 use crate::Dictionary;
+use crate::FixMessage;
 use bitvec::vec::BitVec;
 use codec::decode_stop_bit_bitvec;
 use errors::Error;

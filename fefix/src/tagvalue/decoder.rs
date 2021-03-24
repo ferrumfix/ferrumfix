@@ -1,13 +1,9 @@
-use crate::tags;
-use crate::tagvalue::{
-    field_value::FieldValue, Config, Configure, DecodeError, FixFieldValue, FixMessage, RawDecoder,
-    TagLookup,
-};
-use crate::{AppVersion, DataType, Dictionary};
+use super::{RawDecoder, RawDecoderBuffered, RawFrame};
+use crate::tagvalue::{Config, Configure, DecodeError};
+use crate::{tags, Dictionary, FixMessageRef, FixMessageRefBuilder};
 use std::fmt::Debug;
-use std::str;
 
-use super::{RawDecoderBuffered, RawFrame};
+const BEGIN_STRING_OFFSET: usize = 2;
 
 /// FIX message decoder.
 #[derive(Debug)]
@@ -16,7 +12,7 @@ where
     C: Configure,
 {
     dict: Dictionary,
-    message: FixMessage,
+    builder: FixMessageRefBuilder,
     raw_decoder: RawDecoder<C>,
 }
 
@@ -24,17 +20,16 @@ impl<C> Decoder<C>
 where
     C: Configure,
 {
-    /// Creates a new [`Decoder`] with a FIX 4.4 dictionary.
-    pub fn new(config: C) -> Self {
-        Self::with_dict(Dictionary::from_version(AppVersion::Fix44), config)
-    }
-
     /// Creates a new [`Decoder`] for the tag-value format. `dict` is used to parse
     /// messages.
-    pub fn with_dict(dict: Dictionary, config: C) -> Self {
+    pub fn new(dict: Dictionary) -> Self {
+        Self::with_config(dict, C::default())
+    }
+
+    pub fn with_config(dict: Dictionary, config: C) -> Self {
         Self {
             dict,
-            message: FixMessage::new(),
+            builder: FixMessageRefBuilder::new(),
             raw_decoder: RawDecoder::with_config(config),
         }
     }
@@ -45,8 +40,10 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, Configure, Decoder};
+    /// use fefix::{AppVersion, Dictionary};
     ///
-    /// let decoder = Decoder::new(Config::default());
+    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let decoder = Decoder::<Config>::new(dict);
     /// assert_eq!(decoder.config().separator(), 0x1);
     /// ```
     pub fn config(&self) -> &C {
@@ -59,8 +56,10 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, Configure, Decoder};
+    /// use fefix::{AppVersion, Dictionary};
     ///
-    /// let decoder = &mut Decoder::new(Config::default());
+    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let decoder = &mut Decoder::<Config>::new(dict);
     /// decoder.config_mut().set_separator(b'|');
     /// assert_eq!(decoder.config().separator(), b'|');
     /// ```
@@ -85,50 +84,57 @@ where
     /// ```
     /// use fefix::tagvalue::{Config, Decoder};
     /// use fefix::tags::fix42 as tags;
+    /// use fefix::{AppVersion, Dictionary, FixFieldAccess};
     ///
-    /// let decoder = &mut Decoder::new(Config::default());
+    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let decoder = &mut Decoder::<Config>::new(dict);
     /// let data = b"8=FIX.4.2\x019=42\x0135=0\x0149=A\x0156=B\x0134=12\x0152=20100304-07:59:30\x0110=185\x01";
     /// let message = decoder.decode(data).unwrap();
     /// assert_eq!(
-    ///     message
-    ///         .field(tags::SENDER_COMP_ID)
-    ///         .and_then(|field| field.as_str()),
+    ///     message.field_str(tags::SENDER_COMP_ID),
     ///     Some("A")
     /// );
     /// ```
-    pub fn decode(&mut self, data: &[u8]) -> Result<&FixMessage, DecodeError> {
-        let frame = self.raw_decoder.decode(data)?;
+    pub fn decode<'a>(&'a mut self, bytes: &'a [u8]) -> Result<FixMessageRef<'a>, DecodeError> {
+        let frame = self.raw_decoder.decode(bytes)?;
         self.from_frame(frame)
     }
 
-    fn from_frame(&mut self, frame: RawFrame) -> Result<&FixMessage, DecodeError> {
-        self.message.clear();
-        let begin_string = frame.begin_string();
-        let body = frame.payload();
-        let config = self.config().clone();
-        let mut fields = &mut FieldIter::new(body, &config, &self.dict);
-        // Deserialize `MsgType(35)`.
-        let msg_type = {
-            let (tag, field_value) = fields.next().ok_or(DecodeError::Invalid)??;
-            if tag != tags::MSG_TYPE {
-                dbglog!("Expected MsgType (35), got ({}) instead.", tag);
-                return Err(DecodeError::Invalid);
-            }
-            field_value
-        };
-        self.message
+    fn from_frame<'a>(&'a mut self, frame: RawFrame<'a>) -> Result<FixMessageRef<'a>, DecodeError> {
+        self.builder.clear();
+        let bytes = frame.as_bytes();
+        let mut tag_num = 0u32;
+        let mut state_is_tag = true;
+        let mut i_sep;
+        let mut i_equal_sign = 0usize;
+        self.builder
             .add_field(
                 tags::BEGIN_STRING,
-                FixFieldValue::string(begin_string).unwrap(),
+                BEGIN_STRING_OFFSET,
+                frame.begin_string().len(),
             )
             .unwrap();
-        self.message.add_field(tags::MSG_TYPE, msg_type).unwrap();
-        // Iterate over all the other fields and store them to the message.
-        for field_result in &mut fields {
-            let (tag, field_value) = field_result?;
-            self.message.add_field(tag, field_value).unwrap();
+        for i in 0..frame.payload().len() {
+            let byte = frame.payload()[i];
+            if byte == b'=' {
+                i_equal_sign = i;
+                state_is_tag = false;
+            } else if byte == self.config().separator() {
+                i_sep = i;
+                state_is_tag = true;
+                self.builder
+                    .add_field(
+                        tag_num,
+                        frame.payload_offset() + i_equal_sign + 1,
+                        i_sep - i_equal_sign - 1,
+                    )
+                    .unwrap();
+                tag_num = 0;
+            } else if state_is_tag {
+                tag_num = tag_num * 10 + (byte - b'0') as u32;
+            }
         }
-        Ok(&self.message)
+        Ok(self.builder.build(bytes))
     }
 }
 
@@ -161,8 +167,10 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, Configure, Decoder};
+    /// use fefix::{AppVersion, Dictionary};
     ///
-    /// let decoder = Decoder::new(Config::default()).buffered();
+    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let decoder = Decoder::<Config>::new(dict);
     /// assert_eq!(decoder.config().separator(), 0x1);
     /// ```
     pub fn config(&self) -> &C {
@@ -175,8 +183,10 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, Configure, Decoder};
+    /// use fefix::{AppVersion, Dictionary};
     ///
-    /// let decoder = &mut Decoder::new(Config::default()).buffered();
+    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let decoder = &mut Decoder::<Config>::new(dict);
     /// decoder.config_mut().set_separator(b'|');
     /// assert_eq!(decoder.config().separator(), b'|');
     /// ```
@@ -188,7 +198,7 @@ where
         self.raw_decoder.supply_buffer()
     }
 
-    pub fn current_message(&mut self) -> Result<Option<&FixMessage>, DecodeError> {
+    pub fn current_message(&mut self) -> Result<Option<FixMessageRef>, DecodeError> {
         match self.raw_decoder.current_frame() {
             Ok(Some(frame)) => self.decoder.from_frame(frame).map(|msg| Some(msg)),
             Ok(None) => Ok(None),
@@ -197,129 +207,10 @@ where
     }
 }
 
-struct FieldIter<'a, C>
-where
-    C: Configure,
-{
-    data: &'a [u8],
-    cursor: usize,
-    config: &'a C,
-    tag_lookup: C::TagLookup,
-    data_field_length: usize,
-}
-
-impl<'a, C> FieldIter<'a, C>
-where
-    C: Configure,
-{
-    fn new(data: &'a [u8], config: &'a C, dictionary: &'a Dictionary) -> Self {
-        Self {
-            data,
-            cursor: 0,
-            config,
-            tag_lookup: C::TagLookup::from_dict(dictionary),
-            data_field_length: 0,
-        }
-    }
-}
-
-impl<'a, C> Iterator for &mut FieldIter<'a, C>
-where
-    C: Configure,
-{
-    type Item = Result<(u32, FixFieldValue), DecodeError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.cursor >= self.data.len() {
-            return None;
-        }
-        let mut tag = 0u32;
-        while let Some(byte) = self.data.get(self.cursor) {
-            self.cursor += 1;
-            if *byte == b'=' {
-                if tag == 0 {
-                    return Some(Err(DecodeError::Invalid));
-                } else {
-                    break;
-                }
-            }
-            tag = tag * 10 + byte.wrapping_sub(b'0') as u32;
-        }
-        if self.data.get(self.cursor).is_none() {
-            return Some(Err(DecodeError::Invalid));
-        }
-        debug_assert_eq!(self.data[self.cursor - 1], b'=');
-        debug_assert!(tag > 0);
-        let datatype = self.tag_lookup.lookup(tag);
-        let mut field_value = FixFieldValue::from(0i64);
-        match datatype {
-            Ok(DataType::Data) => {
-                field_value = FixFieldValue::Atom(FieldValue::Data(
-                    self.data[self.cursor..self.cursor + self.data_field_length].to_vec(),
-                ));
-                self.cursor += self.data_field_length + 1;
-                debug_assert_eq!(self.data[self.cursor - 1], self.config.separator());
-            }
-            Ok(datatype) => {
-                if let Some(separator_i) = &self.data[self.cursor..]
-                    .iter()
-                    .position(|byte| *byte == self.config.separator())
-                    .map(|i| i + self.cursor)
-                {
-                    field_value =
-                        read_field_value(datatype, &self.data[self.cursor..*separator_i]).unwrap();
-                    self.cursor = separator_i + 1;
-                    debug_assert_eq!(self.data[self.cursor - 1], self.config.separator());
-                    if datatype == DataType::Length {
-                        self.data_field_length = field_value.as_length().unwrap();
-                    }
-                } else {
-                    dbglog!("EOF before expected separator. Error.");
-                    return Some(Err(DecodeError::Invalid));
-                }
-            }
-            Err(_) => (),
-        }
-        debug_assert_eq!(self.data[self.cursor - 1], self.config.separator());
-        Some(Ok((tag, field_value)))
-    }
-}
-
-fn read_field_value(datatype: DataType, buf: &[u8]) -> Result<FixFieldValue, DecodeError> {
-    debug_assert!(!buf.is_empty());
-    Ok(match datatype {
-        DataType::Char => FixFieldValue::from(buf[0] as char),
-        DataType::Data => FixFieldValue::Atom(FieldValue::Data(buf.to_vec())),
-        DataType::Float => FixFieldValue::Atom(FieldValue::float(
-            str::from_utf8(buf)
-                .map_err(|_| DecodeError::Invalid)?
-                .parse::<f32>()
-                .map_err(|_| DecodeError::Invalid)?,
-        )),
-        DataType::Int => {
-            let mut n = 0i64;
-            let mut multiplier = 1;
-            for byte in buf.iter().rev() {
-                if *byte >= b'0' && *byte <= b'9' {
-                    let digit = byte - b'0';
-                    n += digit as i64 * multiplier;
-                } else if *byte == b'-' {
-                    n *= -1;
-                } else if *byte != b'+' {
-                    return Err(DecodeError::Invalid);
-                }
-                multiplier *= 10;
-            }
-            FixFieldValue::from(n)
-        }
-        _ => FixFieldValue::string(buf).unwrap(),
-    })
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::tagvalue::Config;
+    use crate::{tagvalue::Config, AppVersion};
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
@@ -328,7 +219,8 @@ mod test {
     }
 
     fn decoder() -> Decoder<Config> {
-        Decoder::new(Config::default().with_separator(b'|'))
+        let dict = Dictionary::from_version(AppVersion::Fix44);
+        Decoder::with_config(dict, Config::default().with_separator(b'|'))
     }
 
     #[test]
@@ -361,10 +253,9 @@ mod test {
     #[test]
     fn no_skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
-        let mut config = Config::default();
-        config.set_separator(b'|');
-        config.set_verify_checksum(true);
-        let mut codec = Decoder::new(config);
+        let mut codec = Decoder::<Config>::new(Dictionary::from_version(AppVersion::Fix44));
+        codec.config_mut().set_separator(b'|');
+        codec.config_mut().set_verify_checksum(true);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
     }
@@ -385,14 +276,8 @@ mod test {
         let mut codec = decoder();
         codec.config_mut().set_verify_checksum(false);
         let message = codec.decode(&mut RANDOM_MESSAGES[0].as_bytes()).unwrap();
-        assert_eq!(
-            message.field(8),
-            Some(&FixFieldValue::string(b"FIX.4.2").unwrap())
-        );
-        assert_eq!(
-            message.field(35),
-            Some(&FixFieldValue::string(b"0").unwrap())
-        );
+        assert_eq!(message.field(8), Some(b"FIX.4.2" as &[u8]));
+        assert_eq!(message.field(35), Some(b"0" as &[u8]),);
     }
 
     #[test]
@@ -400,7 +285,7 @@ mod test {
         let message = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
         let mut config = Config::default();
         config.set_separator(b'|');
-        let mut codec = Decoder::new(config);
+        let mut codec = Decoder::with_config(Dictionary::from_version(AppVersion::Fix44), config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
     }

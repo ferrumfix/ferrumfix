@@ -14,22 +14,18 @@ mod config;
 mod decoder;
 mod encoder;
 pub mod field_value;
-mod fix_message;
 mod group_delimiter;
 mod raw_decoder;
 mod raw_encoder;
-mod raw_frame;
 mod taglookup;
 mod utils;
 
 pub use config::{Config, Configure};
 pub use decoder::{Decoder, DecoderBuffered};
 pub use encoder::Encoder;
-pub use fix_message::FixMessage;
 pub use group_delimiter::GroupDelimiter;
-pub use raw_decoder::{RawDecoder, RawDecoderBuffered};
+pub use raw_decoder::{RawDecoder, RawDecoderBuffered, RawFrame};
 pub use raw_encoder::RawEncoder;
-pub use raw_frame::RawFrame;
 pub use taglookup::{TagLookup, TagLookupSingleAppVersion};
 pub use utils::{checksum_10, encode_raw};
 

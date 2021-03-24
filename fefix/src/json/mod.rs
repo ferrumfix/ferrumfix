@@ -3,11 +3,13 @@
 use std::error::Error;
 use std::fmt;
 
-mod codec;
 mod config;
+mod decoder;
+mod encoder;
 
-pub use codec::Codec;
 pub use config::{Config, ConfigPrettyPrint, Configure};
+pub use decoder::Decoder;
+pub use encoder::Encoder;
 
 /// The type returned in the event of an error when encoding a FIX JSON message.
 #[derive(Copy, Clone, Debug)]

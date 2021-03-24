@@ -1,8 +1,6 @@
 use crate::buffering::Buffer;
-use crate::tagvalue::{
-    field_value::TagNum, utils, Config, Configure, EncodeError, FixFieldValue, FixMessage,
-};
-use crate::{AppVersion, Dictionary};
+use crate::tagvalue::{field_value::TagNum, utils, Config, Configure, EncodeError, FixFieldValue};
+use crate::{AppVersion, Dictionary, FixFieldsIter, FixMessage};
 use std::fmt::Debug;
 
 /// FIX message encoder and decoder.
@@ -66,7 +64,7 @@ where
         let body_writer = |buffer: &mut B| {
             let start_i = buffer.as_slice().len();
             // Skips `BeginString`.
-            for (tag, value) in message.fields().skip(1) {
+            for (tag, value) in message.iter_fields().skip(1) {
                 encode_field(
                     TagNum::from(tag as u16),
                     value,
@@ -77,7 +75,7 @@ where
             buffer.as_slice().len() - start_i
         };
         let begin_string = message
-            .fields_in_std_header()
+            .iter_fields_in_std_header()
             .next()
             .unwrap()
             .1

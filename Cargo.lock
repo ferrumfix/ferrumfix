@@ -685,6 +685,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "212d0f5754cb6769937f4501cc0e67f4f4483c8d2c3e1e922ee9edbe4ab4c7c0"
 
 [[package]]
+name = "enum-as-inner"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c5f0096a91d210159eceb2ff5e1c4da18388a170e1e3ce948aac9c8fdbbf595"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "env_logger"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -718,6 +730,7 @@ dependencies = [
  "bitvec",
  "boolinator",
  "chrono",
+ "enum-as-inner",
  "fefix_derive",
  "futures",
  "futures-lite",
