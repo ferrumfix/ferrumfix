@@ -115,18 +115,18 @@ where
         Self::default()
     }
 
+    /// Creates a new [`RawDecoder`] with `config` as a [`Configure`]
+    /// implementor.
+    pub fn with_config(config: C) -> Self {
+        Self { config }
+    }
+
     pub fn buffered(self) -> RawDecoderBuffered<C> {
         RawDecoderBuffered {
             buffer: Vec::new(),
             decoder: self,
             error: None,
         }
-    }
-
-    /// Creates a new [`RawDecoder`] with `config` as a [`Configure`]
-    /// implementor.
-    pub fn with_config(config: C) -> Self {
-        Self { config }
     }
 
     /// Returns an immutable reference to the [`Configure`] implementor used by

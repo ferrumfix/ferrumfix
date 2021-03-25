@@ -133,12 +133,12 @@ where
         let body_length = self.body_length();
         let body_length_range = self.body_length_writable_range();
         let slice = &mut self.buffer.as_mut_slice()[body_length_range];
-        slice[0] = (body_length / 100000) as u8 + b'0';
-        slice[1] = ((body_length / 10000) % 10) as u8 + b'0';
-        slice[2] = ((body_length / 1000) % 10) as u8 + b'0';
-        slice[3] = ((body_length / 100) % 10) as u8 + b'0';
-        slice[4] = ((body_length / 10) % 10) as u8 + b'0';
-        slice[5] = (body_length % 10) as u8 + b'0';
+        slice[0] = to_digit((body_length / 100000) as u8 % 10);
+        slice[1] = to_digit((body_length / 10000) as u8 % 10);
+        slice[2] = to_digit((body_length / 1000) as u8 % 10);
+        slice[3] = to_digit((body_length / 100) as u8 % 10);
+        slice[4] = to_digit((body_length / 10) as u8 % 10);
+        slice[5] = to_digit((body_length / 1) as u8 % 10);
     }
 
     fn write_checksum(&mut self) {
@@ -147,10 +147,14 @@ where
             b'1',
             b'0',
             b'=',
-            (checksum / 100) + b'0',
-            ((checksum / 10) % 10) + b'0',
-            (checksum % 10) + b'0',
+            to_digit(checksum / 100),
+            to_digit((checksum / 10) % 10),
+            to_digit(checksum % 10),
             self.config.separator(),
         ]);
     }
+}
+
+fn to_digit(byte: u8) -> u8 {
+    byte + b'0'
 }
