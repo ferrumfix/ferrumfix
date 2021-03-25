@@ -1,6 +1,6 @@
 use super::Error;
 use crate::tags;
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Range};
 
 const DEFAULT_FIELDS_LEN: usize = 64;
 
@@ -18,30 +18,38 @@ impl<'a> FixMessageRef<'a> {
         self.builder
             .fields
             .get(&tag)
-            .map(|(start, end)| &self.bytes[*start..*end])
+            .map(|range| &self.bytes[range.clone()])
     }
 
     pub fn field_as_char(&self, tag: u32) -> Option<char> {
         self.builder
             .fields
             .get(&tag)
-            .map(|(start, _end)| self.bytes[*start] as char)
+            .map(|range| self.bytes[range.start] as char)
     }
 
-    pub fn field_bool(&self, tag: u32) -> Option<bool> {
+    pub fn field_as_bool(&self, tag: u32) -> Option<bool> {
         self.builder
             .fields
             .get(&tag)
-            .map(|(start, _end)| self.bytes[*start] == b'Y')
+            .map(|range| self.bytes[range.start] == b'Y')
     }
 
     pub fn field_as_i64(&self, tag: u32) -> Option<i64> {
-        self.field_as_str(tag).and_then(|s| str::parse::<i64>(s).ok())
+        self.field_as_str(tag)
+            .and_then(|s| str::parse::<i64>(s).ok())
     }
 
     pub fn field_as_str(&self, tag: u32) -> Option<&str> {
         self.field(tag)
             .and_then(|data| std::str::from_utf8(data).ok())
+    }
+
+    pub fn field_as_chrono_dt(&self, tag: u32) -> Option<chrono::DateTime<chrono::Utc>> {
+        let s = self.field_as_str(tag)?;
+        let naive = chrono::NaiveDateTime::parse_from_str(s, "%Y%m%d-%H:%M:%S.%.3f").ok()?;
+        let dt = chrono::DateTime::<chrono::Utc>::from_utc(naive, chrono::Utc);
+        Some(dt)
     }
 
     pub fn f_msg_type(&self) -> Option<&str> {
@@ -53,13 +61,13 @@ impl<'a> FixMessageRef<'a> {
     }
 
     pub fn f_test_indicator(&self) -> Option<bool> {
-        self.field_bool(tags::TEST_MESSAGE_INDICATOR)
+        self.field_as_bool(tags::TEST_MESSAGE_INDICATOR)
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FixMessageRefBuilder {
-    fields: HashMap<u32, (usize, usize)>,
+    fields: HashMap<u32, Range<usize>>,
     insertion_order: Vec<u32>,
     owned_data: Vec<u8>,
     i_first_cell: usize,
@@ -110,7 +118,7 @@ impl FixMessageRefBuilder {
         if self.fields.contains_key(&tag) {
             Err(Error::Duplicate)
         } else {
-            self.fields.insert(tag, (start, start + len));
+            self.fields.insert(tag, start..start + len);
             self.insertion_order.push(tag);
             Ok(())
         }
