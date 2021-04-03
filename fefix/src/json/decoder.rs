@@ -129,7 +129,6 @@ fn decode_component_block(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::json::ConfigPrettyPrint;
     use crate::AppVersion;
 
     //    const MESSAGE_SIMPLE: &str = r#"
@@ -177,7 +176,7 @@ mod test {
     }
 
     fn encoder_fix44() -> Decoder<impl Configure> {
-        Decoder::with_config(dict_fix44(), ConfigPrettyPrint)
+        Decoder::with_config(dict_fix44(), Config::default())
     }
 
     //#[test]

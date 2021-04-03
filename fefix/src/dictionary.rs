@@ -638,14 +638,17 @@ struct FieldEnumData {
     description: String,
 }
 
+/// An allowed variant for a FIX field definition.
 #[derive(Debug)]
 pub struct FieldEnum<'a>(&'a Dictionary, &'a FieldEnumData);
 
 impl<'a> FieldEnum<'a> {
+    /// Returns the string representation of this field variant.
     pub fn value(&self) -> &str {
         &self.1.value[..]
     }
 
+    /// Returns the documentation description for `self`.
     pub fn description(&self) -> &str {
         &self.1.description[..]
     }
@@ -716,12 +719,6 @@ impl<'a> Field<'a> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct FieldRef {
-    pub name: String,
-    pub required: char,
-}
-
 #[derive(Clone, Debug)]
 #[allow(dead_code)]
 enum LayoutItemKindData {
@@ -767,6 +764,7 @@ fn layout_item_kind<'a>(item: &'a LayoutItemKindData, dict: &'a Dictionary) -> L
     }
 }
 
+/// An entry in a sequence of FIX field definitions.
 #[derive(Clone, Debug)]
 pub struct LayoutItem<'a>(&'a Dictionary, &'a LayoutItemData);
 
@@ -885,12 +883,6 @@ impl<'a> Message<'a> {
 /// documentation and human readability.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Section {}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Value {
-    value_enum: String,
-    description: Option<String>,
-}
 
 mod symbol_table {
     use super::InternalId;

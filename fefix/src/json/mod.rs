@@ -7,7 +7,7 @@ mod config;
 mod decoder;
 mod encoder;
 
-pub use config::{Config, ConfigPrettyPrint, Configure};
+pub use config::{Config, Configure};
 pub use decoder::Decoder;
 pub use encoder::Encoder;
 

@@ -48,18 +48,6 @@ pub trait Configure: Clone + Default {
     }
 }
 
-/// A [`Configure`] that "pretty-prints", i.e. always returns `true` from
-/// [`Configure::pretty_print`].
-#[derive(Debug, Clone, Default)]
-pub struct ConfigPrettyPrint;
-
-impl Configure for ConfigPrettyPrint {
-    #[inline(always)]
-    fn pretty_print(&self) -> bool {
-        true
-    }
-}
-
 /// The canonical implementor of [`Configure`].
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -96,11 +84,6 @@ impl Configure for Config {
 #[cfg(test)]
 mod test {
     use super::*;
-
-    #[test]
-    fn config_pretty_print_always_pretty_prints() {
-        assert_eq!(ConfigPrettyPrint::default().pretty_print(), true);
-    }
 
     #[test]
     fn config_doesnt_pretty_print_by_default() {

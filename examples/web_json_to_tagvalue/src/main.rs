@@ -20,7 +20,7 @@ fn server() -> tide::Server<State> {
 /// case, JSON (en/de)coding devices.
 #[derive(Clone)]
 struct State {
-    decoder: json::Decoder<json::ConfigPrettyPrint>,
+    decoder: json::Decoder<json::Config>,
     encoder: tagvalue::Encoder,
 }
 
@@ -33,8 +33,10 @@ impl State {
 impl Default for State {
     fn default() -> Self {
         let dictionary = Dictionary::from_version(AppVersion::Fix42);
+        let mut config = json::Config::default();
+        config.set_pretty_print(true);
         Self {
-            decoder: json::Decoder::with_config(dictionary, json::ConfigPrettyPrint),
+            decoder: json::Decoder::with_config(dictionary, config),
             encoder: tagvalue::Encoder::new(tagvalue::Config::default()),
         }
     }
