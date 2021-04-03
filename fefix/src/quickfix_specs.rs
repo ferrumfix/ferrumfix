@@ -39,7 +39,9 @@ mod test {
 
     #[test]
     fn all_versions_have_quickfix_spec() {
-        assert!(AppVersion::iter_all()
+        assert!(AppVersion::ALL
+            .iter()
+            .copied()
             .map(|version| quickfix_spec(version))
             .all(|spec| spec.len() > 0));
     }
@@ -47,15 +49,19 @@ mod test {
     #[test]
     fn all_versions_have_different_quickfix_spec() {
         let mut set: HashSet<String> = HashSet::default();
-        AppVersion::iter_all()
+        AppVersion::ALL
+            .iter()
+            .copied()
             .map(|version| set.insert(quickfix_spec(version).to_string()))
             .count();
-        assert_eq!(set.len(), AppVersion::iter_all().count());
+        assert_eq!(set.len(), AppVersion::ALL.iter().copied().count());
     }
 
     #[test]
     fn all_versions_have_xml_valid_quickfix_spec() {
-        assert!(AppVersion::iter_all()
+        assert!(AppVersion::ALL
+            .iter()
+            .copied()
             .map(|version| quickfix_spec(version))
             .all(|spec| roxmltree::Document::parse(&spec).is_ok()));
     }

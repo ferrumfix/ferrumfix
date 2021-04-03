@@ -1479,14 +1479,14 @@ mod test {
 
     #[test]
     fn dictionary_save_definition_spec_is_ok() {
-        for version in AppVersion::iter_all() {
+        for version in AppVersion::ALL.iter().copied() {
             Dictionary::from_version(version);
         }
     }
 
     #[test]
     fn all_datatypes_are_used_at_least_once() {
-        for version in AppVersion::iter_all() {
+        for version in AppVersion::ALL.iter().copied() {
             let dict = Dictionary::from_version(version);
             let datatypes_count = dict.iter_datatypes().count();
             let mut datatypes = HashSet::new();
@@ -1499,7 +1499,7 @@ mod test {
 
     #[test]
     fn at_least_one_datatype() {
-        for version in AppVersion::iter_all() {
+        for version in AppVersion::ALL.iter().copied() {
             let dict = Dictionary::from_version(version);
             assert!(dict.iter_datatypes().count() >= 1);
         }
@@ -1507,7 +1507,7 @@ mod test {
 
     #[test]
     fn std_header_and_trailer_always_present() {
-        for version in AppVersion::iter_all() {
+        for version in AppVersion::ALL.iter().copied() {
             let dict = Dictionary::from_version(version);
             let std_header = dict.component_by_name("StandardHeader");
             let std_trailer = dict.component_by_name("StandardTrailer");
