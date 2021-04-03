@@ -1,7 +1,6 @@
 use crate::Serialize;
 
 pub trait MessageAccumulator {
-
     fn set_field<T>(&mut self, tag: u32, value: T)
     where
         T: Serialize;

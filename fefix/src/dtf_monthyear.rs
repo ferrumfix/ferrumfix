@@ -1,3 +1,5 @@
+use crate::{Buffer, Serialize};
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum DayOrWeek {
     Day(u32),
@@ -146,6 +148,17 @@ impl DtfMonthYear {
         } else {
             None
         }
+    }
+}
+
+impl Serialize for DtfMonthYear {
+    fn serialize<B>(&self, buffer: &mut B) -> usize
+    where
+        B: Buffer,
+    {
+        let bytes = self.to_bytes();
+        buffer.extend_from_slice(&bytes[..]);
+        bytes.len()
     }
 }
 

@@ -1,3 +1,5 @@
+use crate::{Buffer, Serialize};
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DtfTime {
     hour: u32,
@@ -111,6 +113,17 @@ impl DtfTime {
 
     pub fn milli(&self) -> u32 {
         self.milli
+    }
+}
+
+impl Serialize for DtfTime {
+    fn serialize<B>(&self, buffer: &mut B) -> usize
+    where
+        B: Buffer,
+    {
+        let bytes = self.to_bytes();
+        buffer.extend_from_slice(&bytes[..]);
+        bytes.len()
     }
 }
 

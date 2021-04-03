@@ -127,17 +127,11 @@ where
         self.set_field(crate::tags::BEGIN_STRING, value)
     }
 
-    fn wrap_std_header(&mut self) {
-        
-    }
+    fn wrap_std_header(&mut self) {}
 
-    fn wrap_body(&mut self) {
-        
-    }
+    fn wrap_body(&mut self) {}
 
-    fn wrap_std_trailer(&mut self) {
-        
-    }
+    fn wrap_std_trailer(&mut self) {}
 }
 
 impl Serialize for u32 {

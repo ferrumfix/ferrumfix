@@ -1,3 +1,5 @@
+use crate::{Buffer, Serialize};
+
 const LEN_IN_BYTES: usize = 8;
 
 /// Concrete value for [`DataType::LocalMktDate`](crate::DataType::LocalMktDate)
@@ -73,6 +75,17 @@ impl DtfDate {
     #[cfg(feature = "chrono-time")]
     pub fn to_chrono_naivedate(&self) -> chrono::NaiveDate {
         chrono::NaiveDate::from_ymd_opt(self.year(), self.month(), self.day())
+    }
+}
+
+impl Serialize for DtfDate {
+    fn serialize<B>(&self, buffer: &mut B) -> usize
+    where
+        B: Buffer,
+    {
+        let bytes = self.to_bytes();
+        buffer.extend_from_slice(&bytes[..]);
+        bytes.len()
     }
 }
 
