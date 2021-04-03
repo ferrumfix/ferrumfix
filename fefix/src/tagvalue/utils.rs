@@ -1,4 +1,4 @@
-use crate::buffering::Buffer;
+use crate::buffer::Buffer;
 use crate::tagvalue::{DecodeError, EncodeError};
 use std::convert::TryInto;
 

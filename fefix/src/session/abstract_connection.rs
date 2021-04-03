@@ -1,4 +1,4 @@
-use crate::session::{errs, Environment, ResendRequestRange, SeqNumberError, SeqNumbers};
+use crate::{session::{errs, Environment, ResendRequestRange, SeqNumberError, SeqNumbers}, tagvalue::FieldSetter};
 use crate::tagvalue::FixFieldValue;
 use crate::{tags, FixFieldAccess, FixMessage};
 use std::time::Duration;
@@ -29,7 +29,7 @@ pub enum Response {
 
 #[derive(Debug)]
 pub struct Responses<'a> {
-    connection: &'a mut FixConnection,
+    connection: &'a mut AbstractConnection,
 }
 
 impl<'a> Iterator for Responses<'a> {
@@ -44,7 +44,7 @@ impl<'a> Iterator for Responses<'a> {
 
 /// A FIX connection message processor.
 #[derive(Debug, Clone)]
-pub struct FixConnection {
+pub struct AbstractConnection<O> where O: FieldSetter {
     environment: Environment,
     heartbeat: Duration,
     seq_numbers: SeqNumbers,
@@ -54,7 +54,7 @@ pub struct FixConnection {
 }
 
 #[derive(Debug, Clone)]
-pub struct FixConnectionBuilder {
+pub struct AbstractConnectionBuilder {
     pub environment: Environment,
     pub heartbeat: Duration,
     pub seq_numbers: SeqNumbers,
@@ -62,9 +62,9 @@ pub struct FixConnectionBuilder {
     pub target_comp_id: String,
 }
 
-impl FixConnectionBuilder {
-    pub fn build(self) -> FixConnection {
-        FixConnection {
+impl AbstractConnectionBuilder {
+    pub fn build(self) -> AbstractConnection<FieldSetter<Error = ()>> {
+        AbstractConnection {
             environment: self.environment,
             heartbeat: self.heartbeat,
             seq_numbers: self.seq_numbers,
@@ -76,7 +76,7 @@ impl FixConnectionBuilder {
 }
 
 #[allow(dead_code)]
-impl FixConnection {
+impl<O> AbstractConnection<O> where O: FieldSetter {
     fn generate_error_seqnum_too_low(&mut self) -> FixMessage {
         let error_message = errs::msg_seq_num(self.seq_numbers().next_inbound());
         let mut response = FixMessage::new();
@@ -308,8 +308,8 @@ mod test {
     use super::*;
     use std::time::Duration;
 
-    fn conn() -> FixConnection {
-        let builder = FixConnectionBuilder {
+    fn conn() -> AbstractConnection {
+        let builder = AbstractConnectionBuilder {
             environment: Environment::ProductionDisallowTest,
             heartbeat: Duration::from_secs(30),
             seq_numbers: SeqNumbers::default(),

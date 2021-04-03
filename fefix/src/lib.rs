@@ -35,32 +35,50 @@
 mod utils;
 
 mod app_version;
-pub mod buffering;
+mod buffer;
 pub mod dictionary;
 mod dt;
+mod dtf_date;
+mod dtf_monthyear;
+mod dtf_mulchar;
+mod dtf_mulstr;
+mod dtf_time;
 pub mod fast;
 mod fix_codegen;
 pub mod fixs;
 pub mod json;
 mod models;
+mod msgtypemap;
 mod quickfix_specs;
 pub mod session;
 pub mod sofh;
+mod tagmap;
 pub mod tags;
 pub mod tagvalue;
 
 pub use app_version::AppVersion;
+pub use buffer::Buffer;
 pub use dictionary::Dictionary;
 pub use dt::DataType;
+pub use dtf_date::DtfDate;
+pub use dtf_monthyear::DtfMonthYear;
+pub use dtf_mulchar::DtfMulCharIter;
+pub use dtf_mulstr::DtfMulStrIter;
+pub use dtf_time::DtfTime;
 pub use fefix_derive::*;
 pub use fix_codegen::{codegen, codegen_tag_mnemonics};
-pub use models::{
-    FieldsIter, FixFieldAccess, FixFieldsIter, FixMessage, FixMessageRef, FixMessageRefBuilder,
-};
+pub use models::{FieldsIter, FixFieldAccess, FixFieldsIter, FixMessage};
 pub use quickfix_specs::quickfix_spec;
+pub use tagmap::TagMap;
 
 #[cfg(expose_openssl)]
 pub extern crate openssl;
 
 #[cfg(not(expose_openssl))]
 pub(crate) extern crate openssl;
+
+pub trait Serialize {
+    fn serialize<B>(&self, buffer: &mut B) -> usize
+    where
+        B: Buffer;
+}

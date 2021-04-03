@@ -1,4 +1,4 @@
-use crate::buffering::Buffer;
+use crate::buffer::Buffer;
 use std::io;
 
 use super::err::Error;

@@ -1,6 +1,6 @@
 use super::{RawDecoder, RawDecoderBuffered, RawFrame};
-use crate::tagvalue::{Config, Configure, DecodeError};
-use crate::{tags, Dictionary, FixMessageRef, FixMessageRefBuilder};
+use crate::tagvalue::{Config, Configure, DecodeError, FixMessageRef, FixMessageRefBuilder};
+use crate::{tags, Dictionary};
 use std::fmt::Debug;
 
 const BEGIN_STRING_OFFSET: usize = 2;
@@ -276,8 +276,8 @@ mod test {
         let mut codec = decoder();
         codec.config_mut().set_verify_checksum(false);
         let message = codec.decode(&mut RANDOM_MESSAGES[0].as_bytes()).unwrap();
-        assert_eq!(message.field(8), Some(b"FIX.4.2" as &[u8]));
-        assert_eq!(message.field(35), Some(b"0" as &[u8]),);
+        assert_eq!(message.field_raw(8), Some(b"FIX.4.2" as &[u8]));
+        assert_eq!(message.field_raw(35), Some(b"0" as &[u8]),);
     }
 
     #[test]

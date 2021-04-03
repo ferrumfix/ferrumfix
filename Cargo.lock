@@ -81,9 +81,9 @@ checksum = "afddf7f520a80dbf76e6f50a35bca42a2331ef227a28b3b6dc5c2e2338d114b1"
 
 [[package]]
 name = "arbitrary"
-version = "0.4.7"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db55d72333851e17d572bec876e390cd3b11eb1ef53ae821dd9f3b653d2b4569"
+checksum = "698b65a961a9d730fb45b6b0327e20207810c9f61ee421b082b27ba003f49e2b"
 dependencies = [
  "derive_arbitrary",
 ]
@@ -660,9 +660,9 @@ checksum = "3ee2393c4a91429dffb4bedf19f4d6abf27d8a732c8ce4980305d782e5426d57"
 
 [[package]]
 name = "derive_arbitrary"
-version = "0.4.7"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1a012b5e473dc912f0db0546a1c9c6a194ce8494feb66fa0237160926f9e0e6"
+checksum = "df89dd0d075dea5cc5fdd6d5df6b8a61172a710b3efac1d6bdb9dd8b78f82c1a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -732,6 +732,7 @@ dependencies = [
  "chrono",
  "enum-as-inner",
  "fefix_derive",
+ "fixed",
  "futures",
  "futures-lite",
  "openssl",
@@ -774,6 +775,15 @@ dependencies = [
  "serde_json",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "fixed"
+version = "1.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ed9c66f2c3a8da3aed1c98c2bd9d345a213fcbeb0f408369a970ffdcdc86a3f"
+dependencies = [
+ "typenum",
 ]
 
 [[package]]

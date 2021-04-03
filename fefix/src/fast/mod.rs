@@ -1,6 +1,6 @@
 //! FIX Adapted for Streaming (FAST) support.
 
-use crate::buffering::Buffer;
+use crate::buffer::Buffer;
 use crate::Dictionary;
 use crate::FixMessage;
 use bitvec::vec::BitVec;

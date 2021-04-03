@@ -1,5 +1,6 @@
-use crate::buffering::Buffer;
+use super::MessageAccumulator;
 use crate::tagvalue::{field_value::TagNum, utils, Config, Configure, EncodeError, FixFieldValue};
+use crate::{buffer::Buffer, Serialize};
 use crate::{AppVersion, Dictionary, FixFieldsIter, FixMessage};
 use std::fmt::Debug;
 
@@ -94,4 +95,67 @@ fn encode_field(tag: TagNum, value: &FixFieldValue, write: &mut impl Buffer, sep
         FixFieldValue::Atom(field) => write.extend_from_slice(field.to_string().as_bytes()),
     };
     write.extend_from_slice(&[separator]);
+}
+
+/// FIX message encoder and decoder.
+#[derive(Debug, Clone)]
+pub struct EncoderNaive<B = Vec<u8>, C = Config>
+where
+    B: Buffer,
+    C: Configure,
+{
+    buffer: B,
+    config: C,
+}
+
+impl<B, C> MessageAccumulator for EncoderNaive<B, C>
+where
+    B: Buffer,
+    C: Configure,
+{
+    fn set_field<T>(&mut self, tag: u32, value: T)
+    where
+        T: Serialize,
+    {
+        tag.serialize(&mut self.buffer);
+        self.buffer.extend_from_slice(b"=");
+        value.serialize(&mut self.buffer);
+        self.buffer.extend_from_slice(&[self.config.separator()]);
+    }
+
+    fn set_begin_string(&mut self, value: &[u8]) {
+        self.set_field(crate::tags::BEGIN_STRING, value)
+    }
+
+    fn wrap_std_header(&mut self) {
+        
+    }
+
+    fn wrap_body(&mut self) {
+        
+    }
+
+    fn wrap_std_trailer(&mut self) {
+        
+    }
+}
+
+impl Serialize for u32 {
+    fn serialize<B>(&self, _buf: &mut B) -> usize
+    where
+        B: Buffer,
+    {
+        // TODO
+        0
+    }
+}
+
+impl Serialize for &[u8] {
+    fn serialize<B>(&self, buffer: &mut B) -> usize
+    where
+        B: Buffer,
+    {
+        buffer.extend_from_slice(self);
+        self.len()
+    }
 }

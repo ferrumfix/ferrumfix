@@ -17,6 +17,7 @@ name = "fefix"
 
 [features]
 default = ["repo_v2010", "repo_v50sp2ep254", "expose_openssl", "expose_tokio"]
+chrono-time = []
 repo_v50sp2ep254 = []
 repo_v2010 = []
 expose_openssl = []
@@ -26,6 +27,7 @@ expose_tokio = []
 bitvec = "0.18.3"
 boolinator = "2.4.0"
 chrono = "0.4"
+fixed = "1.6"
 futures = "0.3.8"
 futures-lite = "1"
 Inflector = "0.11.4"
@@ -42,7 +44,7 @@ uuid = { version = "0.8.1", features = ["v4"] }
 fefix_derive = { path = "../fefix_derive" }
 
 [dev-dependencies]
-arbitrary = { version = "0.4", features = ["derive"] }
+arbitrary = { version = "1.0", features = ["derive"] }
 enum-as-inner = "0.3"
 quickcheck = "1"
 quickcheck_derive = "0.3"

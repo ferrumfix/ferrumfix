@@ -1,5 +1,5 @@
 use super::{Config, Configure, DecodeError, EncodeError};
-use crate::buffering::Buffer;
+use crate::buffer::Buffer;
 use crate::tagvalue::{field_value::FieldValue, FixFieldValue};
 use crate::Dictionary;
 use crate::FixFieldsIter;
