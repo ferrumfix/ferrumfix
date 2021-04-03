@@ -1,4 +1,5 @@
-use crate::{Buffer, Serialize};
+use crate::tagvalue::SerializeField;
+use crate::Buffer;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum DayOrWeek {
@@ -151,7 +152,7 @@ impl DtfMonthYear {
     }
 }
 
-impl Serialize for DtfMonthYear {
+impl SerializeField for DtfMonthYear {
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
         B: Buffer,

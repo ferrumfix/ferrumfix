@@ -1,6 +1,6 @@
-use super::MessageAccumulator;
+use super::{MessageAccumulator, SerializeField};
+use crate::buffer::Buffer;
 use crate::tagvalue::{field_value::TagNum, utils, Config, Configure, EncodeError, FixFieldValue};
-use crate::{buffer::Buffer, Serialize};
 use crate::{AppVersion, Dictionary, FixFieldsIter, FixMessage};
 use std::fmt::Debug;
 
@@ -115,7 +115,7 @@ where
 {
     fn set_field<T>(&mut self, tag: u32, value: T)
     where
-        T: Serialize,
+        T: SerializeField,
     {
         tag.serialize(&mut self.buffer);
         self.buffer.extend_from_slice(b"=");
@@ -132,24 +132,4 @@ where
     fn wrap_body(&mut self) {}
 
     fn wrap_std_trailer(&mut self) {}
-}
-
-impl Serialize for u32 {
-    fn serialize<B>(&self, _buf: &mut B) -> usize
-    where
-        B: Buffer,
-    {
-        // TODO
-        0
-    }
-}
-
-impl Serialize for &[u8] {
-    fn serialize<B>(&self, buffer: &mut B) -> usize
-    where
-        B: Buffer,
-    {
-        buffer.extend_from_slice(self);
-        self.len()
-    }
 }

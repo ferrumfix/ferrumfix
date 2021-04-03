@@ -1,9 +1,9 @@
-use crate::Serialize;
+use super::SerializeField;
 
 pub trait MessageAccumulator {
     fn set_field<T>(&mut self, tag: u32, value: T)
     where
-        T: Serialize;
+        T: SerializeField;
 
     fn set_begin_string(&mut self, value: &[u8]);
 

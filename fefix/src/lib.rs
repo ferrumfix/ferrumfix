@@ -76,9 +76,3 @@ pub extern crate openssl;
 
 #[cfg(not(expose_openssl))]
 pub(crate) extern crate openssl;
-
-pub trait Serialize {
-    fn serialize<B>(&self, buffer: &mut B) -> usize
-    where
-        B: Buffer;
-}

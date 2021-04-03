@@ -19,6 +19,7 @@ mod fix_message_ref;
 mod group_delimiter;
 mod raw_decoder;
 mod raw_encoder;
+mod serialize_field;
 mod taglookup;
 mod utils;
 
@@ -30,6 +31,7 @@ pub use fix_message_ref::{FixMessageRef, FixMessageRefBuilder, GroupRef, GroupRe
 pub use group_delimiter::GroupDelimiter;
 pub use raw_decoder::{RawDecoder, RawDecoderBuffered, RawFrame};
 pub use raw_encoder::RawEncoder;
+pub use serialize_field::SerializeField;
 pub use taglookup::{TagLookup, TagLookupSingleAppVersion};
 pub use utils::{checksum_10, encode_raw};
 

@@ -1,4 +1,5 @@
-use crate::{Buffer, Serialize};
+use crate::tagvalue::SerializeField;
+use crate::Buffer;
 
 const LEN_IN_BYTES_NO_MILLI: usize = 8;
 const LEN_IN_BYTES_WITH_MILLI: usize = 12;
@@ -164,7 +165,7 @@ impl DtfTime {
     }
 }
 
-impl Serialize for DtfTime {
+impl SerializeField for DtfTime {
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
         B: Buffer,
