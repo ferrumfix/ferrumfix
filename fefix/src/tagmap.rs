@@ -1,8 +1,10 @@
 use crate::Dictionary;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct TagMap<T> {
-    data: Vec<(T, u32)>,
+    assocative_table: Vec<(u32, T)>,
+    fallback: HashMap<u32, T>,
 }
 
 impl<T> TagMap<T> {
@@ -10,7 +12,10 @@ impl<T> TagMap<T> {
     where
         F: Fn(u32) -> T,
     {
-        Self { data: Vec::new() }
+        Self {
+            assocative_table: Vec::new(),
+            fallback: HashMap::default(),
+        }
     }
 
     pub fn get(&self) -> &T {

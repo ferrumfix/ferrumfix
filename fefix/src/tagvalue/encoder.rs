@@ -1,6 +1,7 @@
 use super::{MessageAccumulator, SerializeField};
 use crate::buffer::Buffer;
-use crate::tagvalue::{field_value::TagNum, utils, Config, Configure, EncodeError, FixFieldValue};
+use crate::models::FixFieldValue;
+use crate::tagvalue::{utils, Config, Configure, EncodeError};
 use crate::{AppVersion, Dictionary, FixFieldsIter, FixMessage};
 use std::fmt::Debug;
 
@@ -66,12 +67,7 @@ where
             let start_i = buffer.as_slice().len();
             // Skips `BeginString`.
             for (tag, value) in message.iter_fields().skip(1) {
-                encode_field(
-                    TagNum::from(tag as u16),
-                    value,
-                    buffer,
-                    self.config.separator(),
-                );
+                encode_field(tag, value, buffer, self.config.separator());
             }
             buffer.as_slice().len() - start_i
         };
@@ -87,7 +83,7 @@ where
     }
 }
 
-fn encode_field(tag: TagNum, value: &FixFieldValue, write: &mut impl Buffer, separator: u8) {
+fn encode_field(tag: u32, value: &FixFieldValue, write: &mut impl Buffer, separator: u8) {
     write.extend_from_slice(tag.to_string().as_bytes());
     write.extend_from_slice(&[b'=']);
     match &value {

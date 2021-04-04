@@ -1,5 +1,5 @@
 use super::{RawDecoder, RawDecoderBuffered, RawFrame};
-use crate::tagvalue::{Config, Configure, DecodeError, FixMessageRef, FixMessageRefBuilder};
+use crate::tagvalue::{Config, Configure, DecodeError, Message, MessageBuilder};
 use crate::{tags, Dictionary};
 use std::fmt::Debug;
 
@@ -12,7 +12,7 @@ where
     C: Configure,
 {
     dict: Dictionary,
-    builder: FixMessageRefBuilder,
+    builder: MessageBuilder,
     raw_decoder: RawDecoder<C>,
 }
 
@@ -29,7 +29,7 @@ where
     pub fn with_config(dict: Dictionary, config: C) -> Self {
         Self {
             dict,
-            builder: FixMessageRefBuilder::new(),
+            builder: MessageBuilder::new(),
             raw_decoder: RawDecoder::with_config(config),
         }
     }
@@ -95,12 +95,12 @@ where
     ///     Some("A")
     /// );
     /// ```
-    pub fn decode<'a>(&'a mut self, bytes: &'a [u8]) -> Result<FixMessageRef<'a>, DecodeError> {
+    pub fn decode<'a>(&'a mut self, bytes: &'a [u8]) -> Result<Message<'a>, DecodeError> {
         let frame = self.raw_decoder.decode(bytes)?;
         self.from_frame(frame)
     }
 
-    fn from_frame<'a>(&'a mut self, frame: RawFrame<'a>) -> Result<FixMessageRef<'a>, DecodeError> {
+    fn from_frame<'a>(&'a mut self, frame: RawFrame<'a>) -> Result<Message<'a>, DecodeError> {
         self.builder.clear();
         let bytes = frame.as_bytes();
         let mut tag_num = 0u32;
@@ -198,7 +198,7 @@ where
         self.raw_decoder.supply_buffer()
     }
 
-    pub fn current_message(&mut self) -> Result<Option<FixMessageRef>, DecodeError> {
+    pub fn current_message(&mut self) -> Result<Option<Message>, DecodeError> {
         match self.raw_decoder.current_frame() {
             Ok(Some(frame)) => self.decoder.from_frame(frame).map(|msg| Some(msg)),
             Ok(None) => Ok(None),

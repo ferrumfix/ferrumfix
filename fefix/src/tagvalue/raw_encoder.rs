@@ -1,5 +1,6 @@
+use super::SerializeField;
+use super::{CheckSum, Config, Configure};
 use crate::buffer::Buffer;
-use crate::tagvalue::{utils, Config, Configure};
 use std::ops::Range;
 
 /// A buffered, content-agnostic FIX encoder.
@@ -27,7 +28,6 @@ where
     C: Configure,
 {
     buffer: B,
-    body_start_i: usize,
     config: C,
 }
 
@@ -39,9 +39,16 @@ where
     pub fn from_buffer(buffer: B) -> Self {
         Self {
             buffer,
-            body_start_i: 0,
             config: C::default(),
         }
+    }
+
+    pub fn buffer(&self) -> &B {
+        &self.buffer
+    }
+
+    pub fn buffer_mut(&self) -> &B {
+        &self.buffer
     }
 
     /// Returns an immutable reference to the [`Configure`] implementor used by
@@ -56,69 +63,51 @@ where
         &mut self.config
     }
 
-    /// Sets the `BeginString (8)` field in the FIX message. This method must be
-    /// called first during the encoding phase. Any of the following will result
-    /// in invalid FIX messages:
-    ///
-    /// - Not calling [`RawEncoder::set_begin_string`].
-    /// - Calling [`RawEncoder::set_begin_string`] multiple times.
-    /// - Calling [`RawEncoder::set_begin_string`] before any other
-    /// [`RawEncoder`] methods.
-    ///
-    /// # Examples
-    /// ```
-    /// use fefix::tagvalue::{Config, RawEncoder};
-    ///
-    /// let encoder = &mut RawEncoder::<_, Config>::from_buffer(Vec::new());
-    /// encoder.set_begin_string(b"FIX.4.4");
-    /// encoder.extend_from_slice(b"...");
-    /// let data = encoder.finalize();
-    /// assert!(data.starts_with(b"8=FIX.4.4"));
-    /// ```
-    pub fn set_begin_string(&mut self, begin_string: &[u8]) {
+    pub fn new_message(&mut self, begin_string: &[u8]) -> RawEncoderState<B, C> {
         self.buffer.clear();
+        let mut state = RawEncoderState {
+            raw_encoder: self,
+            body_start_i: 0,
+        };
         // First, write `BeginString(8)`.
-        self.buffer.extend_from_slice(b"8=");
-        self.buffer.extend_from_slice(begin_string);
-        self.buffer.extend_from_slice(&[
-            self.config.separator(),
-            b'9',
-            b'=',
-            b'0',
-            b'0',
-            b'0',
-            b'0',
-            b'0',
-            b'0',
-            self.config.separator(),
-        ]);
-        self.body_start_i = self.buffer.len();
+        state.add_field(8, begin_string);
+        state.add_field(9, b"000000" as &[u8]);
+        state.body_start_i = state.raw_encoder.buffer.len();
+        state
+    }
+}
+
+#[derive(Debug)]
+pub struct RawEncoderState<'a, B, C>
+where
+    B: Buffer,
+    C: Configure,
+{
+    raw_encoder: &'a mut RawEncoder<B, C>,
+    body_start_i: usize,
+}
+
+impl<'a, B, C> RawEncoderState<'a, B, C>
+where
+    B: Buffer,
+    C: Configure,
+{
+    pub fn add_field<T>(&mut self, tag: u32, value: T)
+    where
+        T: SerializeField,
+    {
+        tag.serialize(&mut self.raw_encoder.buffer);
+        self.raw_encoder.buffer.extend_from_slice(b"=" as &[u8]);
+        value.serialize(&mut self.raw_encoder.buffer);
+        self.raw_encoder
+            .buffer
+            .extend_from_slice(&[self.raw_encoder.config().separator()]);
     }
 
-    /// Adds `data` to the payload part of the FIX message.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use fefix::tagvalue::{Config, RawEncoder};
-    ///
-    /// let encoder = &mut RawEncoder::<_, Config>::from_buffer(Vec::new());
-    /// encoder.config_mut();
-    /// encoder.set_begin_string(b"FIX.4.2");
-    /// encoder.extend_from_slice(b"1=fake-body|2=foobar|");
-    /// let data = encoder.finalize();
-    /// assert!(data.starts_with(b"8=FIX.4.2"));
-    /// ```
-    pub fn extend_from_slice(&mut self, data: &[u8]) {
-        self.buffer.extend_from_slice(data);
-    }
-
-    /// Writes `CheckSum (10)` and `BodyLength (9)` and then returns an immutable
-    /// reference over the raw FIX message.
-    pub fn finalize(&mut self) -> &[u8] {
+    pub fn wrap(mut self) -> &'a [u8] {
         self.write_body_length();
         self.write_checksum();
-        self.buffer.as_slice()
+        self.raw_encoder.buffer.as_slice()
     }
 
     fn body_length_writable_range(&self) -> Range<usize> {
@@ -126,13 +115,13 @@ where
     }
 
     fn body_length(&self) -> usize {
-        self.buffer.as_slice().len() - self.body_start_i
+        self.raw_encoder.buffer.as_slice().len() - self.body_start_i
     }
 
     fn write_body_length(&mut self) {
         let body_length = self.body_length();
         let body_length_range = self.body_length_writable_range();
-        let slice = &mut self.buffer.as_mut_slice()[body_length_range];
+        let slice = &mut self.raw_encoder.buffer.as_mut_slice()[body_length_range];
         slice[0] = to_digit((body_length / 100000) as u8 % 10);
         slice[1] = to_digit((body_length / 10000) as u8 % 10);
         slice[2] = to_digit((body_length / 1000) as u8 % 10);
@@ -142,16 +131,8 @@ where
     }
 
     fn write_checksum(&mut self) {
-        let checksum = utils::checksum_10(self.buffer.as_slice());
-        self.buffer.extend_from_slice(&[
-            b'1',
-            b'0',
-            b'=',
-            to_digit(checksum / 100),
-            to_digit((checksum / 10) % 10),
-            to_digit(checksum % 10),
-            self.config.separator(),
-        ]);
+        let checksum = CheckSum::compute(self.raw_encoder.buffer.as_slice());
+        self.add_field(10, checksum);
     }
 }
 

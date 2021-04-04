@@ -1,5 +1,5 @@
 use super::{Config, Configure, DecodeError};
-use crate::tagvalue::FixFieldValue;
+use crate::models::FixFieldValue;
 use crate::Dictionary;
 use crate::FixMessage;
 use std::collections::{BTreeMap, HashMap};

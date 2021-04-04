@@ -1,6 +1,8 @@
+pub mod field_value;
 mod fix_message;
 
 use chrono::NaiveDateTime;
+pub use field_value::*;
 pub use fix_message::{FieldsIter, FixMessage};
 
 pub trait FixMessageReadGroup {

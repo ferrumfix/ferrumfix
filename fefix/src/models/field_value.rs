@@ -1,10 +1,109 @@
-//! Concrete representation of FIX datatypes across all encodings.
-
 use crate::DataType;
+use std::collections::BTreeMap;
 use std::convert::TryInto;
 use std::fmt::{self, Write};
 use std::io;
 use std::marker::PhantomData;
+use std::time::SystemTime;
+
+/// An owned value of a FIX field.
+#[derive(Clone, Debug, PartialEq)]
+pub enum FixFieldValue {
+    Atom(FieldValue<'static>),
+    Group(Vec<BTreeMap<i64, FixFieldValue>>),
+}
+
+impl FixFieldValue {
+    pub fn string(data: &[u8]) -> Option<Self> {
+        std::str::from_utf8(data)
+            .ok()
+            .map(|s| Self::Atom(FieldValue::string(s.to_string())))
+    }
+
+    pub fn as_length(&self) -> Option<usize> {
+        if let Self::Atom(FieldValue::Length(length)) = self {
+            Some((*length).into())
+        } else {
+            None
+        }
+    }
+
+    pub fn as_int(&self) -> Option<i64> {
+        if let Self::Atom(FieldValue::Int(x)) = self {
+            Some((*x).into())
+        } else {
+            None
+        }
+    }
+
+    pub fn as_str(&self) -> Option<&str> {
+        if let Self::Atom(FieldValue::String(s)) = self {
+            Some(s.as_str())
+        } else {
+            None
+        }
+    }
+}
+
+impl From<i64> for FixFieldValue {
+    fn from(v: i64) -> Self {
+        FixFieldValue::Atom(FieldValue::int(v as i64))
+    }
+}
+
+impl From<std::string::String> for FixFieldValue {
+    fn from(v: std::string::String) -> Self {
+        FixFieldValue::Atom(FieldValue::string(v))
+    }
+}
+
+impl From<f64> for FixFieldValue {
+    fn from(v: f64) -> Self {
+        FixFieldValue::Atom(FieldValue::float(v as f32))
+    }
+}
+
+impl From<(u8, u16)> for FixFieldValue {
+    fn from(v: (u8, u16)) -> Self {
+        FixFieldValue::from(((v.0 as i64) << 16) + (v.1 as i64))
+    }
+}
+
+impl From<char> for FixFieldValue {
+    fn from(v: char) -> Self {
+        FixFieldValue::Atom(FieldValue::char(v))
+    }
+}
+
+impl From<usize> for FixFieldValue {
+    fn from(v: usize) -> Self {
+        FixFieldValue::from(v as i64)
+    }
+}
+
+impl From<Vec<u8>> for FixFieldValue {
+    fn from(v: Vec<u8>) -> Self {
+        FixFieldValue::Atom(FieldValue::Data(v))
+    }
+}
+
+impl From<bool> for FixFieldValue {
+    fn from(v: bool) -> Self {
+        FixFieldValue::from(if v { 't' } else { 'f' })
+    }
+}
+
+impl From<u8> for FixFieldValue {
+    fn from(v: u8) -> Self {
+        FixFieldValue::from(i64::from(v))
+    }
+}
+
+impl From<SystemTime> for FixFieldValue {
+    fn from(v: SystemTime) -> Self {
+        FixFieldValue::from(v.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum FieldValue<'a> {

@@ -1,5 +1,5 @@
+use crate::models::FixFieldValue;
 use crate::session::{errs, Environment, ResendRequestRange, SeqNumberError, SeqNumbers};
-use crate::tagvalue::FixFieldValue;
 use crate::{tags, FixFieldAccess, FixMessage};
 use std::time::Duration;
 

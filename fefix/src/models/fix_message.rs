@@ -1,6 +1,6 @@
+use super::field_value as val;
 use super::{Error, FixFieldAccess, FixFieldsIter};
-use crate::tagvalue::field_value as val;
-use crate::tagvalue::FixFieldValue;
+use crate::models::FixFieldValue;
 use std::collections::HashMap;
 
 const DEFAULT_FIELDS_LEN: usize = 64;

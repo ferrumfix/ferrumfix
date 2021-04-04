@@ -1,3 +1,4 @@
+use super::FieldAccess;
 use crate::models::Error;
 use crate::tags;
 use crate::{DtfDate, DtfMonthYear, DtfMulCharIter, DtfTime};
@@ -5,38 +6,14 @@ use std::{collections::HashMap, ops::Range};
 
 const DEFAULT_FIELDS_LEN: usize = 64;
 
-pub trait FieldAccess<E> {
-    fn raw(&self) -> Result<&[u8], E>;
-
-    fn as_char(&self) -> Result<u8, E>;
-
-    fn as_chars(&self) -> Result<DtfMulCharIter<b' '>, E>;
-
-    fn as_bool(&self) -> Result<bool, E>;
-
-    fn as_i64(&self) -> Result<i64, E>;
-
-    fn as_u64(&self) -> Result<u64, E>;
-
-    fn as_timestamp(&self) -> Result<i64, E>;
-
-    fn as_date(&self) -> Result<DtfDate, E>;
-
-    fn as_time(&self) -> Result<DtfTime, E>;
-
-    fn as_float(&self) -> Result<(), E>;
-
-    fn as_month_year(&self) -> Result<DtfMonthYear, E>;
-}
-
 /// FIX message data structure with fast associative and sequential access.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct FixMessageRef<'a> {
+pub struct Message<'a> {
     bytes: &'a [u8],
-    builder: &'a FixMessageRefBuilder,
+    builder: &'a MessageBuilder,
 }
 
-impl<'a> FixMessageRef<'a> {
+impl<'a> Message<'a> {
     pub fn field(&self, tag: u32) -> Option<FieldRef> {
         Some(FieldRef {
             message: self.clone(),
@@ -105,8 +82,9 @@ struct Field {
     range: Range<usize>,
 }
 
+/// A zero-copy, allocation-free builder of [`Message`] instances.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FixMessageRefBuilder {
+pub struct MessageBuilder {
     fields: HashMap<u32, Field>,
     insertion_order: Vec<u32>,
     owned_data: Vec<u8>,
@@ -117,15 +95,15 @@ pub struct FixMessageRefBuilder {
     len_end_trailer: usize,
 }
 
-impl FixMessageRefBuilder {
+impl MessageBuilder {
     /// Creates a new [`Message`] without any fields.
     ///
     /// # Examples
     ///
     /// ```
-    /// use fefix::FixMessageRefBuilder;
+    /// use fefix::MessageBuilder;
     ///
-    /// let msg = FixMessageRefBuilder::new();
+    /// let msg = MessageBuilder::new();
     /// ```
     pub fn new() -> Self {
         Self {
@@ -143,6 +121,7 @@ impl FixMessageRefBuilder {
     /// Removes all fields from `self`.
     pub fn clear(&mut self) {
         self.fields.clear();
+        // TODO: https://github.com/rust-lang/rust/issues/56431
         self.fields.shrink_to_fit();
         self.insertion_order.clear();
         self.insertion_order.reserve_exact(DEFAULT_FIELDS_LEN);
@@ -168,8 +147,8 @@ impl FixMessageRefBuilder {
         }
     }
 
-    pub fn build<'a>(&'a self, bytes: &'a [u8]) -> FixMessageRef<'a> {
-        FixMessageRef {
+    pub fn build<'a>(&'a self, bytes: &'a [u8]) -> Message<'a> {
+        Message {
             bytes,
             builder: self,
         }
@@ -178,7 +157,7 @@ impl FixMessageRefBuilder {
 
 #[derive(Debug, Clone)]
 pub struct FieldRef<'a> {
-    message: FixMessageRef<'a>,
+    message: Message<'a>,
     field: &'a Field,
 }
 
@@ -248,7 +227,7 @@ impl<'a> FieldAccess<()> for FieldRef<'a> {
 
 #[derive(Debug, Clone)]
 pub struct GroupRef<'a> {
-    message: &'a FixMessageRef<'a>,
+    message: &'a Message<'a>,
     len: usize,
     field_len: u32,
 }

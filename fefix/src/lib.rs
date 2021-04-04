@@ -47,7 +47,7 @@ pub mod fast;
 mod fix_codegen;
 pub mod fixs;
 pub mod json;
-mod models;
+pub mod models;
 mod msgtypemap;
 mod quickfix_specs;
 pub mod session;
