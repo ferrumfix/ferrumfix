@@ -47,6 +47,7 @@ mod dtf_timestamp;
 pub mod fast;
 mod fix_codegen;
 pub mod fixs;
+pub mod generated;
 pub mod json;
 pub mod models;
 mod msgtypemap;

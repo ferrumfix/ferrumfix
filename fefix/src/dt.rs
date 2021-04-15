@@ -1,11 +1,11 @@
 //! Datatype specification.
 
 use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
+use strum_macros::{EnumIter, IntoStaticStr};
 
 /// Sum type for all possible data types ever defined across all versions of the
 /// FIX protocol.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, EnumIter)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
 #[non_exhaustive]
 pub enum DataType {
     /// Single character value, can include any alphanumeric character or

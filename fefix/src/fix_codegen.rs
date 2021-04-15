@@ -1,6 +1,7 @@
-//!
+//! Code generation utilities.
 
 use super::dictionary::{Component, Dictionary, Field, LayoutItem, LayoutItemKind};
+use super::dt::DataType;
 use inflector::Inflector;
 
 /// Generates Rust code for a module that contains field tag mnemonics. The
@@ -45,11 +46,27 @@ pub fn codegen_tag_mnemonics(dict: &Dictionary) -> String {
         .map(|field| {
             let name = field.name().to_screaming_snake_case();
             let tag = field.tag().to_string();
-            format!("pub const {}: TagMnemonic = TagMnemonic{{name:\"{}\", tag:{}, is_group_leader:false}};", name, field.name(), tag)
+            format!(
+                r#"pub const {}: FieldDefinition = FieldDefinition{{
+    name: "{}",
+    tag: {},
+    is_group_leader: {},
+    data_type: DataType::{},
+}};
+"#,
+                name,
+                field.name(),
+                tag,
+                field.name().ends_with("Len"),
+                <&'static str as From<DataType>>::from(field.data_type().basetype()),
+            )
         })
         .collect();
     let code = format!(
         r#"#![allow(dead_code)]
+
+use crate::tags::FieldDefinition;
+use crate::DataType;
 
 {field_tags}
 "#,
