@@ -1,4 +1,4 @@
-use crate::AppVersion;
+use super::AppVersion;
 use std::borrow::Cow;
 
 const SPEC_FIX_40: &str = include_str!("../resources/quickfix/FIX-4.0.xml");

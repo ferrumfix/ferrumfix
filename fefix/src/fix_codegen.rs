@@ -1,6 +1,6 @@
 //!
 
-use crate::dictionary::{Component, Dictionary, Field, LayoutItem, LayoutItemKind};
+use super::dictionary::{Component, Dictionary, Field, LayoutItem, LayoutItemKind};
 use inflector::Inflector;
 
 /// Generates Rust code for a module that contains field tag mnemonics. The

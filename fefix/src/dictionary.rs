@@ -1,8 +1,8 @@
 //! Access to FIX Dictionary reference and message specifications.
 
 use self::symbol_table::{Key, KeyRef, SymbolTable, SymbolTableIndex};
-use crate::AppVersion;
-use crate::{quickfix_spec, DataType};
+use super::AppVersion;
+use super::{quickfix_spec, DataType};
 use quickfix::{ParseDictionaryError, QuickFixReader};
 use std::collections::HashMap;
 use std::fmt;
