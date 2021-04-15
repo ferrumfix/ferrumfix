@@ -1,7 +1,7 @@
 use super::FieldAccess;
 use crate::models::Error;
 use crate::tags;
-use crate::{DtfDate, DtfMonthYear, DtfMulCharIter, DtfTime};
+use crate::{DtfDate, DtfMonthYear, DtfMulCharIter, DtfTime, DtfTimestamp};
 use std::{collections::HashMap, ops::Range};
 
 const DEFAULT_FIELDS_LEN: usize = 64;
@@ -57,6 +57,11 @@ impl<'a> Message<'a> {
         let naive = chrono::NaiveDateTime::parse_from_str(s, "%Y%m%d-%H:%M:%S.%.3f").ok()?;
         let dt = chrono::DateTime::<chrono::Utc>::from_utc(naive, chrono::Utc);
         Some(dt)
+    }
+
+    pub fn field_as_timestamp(&self, tag: u32) -> Option<DtfTimestamp> {
+        let raw = self.field_raw(tag)?;
+        DtfTimestamp::parse(raw)
     }
 
     pub fn group(&self, _tag: u32) -> Option<GroupRef> {
@@ -215,7 +220,7 @@ impl<'a> FieldAccess<()> for FieldRef<'a> {
         unimplemented!()
     }
 
-    fn as_chars(&self) -> Result<DtfMulCharIter<b' '>, ()> {
+    fn as_chars(&self) -> Result<DtfMulCharIter, ()> {
         Ok(DtfMulCharIter::new(self.raw()?))
     }
 

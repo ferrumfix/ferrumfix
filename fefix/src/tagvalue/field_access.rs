@@ -6,7 +6,7 @@ pub trait FieldAccess<E> {
 
     fn as_char(&self) -> Result<u8, E>;
 
-    fn as_chars(&self) -> Result<DtfMulCharIter<b' '>, E>;
+    fn as_chars(&self) -> Result<DtfMulCharIter, E>;
 
     fn as_bool(&self) -> Result<bool, E>;
 

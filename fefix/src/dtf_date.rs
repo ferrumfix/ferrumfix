@@ -3,9 +3,17 @@ use crate::Buffer;
 
 const LEN_IN_BYTES: usize = 8;
 
+const MAX_YEAR: u32 = 9999;
+const MAX_MONTH: u32 = 12;
+const MAX_DAY: u32 = 31;
+
+const MIN_YEAR: u32 = 0;
+const MIN_MONTH: u32 = 1;
+const MIN_DAY: u32 = 1;
+
 /// Concrete value for [`DataType::LocalMktDate`](crate::DataType::LocalMktDate)
 /// and [`DataType::UTCDateOnly`](crate::DataType::UtcDateOnly) fields.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DtfDate {
     year: u32,
     month: u32,
@@ -13,13 +21,27 @@ pub struct DtfDate {
 }
 
 impl DtfDate {
+    pub fn new(year: u32, month: u32, day: u32) -> Option<Self> {
+        if year >= MIN_YEAR
+            && year <= MAX_YEAR
+            && month >= MIN_MONTH
+            && month <= MAX_MONTH
+            && day >= MIN_DAY
+            && day <= MAX_DAY
+        {
+            Some(Self { year, month, day })
+        } else {
+            None
+        }
+    }
+
     /// Parses from a `"YYYYMMDD"` format.
     pub fn parse(data: &[u8]) -> Option<Self> {
         if data.len() != LEN_IN_BYTES {
             return None;
         }
         for byte in data.iter().copied() {
-            if byte < b'0' || byte > b'9' {
+            if !is_digit(byte) {
                 return None;
             }
         }
@@ -29,26 +51,22 @@ impl DtfDate {
             + from_digit(data[3]);
         let month = from_digit(data[4]) * 10 + from_digit(data[5]);
         let day = from_digit(data[6]) * 10 + from_digit(data[7]);
-        if month >= 1 && month <= 12 && day >= 1 && day <= 31 {
-            Some(Self { year, month, day })
-        } else {
-            None
-        }
+        Self::new(year, month, day)
     }
 
     pub fn to_bytes(&self) -> [u8; LEN_IN_BYTES] {
-        fn to_digit(n: u32) -> u8 {
-            (n - (b'0' as u32)) as u8
+        fn digit_to_ascii(n: u32) -> u8 {
+            (n - b'0' as u32) as u8
         }
         [
-            to_digit(self.year() / 1000),
-            to_digit((self.year() / 100) % 10),
-            to_digit((self.year() / 10) % 10),
-            to_digit(self.year() % 10),
-            to_digit(self.month() / 10),
-            to_digit(self.month() % 10),
-            to_digit(self.day() / 10),
-            to_digit(self.day() % 10),
+            digit_to_ascii(self.year() / 1000),
+            digit_to_ascii((self.year() / 100) % 10),
+            digit_to_ascii((self.year() / 10) % 10),
+            digit_to_ascii(self.year() % 10),
+            digit_to_ascii(self.month() / 10),
+            digit_to_ascii(self.month() % 10),
+            digit_to_ascii(self.day() / 10),
+            digit_to_ascii(self.day() % 10),
         ]
     }
 
@@ -90,7 +108,11 @@ impl SerializeField for DtfDate {
     }
 }
 
-fn from_digit(digit: u8) -> u32 {
+const fn is_digit(byte: u8) -> bool {
+    byte >= b'0' && byte <= b'9'
+}
+
+const fn from_digit(digit: u8) -> u32 {
     digit as u32 - (b'0' as u32)
 }
 

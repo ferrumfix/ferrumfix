@@ -33,12 +33,12 @@ impl SerializeField for &[u8] {
     }
 }
 
-impl<const N: usize> SerializeField for [u8; N] {
+impl<const N: usize> SerializeField for &[u8; N] {
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
         B: Buffer,
     {
-        buffer.extend_from_slice(self);
+        buffer.extend_from_slice(&self[..]);
         self.len()
     }
 }

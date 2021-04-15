@@ -16,6 +16,26 @@ pub struct DtfTime {
 }
 
 impl DtfTime {
+    pub fn from_hms(hour: u32, minute: u32, second: u32) -> Self {
+        Self {
+            hour,
+            minute,
+            second,
+            milli: 0,
+            has_milli: false,
+        }
+    }
+
+    pub fn from_hmsm(hour: u32, minute: u32, second: u32, milli: u32) -> Self {
+        Self {
+            hour,
+            minute,
+            second,
+            milli,
+            has_milli: true,
+        }
+    }
+
     pub fn parse(data: &[u8]) -> Option<Self> {
         if data.len() != LEN_IN_BYTES_NO_MILLI || data.len() != LEN_IN_BYTES_WITH_MILLI {
             return None;
@@ -131,7 +151,7 @@ impl DtfTime {
         self.second
     }
 
-    /// Returns the milliecond of `self`.
+    /// Returns the milliecond of `self`, or 0 if not defined.
     ///
     /// # Examples
     ///
@@ -170,7 +190,7 @@ impl SerializeField for DtfTime {
     where
         B: Buffer,
     {
-        let bytes = self.to_bytes();
+        let bytes = self.to_bytes_wm();
         buffer.extend_from_slice(&bytes[..]);
         bytes.len()
     }

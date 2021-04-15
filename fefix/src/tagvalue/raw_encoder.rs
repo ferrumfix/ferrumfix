@@ -63,7 +63,7 @@ where
         &mut self.config
     }
 
-    pub fn new_message(&mut self, begin_string: &[u8]) -> RawEncoderState<B, C> {
+    pub fn new_message(&mut self, begin_string: &[u8], msg_type: &[u8]) -> RawEncoderState<B, C> {
         self.buffer.clear();
         let mut state = RawEncoderState {
             raw_encoder: self,
@@ -73,12 +73,13 @@ where
         state.add_field(8, begin_string);
         state.add_field(9, b"000000" as &[u8]);
         state.body_start_i = state.raw_encoder.buffer.len();
+        state.add_field(35, msg_type);
         state
     }
 }
 
 #[derive(Debug)]
-pub struct RawEncoderState<'a, B, C>
+pub struct RawEncoderState<'a, B = Vec<u8>, C = Config>
 where
     B: Buffer,
     C: Configure,

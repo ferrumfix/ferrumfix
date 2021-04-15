@@ -11,7 +11,10 @@ use std::io;
 ///
 /// Please note that calls to [`std::io::Write::flush`] on [`Buffer`]
 /// implementors should have **no** effect.
-pub trait Buffer: io::Write {
+pub trait Buffer
+where
+    Self: io::Write,
+{
     /// Returns an immutable reference to the contents of the buffer.
     fn as_slice(&self) -> &[u8];
 

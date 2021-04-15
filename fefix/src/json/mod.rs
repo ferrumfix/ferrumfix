@@ -6,10 +6,12 @@ use std::fmt;
 mod config;
 mod decoder;
 mod encoder;
+mod message;
 
 pub use config::{Config, Configure};
 pub use decoder::Decoder;
 pub use encoder::Encoder;
+pub use message::{Message, MessageBuilder};
 
 /// The type returned in the event of an error when encoding a FIX JSON message.
 #[derive(Copy, Clone, Debug)]

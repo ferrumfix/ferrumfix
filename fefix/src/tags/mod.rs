@@ -13,4 +13,11 @@ pub mod fix50sp1;
 pub mod fix50sp2;
 pub mod fixt11;
 
+#[derive(Debug, Clone)]
+pub struct TagMnemonic {
+    pub name: &'static str,
+    pub tag: u32,
+    pub is_group_leader: bool,
+}
+
 pub use fix44::*;

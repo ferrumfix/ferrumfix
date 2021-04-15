@@ -9,7 +9,10 @@ use std::collections::HashMap;
 
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]
-pub struct Encoder<C = Config> {
+pub struct Encoder<C = Config>
+where
+    C: Configure,
+{
     dictionaries: HashMap<String, Dictionary>,
     message: FixMessage,
     config: C,

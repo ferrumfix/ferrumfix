@@ -1,4 +1,4 @@
-use super::{Config, Configure, DecodeError};
+use super::{Config, Configure, DecodeError, Message, MessageBuilder};
 use crate::models::FixFieldValue;
 use crate::Dictionary;
 use crate::FixMessage;
@@ -6,9 +6,13 @@ use std::collections::{BTreeMap, HashMap};
 
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]
-pub struct Decoder<C = Config> {
+pub struct Decoder<C = Config>
+where
+    C: Configure,
+{
     dictionaries: HashMap<String, Dictionary>,
     message: FixMessage,
+    message_builder: MessageBuilder,
     config: C,
 }
 
@@ -32,6 +36,7 @@ where
         Self {
             dictionaries,
             message: FixMessage::new(),
+            message_builder: MessageBuilder::empty(),
             config,
         }
     }
@@ -86,6 +91,41 @@ where
             decode_field(key, value)?.unwrap();
         }
         Ok(&self.message)
+    }
+
+    pub fn decode_reff(&mut self, data: &[u8]) -> Result<Message, DecodeError> {
+        let value: serde_json::Value =
+            serde_json::from_reader(data).map_err(|_| DecodeError::Syntax)?;
+        let header = value
+            .get("Header")
+            .and_then(|v| v.as_object())
+            .ok_or(DecodeError::Schema)?;
+        let body = value
+            .get("Body")
+            .and_then(|v| v.as_object())
+            .ok_or(DecodeError::Schema)?;
+        let trailer = value
+            .get("Trailer")
+            .and_then(|v| v.as_object())
+            .ok_or(DecodeError::Schema)?;
+        for (key, value) in header.into_iter() {
+            if let serde_json::Value::String(s) = value {
+                self.message_builder
+                    .add_to_std_header(key.clone(), s.clone());
+            }
+        }
+        for (key, value) in body.into_iter() {
+            if let serde_json::Value::String(s) = value {
+                self.message_builder.add_to_body(key.clone(), s.clone());
+            }
+        }
+        for (key, value) in trailer.into_iter() {
+            if let serde_json::Value::String(s) = value {
+                self.message_builder
+                    .add_to_std_trailer(key.clone(), s.clone());
+            }
+        }
+        Ok(self.message_builder.build())
     }
 }
 

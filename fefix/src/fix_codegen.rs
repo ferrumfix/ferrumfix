@@ -20,13 +20,32 @@ use inflector::Inflector;
 /// // pub const CHECK_SUM: u32 = 10;
 /// // ...
 /// ```
-pub fn codegen_tag_mnemonics(dict: &Dictionary) -> String {
+pub fn codegen_tag_numbers(dict: &Dictionary) -> String {
     let field_tags: Vec<String> = dict
         .iter_fields()
         .map(|field| {
             let name = field.name().to_screaming_snake_case();
             let tag = field.tag().to_string();
             format!("pub const {}: u32 = {};", name, tag)
+        })
+        .collect();
+    let code = format!(
+        r#"#![allow(dead_code)]
+
+{field_tags}
+"#,
+        field_tags = field_tags.join("\n"),
+    );
+    code
+}
+
+pub fn codegen_tag_mnemonics(dict: &Dictionary) -> String {
+    let field_tags: Vec<String> = dict
+        .iter_fields()
+        .map(|field| {
+            let name = field.name().to_screaming_snake_case();
+            let tag = field.tag().to_string();
+            format!("pub const {}: TagMnemonic = TagMnemonic{{name:\"{}\", tag:{}, is_group_leader:false}};", name, field.name(), tag)
         })
         .collect();
     let code = format!(

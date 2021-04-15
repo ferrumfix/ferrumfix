@@ -205,6 +205,16 @@ where
             Err(e) => Err(e),
         }
     }
+
+    pub fn message(&self) -> Message {
+        self.decoder.builder.build(
+            self.raw_decoder
+                .current_frame()
+                .unwrap()
+                .unwrap()
+                .as_bytes(),
+        )
+    }
 }
 
 #[cfg(test)]

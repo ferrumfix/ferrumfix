@@ -19,15 +19,15 @@ impl SerializeField for CheckSum {
     where
         B: Buffer,
     {
-        [
-            to_digit(self.0 / 100),
-            to_digit((self.0 / 10) % 10),
-            to_digit(self.0 % 10),
-        ]
-        .serialize(buffer)
+        buffer.extend_from_slice(&[
+            digit_to_ascii(self.0 / 100),
+            digit_to_ascii((self.0 / 10) % 10),
+            digit_to_ascii(self.0 % 10),
+        ]);
+        3
     }
 }
 
-fn to_digit(byte: u8) -> u8 {
+fn digit_to_ascii(byte: u8) -> u8 {
     byte + b'0'
 }

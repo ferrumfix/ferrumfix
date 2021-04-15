@@ -729,6 +729,7 @@ dependencies = [
  "arbitrary",
  "bitvec",
  "boolinator",
+ "bytes",
  "chrono",
  "enum-as-inner",
  "fefix_derive",
