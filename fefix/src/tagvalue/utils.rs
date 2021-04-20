@@ -56,11 +56,6 @@ pub fn verify_body_length(
         .wrapping_sub(start_of_body);
     let end_of_body = data.len() - FIELD_CHECKSUM_LEN_IN_BYTES;
     if start_of_body > end_of_body || nominal_body_length != body_length {
-        dbglog!(
-            "BodyLength mismatch: expected {} but is {}.",
-            body_length,
-            nominal_body_length,
-        );
         Err(DecodeError::Invalid)
     } else {
         debug_assert!(body_length < data.len());

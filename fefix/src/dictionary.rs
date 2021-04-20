@@ -873,14 +873,8 @@ impl<'a> Message<'a> {
     }
 
     pub fn group_info(&self, num_in_group_tag: u32) -> Option<u32> {
-        dbglog!(
-            "searching for group info about {} and {}",
-            self.msg_type(),
-            num_in_group_tag
-        );
         self.layout().find_map(|layout_item| {
             if let LayoutItemKind::Group(field, items) = layout_item.kind() {
-                dbglog!("found group with tag {}", field.tag());
                 if field.tag() == num_in_group_tag {
                     if let LayoutItemKind::Field(f) = items[0].kind() {
                         Some(f.tag())
@@ -890,8 +884,7 @@ impl<'a> Message<'a> {
                 } else {
                     None
                 }
-            } else if let LayoutItemKind::Component(component) = layout_item.kind() {
-                dbglog!("found component with name {}", component.name());
+            } else if let LayoutItemKind::Component(_component) = layout_item.kind() {
                 None
             } else {
                 None

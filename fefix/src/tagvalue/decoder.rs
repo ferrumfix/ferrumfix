@@ -148,14 +148,12 @@ where
     fn store_field(&mut self, tag: u32, start: usize, len: usize, msg_type: &str) {
         let field_definition = self.dict.field_by_tag(tag).unwrap();
         if tag == self.current_group_entry_tag {
-            dbglog!("{} tag is group entry id", tag);
             self.remaining_group_entries -= 1;
             if self.remaining_group_entries <= 1 {
                 self.group_ancestry.leave_group();
             }
         }
         if field_definition.basetype() == DataType::NumInGroup {
-            dbglog!("{} tag is numingroup", tag);
             // It's a "group leader".
             // FIXME
             self.current_group_entry_tag = self
@@ -173,7 +171,6 @@ where
             };
             self.builder.add_field(context, start, len).unwrap();
         } else {
-            dbglog!("{} tag is not numingroup", tag);
             // It's not.
             if tag == self.current_group_entry_tag {
                 self.remaining_group_entries = self.remaining_group_entries.wrapping_sub(1);

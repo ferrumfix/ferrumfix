@@ -2,6 +2,7 @@
 
 /// A handly macro for quick and dirty debugging. It reports the caller location
 /// in the form of file plus line, and it also supports `format!` -like arguments.
+#[allow(unused_macros)]
 macro_rules! dbglog {
     ($($arg:tt)*) => {{
         if std::cfg!(debug_assertions) {
