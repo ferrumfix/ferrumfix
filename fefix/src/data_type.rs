@@ -147,7 +147,7 @@ pub enum DataType {
 impl DataType {
     /// Compares `name` to the set of strings commonly used by QuickFIX's custom
     /// specification format and returns its associated [`DataType`] if a match
-    /// was found. The query is case-sensitive.
+    /// was found. The query is case-insensitive.
     ///
     /// # Examples
     ///
@@ -155,13 +155,13 @@ impl DataType {
     /// use fefix::DataType;
     ///
     /// assert_eq!(DataType::from_quickfix_name("AMT"), Some(DataType::Amt));
-    /// assert_eq!(DataType::from_quickfix_name("Amt"), None);
+    /// assert_eq!(DataType::from_quickfix_name("Amt"), Some(DataType::Amt));
     /// assert_eq!(DataType::from_quickfix_name("MONTHYEAR"), Some(DataType::MonthYear));
     /// assert_eq!(DataType::from_quickfix_name(""), None);
     /// ```
     pub fn from_quickfix_name(name: &str) -> Option<Self> {
         // https://github.com/quickfix/quickfix/blob/b6760f55ac6a46306b4e081bb13b65e6220ab02d/src/C%2B%2B/DataDictionary.cpp#L646-L680
-        Some(match name {
+        Some(match name.to_ascii_uppercase().as_str() {
             "AMT" => DataType::Amt,
             "BOOLEAN" => DataType::Boolean,
             "CHAR" => DataType::Char,

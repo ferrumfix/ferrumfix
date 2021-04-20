@@ -21,6 +21,7 @@ impl CheckSum {
 
 impl<'a> DataField<'a> for CheckSum {
     type Error = error::CheckSum;
+    type SerializeSettings = ();
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where

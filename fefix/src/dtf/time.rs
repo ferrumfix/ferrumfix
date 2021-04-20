@@ -99,9 +99,9 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::DtfTime;
+    /// use fefix::dtf::Time;
     ///
-    /// let dtf = DtfTime::parse(b"12:45:00").unwrap();
+    /// let dtf = Time::parse(b"12:45:00").unwrap();
     /// assert_eq!(dtf.hour(), 12)
     /// ```
     pub const fn hour(&self) -> u32 {
@@ -113,9 +113,9 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::DtfTime;
+    /// use fefix::dtf::Time;
     ///
-    /// let dtf = DtfTime::parse(b"12:45:00").unwrap();
+    /// let dtf = Time::parse(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
     /// ```
     pub const fn minute(&self) -> u32 {
@@ -127,18 +127,18 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::DtfTime;
+    /// use fefix::dtf::Time;
     ///
-    /// let dtf = DtfTime::parse(b"12:45:00").unwrap();
+    /// let dtf = Time::parse(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 00)
     /// ```
     ///
     /// Leap second:
     ///
     /// ```
-    /// use fefix::DtfTime;
+    /// use fefix::dtf::Time;
     ///
-    /// let dtf = DtfTime::parse(b"23:59:60").unwrap();
+    /// let dtf = Time::parse(b"23:59:60").unwrap();
     /// assert_eq!(dtf.second(), 60)
     /// ```
     pub const fn second(&self) -> u32 {
@@ -150,9 +150,9 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::DtfTime;
+    /// use fefix::dtf::Time;
     ///
-    /// let dtf = DtfTime::parse(b"12:45:00.328").unwrap();
+    /// let dtf = Time::parse(b"12:45:00.328").unwrap();
     /// assert_eq!(dtf.milli(), 328)
     /// ```
     pub const fn milli(&self) -> u32 {
@@ -162,6 +162,7 @@ impl Time {
 
 impl<'a> DataField<'a> for Time {
     type Error = error::Time;
+    type SerializeSettings = ();
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where

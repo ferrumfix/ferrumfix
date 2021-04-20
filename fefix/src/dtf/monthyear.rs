@@ -155,6 +155,7 @@ impl MonthYear {
 
 impl<'a> DataField<'a> for MonthYear {
     type Error = error::MonthYear;
+    type SerializeSettings = ();
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where

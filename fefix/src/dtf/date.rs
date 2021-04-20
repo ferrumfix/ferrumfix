@@ -38,19 +38,19 @@ impl Date {
     /// # Examples
     ///
     /// ```
-    /// use fefix::DtfDate;
+    /// use fefix::dtf::Date;
     ///
-    /// assert!(DtfDate::new(2021, 4, 16).is_some());
-    /// assert!(DtfDate::new(2021, 13, 32).is_none());
+    /// assert!(dtf::Date::new(2021, 4, 16).is_some());
+    /// assert!(dtf::Date::new(2021, 13, 32).is_none());
     ///
     /// // Support from January 1, year zero (which doesn't actually exist) to
     /// // December 31, 9999.
-    /// assert!(DtfDate::new(0, 1, 1).is_some());
-    /// assert!(DtfDate::new(9999, 12, 31).is_some());
+    /// assert!(dtf::Date::new(0, 1, 1).is_some());
+    /// assert!(dtf::Date::new(9999, 12, 31).is_some());
     ///
     /// // We don't check month-aware day boundaries, i.e. go ahead and assume
     /// every month has 31 days.
-    /// assert!(DtfDate::new(2021, 2, 31).is_some());
+    /// assert!(dtf::Date::new(2021, 2, 31).is_some());
     /// ```
     pub fn new(year: u32, month: u32, day: u32) -> Result<Self, error::Date> {
         if year >= MIN_YEAR
@@ -71,9 +71,9 @@ impl Date {
     /// # Examples
     ///
     /// ```
-    /// use fefix::DtfDate;
+    /// use fefix::dtf::Date;
     ///
-    /// assert_eq!(DtfDate::new(2021, 01, 01).unwrap().to_bytes(), b"20210101");
+    /// assert_eq!(dtf::Date::new(2021, 01, 01).unwrap().to_bytes(), b"20210101");
     /// ```
     pub fn to_bytes(&self) -> [u8; LEN_IN_BYTES] {
         fn digit_to_ascii(n: u32) -> u8 {
@@ -120,6 +120,7 @@ impl Date {
 
 impl<'a> DataField<'a> for Date {
     type Error = error::Date;
+    type SerializeSettings = ();
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where

@@ -36,14 +36,20 @@ mod multiple_chars;
 mod multiple_strings;
 mod time;
 mod timestamp;
+mod tz;
+mod tz_time;
+mod tz_timestamp;
 
-pub use checksum::*;
-pub use date::*;
-pub use monthyear::*;
-pub use multiple_chars::*;
-pub use multiple_strings::*;
-pub use time::*;
-pub use timestamp::*;
+pub use checksum::CheckSum;
+pub use date::Date;
+pub use monthyear::MonthYear;
+pub use multiple_chars::MultipleChars;
+pub use multiple_strings::MultipleStrings;
+pub use time::Time;
+pub use timestamp::Timestamp;
+pub use tz_time::TzTime;
+pub use tz_timestamp::TzTimestamp;
+pub use tz::Tz;
 
 use crate::Buffer;
 use rust_decimal::Decimal;
@@ -56,10 +62,18 @@ where
     Self: Sized,
 {
     type Error;
+    type SerializeSettings;
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
         B: Buffer;
+
+    fn serialize_custom<B>(&self, buffer: &mut B, _settings: &Self::SerializeSettings) -> usize
+    where
+        B: Buffer,
+    {
+        self.serialize(buffer)
+    }
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error>;
 
@@ -70,6 +84,7 @@ where
 
 impl<'a> DataField<'a> for Decimal {
     type Error = error::Decimal;
+    type SerializeSettings = ();
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -89,6 +104,7 @@ impl<'a> DataField<'a> for Decimal {
 
 impl<'a> DataField<'a> for bool {
     type Error = error::Bool;
+    type SerializeSettings = ();
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -118,6 +134,7 @@ impl<'a> DataField<'a> for bool {
 
 impl<'a> DataField<'a> for u8 {
     type Error = error::Int;
+    type SerializeSettings = ();
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -134,6 +151,7 @@ impl<'a> DataField<'a> for u8 {
 
 impl<'a> DataField<'a> for &'a [u8] {
     type Error = ();
+    type SerializeSettings = ();
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -150,6 +168,7 @@ impl<'a> DataField<'a> for &'a [u8] {
 
 impl<'a, const N: usize> DataField<'a> for &'a [u8; N] {
     type Error = ();
+    type SerializeSettings = ();
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -166,6 +185,7 @@ impl<'a, const N: usize> DataField<'a> for &'a [u8; N] {
 
 impl<'a> DataField<'a> for u32 {
     type Error = error::Int;
+    type SerializeSettings = ();
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -195,6 +215,7 @@ impl<'a> DataField<'a> for u32 {
 
 impl<'a> DataField<'a> for i32 {
     type Error = error::Int;
+    type SerializeSettings = ();
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -225,6 +246,7 @@ impl<'a> DataField<'a> for i32 {
 
 impl<'a> DataField<'a> for u64 {
     type Error = error::Int;
+    type SerializeSettings = ();
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -254,6 +276,7 @@ impl<'a> DataField<'a> for u64 {
 
 impl<'a> DataField<'a> for i64 {
     type Error = error::Int;
+    type SerializeSettings = ();
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -284,6 +307,7 @@ impl<'a> DataField<'a> for i64 {
 
 impl<'a> DataField<'a> for usize {
     type Error = error::Int;
+    type SerializeSettings = ();
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
