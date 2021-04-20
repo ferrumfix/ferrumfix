@@ -1,8 +1,111 @@
-use super::{Config, Configure, DecodeError, Message, MessageBuilder};
-use crate::models::FixFieldValue;
+use super::{Config, Configure, DecodeError};
+use crate::dtf;
+use crate::fields::{FieldDef, FieldLocation};
 use crate::Dictionary;
-use crate::FixMessage;
-use std::collections::{BTreeMap, HashMap};
+use serde::{Deserialize, Serialize};
+use std::borrow::{Borrow, Cow};
+use std::collections::HashMap;
+
+/// A read-only JSON FIX message as parsed by [`Decoder`].
+#[derive(Debug, Copy, Clone)]
+pub struct Message<'a> {
+    internal: &'a MessageInternal<'a>,
+}
+
+/// A repeating group within a [`Message`].
+#[derive(Debug, Copy, Clone)]
+pub struct MessageGroup<'a> {
+    message: &'a Message<'a>,
+    entries: &'a [Component<'a>],
+}
+
+impl<'a> MessageGroup<'a> {
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = MessageGroupEntry<'a>> {
+        self.entries
+            .iter()
+            .map(|component| MessageGroupEntry { component })
+    }
+}
+
+/// A specific [`MessageGroup`] entry.
+#[derive(Debug)]
+pub struct MessageGroupEntry<'a> {
+    component: &'a Component<'a>,
+}
+
+impl<'a> MessageGroupEntry<'a> {
+    pub fn group<'b, T>(&'b self, _field_def: &FieldDef<'b, T>) -> Option<MessageGroup<'b>>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>,
+    {
+        None
+    }
+
+    pub fn field_ref<'b, T>(
+        &'b self,
+        _field_def: &FieldDef<'b, T>,
+    ) -> Option<Result<T, <T as dtf::DataField<'b>>::Error>>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>,
+    {
+        unimplemented!()
+    }
+
+    pub fn field_raw(&self, _name: &str, _location: FieldLocation) -> Option<&str> {
+        unimplemented!()
+    }
+
+    //type FieldsIter = FieldsIter<'a>;
+    //type FieldsIterStdHeader = FieldsIter<'a>;
+    //type FieldsIterBody = FieldsIter<'a>;
+
+    /// Creates an [`Iterator`] over all FIX fields in `self`.
+    pub fn iter_fields(&self) -> impl Iterator<Item = Cow<'a, str>> {
+        // TODO
+        std::iter::empty()
+    }
+}
+
+impl<'a> Message<'a> {
+    pub fn group<'b, T>(&'b self, _field_def: &FieldDef<'b, T>) -> Option<MessageGroup<'b>>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>,
+    {
+        None
+    }
+
+    pub fn field_ref<'b, T>(
+        &'b self,
+        field_def: &FieldDef<'b, T>,
+    ) -> Option<Result<T, <T as dtf::DataField<'b>>::Error>>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>,
+    {
+        self.internal.field_ref(field_def)
+    }
+
+    pub fn field_raw(&self, name: &str, location: FieldLocation) -> Option<&str> {
+        self.internal.field_raw(name, location)
+    }
+
+    //type FieldsIter = FieldsIter<'a>;
+    //type FieldsIterStdHeader = FieldsIter<'a>;
+    //type FieldsIterBody = FieldsIter<'a>;
+
+    /// Creates an [`Iterator`] over all FIX fields in `self`.
+    pub fn iter_fields(&self) -> impl Iterator<Item = Cow<'a, str>> {
+        // TODO
+        std::iter::empty()
+    }
+}
 
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]
@@ -11,8 +114,7 @@ where
     C: Configure,
 {
     dictionaries: HashMap<String, Dictionary>,
-    message: FixMessage,
-    message_builder: MessageBuilder,
+    message_builder: MessageInternal<'static>,
     config: C,
 }
 
@@ -35,8 +137,7 @@ where
         dictionaries.insert(dict.get_version().to_string(), dict);
         Self {
             dictionaries,
-            message: FixMessage::new(),
-            message_builder: MessageBuilder::empty(),
+            message_builder: MessageInternal::default(),
             config,
         }
     }
@@ -53,117 +154,84 @@ where
         &mut self.config
     }
 
-    pub fn decode(&mut self, data: &[u8]) -> Result<&FixMessage, DecodeError> {
-        let value: serde_json::Value =
-            serde_json::from_reader(data).map_err(|_| DecodeError::Syntax)?;
-        let header = value
-            .get("Header")
-            .and_then(|v| v.as_object())
-            .ok_or(DecodeError::Schema)?;
-        let body = value
-            .get("Body")
-            .and_then(|v| v.as_object())
-            .ok_or(DecodeError::Schema)?;
-        let trailer = value
-            .get("Trailer")
-            .and_then(|v| v.as_object())
-            .ok_or(DecodeError::Schema)?;
-        let begin_string = header
-            .get("BeginString")
-            .and_then(|v| v.as_str())
-            .ok_or(DecodeError::Schema)?;
-        let dictionary = self
-            .dictionaries
-            .get(begin_string)
-            .ok_or(DecodeError::InvalidMsgType)?;
-        let message = &mut self.message;
-        message.clear();
-        let mut decode_field = |name: &str, value: &serde_json::Value| {
-            decode_field(dictionary, name, value).map(|(tag, field)| message.add_field(tag, field))
-        };
-        for (key, value) in header.iter() {
-            decode_field(key, value)?.unwrap();
+    fn message_builder<'a>(&'a mut self) -> &'a mut MessageInternal<'a> {
+        self.message_builder.clear();
+        unsafe {
+            std::mem::transmute::<&'a mut MessageInternal<'static>, &'a mut MessageInternal<'a>>(
+                &mut self.message_builder,
+            )
         }
-        for (key, value) in body.iter() {
-            decode_field(key, value)?.unwrap();
-        }
-        for (key, value) in trailer.iter() {
-            decode_field(key, value)?.unwrap();
-        }
-        Ok(&self.message)
     }
 
-    pub fn decode_reff(&mut self, data: &[u8]) -> Result<Message, DecodeError> {
-        let value: serde_json::Value =
-            serde_json::from_reader(data).map_err(|_| DecodeError::Syntax)?;
-        let header = value
-            .get("Header")
-            .and_then(|v| v.as_object())
-            .ok_or(DecodeError::Schema)?;
-        let body = value
-            .get("Body")
-            .and_then(|v| v.as_object())
-            .ok_or(DecodeError::Schema)?;
-        let trailer = value
-            .get("Trailer")
-            .and_then(|v| v.as_object())
-            .ok_or(DecodeError::Schema)?;
-        for (key, value) in header.into_iter() {
-            if let serde_json::Value::String(s) = value {
-                self.message_builder
-                    .add_to_std_header(key.clone(), s.clone());
-            }
-        }
-        for (key, value) in body.into_iter() {
-            if let serde_json::Value::String(s) = value {
-                self.message_builder.add_to_body(key.clone(), s.clone());
-            }
-        }
-        for (key, value) in trailer.into_iter() {
-            if let serde_json::Value::String(s) = value {
-                self.message_builder
-                    .add_to_std_trailer(key.clone(), s.clone());
-            }
-        }
-        Ok(self.message_builder.build())
+    pub fn decode<'a>(&'a mut self, data: &'a [u8]) -> Result<Message<'a>, DecodeError> {
+        let mut deserilizer = serde_json::Deserializer::from_slice(data);
+        let msg = self.message_builder();
+        MessageInternal::deserialize_in_place(&mut deserilizer, msg)
+            .map_err(|_| DecodeError::InvalidData)?;
+        Ok(Message { internal: msg })
     }
 }
 
-fn decode_field(
-    dictionary: &Dictionary,
-    key: &str,
-    value: &serde_json::Value,
-) -> Result<(u32, FixFieldValue), DecodeError> {
-    if let Some(field) = dictionary.field_by_name(key) {
-        match value {
-            serde_json::Value::String(s) => Ok((
-                field.tag() as u32,
-                FixFieldValue::string(s.as_bytes()).unwrap(),
-            )),
-            serde_json::Value::Array(values) => {
-                let mut group = Vec::new();
-                for item in values {
-                    group.push(decode_component_block(dictionary, item)?);
+type Component<'a> = HashMap<&'a str, FieldOrGroup<'a>>;
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+enum FieldOrGroup<'a> {
+    Field {
+        value: Cow<'a, str>,
+    },
+    Group {
+        #[serde(borrow)]
+        entries: Vec<Component<'a>>,
+    },
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+struct MessageInternal<'a> {
+    #[serde(borrow, rename = "StandardHeader")]
+    std_header: Component<'a>,
+    #[serde(borrow, rename = "Body")]
+    body: Component<'a>,
+    #[serde(borrow, rename = "StandardTrailer")]
+    std_trailer: Component<'a>,
+}
+
+impl<'a> std::ops::Drop for MessageInternal<'a> {
+    fn drop(&mut self) {
+        self.clear();
+    }
+}
+
+impl<'a> MessageInternal<'a> {
+    fn clear(&mut self) {
+        self.std_header.clear();
+        self.body.clear();
+        self.std_trailer.clear();
+    }
+
+    pub fn field_ref<'b, T>(
+        &'b self,
+        field_def: &FieldDef<'b, T>,
+    ) -> Option<Result<T, <T as dtf::DataField<'b>>::Error>>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>,
+    {
+        self.field_raw(field_def.name(), field_def.location)
+            .map(|s| T::deserialize(s.as_bytes()))
+    }
+
+    fn field_raw(&self, name: &str, location: FieldLocation) -> Option<&str> {
+        match location {
+            FieldLocation::Body => self.body.get(name).and_then(|field_or_group| {
+                if let FieldOrGroup::Field { value } = field_or_group {
+                    Some(value.borrow())
+                } else {
+                    None
                 }
-                Ok((field.tag() as u32, FixFieldValue::Group(group)))
-            }
-            _ => Err(DecodeError::Schema),
+            }),
+            _ => panic!(),
         }
-    } else {
-        Err(DecodeError::InvalidData)
     }
-}
-
-fn decode_component_block(
-    dictionary: &Dictionary,
-    value: &serde_json::Value,
-) -> Result<BTreeMap<i64, FixFieldValue>, DecodeError> {
-    let mut group = BTreeMap::new();
-    for item in value.as_object().unwrap() {
-        let (tag, field) = decode_field(dictionary, item.0, item.1)?;
-        group.insert(tag as i64, field);
-    }
-    Ok(group)
 }
 
 #[cfg(test)]
@@ -171,45 +239,9 @@ mod test {
     use super::*;
     use crate::AppVersion;
 
-    //    const MESSAGE_SIMPLE: &str = r#"
-    //{
-    //    "Header": {
-    //        "BeginString": "FIX.4.4",
-    //        "MsgType": "W",
-    //        "MsgSeqNum": "4567",
-    //        "SenderCompID": "SENDER",
-    //        "TargetCompID": "TARGET",
-    //        "SendingTime": "20160802-21:14:38.717"
-    //    },
-    //    "Body": {
-    //        "SecurityIDSource": "8",
-    //        "SecurityID": "ESU6",
-    //        "MDReqID": "789",
-    //        "NoMDEntries": [
-    //            { "MDEntryType": "0", "MDEntryPx": "1.50", "MDEntrySize": "75", "MDEntryTime": "21:14:38.688" },
-    //            { "MDEntryType": "1", "MDEntryPx": "1.75", "MDEntrySize": "25", "MDEntryTime": "21:14:38.688" }
-    //        ]
-    //    },
-    //    "Trailer": {
-    //    }
-    //}
-    //    "#;
+    const MESSAGE_SIMPLE: &str = include_str!("test_data/message_simple.json");
 
-    const MESSAGE_WITHOUT_HEADER: &str = r#"
-{
-    "Body": {
-        "SecurityIDSource": "8",
-        "SecurityID": "ESU6",
-        "MDReqID": "789",
-        "NoMDEntries": [
-            { "MDEntryType": "0", "MDEntryPx": "1.50", "MDEntrySize": "75", "MDEntryTime": "21:14:38.688" },
-            { "MDEntryType": "1", "MDEntryPx": "1.75", "MDEntrySize": "25", "MDEntryTime": "21:14:38.688" }
-        ]
-    },
-    "Trailer": {
-    }
-}
-    "#;
+    const MESSAGE_WITHOUT_HEADER: &str = include_str!("test_data/message_without_header.json");
 
     fn dict_fix44() -> Dictionary {
         Dictionary::from_version(AppVersion::Fix44)
@@ -219,18 +251,6 @@ mod test {
         Decoder::with_config(dict_fix44(), Config::default())
     }
 
-    //#[test]
-    //fn decode_then_decode() {
-    //    let mut decoder = encoder_fix44();
-    //    let mut encoder = encoder_fix44();
-    //    let json_value_before: Value = from_str(MESSAGE_SIMPLE).unwrap();
-    //    let message = decoder.decode(&mut MESSAGE_SIMPLE.as_bytes()).unwrap();
-    //    let mut buffer = Vec::<u8>::new();
-    //    encoder.encode(&mut buffer, message.to_message_seq()).unwrap();
-    //    let json_value_after: Value = from_slice(&buffer[..]).unwrap();
-    //    assert_eq!(json_value_before, json_value_after);
-    //}
-
     #[test]
     fn message_without_header() {
         let mut encoder = encoder_fix44();
@@ -239,6 +259,13 @@ mod test {
             Err(DecodeError::Schema) => (),
             _ => panic!(),
         };
+    }
+
+    #[test]
+    fn simple_message() {
+        let mut encoder = encoder_fix44();
+        let result = encoder.decode(&mut MESSAGE_SIMPLE.as_bytes());
+        assert!(result.is_ok());
     }
 
     #[test]

@@ -3,7 +3,7 @@
 use strum::IntoEnumIterator;
 use strum_macros::{EnumIter, IntoStaticStr};
 
-/// Sum type for all possible data types ever defined across all versions of the
+/// Sum type for all possible FIX data types ever defined across all versions of the
 /// FIX protocol.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
 #[non_exhaustive]
@@ -159,9 +159,9 @@ impl DataType {
     /// assert_eq!(DataType::from_quickfix_name("MONTHYEAR"), Some(DataType::MonthYear));
     /// assert_eq!(DataType::from_quickfix_name(""), None);
     /// ```
-    pub fn from_quickfix_name<S: AsRef<str>>(name: S) -> Option<Self> {
+    pub fn from_quickfix_name(name: &str) -> Option<Self> {
         // https://github.com/quickfix/quickfix/blob/b6760f55ac6a46306b4e081bb13b65e6220ab02d/src/C%2B%2B/DataDictionary.cpp#L646-L680
-        Some(match name.as_ref() {
+        Some(match name {
             "AMT" => DataType::Amt,
             "BOOLEAN" => DataType::Boolean,
             "CHAR" => DataType::Char,
@@ -195,7 +195,6 @@ impl DataType {
             "TIME" => DataType::UtcTimestamp,
             "XMLDATA" => DataType::XmlData,
             _ => {
-                dbglog!("Unknown QuickFIX data type '{}'", name.as_ref());
                 return None;
             }
         })

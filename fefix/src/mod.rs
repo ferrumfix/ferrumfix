@@ -5,11 +5,11 @@
 mod utils;
 
 pub mod app_version;
+pub mod codegen;
+pub mod data_type;
 pub mod dictionary;
-pub mod dt;
-pub mod fix_codegen;
 pub mod quickfix_specs;
 
 pub use app_version::AppVersion;
-pub use dt::DataType;
+pub use data_type::DataType;
 pub use quickfix_specs::quickfix_spec;

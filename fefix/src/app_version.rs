@@ -10,7 +10,10 @@ const NAME_FIX50SP1: &str = "FIX-5.0-SP1";
 const NAME_FIX50SP2: &str = "FIX-5.0-SP2";
 const NAME_FIXT11: &str = "FIXT-1.1";
 
-/// Which [`Dictionary`](fefix::Dictionary) version to use.
+/// Indicates any of the officially supported FIX Application Layer versions.
+///
+/// FerrumFIX doesn't restrict support to only these versions; these are simply
+/// the ones that are shipped by default with the library.
 #[derive(Copy, Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum AppVersion {
@@ -26,6 +29,7 @@ pub enum AppVersion {
 }
 
 impl AppVersion {
+    /// An array of all [`AppVersion`] variants.
     pub const ALL: &'static [Self] = &[
         Self::Fix40,
         Self::Fix41,
@@ -38,6 +42,7 @@ impl AppVersion {
         Self::Fixt11,
     ];
 
+    /// Returns the signature name of `self`, e.g. "FIX-4.4" or "FIX-5.0-SP1".
     pub const fn name(&self) -> &str {
         match self {
             Self::Fix40 => NAME_FIX40,
@@ -52,9 +57,10 @@ impl AppVersion {
         }
     }
 
-    /// Matches
-    pub fn from_str(s: &str) -> Option<Self> {
-        Some(match s {
+    /// Returns the [`AppVersion`] associated with `name`, if it exists. Returns
+    /// `None` if no match was found.
+    pub fn from_str(name: &str) -> Option<Self> {
+        Some(match name {
             NAME_FIX40 => Self::Fix40,
             NAME_FIX41 => Self::Fix41,
             NAME_FIX42 => Self::Fix42,

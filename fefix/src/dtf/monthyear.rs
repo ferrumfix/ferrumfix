@@ -1,4 +1,5 @@
-use crate::tagvalue::SerializeField;
+use super::error;
+use crate::dtf::DataField;
 use crate::Buffer;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -7,16 +8,16 @@ enum DayOrWeek {
     Week(u32),
 }
 
-/// Concrete value for [`DataType::MonthYear`](crate::DataType::MonthYear)
-/// fields.
+/// Canonical data field (DTF) for
+/// [`DataType::MonthYear`](crate::DataType::MonthYear).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct DtfMonthYear {
+pub struct MonthYear {
     year: u32,
     month: u32,
     day_or_week: DayOrWeek,
 }
 
-impl DtfMonthYear {
+impl MonthYear {
     pub fn parse(data: &[u8]) -> Option<Self> {
         if !validate(data) {
             None
@@ -152,7 +153,9 @@ impl DtfMonthYear {
     }
 }
 
-impl SerializeField for DtfMonthYear {
+impl<'a> DataField<'a> for MonthYear {
+    type Error = error::MonthYear;
+
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
         B: Buffer,
@@ -160,6 +163,10 @@ impl SerializeField for DtfMonthYear {
         let bytes = self.to_bytes();
         buffer.extend_from_slice(&bytes[..]);
         bytes.len()
+    }
+
+    fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
+        Self::parse(data).ok_or(Self::Error::Other)
     }
 }
 

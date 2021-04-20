@@ -81,9 +81,9 @@ impl<'a> Frame<'a> {
     /// ```
     /// use fefix::sofh::Frame;
     ///
-    /// // Message_Length:          -----------
-    /// // Encoding_Type:                       ---------
-    /// // Message:                                       --
+    /// // Message_Length:          ~~~~~~~~~~~
+    /// // Encoding_Type:                       ~~~~~~~~~
+    /// // Message:                                       ~~
     /// let frame = Frame::decode(&[0, 0, 0, 7, 0x0, 0x0, 42]).unwrap();
     /// assert_eq!(frame.message(), &[42]);
     /// ```
@@ -122,9 +122,9 @@ impl<'a> Frame<'a> {
     /// use fefix::sofh::Frame;
     ///
     /// // Message_Length:
-    /// //            -----------
-    /// // Encoding_Type:         ---------
-    /// // Message:                         --
+    /// //            ~~~~~~~~~~~
+    /// // Encoding_Type:         ~~~~~~~~~
+    /// // Message:                         ~~
     /// let bytes = &[0, 0, 0, 7, 0x0, 0x0, 42];
     /// let frame = Frame::decode(bytes).unwrap();
     /// let buffer = &mut Vec::new();

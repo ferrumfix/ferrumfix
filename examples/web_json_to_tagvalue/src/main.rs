@@ -1,6 +1,6 @@
 //! Starts an HTTP server on any open port and listens for JSON FIX messages.
 
-use fefix::{json, tagvalue, AppVersion, Dictionary, FixFieldsIter, FixMessage};
+use fefix::{json, tagvalue, AppVersion, Dictionary};
 
 #[tokio::main]
 async fn main() -> tide::Result<()> {
@@ -37,7 +37,7 @@ impl Default for State {
         config.set_pretty_print(true);
         Self {
             decoder: json::Decoder::with_config(dictionary, config),
-            encoder: tagvalue::Encoder::new(tagvalue::Config::default()),
+            encoder: tagvalue::Encoder::<Vec<u8>, tagvalue::Config>::from_buffer(vec![]),
         }
     }
 }
@@ -49,19 +49,14 @@ async fn serve_hello_world(_req: tide::Request<State>) -> tide::Result {
 async fn serve_json_relay(mut req: tide::Request<State>) -> tide::Result {
     let decoder = &mut req.state().decoder.clone();
     let encoder = &mut req.state().encoder.clone();
-    let message = {
-        let body: Vec<u8> = req.body_bytes().await?;
-        decoder.decode(&body[..]).unwrap()
-    };
-    let mut buffer = Vec::new();
+    let body: Vec<u8> = req.body_bytes().await?;
+    let message = { decoder.decode(&body[..]).unwrap() };
     let body_response = {
-        let msg = &mut FixMessage::new();
-        for (tag, value) in message.iter_fields() {
-            msg.add_field(tag, value.clone()).unwrap();
-        }
-        encoder.encode(&mut buffer, &msg).unwrap();
-        let buffer_string = std::str::from_utf8(&buffer[..]).unwrap();
-        buffer_string
+        //let mut state = encoder.start_message(b"FIX-4.4", message.f_msg_type().unwrap().as_bytes());
+        //for (tag, _value) in message.iter_fields() {
+        //    state.set_any(tag, b"TODO");
+        //}
+        "TODO"
     };
     Ok(body_response.into())
 }

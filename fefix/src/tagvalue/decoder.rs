@@ -1,6 +1,10 @@
-use super::{RawDecoder, RawDecoderBuffered, RawFrame};
+use super::{
+    message::{AncestryTracker, Context},
+    RawDecoder, RawDecoderBuffered, RawFrame,
+};
+use crate::fields::fix44 as fields;
 use crate::tagvalue::{Config, Configure, DecodeError, Message, MessageBuilder};
-use crate::{tags, Dictionary};
+use crate::{DataType, Dictionary};
 use std::fmt::Debug;
 
 const BEGIN_STRING_OFFSET: usize = 2;
@@ -14,6 +18,9 @@ where
     dict: Dictionary,
     builder: MessageBuilder,
     raw_decoder: RawDecoder<C>,
+    current_group_entry_tag: u32,
+    remaining_group_entries: u16,
+    group_ancestry: AncestryTracker,
 }
 
 impl<C> Decoder<C>
@@ -31,6 +38,9 @@ where
             dict,
             builder: MessageBuilder::new(),
             raw_decoder: RawDecoder::with_config(config),
+            current_group_entry_tag: 0,
+            remaining_group_entries: 0,
+            group_ancestry: AncestryTracker::top_level(),
         }
     }
 
@@ -109,7 +119,7 @@ where
         let mut i_equal_sign = 0usize;
         self.builder
             .add_field(
-                tags::BEGIN_STRING,
+                Context::top_level(fields::BEGIN_STRING.tag()),
                 BEGIN_STRING_OFFSET,
                 frame.begin_string().len(),
             )
@@ -122,19 +132,62 @@ where
             } else if byte == self.config().separator() {
                 i_sep = i;
                 state_is_tag = true;
-                self.builder
-                    .add_field(
-                        tag_num,
-                        frame.payload_offset() + i_equal_sign + 1,
-                        i_sep - i_equal_sign - 1,
-                    )
-                    .unwrap();
+                let start = frame.payload_offset() + i_equal_sign + 1;
+                let len = i_sep - i_equal_sign - 1;
+                let msg = self.builder.build(bytes);
+                let msg_type = msg.f_msg_type().unwrap_or("").to_string();
+                self.store_field(tag_num, start, len, msg_type.as_str());
                 tag_num = 0;
             } else if state_is_tag {
                 tag_num = tag_num * 10 + (byte - b'0') as u32;
             }
         }
         Ok(self.builder.build(bytes))
+    }
+
+    fn store_field(&mut self, tag: u32, start: usize, len: usize, msg_type: &str) {
+        let field_definition = self.dict.field_by_tag(tag).unwrap();
+        if tag == self.current_group_entry_tag {
+            dbglog!("{} tag is group entry id", tag);
+            self.remaining_group_entries -= 1;
+            if self.remaining_group_entries <= 1 {
+                self.group_ancestry.leave_group();
+            }
+        }
+        if field_definition.basetype() == DataType::NumInGroup {
+            dbglog!("{} tag is numingroup", tag);
+            // It's a "group leader".
+            // FIXME
+            self.current_group_entry_tag = self
+                .dict
+                .message_by_msgtype(msg_type)
+                .unwrap()
+                .group_info(tag)
+                .unwrap();
+            self.group_ancestry.enter_group();
+            // FIXME: read value and set it.
+            self.remaining_group_entries = 1;
+            let context = Context {
+                tag,
+                ancestry: AncestryTracker::top_level().ancestry(),
+            };
+            self.builder.add_field(context, start, len).unwrap();
+        } else {
+            dbglog!("{} tag is not numingroup", tag);
+            // It's not.
+            if tag == self.current_group_entry_tag {
+                self.remaining_group_entries = self.remaining_group_entries.wrapping_sub(1);
+                if self.remaining_group_entries <= 1 {
+                    self.current_group_entry_tag = 0;
+                }
+                self.group_ancestry.incr_entry();
+            }
+            let context = Context {
+                tag,
+                ancestry: AncestryTracker::top_level().ancestry(),
+            };
+            self.builder.add_field(context, start, len).unwrap();
+        }
     }
 }
 
@@ -220,7 +273,7 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{tagvalue::Config, AppVersion};
+    use crate::{fields::fix44 as fields, tagvalue::Config, AppVersion};
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
@@ -261,6 +314,25 @@ mod test {
     }
 
     #[test]
+    fn repeating_group_entries() {
+        let bytes = b"8=FIX.4.2|9=196|35=X|49=A|56=B|34=12|52=20100318-03:21:11.364|262=A|268=2|279=0|269=0|278=BID|55=EUR/USD|270=1.37215|15=EUR|271=2500000|346=1|279=0|269=1|278=OFFER|55=EUR/USD|270=1.37224|15=EUR|271=2503200|346=1|10=171|";
+        let decoder = &mut decoder();
+        decoder.config_mut().set_separator(b'|');
+        decoder.config_mut().set_verify_checksum(false);
+        let message = decoder.decode(bytes).unwrap();
+        let group = message.group_ref(268).unwrap();
+        assert_eq!(group.len(), 2);
+        assert_eq!(
+            group
+                .entry(0)
+                .field_ref(fields::MD_ENTRY_ID)
+                .unwrap()
+                .unwrap(),
+            b"BID"
+        );
+    }
+
+    #[test]
     fn no_skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
         let mut codec = Decoder::<Config>::new(Dictionary::from_version(AppVersion::Fix44));
@@ -286,6 +358,7 @@ mod test {
         let mut codec = decoder();
         codec.config_mut().set_verify_checksum(false);
         let message = codec.decode(&mut RANDOM_MESSAGES[0].as_bytes()).unwrap();
+        assert_eq!(message.field_ref(fields::MSG_TYPE), Some(Ok(b"0" as &[u8])));
         assert_eq!(message.field_raw(8), Some(b"FIX.4.2" as &[u8]));
         assert_eq!(message.field_raw(35), Some(b"0" as &[u8]),);
     }

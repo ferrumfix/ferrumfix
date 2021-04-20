@@ -11,21 +11,21 @@ use super::frame::Frame;
 /// High Performance Group to allow message processors and communication gateways
 /// to determine the length and the data format of incoming messages.
 #[derive(Debug)]
-pub struct Decoder<T>
+pub struct Decoder<B>
 where
-    T: Buffer,
+    B: Buffer,
 {
-    buffer: T,
+    buffer: B,
     buffer_actual_len: usize,
 }
 
-impl<T> Decoder<T>
+impl<B> Decoder<B>
 where
-    T: Buffer,
+    B: Buffer,
 {
     /// Creates a new [`Decoder`] with a buffer large enough to
     /// hold `capacity` amounts of bytes without reallocating.
-    pub fn from_buffer(buffer: T) -> Self {
+    pub fn from_buffer(buffer: B) -> Self {
         Self {
             buffer,
             buffer_actual_len: 0,
@@ -48,9 +48,9 @@ where
     }
 }
 
-impl<T> Decoder<T>
+impl<B> Decoder<B>
 where
-    T: Buffer,
+    B: Buffer,
 {
     /// Provides a buffer that must be filled before re-attempting to deserialize
     /// the next [`Frame`].
@@ -81,7 +81,7 @@ where
         decode_result.unwrap()
     }
 
-    pub fn read_frames<R>(self, reader: R) -> Frames<T, R>
+    pub fn read_frames<R>(self, reader: R) -> Frames<B, R>
     where
         R: io::Read,
     {
@@ -93,17 +93,17 @@ where
 }
 
 #[derive(Debug)]
-pub struct Frames<T, R>
+pub struct Frames<B, R>
 where
-    T: Buffer,
+    B: Buffer,
 {
-    decoder: Decoder<T>,
+    decoder: Decoder<B>,
     reader: R,
 }
 
-impl<T, R> Frames<T, R>
+impl<B, R> Frames<B, R>
 where
-    T: Buffer,
+    B: Buffer,
     R: std::io::Read,
 {
     pub fn next(&mut self) -> Result<Option<Frame>, Error> {

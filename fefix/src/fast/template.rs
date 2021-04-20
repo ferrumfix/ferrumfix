@@ -1,29 +1,28 @@
 use super::errors::StaticError;
 use super::field_operators::FieldOperatorInstruction;
 use super::Decimal;
-use crate::dictionary::Dictionary;
 
 #[derive(Clone, Debug)]
 pub enum PrimitiveValue<'a> {
-    SInt32(i32),
-    UInt32(u32),
-    SInt64(i64),
-    UInt64(u64),
+    I32(i32),
+    U32(u32),
+    I64(i64),
+    U64(u64),
     Decimal(Decimal),
-    Ascii(&'a [u8]),
-    Utf8(&'a [u8]),
+    AsciiString(&'a [u8]),
+    Utf8String(&'a str),
     Bytes(&'a [u8]),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 pub enum PrimitiveType {
-    SInt32,
-    UInt32,
-    SInt64,
-    UInt64,
+    I32,
+    U32,
+    I64,
+    U64,
     Decimal,
-    Ascii,
-    Utf8,
+    AsciiString,
+    Utf8String,
     Bytes,
 }
 
@@ -91,7 +90,6 @@ pub struct Template {
     /// Used for code generation.
     name: String,
     instructions: Vec<FieldInstruction>,
-    dictionary: Dictionary,
 }
 
 impl Template {
@@ -99,10 +97,10 @@ impl Template {
         let document = roxmltree::Document::parse(xml_document).unwrap();
         let container = document.root().first_element_child().unwrap();
         let root = container.first_element_child().unwrap();
-        Template::from_xml(Dictionary::empty(), root)
+        Template::from_xml(root)
     }
 
-    fn from_xml(dict: Dictionary, root: roxmltree::Node) -> Result<Self, StaticError> {
+    fn from_xml(root: roxmltree::Node) -> Result<Self, StaticError> {
         debug_assert_eq!(root.tag_name().name(), "template");
         let name = root.attribute("name").unwrap();
         let id = {
@@ -136,7 +134,6 @@ impl Template {
             id,
             name: name.to_string(),
             instructions,
-            dictionary: dict,
         };
         Ok(template)
     }
@@ -155,14 +152,14 @@ impl Template {
 
     fn xml_tag_to_instruction(tag: &str) -> Result<FieldType, StaticError> {
         Ok(match tag {
-            "string" => FieldType::Primitive(PrimitiveType::Ascii),
-            "uInt32" => FieldType::Primitive(PrimitiveType::UInt32),
-            "int32" => FieldType::Primitive(PrimitiveType::SInt32),
-            "uInt64" => FieldType::Primitive(PrimitiveType::UInt64),
-            "int64" => FieldType::Primitive(PrimitiveType::SInt64),
+            "string" => FieldType::Primitive(PrimitiveType::AsciiString),
+            "uInt32" => FieldType::Primitive(PrimitiveType::U32),
+            "int32" => FieldType::Primitive(PrimitiveType::I32),
+            "uInt64" => FieldType::Primitive(PrimitiveType::U64),
+            "int64" => FieldType::Primitive(PrimitiveType::I64),
             "decimal" => FieldType::Primitive(PrimitiveType::Decimal),
             "byteVector" => FieldType::Primitive(PrimitiveType::Decimal),
-            "length" => FieldType::Primitive(PrimitiveType::UInt32),
+            "length" => FieldType::Primitive(PrimitiveType::U32),
             _ => return Err(StaticError::S1),
         })
     }

@@ -1,7 +1,7 @@
 use crate::tagvalue::{utils, Config, Configure, DecodeError};
 use std::ops::Range;
 
-/// An immutable view over the raw contents of a FIX message.
+/// View over the contents of a FIX message according to [`RawDecoder`].
 #[derive(Debug)]
 pub struct RawFrame<'a> {
     data: &'a [u8],
@@ -160,7 +160,7 @@ where
     }
 }
 
-/// A bare-bones FIX decoder for byte streams.
+/// A [`RawDecoder`] that can buffer incoming data and read a stream of messages.
 #[derive(Debug, Clone)]
 pub struct RawDecoderBuffered<C = Config>
 where

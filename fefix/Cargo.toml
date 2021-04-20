@@ -29,14 +29,17 @@ bytes = "1"
 boolinator = "2.4.0"
 chrono = "0.4"
 fixed = "1.6"
+fnv = "1"
 futures = "0.3.8"
 futures-lite = "1"
 Inflector = "0.11"
+indoc = "1"
 openssl = "0.10"
 quick-xml = "0.22"
 phf = { version = "0.8", features = ["macros"] }
 roxmltree = "0.14"
-serde = "1"
+rust_decimal = "1"
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
 strum = "0.20"
 strum_macros = "0.20"
@@ -45,7 +48,9 @@ uuid = { version = "0.8.1", features = ["v4"] }
 fefix_derive = { path = "../fefix_derive" }
 
 [build-dependencies]
+fnv = "1"
 Inflector = "0.11"
+indoc = "1"
 quick-xml = "0.22"
 roxmltree = "0.14"
 rayon = "1"

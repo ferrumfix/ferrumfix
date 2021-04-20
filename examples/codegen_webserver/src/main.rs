@@ -5,7 +5,7 @@
 //! - http://localhost:8080/mnemonics/FIX-4.2/10
 //! - http://localhost:8080/structs/FIX-4.3
 
-use fefix::{codegen, codegen_tag_mnemonics, AppVersion, Dictionary};
+use fefix::{codegen, AppVersion, Dictionary};
 use std::collections::HashMap;
 
 #[tokio::main]
@@ -52,7 +52,7 @@ async fn serve_mnemonics(req: tide::Request<State>) -> tide::Result {
             let tag = tag.parse::<u32>().unwrap();
             dict.field_by_tag(tag).unwrap().name().to_string()
         } else {
-            codegen_tag_mnemonics(&dict)
+            codegen::fields(dict.clone(), "fefix")
         }
     };
     Ok(body_response.into())
@@ -62,5 +62,9 @@ async fn serve_structs(req: tide::Request<State>) -> tide::Result {
     let version_name = req.param("version").unwrap();
     let version = AppVersion::from_str(version_name).unwrap();
     let dict = req.state().dictionaries.get(&version).unwrap();
-    Ok(codegen(&dict).into())
+    let mut code = String::new();
+    for field in dict.iter_fields() {
+        code.push_str(codegen::field_def(field).as_str());
+    }
+    Ok(code.into())
 }

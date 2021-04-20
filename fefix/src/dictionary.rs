@@ -3,16 +3,23 @@
 use self::symbol_table::{Key, KeyRef, SymbolTable, SymbolTableIndex};
 use super::AppVersion;
 use super::{quickfix_spec, DataType};
+use fnv::FnvHashMap;
 use quickfix::{ParseDictionaryError, QuickFixReader};
-use std::collections::HashMap;
 use std::fmt;
 use std::io;
-use std::ops::Range;
 use std::sync::Arc;
 
 /// Value for the field `MsgType (35)`.
 #[derive(Copy, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MsgType(u16);
+
+#[derive(Debug, Clone)]
+pub struct Version {
+    pub standard: String,
+    pub v_major: u32,
+    pub v_minor: u32,
+    pub ep: Option<u32>,
+}
 
 impl MsgType {
     pub fn write(&self, writer: &mut impl io::Write) -> io::Result<()> {
@@ -67,7 +74,7 @@ struct DictionaryData {
     fields: Vec<FieldData>,
     components: Vec<ComponentData>,
     messages: Vec<MessageData>,
-    layout_items: Vec<LayoutItemData>,
+    //layout_items: Vec<LayoutItemData>,
     categories: Vec<CategoryData>,
     header: Vec<FieldData>,
 }
@@ -159,13 +166,13 @@ impl Dictionary {
         Dictionary {
             inner: Arc::new(DictionaryData {
                 version: version.to_string(),
-                symbol_table: HashMap::new(),
+                symbol_table: FnvHashMap::default(),
                 abbreviations: Vec::new(),
                 data_types: Vec::new(),
                 fields: Vec::new(),
                 components: Vec::new(),
                 messages: Vec::new(),
-                layout_items: Vec::new(),
+                //layout_items: Vec::new(),
                 categories: Vec::new(),
                 header: Vec::new(),
             }),
@@ -371,13 +378,13 @@ impl Dictionary {
 
 struct DictionaryBuilder {
     version: String,
-    symbol_table: HashMap<Key, InternalId>,
+    symbol_table: FnvHashMap<Key, InternalId>,
     abbreviations: Vec<AbbreviatonData>,
     data_types: Vec<DatatypeData>,
     fields: Vec<FieldData>,
     components: Vec<ComponentData>,
     messages: Vec<MessageData>,
-    layout_items: Vec<LayoutItemData>,
+    //layout_items: Vec<LayoutItemData>,
     categories: Vec<CategoryData>,
     header: Vec<FieldData>,
 }
@@ -386,13 +393,13 @@ impl DictionaryBuilder {
     pub fn new(version: String) -> Self {
         Self {
             version,
-            symbol_table: HashMap::default(),
+            symbol_table: FnvHashMap::default(),
             abbreviations: Vec::new(),
             data_types: Vec::new(),
             fields: Vec::new(),
             components: Vec::new(),
             messages: Vec::new(),
-            layout_items: Vec::new(),
+            //layout_items: Vec::new(),
             categories: Vec::new(),
             header: Vec::new(),
         }
@@ -442,7 +449,7 @@ impl DictionaryBuilder {
                 fields: self.fields,
                 components: self.components,
                 messages: self.messages,
-                layout_items: self.layout_items,
+                //layout_items: self.layout_items,
                 categories: self.categories,
                 header: self.header,
             }),
@@ -488,7 +495,7 @@ struct ComponentData {
     /// type.
     id: usize,
     component_type: ComponentType,
-    layout_items_iid_range: Range<u32>,
+    layout_items: Vec<LayoutItemData>,
     category_iid: InternalId,
     /// The human readable name of the component.
     name: String,
@@ -542,9 +549,8 @@ impl<'a> Component<'a> {
     }
 
     pub fn items(&self) -> impl Iterator<Item = LayoutItem> {
-        let start = self.1.layout_items_iid_range.start as usize;
-        let end = self.1.layout_items_iid_range.end as usize;
-        self.0.inner.layout_items[start..end]
+        self.1
+            .layout_items
             .iter()
             .map(move |data| LayoutItem(self.0, data))
     }
@@ -726,7 +732,7 @@ enum LayoutItemKindData {
         iid: InternalId,
     },
     Group {
-        len_field_iid: InternalId,
+        len_field_iid: u32,
         items: Vec<LayoutItemData>,
     },
     Field {
@@ -820,6 +826,8 @@ impl<'a> LayoutItem<'a> {
     }
 }
 
+type LayoutItems = Vec<LayoutItemData>;
+
 #[derive(Clone, Debug)]
 struct MessageData {
     /// The unique integer identifier of this message type.
@@ -833,7 +841,7 @@ struct MessageData {
     category_iid: InternalId,
     /// Identifier of the section to which this message belongs.
     section_id: String,
-    layout_items: Range<InternalId>,
+    layout_items: LayoutItems,
     /// The abbreviated name of this message, when used in an XML context.
     abbr_name: Option<String>,
     /// A boolean used to indicate if the message is to be generated as part
@@ -864,15 +872,41 @@ impl<'a> Message<'a> {
         &self.1.description
     }
 
+    pub fn group_info(&self, num_in_group_tag: u32) -> Option<u32> {
+        dbglog!(
+            "searching for group info about {} and {}",
+            self.msg_type(),
+            num_in_group_tag
+        );
+        self.layout().find_map(|layout_item| {
+            if let LayoutItemKind::Group(field, items) = layout_item.kind() {
+                dbglog!("found group with tag {}", field.tag());
+                if field.tag() == num_in_group_tag {
+                    if let LayoutItemKind::Field(f) = items[0].kind() {
+                        Some(f.tag())
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } else if let LayoutItemKind::Component(component) = layout_item.kind() {
+                dbglog!("found component with name {}", component.name());
+                None
+            } else {
+                None
+            }
+        })
+    }
+
     /// Returns the component ID of `self`.
     pub fn component_id(&self) -> u32 {
         self.1.component_id
     }
 
     pub fn layout(&self) -> impl Iterator<Item = LayoutItem> {
-        let start = self.1.layout_items.start as usize;
-        let end = self.1.layout_items.end as usize;
-        self.0.inner.layout_items[start..end]
+        self.1
+            .layout_items
             .iter()
             .map(move |data| LayoutItem(self.0, data))
     }
@@ -887,11 +921,11 @@ pub struct Section {}
 mod symbol_table {
     use super::InternalId;
     use super::MsgType;
+    use fnv::FnvHashMap;
     use std::borrow::Borrow;
-    use std::collections::HashMap;
     use std::hash::Hash;
 
-    pub type SymbolTable = HashMap<Key, InternalId>;
+    pub type SymbolTable = FnvHashMap<Key, InternalId>;
 
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub enum Key {
@@ -1026,9 +1060,6 @@ mod quickfix {
         use std::io::Cursor;
         let mut writer = Writer::new_with_indent(Cursor::new(Vec::new()), b' ', 2);
         writer
-            .write_event(Event::Start(BytesStart::borrowed_name(b"fix")))
-            .unwrap();
-        writer
             .write_event(Event::Start(BytesStart::borrowed_name(b"header")))
             .unwrap();
         for item in dict.component_by_name("StandardHeader").unwrap().items() {
@@ -1038,13 +1069,7 @@ mod quickfix {
             .write_event(Event::End(BytesEnd::borrowed(b"header")))
             .unwrap();
         writer
-            .write_event(Event::Start(BytesStart::borrowed_name(b"trailer")))
-            .unwrap();
-        for item in dict.component_by_name("StandardTrailer").unwrap().items() {
-            write_layout_item(&mut writer, item);
-        }
-        writer
-            .write_event(Event::End(BytesEnd::borrowed(b"trailer")))
+            .write_event(Event::Start(BytesStart::borrowed_name(b"fix")))
             .unwrap();
         writer
             .write_event(Event::Start(BytesStart::borrowed_name(b"messages")))
@@ -1053,10 +1078,10 @@ mod quickfix {
             writer
                 .write_event(Event::Start(BytesStart::borrowed(
                     format!(
-                        "message msgcat='{}' msgtype='{}' name='{}' ",
-                        "FIXME",
+                        "message name='{}' msgtype='{}' msgcat='{}' ",
+                        message.name(),
                         message.msg_type(),
-                        message.name()
+                        "TODO_CATEGORY",
                     )
                     .as_bytes(),
                     b"message".len(),
@@ -1071,6 +1096,15 @@ mod quickfix {
         }
         writer
             .write_event(Event::End(BytesEnd::borrowed(b"messages")))
+            .unwrap();
+        writer
+            .write_event(Event::Start(BytesStart::borrowed_name(b"trailer")))
+            .unwrap();
+        for item in dict.component_by_name("StandardTrailer").unwrap().items() {
+            write_layout_item(&mut writer, item);
+        }
+        writer
+            .write_event(Event::End(BytesEnd::borrowed(b"trailer")))
             .unwrap();
         writer
             .write_event(Event::Start(BytesStart::borrowed_name(b"components")))
@@ -1154,7 +1188,7 @@ mod quickfix {
             }
             // `StandardHeader` and `StandardTrailer` are defined in ad-hoc
             // sections of the XML files. They're always there, even if
-            // potentially empty (FIX 5.0+).
+            // potentially empty (e.g. FIX 5.0+).
             import_component(
                 &mut reader.builder,
                 reader.node_with_header,
@@ -1192,7 +1226,19 @@ mod quickfix {
                     .ok_or(ParseDictionaryError::InvalidData(
                         "No minor version attribute.".to_string(),
                     ))?;
-            let version = format!("{}.{}.{}", version_type, version_major, version_minor);
+            let version_sp = root.attribute("servicepack").unwrap_or("0");
+            let version = format!(
+                "{}.{}.{}{}",
+                version_type,
+                version_major,
+                version_minor,
+                // Omit Service Pack ID if set to zero.
+                if version_sp != "0" {
+                    format!("-SP{}", version_sp)
+                } else {
+                    String::new()
+                }
+            );
             Ok(QuickFixReader {
                 builder: DictionaryBuilder::new(version),
                 node_with_header: find_tagged_child("header")?,
@@ -1243,15 +1289,14 @@ mod quickfix {
     ) -> ParseResult<InternalId> {
         debug_assert_eq!(node.tag_name().name(), "message");
         let category_iid = import_category(builder, node)?;
-        let layout_start = builder.layout_items.len() as u32;
+        let mut layout_items = LayoutItems::new();
         for child in node.children() {
             if child.is_element() {
                 // We don't need to generate new IID's because we're dealing
                 // with ranges.
-                import_layout_item(builder, child)?;
+                layout_items.push(import_layout_item(builder, child)?);
             }
         }
-        let layout_end = builder.layout_items.len() as u32;
         let message = MessageData {
             name: node
                 .attribute("name")
@@ -1264,7 +1309,7 @@ mod quickfix {
             component_id: 0,
             category_iid,
             section_id: String::new(),
-            layout_items: layout_start..layout_end,
+            layout_items,
             abbr_name: None,
             required: true,
             elaboration: None,
@@ -1278,17 +1323,16 @@ mod quickfix {
         node: roxmltree::Node,
         name: S,
     ) -> ParseResult<InternalId> {
-        let layout_start = builder.layout_items.len() as u32;
+        let mut layout_items = LayoutItems::new();
         for child in node.children() {
             if child.is_element() {
-                import_layout_item(builder, child)?;
+                layout_items.push(import_layout_item(builder, child)?);
             }
         }
-        let layout_end = builder.layout_items.len() as u32;
         let component = ComponentData {
             id: 0,
             component_type: ComponentType::Block,
-            layout_items_iid_range: layout_start..layout_end,
+            layout_items,
             category_iid: 0, // FIXME
             name: name.as_ref().to_string(),
             abbr_name: None,
@@ -1360,7 +1404,7 @@ mod quickfix {
     fn import_layout_item(
         builder: &mut DictionaryBuilder,
         node: roxmltree::Node,
-    ) -> ParseResult<InternalId> {
+    ) -> ParseResult<LayoutItemData> {
         // This processing step requires on fields being already present in
         // the dictionary.
         debug_assert_ne!(builder.fields.len(), 0);
@@ -1379,13 +1423,13 @@ mod quickfix {
             }
             "group" => {
                 let len_field_iid = *builder.symbol(KeyRef::FieldByName(name)).unwrap();
-                let mut iids = Vec::new();
+                let mut items = Vec::new();
                 for child in node.children().filter(|n| n.is_element()) {
-                    iids.push(import_layout_item(builder, child)?);
+                    items.push(import_layout_item(builder, child)?);
                 }
                 LayoutItemKindData::Group {
                     len_field_iid,
-                    items: Vec::new(),
+                    items,
                 }
             }
             _ => {
@@ -1393,9 +1437,7 @@ mod quickfix {
             }
         };
         let item = LayoutItemData { required, kind };
-        let iid = builder.layout_items.len() as InternalId;
-        builder.layout_items.push(item);
-        Ok(iid)
+        Ok(item)
     }
 
     fn import_category(

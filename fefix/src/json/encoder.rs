@@ -1,158 +1,174 @@
-use super::{Config, Configure, DecodeError, EncodeError};
-use crate::buffer::Buffer;
-use crate::models::{field_value::FieldValue, FixFieldValue};
-use crate::Dictionary;
-use crate::FixFieldsIter;
-use crate::FixMessage;
-use serde_json::json;
-use std::collections::HashMap;
+use crate::dtf::DataField;
+use crate::fields::FieldDef;
 
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]
-pub struct Encoder<C = Config>
-where
-    C: Configure,
-{
-    dictionaries: HashMap<String, Dictionary>,
-    message: FixMessage,
-    config: C,
+pub struct Encoder {
+    buffer: Vec<u8>,
+    has_message: bool,
 }
 
-impl<C> Encoder<C>
-where
-    C: Configure,
-{
-    /// Creates a new codec. `dict` serves as a reference for data type inference
-    /// of incoming messages' fields. `config` handles encoding details. See the
-    /// [`Configure`] trait for more information.
-    pub fn new(dict: Dictionary) -> Self {
-        Self::with_config(dict, C::default())
-    }
-
-    /// Creates a new codec. `dict` serves as a reference for data type inference
-    /// of incoming messages' fields. `config` handles encoding details. See the
-    /// [`Configure`] trait for more information.
-    pub fn with_config(dict: Dictionary, config: C) -> Self {
-        let mut dictionaries = HashMap::new();
-        dictionaries.insert(dict.get_version().to_string(), dict);
+impl Encoder {
+    pub fn new() -> Self {
         Self {
-            dictionaries,
-            message: FixMessage::new(),
-            config,
+            buffer: Vec::new(),
+            has_message: false,
         }
     }
 
-    /// Returns an immutable reference to the [`Configure`] implementor used by
-    /// `self`.
-    pub fn config(&self) -> &C {
-        &self.config
+    pub fn start_message(&mut self) -> encoder_states::Initial {
+        self.buffer.clear();
+        self.has_message = true;
+        encoder_states::Initial { encoder: self }
+    }
+}
+
+/// Typestates for the JSON [`Encoder`].
+pub mod encoder_states {
+    use super::*;
+
+    /// Typestate produced by [`Encoder::start_message`].
+    #[derive(Debug)]
+    #[must_use]
+    pub struct Initial<'a> {
+        pub encoder: &'a mut Encoder,
     }
 
-    /// Returns a mutable reference to the [`Configure`] implementor used by
-    /// `self`.
-    pub fn config_mut(&mut self) -> &mut C {
-        &mut self.config
-    }
-
-    fn translate(&self, dict: &Dictionary, field: &FixFieldValue) -> serde_json::Value {
-        match field {
-            FixFieldValue::Atom(FieldValue::String(c)) => {
-                serde_json::Value::String(c.as_str().to_string())
+    impl<'a> Initial<'a> {
+        pub fn with_header(self) -> StdHeader<'a> {
+            self.encoder
+                .buffer
+                .extend_from_slice(br#"{"StandardHeader":{"#);
+            StdHeader {
+                encoder: self.encoder,
             }
-            FixFieldValue::Group(array) => {
-                let mut values = Vec::new();
-                for group in array {
-                    let mut map = serde_json::Map::new();
-                    for item in group {
-                        let field = dict
-                            .field_by_tag(*item.0 as u32)
-                            .ok_or(DecodeError::InvalidData)
-                            .unwrap();
-                        let field_name = field.name().to_string();
-                        let field_value = self.translate(dict, item.1);
-                        map.insert(field_name, field_value);
-                    }
-                    values.push(serde_json::Value::Object(map));
-                }
-                serde_json::Value::Array(values)
-            }
-            _ => panic!(),
         }
     }
 
-    pub fn encode<B>(
-        &mut self,
-        mut buffer: &mut B,
-        message: &FixMessage,
-    ) -> Result<usize, EncodeError>
+    trait EncoderStateAtTopLevel
     where
-        B: Buffer,
+        Self: Sized,
     {
-        let dictionary =
-            if let Some(FixFieldValue::Atom(FieldValue::String(fix_version))) = message.field(8) {
-                self.dictionaries
-                    .get(fix_version.as_str())
-                    .ok_or(EncodeError::Dictionary)?
-            } else {
-                return Err(EncodeError::Dictionary);
-            };
-        let component_std_header = dictionary
-            .component_by_name("StandardHeader")
-            .expect("The `StandardHeader` component is mandatory.");
-        let component_std_traler = dictionary
-            .component_by_name("StandardTrailer")
-            .expect("The `StandardTrailer` component is mandatory.");
-        let mut map_header = json!({});
-        let mut map_body = json!({});
-        let mut map_trailer = json!({});
-        for (field_tag, field_value) in message.iter_fields_in_std_header() {
-            let field = dictionary
-                .field_by_tag(field_tag)
-                .ok_or(EncodeError::Dictionary)?;
-            let field_name = field.name().to_string();
-            debug_assert!(component_std_header.contains_field(&field));
-            let field_value = self.translate(dictionary, field_value);
-            map_header
-                .as_object_mut()
-                .unwrap()
-                .insert(field_name, field_value);
+        fn encoder_mut(&mut self) -> &mut Encoder;
+
+        /// Adds a `field` with a `value` to the current message.
+        fn set<'a, T>(mut self, field: &FieldDef<'a, T>, value: T) -> Self
+        where
+            T: DataField<'a>,
+        {
+            debug_assert!(field.name().is_ascii());
+            let encoder = self.encoder_mut();
+            encoder.buffer.extend_from_slice(br#"""#);
+            field.name().as_bytes().serialize(&mut encoder.buffer);
+            encoder.buffer.extend_from_slice(br#"":""#);
+            value.serialize(&mut encoder.buffer);
+            encoder.buffer.extend_from_slice(br#"""#);
+            self
         }
-        for (field_tag, field_value) in message.iter_fields_in_std_header() {
-            let field = dictionary
-                .field_by_tag(field_tag)
-                .ok_or(EncodeError::Dictionary)?;
-            let field_name = field.name().to_string();
-            let field_value = self.translate(dictionary, field_value);
-            map_body
-                .as_object_mut()
-                .unwrap()
-                .insert(field_name, field_value);
+    }
+
+    /// Typestate produced by [`Initial::with_header`].
+    #[derive(Debug)]
+    #[must_use]
+    pub struct StdHeader<'a> {
+        encoder: &'a mut Encoder,
+    }
+
+    impl<'a> StdHeader<'a> {
+        pub fn with_body(self) -> Body<'a> {
+            self.encoder.buffer.extend_from_slice(br#"},"Body":{"#);
+            Body {
+                encoder: self.encoder,
+            }
         }
-        for (field_tag, field_value) in message.iter_fields_in_std_header() {
-            let field = dictionary
-                .field_by_tag(field_tag)
-                .ok_or(EncodeError::Dictionary)?;
-            debug_assert!(component_std_traler.contains_field(&field));
-            let field_name = field.name().to_string();
-            let field_value = self.translate(dictionary, field_value);
-            map_trailer
-                .as_object_mut()
-                .unwrap()
-                .insert(field_name, field_value);
+
+        pub fn set<T>(self, field: &FieldDef<'a, T>, value: T) -> Self
+        where
+            T: DataField<'a>,
+        {
+            EncoderStateAtTopLevel::set(self, field, value)
         }
-        let value = json!({
-            "Header": map_header,
-            "Body": map_body,
-            "Trailer": map_trailer,
-        });
-        if self.config.pretty_print() {
-            serde_json::to_writer_pretty(&mut buffer, &value).unwrap();
-        } else {
-            serde_json::to_writer(&mut buffer, &value).unwrap();
+    }
+
+    impl<'a> EncoderStateAtTopLevel for StdHeader<'a> {
+        fn encoder_mut(&mut self) -> &mut Encoder {
+            self.encoder
         }
-        Ok(buffer.as_slice().len())
+    }
+
+    /// Typestate produced by [`StdHeader::with_body`].
+    #[derive(Debug)]
+    #[must_use]
+    pub struct Body<'a> {
+        encoder: &'a mut Encoder,
+    }
+
+    impl<'a> Body<'a> {
+        pub fn with_trailer(self) -> StdTrailer<'a> {
+            self.encoder
+                .buffer
+                .extend_from_slice(br#"},"StandardTrailer":{"#);
+            StdTrailer {
+                encoder: self.encoder,
+            }
+        }
+
+        pub fn set<T>(self, field: &FieldDef<'a, T>, value: T) -> Self
+        where
+            T: DataField<'a>,
+        {
+            EncoderStateAtTopLevel::set(self, field, value)
+        }
+    }
+
+    impl<'a> EncoderStateAtTopLevel for Body<'a> {
+        fn encoder_mut(&mut self) -> &mut Encoder {
+            self.encoder
+        }
+    }
+
+    /// Typestate produced by [`Body::with_trailer`].
+    #[derive(Debug)]
+    #[must_use]
+    pub struct StdTrailer<'a> {
+        encoder: &'a mut Encoder,
+    }
+
+    impl<'a> StdTrailer<'a> {
+        pub fn done(self) -> &'a str {
+            self.encoder.buffer.extend_from_slice(b"}}");
+            std::str::from_utf8(&self.encoder.buffer[..]).unwrap()
+        }
+
+        pub fn set<T>(self, field: &FieldDef<'a, T>, value: T) -> Self
+        where
+            T: DataField<'a>,
+        {
+            EncoderStateAtTopLevel::set(self, field, value)
+        }
+    }
+
+    impl<'a> EncoderStateAtTopLevel for StdTrailer<'a> {
+        fn encoder_mut(&mut self) -> &mut Encoder {
+            self.encoder
+        }
     }
 }
 
 #[cfg(test)]
-mod test {}
+mod test {
+    use super::*;
+
+    #[test]
+    fn empty_message_is_valid_json() {
+        let encoder = &mut Encoder::new();
+        let message = encoder
+            .start_message()
+            .with_header()
+            .with_body()
+            .with_trailer()
+            .done();
+        let json = serde_json::from_str::<serde_json::Value>(message);
+        assert!(json.is_ok());
+    }
+}

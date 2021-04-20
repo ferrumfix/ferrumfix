@@ -1,4 +1,4 @@
-use crate::{DtfDate, DtfMonthYear, DtfMulCharIter, DtfTime};
+use crate::dtf;
 
 /// A trait to retrieve field values in a FIX message.
 pub trait FieldAccess<E> {
@@ -6,7 +6,7 @@ pub trait FieldAccess<E> {
 
     fn as_char(&self) -> Result<u8, E>;
 
-    fn as_chars(&self) -> Result<DtfMulCharIter, E>;
+    fn as_chars(&self) -> Result<dtf::MultipleChars, E>;
 
     fn as_bool(&self) -> Result<bool, E>;
 
@@ -16,11 +16,11 @@ pub trait FieldAccess<E> {
 
     fn as_timestamp(&self) -> Result<i64, E>;
 
-    fn as_date(&self) -> Result<DtfDate, E>;
+    fn as_date(&self) -> Result<dtf::Date, E>;
 
-    fn as_time(&self) -> Result<DtfTime, E>;
+    fn as_time(&self) -> Result<dtf::Time, E>;
 
     fn as_float(&self) -> Result<(), E>;
 
-    fn as_month_year(&self) -> Result<DtfMonthYear, E>;
+    fn as_month_year(&self) -> Result<dtf::MonthYear, E>;
 }

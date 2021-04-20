@@ -10,13 +10,17 @@ use std::collections::HashMap;
 use template::Template;
 
 mod codec;
+mod codegen;
 pub mod decimal;
+mod dtf;
 mod errors;
 mod field_operators;
 mod template;
 
 pub use codec::{Codec, PresenceMap};
+pub use codegen::template_struct as codegen_template_struct;
 pub use decimal::Decimal;
+pub use dtf::DataField;
 pub use field_operators::*;
 pub use template::*;
 
@@ -59,35 +63,35 @@ impl Fast {
         for field in self.templates.get("").unwrap().iter_items() {
             if let template::FieldType::Primitive(f) = field.kind() {
                 match f {
-                    PrimitiveType::SInt32 => {
+                    PrimitiveType::I32 => {
                         let mut val = 0i32;
                         val.deserialize(&mut source)?;
-                        PrimitiveValue::SInt32(val)
+                        PrimitiveValue::I32(val)
                     }
-                    PrimitiveType::UInt32 => {
+                    PrimitiveType::U32 => {
                         let mut val = 0u32;
                         val.deserialize(&mut source)?;
-                        PrimitiveValue::UInt32(val)
+                        PrimitiveValue::U32(val)
                     }
-                    PrimitiveType::SInt64 => {
+                    PrimitiveType::I64 => {
                         let mut val = 0i64;
                         val.deserialize(&mut source)?;
-                        PrimitiveValue::SInt64(val)
+                        PrimitiveValue::I64(val)
                     }
-                    PrimitiveType::UInt64 => {
+                    PrimitiveType::U64 => {
                         let mut val = 0u64;
                         val.deserialize(&mut source)?;
-                        PrimitiveValue::UInt64(val)
+                        PrimitiveValue::U64(val)
                     }
                     PrimitiveType::Bytes => {
                         let mut val: Vec<u8> = Vec::new();
                         val.deserialize(&mut source)?;
                         PrimitiveValue::Bytes(&val[..])
                     }
-                    PrimitiveType::Ascii => {
+                    PrimitiveType::AsciiString => {
                         let mut val = String::new();
                         val.deserialize(&mut source)?;
-                        PrimitiveValue::Ascii(val.as_bytes())
+                        PrimitiveValue::AsciiString(val.as_bytes())
                     }
                     _ => {
                         todo!();

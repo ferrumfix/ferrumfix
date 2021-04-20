@@ -2,6 +2,7 @@ mod src;
 
 use src as fefix_barebones;
 
+use fefix_barebones::codegen;
 use fefix_barebones::AppVersion;
 use rayon::prelude::*;
 use std::fs::{create_dir_all, File};
@@ -10,7 +11,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 fn main() -> std::io::Result<()> {
-    let generated_path = project_root().join("src").join("generated");
+    let generated_path = project_root().join("src").join("fields");
     create_dir_all(generated_path.as_path())?;
     fefix_barebones::AppVersion::ALL
         .par_iter()
@@ -30,7 +31,7 @@ fn codegen(app_version: AppVersion, dir: PathBuf) -> io::Result<()> {
         .map(|c| c.to_ascii_lowercase())
         .collect();
     filename.push_str(".rs");
-    let code = fefix_barebones::fix_codegen::codegen_tag_mnemonics(&fix_dictionary);
+    let code = codegen::fields(fix_dictionary, "crate");
     let path = dir.join(filename);
     let mut file = File::create(path)?;
     file.write_all(code.as_bytes())?;
