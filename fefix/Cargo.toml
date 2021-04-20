@@ -15,9 +15,6 @@ license = "MIT OR Apache-2.0"
 [lib]
 name = "fefix"
 
-[profile.release]
-lto = true
-
 [features]
 default = ["repo_v2010", "repo_v50sp2ep254", "expose_openssl", "expose_tokio"]
 chrono-time = []

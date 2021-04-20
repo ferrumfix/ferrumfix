@@ -2,6 +2,9 @@
 # - The repository is `ferrum-fix`.
 # - The crates are named `fefix`, `fefix_derive`, etc..
 
+[profile.release]
+lto = true
+
 [workspace]
 members = [
     # Public crates.
