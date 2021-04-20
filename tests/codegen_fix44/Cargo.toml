@@ -1,0 +1,12 @@
+[package]
+name = "test_codegen_fix44"
+version = "0.1.0"
+edition = "2018"
+build = "build.rs"
+
+[dependencies]
+fefix = { path = "../../fefix" }
+rust_decimal = "1"
+
+[build-dependencies]
+fefix = { path = "../../fefix" }

@@ -5,13 +5,23 @@ use super::dictionary::{Dictionary, Field, LayoutItem, LayoutItemKind, Message};
 use indoc::indoc;
 use inflector::Inflector;
 
-const GENERATED_CODE_NOTICE: &str = indoc!(
-    r#"
-// Generated automaticaly by FerrumFIX.
-//
-// DO NOT MODIFY MANUALLY. ALL CHANGES WILL BE OVERWRITTEN.
-"#
-);
+fn generated_code_notice() -> String {
+    use chrono::prelude::*;
+    format!(
+        indoc!(r#"
+            // Generated automatically by FerrumFIX {} on {}.
+            //
+            // DO NOT MODIFY MANUALLY.
+            // DO NOT COMMIT TO VERSION CONTROL.
+            // ALL CHANGES WILL BE OVERWRITTEN.
+            "#
+        ),
+        FEFIX_VERSION,
+        Utc::now().to_rfc2822(),
+    )
+}
+
+const FEFIX_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 pub fn message(dict: Dictionary, message: Message, custom_derive_line: &str) -> String {
     let identifier = message.name().to_pascal_case();
@@ -46,7 +56,7 @@ pub fn message(dict: Dictionary, message: Message, custom_derive_line: &str) -> 
     )
 }
 
-pub fn field_def(field: Field) -> String {
+pub fn field_def(field: Field, fefix_path: &str) -> String {
     let name = field.name().to_screaming_snake_case();
     let tag = field.tag().to_string();
     format!(
@@ -63,7 +73,7 @@ pub fn field_def(field: Field) -> String {
             "#
         ),
         identifier = name,
-        type_param = suggested_type(field.tag(), field.data_type().basetype()),
+        type_param = suggested_type(field.tag(), field.data_type().basetype(), fefix_path),
         name = field.name(),
         tag = tag,
         group = field.name().ends_with("Len"),
@@ -74,7 +84,7 @@ pub fn field_def(field: Field) -> String {
 pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
     let field_defs = dict
         .iter_fields()
-        .map(|field| field_def(field))
+        .map(|field| field_def(field, fefix_path))
         .collect::<Vec<String>>()
         .join("\n");
     let code = format!(
@@ -84,45 +94,45 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
 
             {notice}
 
-            use super::{{FieldDef, FieldLocation}};
+            use {fefix_path}::fields::{{FieldDef, FieldLocation}};
             use {fefix_path}::DataType;
             use std::marker::PhantomData;
 
             {field_defs}
             "#
         ),
-        notice = GENERATED_CODE_NOTICE,
+        notice = generated_code_notice(),
         field_defs = field_defs,
         fefix_path = fefix_path,
     );
     code
 }
 
-fn suggested_type(tag: u32, data_type: DataType) -> &'static str {
+fn suggested_type(tag: u32, data_type: DataType, fefix_path: &str) -> String {
     if tag == 10 {
-        return "crate::dtf::CheckSum";
+        return format!("{}::dtf::CheckSum", fefix_path);
     }
     if data_type.base_type() == DataType::Float {
-        return "rust_decimal::Decimal";
+        return "rust_decimal::Decimal".to_string();
     }
     match data_type {
-        DataType::String => "&[u8]",
-        DataType::Char => "u8",
-        DataType::Boolean => "bool",
-        DataType::Country => "&[u8; 2]",
-        DataType::Currency => "&[u8; 3]",
-        DataType::Exchange => "&[u8; 4]",
-        DataType::Data => "&[u8]",
-        DataType::Length => "usize",
-        DataType::DayOfMonth => "u32",
-        DataType::Int => "i64",
-        DataType::Language => "&[u8; 2]",
-        DataType::SeqNum => "u64",
-        DataType::NumInGroup => "usize",
-        DataType::UtcDateOnly => "crate::dtf::Date",
-        DataType::UtcTimeOnly => "crate::dtf::Time",
-        DataType::UtcTimestamp => "crate::dtf::Timestamp",
-        _ => "&[u8]", // TODO
+        DataType::String => "&[u8]".to_string(),
+        DataType::Char => "u8".to_string(),
+        DataType::Boolean => "bool".to_string(),
+        DataType::Country => "&[u8; 2]".to_string(),
+        DataType::Currency => "&[u8; 3]".to_string(),
+        DataType::Exchange => "&[u8; 4]".to_string(),
+        DataType::Data => "&[u8]".to_string(),
+        DataType::Length => "usize".to_string(),
+        DataType::DayOfMonth => "u32".to_string(),
+        DataType::Int => "i64".to_string(),
+        DataType::Language => "&[u8; 2]".to_string(),
+        DataType::SeqNum => "u64".to_string(),
+        DataType::NumInGroup => "usize".to_string(),
+        DataType::UtcDateOnly => format!("{}::dtf::Date", fefix_path),
+        DataType::UtcTimeOnly => format!("{}::dtf::Time", fefix_path),
+        DataType::UtcTimestamp => format!("{}::dtf::Timestamp", fefix_path),
+        _ => "&[u8]".to_string(), // TODO
     }
 }
 

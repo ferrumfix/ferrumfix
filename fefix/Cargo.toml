@@ -48,6 +48,7 @@ uuid = { version = "0.8.1", features = ["v4"] }
 fefix_derive = { path = "../fefix_derive" }
 
 [build-dependencies]
+chrono = "0.4"
 fnv = "1"
 Inflector = "0.11"
 indoc = "1"

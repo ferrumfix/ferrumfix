@@ -15,10 +15,11 @@ pub struct MsgType(u16);
 
 #[derive(Debug, Clone)]
 pub struct Version {
-    pub standard: String,
-    pub v_major: u32,
-    pub v_minor: u32,
-    pub ep: Option<u32>,
+    standard: String,
+    v_major: u32,
+    v_minor: u32,
+    service_pack: u32,
+    ep: Option<u32>,
 }
 
 impl MsgType {
@@ -183,7 +184,15 @@ impl Dictionary {
     /// `version`.
     pub fn from_version(version: AppVersion) -> Self {
         let spec = quickfix_spec(version);
-        Dictionary::save_definition_spec(spec).unwrap()
+        Dictionary::from_quickfix_spec(spec).unwrap()
+    }
+
+    /// Attempts to read a QuickFIX-style specification file and convert it into
+    /// a [`Dictionary`].
+    pub fn from_quickfix_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
+        let xml_document = roxmltree::Document::parse(input.as_ref())
+            .map_err(|_| ParseDictionaryError::InvalidFormat)?;
+        QuickFixReader::new(&xml_document)
     }
 
     /// Creates a new empty FIX Dictionary with `FIX.???` as its version string.
@@ -260,13 +269,6 @@ impl Dictionary {
         self.symbol(KeyRef::ComponentByName(name.as_ref()))
             .map(|iid| self.inner.components.get(*iid as usize).unwrap())
             .map(|data| Component(self, data))
-    }
-
-    /// Attempts to read a QuickFIX-style specification file and convert it into
-    /// a [`Dictionary`].
-    pub fn save_definition_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
-        let xml_document = roxmltree::Document::parse(input.as_ref()).unwrap();
-        QuickFixReader::new(&xml_document)
     }
 
     /// Returns the [`DataType`](DataType) named `name`, if any.
@@ -1505,7 +1507,7 @@ mod test {
     }
 
     #[test]
-    fn dictionary_save_definition_spec_is_ok() {
+    fn dictionary_from_quickfix_spec_is_ok() {
         for version in AppVersion::ALL.iter().copied() {
             Dictionary::from_version(version);
         }
@@ -1564,5 +1566,25 @@ mod test {
         let field_167 = dict.field_by_tag(167).unwrap();
         assert_eq!(field_167.name(), "SecurityType");
         assert!(field_167.enums().unwrap().any(|e| e.value() == "EUCORP"));
+    }
+
+    const INVALID_QUICKFIX_SPECS: &[&str] = &[
+        include_str!("test_data/quickfix_specs/empty_file.xml"),
+        include_str!("test_data/quickfix_specs/missing_components.xml"),
+        include_str!("test_data/quickfix_specs/missing_fields.xml"),
+        include_str!("test_data/quickfix_specs/missing_header.xml"),
+        include_str!("test_data/quickfix_specs/missing_messages.xml"),
+        include_str!("test_data/quickfix_specs/missing_trailer.xml"),
+        include_str!("test_data/quickfix_specs/root_has_no_type_attr.xml"),
+        include_str!("test_data/quickfix_specs/root_has_no_version_attrs.xml"),
+        include_str!("test_data/quickfix_specs/root_is_not_fix.xml"),
+    ];
+
+    #[test]
+    fn invalid_quickfix_specs() {
+        for spec in INVALID_QUICKFIX_SPECS.iter() {
+            let dict = Dictionary::from_quickfix_spec(spec);
+            assert!(dict.is_err(), "{}", spec);
+        }
     }
 }

@@ -64,7 +64,7 @@ async fn serve_structs(req: tide::Request<State>) -> tide::Result {
     let dict = req.state().dictionaries.get(&version).unwrap();
     let mut code = String::new();
     for field in dict.iter_fields() {
-        code.push_str(codegen::field_def(field).as_str());
+        code.push_str(codegen::field_def(field, "fefix").as_str());
     }
     Ok(code.into())
 }

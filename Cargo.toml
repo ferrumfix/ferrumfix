@@ -4,11 +4,14 @@
 
 [workspace]
 members = [
+    # Public crates.
     "fefix",
     "fefix_derive",
+    # Private crates.
     "examples/codegen_fix42",
     "examples/codegen_webserver",
     "examples/web_json_to_tagvalue",
     "examples/tcp_sofh",
     "examples/tls_fixua_acceptor",
+    "tests/codegen_fix44",
 ]

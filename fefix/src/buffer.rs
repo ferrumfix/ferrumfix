@@ -75,12 +75,23 @@ mod test {
     use quickcheck::QuickCheck;
 
     #[test]
-    fn vec_slice_operations_are_consistent() {
+    fn vec_slicing_is_consistent() {
         fn prop(mut vec: Vec<u8>) -> bool {
             let buf_as_slice = Vec::from(Buffer::as_mut_slice(&mut vec));
             let buf_as_mut_slice = Vec::from(Buffer::as_slice(&vec));
             let buf_len = Buffer::len(&vec);
             buf_as_slice == buf_as_mut_slice && buf_as_slice.len() == buf_len
+        }
+        QuickCheck::new()
+            .tests(1000)
+            .quickcheck(prop as fn(Vec<u8>) -> bool)
+    }
+
+    #[test]
+    fn vec_clear_always_removes_content() {
+        fn prop(mut vec: Vec<u8>) -> bool {
+            Buffer::clear(&mut vec);
+            vec.len() == 0
         }
         QuickCheck::new()
             .tests(1000)

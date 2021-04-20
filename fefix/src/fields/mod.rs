@@ -1,13 +1,22 @@
 //! Field definition ergonomics.
 
+#[rustfmt::skip]
 pub mod fix40;
+#[rustfmt::skip]
 pub mod fix41;
+#[rustfmt::skip]
 pub mod fix42;
+#[rustfmt::skip]
 pub mod fix43;
+#[rustfmt::skip]
 pub mod fix44;
+#[rustfmt::skip]
 pub mod fix50;
+#[rustfmt::skip]
 pub mod fix50sp1;
+#[rustfmt::skip]
 pub mod fix50sp2;
+#[rustfmt::skip]
 pub mod fixt11;
 
 use std::marker::PhantomData;
@@ -20,12 +29,12 @@ pub struct FieldDef<'a, V>
 where
     V: DataField<'a>,
 {
-    pub(crate) name: &'a str,
-    pub(crate) tag: u32,
-    pub(crate) is_group_leader: bool,
-    pub(crate) data_type: DataType,
-    pub(crate) location: FieldLocation,
-    pub(crate) phantom: PhantomData<V>,
+    pub name: &'a str,
+    pub tag: u32,
+    pub is_group_leader: bool,
+    pub data_type: DataType,
+    pub location: FieldLocation,
+    pub phantom: PhantomData<V>,
 }
 
 /// The expected location of a field within a FIX message (i.e. header, body, or
