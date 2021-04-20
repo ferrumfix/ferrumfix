@@ -2,6 +2,8 @@ use super::error;
 use crate::dtf::DataField;
 use crate::Buffer;
 
+const LEN_IN_BYTES: usize = 8;
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum DayOrWeek {
     Day(u32),
@@ -44,7 +46,7 @@ impl MonthYear {
         })
     }
 
-    pub fn to_bytes(&self) -> [u8; 8] {
+    pub fn to_bytes(&self) -> [u8; LEN_IN_BYTES] {
         let day_or_week_1 = match self.day_or_week {
             DayOrWeek::Day(day) => (day / 10) as u8 + b'0',
             DayOrWeek::Week(_) => b'w',
@@ -70,9 +72,9 @@ impl MonthYear {
     /// # Examples
     ///
     /// ```
-    /// use fefix::DtfMonthYear;
+    /// use fefix::dtf::MonthYear;
     ///
-    /// let dtf = DtfMonthYear::parse(b"19390901").unwrap();
+    /// let dtf = MonthYear::parse(b"19390901").unwrap();
     /// assert_eq!(dtf.year(), 1939)
     /// ```
     pub fn year(&self) -> u32 {
@@ -84,9 +86,9 @@ impl MonthYear {
     /// # Examples
     ///
     /// ```
-    /// use fefix::DtfMonthYear;
+    /// use fefix::dtf::MonthYear;
     ///
-    /// let dtf = DtfMonthYear::parse(b"20000101").unwrap();
+    /// let dtf = MonthYear::parse(b"20000101").unwrap();
     /// assert_eq!(dtf.month(), 1)
     /// ```
     pub fn month(&self) -> u32 {
@@ -100,18 +102,18 @@ impl MonthYear {
     /// Day included in the definition:
     ///
     /// ```
-    /// use fefix::DtfMonthYear;
+    /// use fefix::dtf::MonthYear;
     ///
-    /// let dtf = DtfMonthYear::parse(b"20191225").unwrap();
+    /// let dtf = MonthYear::parse(b"20191225").unwrap();
     /// assert_eq!(dtf.day(), Some(25))
     /// ```
     ///
     /// Day not included:
     ///
     /// ```
-    /// use fefix::DtfMonthYear;
+    /// use fefix::dtf::MonthYear;
     ///
-    /// let dtf = DtfMonthYear::parse(b"201801w3").unwrap();
+    /// let dtf = MonthYear::parse(b"201801w3").unwrap();
     /// assert_eq!(dtf.day(), None)
     /// ```
     pub fn day(&self) -> Option<u32> {
@@ -130,18 +132,18 @@ impl MonthYear {
     /// Present week code:
     ///
     /// ```
-    /// use fefix::DtfMonthYear;
+    /// use fefix::dtf::MonthYear;
     ///
-    /// let dtf = DtfMonthYear::parse(b"201912w1").unwrap();
+    /// let dtf = MonthYear::parse(b"201912w1").unwrap();
     /// assert_eq!(dtf.week(), Some(1))
     /// ```
     ///
     /// Absent week code:
     ///
     /// ```
-    /// use fefix::DtfMonthYear;
+    /// use fefix::dtf::MonthYear;
     ///
-    /// let dtf = DtfMonthYear::parse(b"20191225").unwrap();
+    /// let dtf = MonthYear::parse(b"20191225").unwrap();
     /// assert_eq!(dtf.week(), None)
     /// ```
     pub fn week(&self) -> Option<u32> {

@@ -4,7 +4,34 @@
 //! used to store [`DataType`](crate::DataType) values. This is done via the
 //! [`DataField`] trait, which allows both serialization and deserialization.
 //!
-//! # Quick tour
+//! FerrumFIX maps FIX date types to the following [`DataField`] implementors:
+//!
+//! - `int`: any Rust primitive integer type;
+//! - `Length`: [`usize`];
+//! - `NumInGroup`: [`u16`];
+//! - `SeqNum`: [`u64`];
+//! - `TagNum`: [`u32`];
+//! - `DayOfMonth`: [`u32`];
+//! - `float`, `Qty`, `Price`, `PriceOffset`, `Amt`, `Percentage`: [`rust_decimal::Decimal`];
+//! - `char`: [`u8`] (FIX mandates the use of a single-byte encoding, so `u8` is
+//! a better fit than `char`);
+//! - `Boolean`: [`bool`];
+//! - `String`, `data`: `&[u8]`;
+//! - `MultipleCharValue`: [`MultipleChars`];
+//! - `MultipleValueString`: [`MultipleStrings`];
+//! - `Country`: `[u8; 2]`;
+//! - `Currency`: `[u8; 3]`;
+//! - `Exchange`: `[u8; 4]`;
+//! - `month-year`: [`MonthYear`];
+//! - `UTCTimestamp`, `LocalMktDate`: [`Timestamp`];
+//! - `UTCTimeOnly`: [`Time`];
+//! - `UTCDateOnly`: [`Date`];
+//! - `TZTimeOnly`: [`TzTime`];
+//! - `TZTimestamp`: [`TzTimestamp`];
+//!
+//! The module name (`dtf`) is short for **D**a**T**a **F**ields.
+//!
+//! # Quick tour of [`DataField`]
 //!
 //! ```
 //! use fefix::dtf::{DataField, Timestamp};
@@ -25,8 +52,6 @@
 //! 1337u32.serialize(buffer);
 //! assert_eq!(&buffer[..], b"1337" as &[u8]);
 //! ```
-//!
-//! The module name (`dtf`) is short for **D**a**T**a **F**ields.
 
 mod checksum;
 mod date;
