@@ -1,5 +1,4 @@
 use fefix::{AppVersion, Dictionary};
 
 #[test]
-fn fix_11() {
-}
+fn fix_11() {}

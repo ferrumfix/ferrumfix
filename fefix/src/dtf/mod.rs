@@ -123,7 +123,7 @@ impl<'a> DataField<'a> for Decimal {
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         let s = std::str::from_utf8(data).map_err(|_| Self::Error::NotUtf8)?;
-        Decimal::from_str(s).map_err(|e| Self::Error::Other(e))
+        Decimal::from_str(s).map_err(|err| Self::Error::Other(err.to_string()))
     }
 }
 

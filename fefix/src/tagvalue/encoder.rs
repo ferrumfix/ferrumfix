@@ -92,7 +92,7 @@ where
         // Six digits (~1MB) ought to be enough for every message.
         state.set_any(fixt11::BODY_LENGTH.tag(), b"000000" as &[u8]);
         state.body_start_i = state.raw_encoder.buffer.len();
-        state.set(fixt11::MSG_TYPE, msg_type);
+        state.set_any(fixt11::MSG_TYPE.tag(), msg_type);
         state
     }
 }

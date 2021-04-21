@@ -32,6 +32,12 @@ pub enum DecodeError {
     CheckSum,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum OptionalFieldError<E> {
+    Missing,
+    Invalid(E),
+}
+
 impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "SuperError is here!")

@@ -36,4 +36,3 @@ impl<'a> DataField<'a> for TzTimestamp {
         unimplemented!()
     }
 }
-

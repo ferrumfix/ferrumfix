@@ -8,7 +8,8 @@ use inflector::Inflector;
 fn generated_code_notice() -> String {
     use chrono::prelude::*;
     format!(
-        indoc!(r#"
+        indoc!(
+            r#"
             // Generated automatically by FerrumFIX {} on {}.
             //
             // DO NOT MODIFY MANUALLY.
@@ -59,6 +60,45 @@ pub fn message(dict: Dictionary, message: Message, custom_derive_line: &str) -> 
 pub fn field_def(field: Field, fefix_path: &str) -> String {
     let name = field.name().to_screaming_snake_case();
     let tag = field.tag().to_string();
+    let (enum_type_name, enum_variants) = if let Some(variants) = field.enums() {
+        let variants: Vec<String> = variants
+            .map(|e| {
+                format!(
+                    indoc!(
+                        r#"
+                        {indentation}#[fefix(variant = "{variant}")]
+                        {indentation}{}{},"#
+                    ),
+                    if e.description().chars().next().unwrap().is_ascii_digit() {
+                        "N"
+                    } else {
+                        ""
+                    },
+                    e.description().to_pascal_case(),
+                    variant = e.value(),
+                    indentation = "    ",
+                )
+            })
+            .collect();
+        (
+            Some(field.name().to_pascal_case()),
+            format!(
+                indoc!(
+                    r#"
+
+                    #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, DataField)]
+                    pub enum {identifier} {{
+                    {variants}
+                    }}
+                "#
+                ),
+                identifier = field.name().to_pascal_case(),
+                variants = variants.join("\n")
+            ),
+        )
+    } else {
+        (None, String::new())
+    };
     format!(
         indoc!(
             r#"
@@ -67,15 +107,22 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
                 tag: {tag},
                 is_group_leader: {group},
                 data_type: DataType::{data_type},
-                location: FieldLocation::Body,
                 phantom: PhantomData,
+                location: FieldLocation::Body,
             }};
+            {enum_variants}
             "#
         ),
         identifier = name,
-        type_param = suggested_type(field.tag(), field.data_type().basetype(), fefix_path),
+        type_param = suggested_type(
+            field.tag(),
+            field.data_type().basetype(),
+            enum_type_name,
+            fefix_path
+        ),
         name = field.name(),
         tag = tag,
+        enum_variants = enum_variants,
         group = field.name().ends_with("Len"),
         data_type = <&'static str as From<DataType>>::from(field.data_type().basetype()),
     )
@@ -95,20 +142,35 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
             {notice}
 
             use {fefix_path}::fields::{{FieldDef, FieldLocation}};
-            use {fefix_path}::DataType;
+            use {fefix_path}::{{DataType, Buffer}};
+            use {fefix_path}::dtf::DataField;
             use std::marker::PhantomData;
+            use {fefix_derive_path}::DataField;
 
             {field_defs}
             "#
         ),
         notice = generated_code_notice(),
+        fefix_derive_path = if fefix_path == "fefix" {
+            "fefix"
+        } else {
+            "fefix_derive"
+        },
         field_defs = field_defs,
         fefix_path = fefix_path,
     );
     code
 }
 
-fn suggested_type(tag: u32, data_type: DataType, fefix_path: &str) -> String {
+fn suggested_type(
+    tag: u32,
+    data_type: DataType,
+    enum_type_name: Option<String>,
+    fefix_path: &str,
+) -> String {
+    if let Some(name) = enum_type_name {
+        return name;
+    }
     if tag == 10 {
         return format!("{}::dtf::CheckSum", fefix_path);
     }

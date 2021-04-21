@@ -56,7 +56,6 @@ impl<'a> DataField<'a> for Timestamp {
     type Error = error::Timestamp;
     type SerializeSettings = ();
 
-
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
         B: Buffer,

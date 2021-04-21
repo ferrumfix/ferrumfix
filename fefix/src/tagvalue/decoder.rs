@@ -1,6 +1,6 @@
 use super::{
-    Config, Configure, DecodeError, DecodeError as Error, FieldAccess, RawDecoder,
-    RawDecoderBuffered, RawFrame,
+    Config, Configure, DecodeError, DecodeError as Error, FieldAccess, OptionalFieldError,
+    RawDecoder, RawDecoderBuffered, RawFrame,
 };
 use crate::fields::fix44 as fields;
 use crate::{dtf, dtf::DataField, fields::FieldDef, DataType, Dictionary};
@@ -402,6 +402,28 @@ impl<'a> Message<'a> {
     pub fn field_ref<'b, T>(
         &'b self,
         field_def: &FieldDef<'b, T>,
+    ) -> Result<T, OptionalFieldError<<T as dtf::DataField<'b>>::Error>>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>,
+    {
+        let context = Context {
+            tag: field_def.tag(),
+            ancestry: AncestryTracker::top_level().ancestry(),
+        };
+        self.builder
+            .fields
+            .get(&context)
+            .ok_or(OptionalFieldError::Missing)
+            .map(|field| &self.bytes[field.range.clone()])
+            .and_then(|bytes| {
+                T::deserialize_lossy(bytes).map_err(|err| OptionalFieldError::Invalid(err))
+            })
+    }
+
+    pub fn field_ref_opt<'b, T>(
+        &'b self,
+        field_def: &FieldDef<'b, T>,
     ) -> Option<Result<T, <T as dtf::DataField<'b>>::Error>>
     where
         'b: 'a,
@@ -799,7 +821,10 @@ mod test {
         let mut codec = decoder();
         codec.config_mut().set_verify_checksum(false);
         let message = codec.decode(&mut RANDOM_MESSAGES[0].as_bytes()).unwrap();
-        assert_eq!(message.field_ref(fields::MSG_TYPE), Some(Ok(b"0" as &[u8])));
+        assert_eq!(
+            message.field_ref(fields::MSG_TYPE),
+            Ok(fields::MsgType::Heartbeat)
+        );
         assert_eq!(message.field_raw(8), Some(b"FIX.4.2" as &[u8]));
         assert_eq!(message.field_raw(35), Some(b"0" as &[u8]),);
     }

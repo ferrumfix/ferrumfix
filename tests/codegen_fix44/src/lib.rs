@@ -5,7 +5,7 @@ mod generated_fix44;
 mod tests {
     use crate::generated_fix44 as fields;
     use fefix::DataType;
-    
+
     #[test]
     fn info_about_begin_string_field_is_correct() {
         assert_eq!(fields::BEGIN_STRING.name(), "BeginString");

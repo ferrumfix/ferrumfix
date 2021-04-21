@@ -13,6 +13,7 @@ members = [
     # Private crates.
     "examples/codegen_fix42",
     "examples/codegen_webserver",
+    "examples/decode_fix_message",
     "examples/web_json_to_tagvalue",
     "examples/tcp_sofh",
     "examples/tls_fixua_acceptor",

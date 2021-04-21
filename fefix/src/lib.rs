@@ -93,6 +93,8 @@ pub use models::{FieldsIter, FixFieldAccess, FixFieldsIter, FixMessage};
 pub use quickfix_specs::quickfix_spec;
 pub use tagmap::TagMap;
 
+pub use fefix_derive::DataField;
+
 #[cfg(expose_openssl)]
 pub extern crate openssl;
 
