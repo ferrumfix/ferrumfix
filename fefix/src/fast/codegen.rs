@@ -1,6 +1,6 @@
 use super::{FieldType, PrimitiveType, Template};
 use indoc::indoc;
-use inflector::Inflector;
+use heck::CamelCase;
 
 const GENERATED_CODE_NOTICE: &str = indoc!(
     r#"
@@ -11,7 +11,7 @@ const GENERATED_CODE_NOTICE: &str = indoc!(
 );
 
 pub fn template_struct(template: &Template, custom_derive_line: &str) -> String {
-    let identifier = template.name().to_pascal_case();
+    let identifier = template.name().to_camel_case();
     let fields = template
         .iter_items()
         .map(|field_instruction| match field_instruction.kind() {

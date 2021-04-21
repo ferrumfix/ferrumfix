@@ -3,7 +3,7 @@
 use super::data_type::DataType;
 use super::dictionary::{Dictionary, Field, LayoutItem, LayoutItemKind, Message};
 use indoc::indoc;
-use inflector::Inflector;
+use heck::{CamelCase, ShoutySnakeCase, SnakeCase};
 
 fn generated_code_notice() -> String {
     use chrono::prelude::*;
@@ -25,7 +25,7 @@ fn generated_code_notice() -> String {
 const FEFIX_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 pub fn message(dict: Dictionary, message: Message, custom_derive_line: &str) -> String {
-    let identifier = message.name().to_pascal_case();
+    let identifier = message.name().to_camel_case();
     let fields = message
         .layout()
         .map(|layout_item| {
@@ -58,7 +58,7 @@ pub fn message(dict: Dictionary, message: Message, custom_derive_line: &str) -> 
 }
 
 pub fn field_def(field: Field, fefix_path: &str) -> String {
-    let name = field.name().to_screaming_snake_case();
+    let name = field.name().to_shouty_snake_case();
     let tag = field.tag().to_string();
     let (enum_type_name, enum_variants) = if let Some(variants) = field.enums() {
         let variants: Vec<String> = variants
@@ -74,14 +74,14 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
                     } else {
                         ""
                     },
-                    e.description().to_pascal_case(),
+                    e.description().to_camel_case(),
                     variant = e.value(),
                     indentation = "    ",
                 )
             })
             .collect();
         (
-            Some(field.name().to_pascal_case()),
+            Some(field.name().to_camel_case()),
             format!(
                 indoc!(
                     r#"
@@ -92,7 +92,7 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
                     }}
                 "#
                 ),
-                identifier = field.name().to_pascal_case(),
+                identifier = field.name().to_camel_case(),
                 variants = variants.join("\n")
             ),
         )

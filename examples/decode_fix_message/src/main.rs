@@ -7,26 +7,25 @@ const FIX_MESSAGE: &[u8] = b"8=FIX.4.2|9=97|35=6|49=BKR|56=IM|34=14|52=20100204-
 fn main() {
     let fix_dictionary = Dictionary::from_version(AppVersion::Fix42);
     let fix_decoder = &mut Decoder::<Config>::new(fix_dictionary);
-    let message = fix_decoder
+    fix_decoder.config_mut().set_separator(b'|');
+    fix_decoder.config_mut().set_verify_checksum(false);
+    let msg = fix_decoder
         .decode(FIX_MESSAGE)
         .expect("Invalid FIX message");
-    assert_eq!(message.field_ref(fix42::BEGIN_STRING), Ok(b"FIX" as &[u8]));
+    assert_eq!(msg.field_ref(fix42::BEGIN_STRING), Ok(b"FIX.4.2" as &[u8]));
     assert_eq!(
-        message.field_ref(fix42::MSG_TYPE),
+        msg.field_ref(fix42::MSG_TYPE),
         Ok(fix42::MsgType::IndicationOfInterest)
     );
+    assert_eq!(msg.field_ref(fix42::SENDER_COMP_ID), Ok(b"BKR" as &[u8]));
+    assert_eq!(msg.field_ref(fix42::TARGET_COMP_ID), Ok(b"IM" as &[u8]));
+    assert_eq!(msg.field_ref(fix42::MSG_SEQ_NUM), Ok(14));
+    assert_eq!(msg.field_ref(fix42::IO_IID), Ok(b"115685" as &[u8]));
     assert_eq!(
-        message.field_ref(fix42::SENDER_COMP_ID),
-        Ok(b"BKR" as &[u8])
+        msg.field_ref(fix42::IOI_TRANS_TYPE),
+        Ok(fix42::IoiTransType::New)
     );
-    assert_eq!(message.field_ref(fix42::TARGET_COMP_ID), Ok(b"IM" as &[u8]));
-    assert_eq!(message.field_ref(fix42::MSG_SEQ_NUM), Ok(14));
-    assert_eq!(message.field_ref(fix42::IO_IID), Ok(b"115685" as &[u8]));
-    assert_eq!(
-        message.field_ref(fix42::IOI_TRANS_TYPE),
-        Ok(fix42::IoitransType::New)
-    );
-    assert_eq!(message.field_ref(fix42::SYMBOL), Ok(b"SPMI.MI" as &[u8]));
-    assert_eq!(message.field_ref(fix42::SIDE), Ok(fix42::Side::Sell));
-    println!("Hello, world!");
+    assert_eq!(msg.field_ref(fix42::SYMBOL), Ok(b"SPMI.MI" as &[u8]));
+    assert_eq!(msg.field_ref(fix42::SIDE), Ok(fix42::Side::Sell));
+    assert_eq!(msg.field_ref(fix42::IOI_QLTY_IND), Ok(fix42::IoiQltyInd::High));
 }
