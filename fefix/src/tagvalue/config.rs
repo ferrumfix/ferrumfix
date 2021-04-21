@@ -1,6 +1,5 @@
-use crate::tagvalue::{TagLookup, TagLookupSingleAppVersion};
-
 const SOH: u8 = 0x1;
+const DEFAULT_MAX_MESSAGE_SIZE: usize = 65_536;
 
 /// Collection of configuration options related to FIX encoding and decoding.
 ///
@@ -8,11 +7,6 @@ const SOH: u8 = 0x1;
 ///
 /// Implementors of this trait should start with `Config`.
 pub trait Configure: Clone + Default {
-    /// The [`TagLookup`] implementor that will be used during decoding.
-    ///
-    /// This type has no effect on encoding operations.
-    type TagLookup: TagLookup;
-
     /// The delimiter character, which terminates every tag-value pair including
     /// the last one.
     ///
@@ -26,7 +20,7 @@ pub trait Configure: Clone + Default {
     /// The maximum allowed size for any single FIX message. No restrictions are
     /// imposed when it is `None`.
     fn max_message_size(&self) -> Option<usize> {
-        Some(65536)
+        Some(DEFAULT_MAX_MESSAGE_SIZE)
     }
 
     /// Determines wheather or not `CheckSum(10)` should be verified.
@@ -41,6 +35,7 @@ pub trait Configure: Clone + Default {
 #[derive(Debug, Copy, Clone)]
 pub struct Config {
     separator: u8,
+    max_message_size: Option<usize>,
     verify_checksum: bool,
 }
 
@@ -63,6 +58,15 @@ impl Config {
 
     pub fn with_separator(mut self, separator: u8) -> Self {
         self.separator = separator;
+        self
+    }
+
+    pub fn set_max_message_size(&mut self, max_message_size: Option<usize>) {
+        self.max_message_size = max_message_size;
+    }
+
+    pub fn with_max_message_size(mut self, max_message_size: Option<usize>) -> Self {
+        self.max_message_size = max_message_size;
         self
     }
 
@@ -89,8 +93,6 @@ impl Config {
 }
 
 impl Configure for Config {
-    type TagLookup = TagLookupSingleAppVersion;
-
     fn separator(&self) -> u8 {
         self.separator
     }
@@ -98,11 +100,16 @@ impl Configure for Config {
     fn verify_checksum(&self) -> bool {
         self.verify_checksum
     }
+
+    fn max_message_size(&self) -> Option<usize> {
+        self.max_message_size
+    }
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
+            max_message_size: Some(DEFAULT_MAX_MESSAGE_SIZE),
             separator: SOH,
             verify_checksum: true,
         }

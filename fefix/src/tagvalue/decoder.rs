@@ -1,11 +1,13 @@
 use super::{
-    message::{AncestryTracker, Context},
-    RawDecoder, RawDecoderBuffered, RawFrame,
+    Config, Configure, DecodeError, DecodeError as Error, FieldAccess, RawDecoder,
+    RawDecoderBuffered, RawFrame,
 };
 use crate::fields::fix44 as fields;
-use crate::tagvalue::{Config, Configure, DecodeError, Message, MessageBuilder};
-use crate::{DataType, Dictionary};
+use crate::{dtf, dtf::DataField, fields::FieldDef, DataType, Dictionary};
+use fnv::FnvHashMap;
+use std::collections::HashMap;
 use std::fmt::Debug;
+use std::ops::Range;
 
 const BEGIN_STRING_OFFSET: usize = 2;
 
@@ -21,6 +23,9 @@ where
     current_group_entry_tag: u32,
     remaining_group_entries: u16,
     group_ancestry: AncestryTracker,
+    ancestry_id: u64,
+    tag_lookup: TagLookup,
+    is_beginning_group: bool,
 }
 
 impl<C> Decoder<C>
@@ -35,12 +40,15 @@ where
 
     pub fn with_config(dict: Dictionary, config: C) -> Self {
         Self {
-            dict,
+            dict: dict.clone(),
             builder: MessageBuilder::new(),
             raw_decoder: RawDecoder::with_config(config),
             current_group_entry_tag: 0,
             remaining_group_entries: 0,
             group_ancestry: AncestryTracker::top_level(),
+            ancestry_id: 0,
+            tag_lookup: TagLookup::from_dict(&dict),
+            is_beginning_group: false,
         }
     }
 
@@ -136,7 +144,13 @@ where
                 let len = i_sep - i_equal_sign - 1;
                 let msg = self.builder.build(bytes);
                 let msg_type = msg.f_msg_type().unwrap_or("").to_string();
-                self.store_field(tag_num, start, len, msg_type.as_str());
+                self.store_field(
+                    tag_num,
+                    &bytes[start..start + len],
+                    start,
+                    len,
+                    msg_type.as_str(),
+                );
                 tag_num = 0;
             } else if state_is_tag {
                 tag_num = tag_num * 10 + (byte - b'0') as u32;
@@ -145,45 +159,35 @@ where
         Ok(self.builder.build(bytes))
     }
 
-    fn store_field(&mut self, tag: u32, start: usize, len: usize, msg_type: &str) {
-        let field_definition = self.dict.field_by_tag(tag).unwrap();
+    fn store_field(&mut self, tag: u32, content: &[u8], start: usize, len: usize, _msg_type: &str) {
+        let entry = self.tag_lookup.lookup(tag).unwrap();
+        if self.is_beginning_group {
+            self.current_group_entry_tag = tag;
+            self.is_beginning_group = false;
+        }
         if tag == self.current_group_entry_tag {
-            self.remaining_group_entries -= 1;
+            if self.ancestry_id & 0xff <= 1 {
+                self.ancestry_id >>= 16;
+            } else {
+                self.ancestry_id -= 1;
+            }
             if self.remaining_group_entries <= 1 {
                 self.group_ancestry.leave_group();
             }
         }
-        if field_definition.basetype() == DataType::NumInGroup {
-            // It's a "group leader".
-            // FIXME
-            self.current_group_entry_tag = self
-                .dict
-                .message_by_msgtype(msg_type)
-                .unwrap()
-                .group_info(tag)
-                .unwrap();
+        let context = Context {
+            tag,
+            ancestry: Ancestry::from_u64(self.ancestry_id),
+        };
+        self.builder.add_field(context, start, len).unwrap();
+        if entry.data_type() == DataType::NumInGroup {
+            self.is_beginning_group = true;
+            let s = std::str::from_utf8(content).unwrap();
+            let entries_count = str::parse::<u16>(s).unwrap();
+            self.current_group_entry_tag = entry.first_tag_of_group;
+            self.ancestry_id = (self.ancestry_id << 16) + entries_count as u64;
             self.group_ancestry.enter_group();
-            // FIXME: read value and set it.
-            self.remaining_group_entries = 1;
-            let context = Context {
-                tag,
-                ancestry: AncestryTracker::top_level().ancestry(),
-            };
-            self.builder.add_field(context, start, len).unwrap();
-        } else {
-            // It's not.
-            if tag == self.current_group_entry_tag {
-                self.remaining_group_entries = self.remaining_group_entries.wrapping_sub(1);
-                if self.remaining_group_entries <= 1 {
-                    self.current_group_entry_tag = 0;
-                }
-                self.group_ancestry.incr_entry();
-            }
-            let context = Context {
-                tag,
-                ancestry: AncestryTracker::top_level().ancestry(),
-            };
-            self.builder.add_field(context, start, len).unwrap();
+            self.remaining_group_entries = entries_count;
         }
     }
 }
@@ -265,6 +269,446 @@ where
                 .as_bytes(),
         )
     }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct TagLookupEntry {
+    data_type: DataType,
+    first_tag_of_group: u32,
+}
+
+impl TagLookupEntry {
+    pub fn data_type(&self) -> DataType {
+        self.data_type
+    }
+}
+
+#[derive(Debug)]
+pub struct TagLookup {
+    current_dict: Dictionary,
+    entries: FnvHashMap<u32, TagLookupEntry>,
+}
+
+impl TagLookup {
+    pub fn from_dict(dict: &Dictionary) -> Self {
+        let mut entries = FnvHashMap::default();
+        for field in dict.iter_fields() {
+            entries.insert(
+                field.tag(),
+                TagLookupEntry {
+                    data_type: field.data_type().basetype(),
+                    first_tag_of_group: 0,
+                },
+            );
+        }
+        Self {
+            current_dict: dict.clone(),
+            entries,
+        }
+    }
+
+    pub fn lookup(&mut self, tag: u32) -> Option<&TagLookupEntry> {
+        self.entries.get(&tag)
+    }
+}
+
+/// A repeating group within a [`Message`].
+#[derive(Debug)]
+pub struct MessageGroup<'a> {
+    message: &'a Message<'a>,
+    num_in_group_tag_index: usize,
+    num_in_group_value: usize,
+    ancestry_id: u64,
+}
+
+impl<'a> MessageGroup<'a> {
+    pub fn len(&self) -> usize {
+        self.num_in_group_value
+    }
+
+    pub fn entry(&self, index: usize) -> MessageGroupEntry {
+        MessageGroupEntry {
+            group: self,
+            start_index: 0,
+            index,
+            ancestry_id: (self.ancestry_id << 16) + (index as u64 + 1),
+        }
+    }
+}
+
+/// A specific [`MessageGroup`] entry.
+#[derive(Debug)]
+pub struct MessageGroupEntry<'a> {
+    group: &'a MessageGroup<'a>,
+    start_index: usize,
+    index: usize,
+    ancestry_id: u64,
+}
+
+impl<'a> MessageGroupEntry<'a> {
+    pub fn field_ref<'b, T>(
+        &'b self,
+        field_def: &FieldDef<'b, T>,
+    ) -> Option<Result<T, <T as dtf::DataField<'b>>::Error>>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>,
+    {
+        let context = Context {
+            tag: field_def.tag(),
+            ancestry: Ancestry::from_u64(self.ancestry_id),
+        };
+        self.group
+            .message
+            .builder
+            .fields
+            .get(&context)
+            .map(|field| &self.group.message.bytes[field.range.clone()])
+            .map(|bytes| T::deserialize_lossy(bytes))
+    }
+}
+
+/// FIX message data structure with fast associative and sequential access.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Message<'a> {
+    bytes: &'a [u8],
+    builder: &'a MessageBuilder,
+}
+
+impl<'a> Message<'a> {
+    pub fn group_ref(&self, tag: u32) -> Option<MessageGroup> {
+        let num_in_group_value = self.field_as_i64(tag)? as usize;
+        let context = Context {
+            tag,
+            ancestry: Ancestry::from_u64(0),
+        };
+        let field_i = self.builder.fields.get(&context)?.i;
+        Some(MessageGroup {
+            message: self,
+            num_in_group_tag_index: field_i,
+            num_in_group_value,
+            ancestry_id: 0,
+        })
+    }
+
+    pub fn field(&self, tag: u32) -> Option<FieldRef> {
+        let context = Context::top_level(tag);
+        Some(FieldRef {
+            message: self.clone(),
+            field: self.builder.fields.get(&context)?,
+        })
+    }
+
+    pub fn field_ref<'b, T>(
+        &'b self,
+        field_def: &FieldDef<'b, T>,
+    ) -> Option<Result<T, <T as dtf::DataField<'b>>::Error>>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>,
+    {
+        let context = Context {
+            tag: field_def.tag(),
+            ancestry: AncestryTracker::top_level().ancestry(),
+        };
+        self.builder
+            .fields
+            .get(&context)
+            .map(|field| &self.bytes[field.range.clone()])
+            .map(|bytes| T::deserialize_lossy(bytes))
+    }
+
+    pub fn field_raw(&self, tag: u32) -> Option<&[u8]> {
+        self.builder
+            .fields
+            .get(&Context::top_level(tag))
+            .map(|field| &self.bytes[field.range.clone()])
+    }
+
+    pub fn field_as_char(&self, tag: u32) -> Option<char> {
+        self.builder
+            .fields
+            .get(&Context::top_level(tag))
+            .map(|field| self.bytes[field.range.start] as char)
+    }
+
+    pub fn field_as_bool(&self, tag: u32) -> Option<bool> {
+        self.builder
+            .fields
+            .get(&Context::top_level(tag))
+            .map(|field| self.bytes[field.range.start] == b'Y')
+    }
+
+    pub fn field_as_i64(&self, tag: u32) -> Option<i64> {
+        self.field_as_str(tag)
+            .and_then(|s| str::parse::<i64>(s).ok())
+    }
+
+    pub fn field_as_str(&self, tag: u32) -> Option<&str> {
+        self.field_raw(tag)
+            .and_then(|data| std::str::from_utf8(data).ok())
+    }
+
+    pub fn field_as_chrono_dt(&self, tag: u32) -> Option<chrono::DateTime<chrono::Utc>> {
+        let s = self.field_as_str(tag)?;
+        let naive = chrono::NaiveDateTime::parse_from_str(s, "%Y%m%d-%H:%M:%S.%.3f").ok()?;
+        let dt = chrono::DateTime::<chrono::Utc>::from_utc(naive, chrono::Utc);
+        Some(dt)
+    }
+
+    pub fn field_as_timestamp(&self, tag: u32) -> Option<dtf::Timestamp> {
+        let raw = self.field_raw(tag)?;
+        dtf::Timestamp::parse(raw)
+    }
+
+    pub fn group(&self, _tag: u32) -> Option<GroupRef> {
+        None
+    }
+
+    pub fn f_msg_type(&self) -> Option<&str> {
+        self.field_as_str(fields::MSG_TYPE.tag())
+    }
+
+    pub fn f_seq_num(&self) -> Option<u64> {
+        self.field_as_i64(fields::MSG_SEQ_NUM.tag())
+            .map(|x| x as u64)
+    }
+
+    pub fn f_test_indicator(&self) -> Option<bool> {
+        self.field_as_bool(fields::TEST_MESSAGE_INDICATOR.tag())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Field {
+    i: usize,
+    range: Range<usize>,
+}
+
+/// Max of 2**16 entries per group.
+type GroupEntryId = u16;
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct AncestryTracker {
+    id: u64,
+    parents: [GroupEntryId; 4],
+    depth: usize,
+}
+
+impl AncestryTracker {
+    pub fn top_level() -> Self {
+        Self {
+            id: 0,
+            parents: [0; 4],
+            depth: 0,
+        }
+    }
+
+    pub fn enter_group(&mut self) {
+        self.id = (self.id << 16) | 1;
+        self.parents[self.depth] = 1;
+        self.depth += 1;
+    }
+
+    pub fn leave_group(&mut self) {
+        self.id = self.id >> 16;
+        self.parents[self.depth] = 0;
+        self.depth -= 1;
+    }
+
+    pub fn ancestry(&self) -> Ancestry {
+        Ancestry {
+            id: ((self.parents[0] as u64) << 48)
+                + ((self.parents[1] as u64) << 32)
+                + ((self.parents[2] as u64) << 16)
+                + self.parents[3] as u64,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct Ancestry {
+    pub id: u64,
+}
+
+impl Ancestry {
+    pub fn from_u64(id: u64) -> Self {
+        Self { id }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct Context {
+    pub tag: u32,
+    pub ancestry: Ancestry,
+}
+
+impl Context {
+    pub fn top_level(tag: u32) -> Self {
+        Self {
+            tag,
+            ancestry: AncestryTracker::top_level().ancestry(),
+        }
+    }
+}
+
+/// A zero-copy, allocation-free builder of [`Message`] instances.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageBuilder {
+    fields: HashMap<Context, Field>,
+    insertion_order: Vec<Context>,
+    owned_data: Vec<u8>,
+    i_first_cell: usize,
+    i_last_cell: usize,
+    len_end_header: usize,
+    len_end_body: usize,
+    len_end_trailer: usize,
+}
+
+impl MessageBuilder {
+    /// Creates a new [`Message`] without any fields.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::MessageBuilder;
+    ///
+    /// let msg = MessageBuilder::new();
+    /// ```
+    pub fn new() -> Self {
+        Self {
+            fields: HashMap::new(),
+            insertion_order: vec![],
+            owned_data: Vec::new(),
+            i_first_cell: 0,
+            i_last_cell: 0,
+            len_end_header: 0,
+            len_end_body: 0,
+            len_end_trailer: 0,
+        }
+    }
+
+    /// Removes all fields from `self`.
+    pub fn clear(&mut self) {
+        // TODO: https://github.com/rust-lang/rust/issues/56431
+        self.fields.clear();
+        self.insertion_order.clear();
+        self.i_first_cell = 0;
+        self.i_last_cell = 0;
+        self.len_end_body = 0;
+        self.len_end_header = 0;
+        self.len_end_trailer = 0;
+    }
+
+    pub fn add_field(&mut self, context: Context, start: usize, len: usize) -> Result<(), Error> {
+        let field = Field {
+            i: self.insertion_order.len(),
+            range: start..start + len,
+        };
+        self.fields.insert(context, field);
+        self.insertion_order.push(context);
+        Ok(())
+    }
+
+    pub fn build<'a>(&'a self, bytes: &'a [u8]) -> Message<'a> {
+        Message {
+            bytes,
+            builder: self,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FieldRef<'a> {
+    message: Message<'a>,
+    field: &'a Field,
+}
+
+impl<'a> FieldAccess<()> for FieldRef<'a> {
+    fn raw(&self) -> Result<&[u8], ()> {
+        Ok(&self.message.bytes[self.field.range.clone()])
+    }
+
+    fn as_char(&self) -> Result<u8, ()> {
+        Ok(self.message.bytes[self.field.range.start])
+    }
+
+    fn as_bool(&self) -> Result<bool, ()> {
+        Ok(self.message.bytes[self.field.range.start] == b'Y')
+    }
+
+    fn as_i64(&self) -> Result<i64, ()> {
+        let data = self.raw()?;
+        if data.is_empty() {
+            return Err(());
+        }
+        let mut num = 0i64;
+        for byte in data.iter().copied().rev() {
+            if byte == b'-' {
+                num = -num;
+            } else {
+                num = num * 10 + byte.wrapping_sub(b'0') as i64;
+            }
+        }
+        Ok(num)
+    }
+
+    fn as_u64(&self) -> Result<u64, ()> {
+        let data = self.raw()?;
+        let mut num = 0u64;
+        for byte in data.iter().rev() {
+            num = num * 10 + byte.wrapping_sub(b'0') as u64;
+        }
+        Ok(num)
+    }
+
+    fn as_timestamp(&self) -> Result<i64, ()> {
+        unimplemented!()
+    }
+
+    fn as_date(&self) -> Result<dtf::Date, ()> {
+        dtf::Date::deserialize(self.raw()?).map_err(|_| ())
+    }
+
+    fn as_time(&self) -> Result<dtf::Time, ()> {
+        Ok(dtf::Time::parse(self.raw()?).ok_or(())?)
+    }
+
+    fn as_float(&self) -> Result<(), ()> {
+        unimplemented!()
+    }
+
+    fn as_chars(&self) -> Result<dtf::MultipleChars, ()> {
+        Ok(dtf::MultipleChars::new(self.raw()?))
+    }
+
+    fn as_month_year(&self) -> Result<dtf::MonthYear, ()> {
+        let data = self.raw()?;
+        dtf::MonthYear::parse(data).ok_or(())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct GroupRef<'a> {
+    message: &'a Message<'a>,
+    len: usize,
+    field_len: u32,
+}
+
+impl<'a> GroupRef<'a> {
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    pub fn iter(&self) -> GroupRefIter {
+        GroupRefIter { group: self, i: 0 }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct GroupRefIter<'a> {
+    group: &'a GroupRef<'a>,
+    i: usize,
 }
 
 #[cfg(test)]

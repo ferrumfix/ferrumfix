@@ -11,22 +11,17 @@ mod config;
 mod decoder;
 mod encoder;
 mod field_access;
-mod group_delimiter;
-mod message;
 mod raw_decoder;
-mod taglookup;
 mod utils;
 
 pub use config::{Config, Configure};
-pub use decoder::{Decoder, DecoderBuffered};
+pub use decoder::{
+    Decoder, DecoderBuffered, GroupRef, GroupRefIter, Message, MessageBuilder, MessageGroup,
+    MessageGroupEntry,
+};
 pub use encoder::{Encoder, EncoderHandle};
 pub use field_access::FieldAccess;
-pub use group_delimiter::GroupDelimiter;
-pub use message::{
-    GroupRef, GroupRefIter, Message, MessageBuilder, MessageGroup, MessageGroupEntry,
-};
 pub use raw_decoder::{RawDecoder, RawDecoderBuffered, RawFrame};
-pub use taglookup::{TagLookup, TagLookupSingleAppVersion};
 
 /// The type returned in the event of an error during message decoding.
 #[derive(Clone, Debug, PartialEq)]

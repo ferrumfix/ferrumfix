@@ -1,7 +1,7 @@
 use super::{Config, Configure};
+use crate::buffer::Buffer;
 use crate::dtf::{CheckSum, DataField};
-use crate::fields::fixt11;
-use crate::{buffer::Buffer, fields::FieldDef};
+use crate::fields::{fixt11, FieldDef};
 use std::ops::Range;
 
 /// A buffered, content-agnostic FIX encoder.
