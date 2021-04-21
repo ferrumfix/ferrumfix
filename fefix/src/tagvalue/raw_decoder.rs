@@ -272,7 +272,10 @@ impl HeaderInfo {
                 info.i_sep[field_i] = i;
                 field_i += 1;
             } else {
-                info.body_length = info.body_length * 10 + byte.wrapping_sub(b'0') as usize;
+                info.body_length = info
+                    .body_length
+                    .wrapping_mul(10)
+                    .wrapping_add(byte.wrapping_sub(b'0') as usize);
             }
             i += 1;
         }
