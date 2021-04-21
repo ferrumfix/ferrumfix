@@ -11,7 +11,7 @@ use template::Template;
 
 mod codec;
 mod codegen;
-pub mod decimal;
+mod decimal;
 mod dtf;
 mod errors;
 mod field_operators;

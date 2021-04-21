@@ -1,6 +1,6 @@
 //! Decimal floating-point arithmetic for FAST.
 
-use std::cmp;
+use std::cmp::{self, Ordering};
 use std::fmt;
 use std::ops;
 
@@ -22,7 +22,7 @@ use std::ops;
 /// converting to more battle-tested formats such as `decimal128` (see the
 /// Wikipedia
 /// [article](https://en.wikipedia.org/wiki/Decimal128_floating-point_format)).
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Decimal {
     // In theory, 7 bits ought to suffice (we only need -63/+63), but reserving
     // more space allows for easier calculations and more relaxed overflow
@@ -33,7 +33,7 @@ pub struct Decimal {
 
 #[derive(Debug)]
 pub enum Error {
-    InvalidScale,
+    //InvalidScale,
 }
 
 impl Decimal {
@@ -68,10 +68,10 @@ impl Decimal {
     /// use fefix::fast::Decimal;
     ///
     /// assert_eq!(Decimal::MAX * Decimal::ONE, Decimal::MAX);
-    /// assert_eq!(Decimal::MIN * Decimal::MIN, Decimal::MAX);
+    /// assert_eq!(Decimal::MIN * Decimal::ONE, Decimal::MIN);
     ///
     /// let pi = Decimal::new(314, -2);
-    /// assert_eq!(pi * Decimal::MIN, pi);
+    /// assert_eq!(pi * Decimal::ONE, pi);
     /// ```
     pub const ONE: Decimal = Decimal {
         exp: 0,
@@ -111,7 +111,7 @@ impl Decimal {
     /// # Example
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let pi = Decimal::new(3141, -3);
     /// assert_eq!(pi.to_string(), "3.141");
@@ -131,7 +131,7 @@ impl Decimal {
     /// # Example
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let pi = Decimal::new(3141, -3);
     /// assert_eq!(pi.to_string(), "3.141");
@@ -159,7 +159,7 @@ impl Decimal {
     /// # Example
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(1234, 3);
     /// assert_eq!(num.exp(), 3i32);
@@ -174,7 +174,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(314159, -5);
     /// assert_eq!(num.mantissa(), 314159);
@@ -192,7 +192,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(314159, -5);
     /// assert_eq!(num.signum(), Decimal::ONE);
@@ -218,7 +218,7 @@ impl Decimal {
     /// # Example
     ///
     /// ```
-    /// use fefix::fast::decimal::*;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(-1337, 0);
     /// assert_eq!(num.abs().to_string(), "1337");
@@ -229,6 +229,30 @@ impl Decimal {
             exp: self.exp(),
             mantissa: self.mantissa().abs(),
         }
+    }
+
+    /// Checked addition. Computes `self + other`, returning `None` if overflow
+    /// occurred.
+    pub fn checked_add(&self, _other: Decimal) -> Option<Self> {
+        unimplemented!()
+    }
+
+    /// Checked subtraction. Computes `self - other`, returning `None` if overflow
+    /// occurred.
+    pub fn checked_sub(&self, _other: Decimal) -> Option<Self> {
+        unimplemented!()
+    }
+
+    /// Checked multiplication. Computes `self * other`, returning `None` if overflow
+    /// occurred.
+    pub fn checked_mul(&self, _other: Decimal) -> Option<Self> {
+        unimplemented!()
+    }
+
+    /// Checked division. Computes `self / other`, returning `None` if `other ==
+    /// 0.0` or the division results in overflow.
+    pub fn checked_div(self, _other: Decimal) -> Option<Decimal> {
+        unimplemented!()
     }
 
     /// Returns `true` if and only if `self` is strictly negative, `false`
@@ -282,8 +306,7 @@ impl Decimal {
             0 => Self::ONE,
             1 if exp % 2 == 0 => (*self * *self).pow(exp / 2),
             1 => *self * ((*self * *self).pow(exp / 2)),
-            -1 => todo!(),
-            _ => panic!("You found a bug! Please file it immediately."),
+            _ => todo!(),
         }
     }
 
@@ -292,7 +315,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(314, -2);
     /// assert_eq!(num.truncate(), Decimal::new(3, 0));
@@ -308,7 +331,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(314, -2);
     /// assert_eq!(num.fract(), Decimal::new(14, -2));
@@ -322,7 +345,7 @@ impl Decimal {
     /// Returns the least integer greater than or equal to `self`.
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(100000001, -4);
     /// assert_eq!(num.ceil(), Decimal::new(2, 0));
@@ -347,7 +370,7 @@ impl Decimal {
     /// Returns the greatest integer less than or equal to `self`.
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(100000001, 4);
     /// assert_eq!(num.floor(), Decimal::new(1, 0));
@@ -373,7 +396,7 @@ impl Decimal {
     /// FIXME
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(100000001, -4);
     /// assert_eq!(num.floor(), Decimal::new(1, 0));
@@ -483,9 +506,12 @@ impl cmp::PartialOrd for Decimal {
 impl cmp::Ord for Decimal {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
         let cmp_sign = self.mantissa().signum().cmp(&other.mantissa().signum());
+        if cmp_sign != Ordering::Equal {
+            return cmp_sign;
+        }
         let cmp_exp = self.exp().signum().cmp(&other.exp().signum());
-        let cmp_mantissa = self.mantissa().abs().cmp(&other.mantissa().abs());
-        cmp_sign.then(cmp_exp).then(cmp_mantissa)
+        let cmp_mantissa = self.mantissa().cmp(&other.mantissa());
+        cmp_exp.then(cmp_mantissa)
     }
 }
 

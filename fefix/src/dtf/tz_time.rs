@@ -21,10 +21,10 @@ impl TzTime {
     /// # Examples
     ///
     /// ```
-    /// use fefix::dtf::TzTime;
+    /// use fefix::dtf::{DataField, TzTime};
     ///
-    /// let dtf = TzTime::parse(b"12:45:00Z").unwrap();
-    /// assert_eq!(dtf.minute(), 45)
+    /// let dtf = TzTime::deserialize(b"12:45:00Z").unwrap();
+    /// assert_eq!(dtf.minute(), 45);
     /// ```
     pub fn hour(&self) -> u32 {
         self.hour

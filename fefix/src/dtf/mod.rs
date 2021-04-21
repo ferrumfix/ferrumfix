@@ -40,7 +40,7 @@
 //!
 //! // You can use `DataField::deserialize` to parse data fields.
 //! let timestamp = Timestamp::deserialize(bytes).unwrap();
-//! assert(timestamp.date().year(), 2013);
+//! assert_eq!(timestamp.date().year(), 2013);
 //!
 //! // `DataField::deserialize_lossy` is like `DataField::deserialize`, but it's
 //! // allowed to skip some format verification for the sake of speed.
@@ -72,9 +72,9 @@ pub use multiple_chars::MultipleChars;
 pub use multiple_strings::MultipleStrings;
 pub use time::Time;
 pub use timestamp::Timestamp;
+pub use tz::Tz;
 pub use tz_time::TzTime;
 pub use tz_timestamp::TzTimestamp;
-pub use tz::Tz;
 
 use crate::Buffer;
 use rust_decimal::Decimal;
@@ -228,11 +228,11 @@ impl<'a> DataField<'a> for u32 {
 
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
         fn ascii_digit_to_u32(digit: u8) -> u32 {
-            digit as u32 - b'0' as u32
+            (digit as u32).wrapping_sub(b'0' as u32)
         }
-        let mut n = 0;
+        let mut n = 0u32;
         for byte in data.iter().copied() {
-            n = n * 10 + ascii_digit_to_u32(byte);
+            n = n.wrapping_mul(10).wrapping_add(ascii_digit_to_u32(byte));
         }
         Ok(n)
     }

@@ -55,6 +55,7 @@
 #![deny(
     unused,
     missing_debug_implementations,
+    unstable_name_collisions,
     clippy::useless_conversion,
     clippy::missing_panics_docs,
     clippy::mixed_case_hex_literals,

@@ -166,8 +166,13 @@ where
     pub fn decode<'a>(&'a mut self, data: &'a [u8]) -> Result<Message<'a>, DecodeError> {
         let mut deserilizer = serde_json::Deserializer::from_slice(data);
         let msg = self.message_builder();
-        MessageInternal::deserialize_in_place(&mut deserilizer, msg)
-            .map_err(|_| DecodeError::InvalidData)?;
+        MessageInternal::deserialize_in_place(&mut deserilizer, msg).map_err(|err| {
+            if err.is_syntax() || err.is_eof() || err.is_io() {
+                DecodeError::Syntax
+            } else {
+                DecodeError::Schema
+            }
+        })?;
         Ok(Message { internal: msg })
     }
 }
@@ -175,23 +180,20 @@ where
 type Component<'a> = HashMap<&'a str, FieldOrGroup<'a>>;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(untagged)]
 enum FieldOrGroup<'a> {
-    Field {
-        value: Cow<'a, str>,
-    },
-    Group {
-        #[serde(borrow)]
-        entries: Vec<Component<'a>>,
-    },
+    Field(Cow<'a, str>),
+    #[serde(borrow)]
+    Group(Vec<Component<'a>>),
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 struct MessageInternal<'a> {
-    #[serde(borrow, rename = "StandardHeader")]
+    #[serde(borrow, rename = "Header")]
     std_header: Component<'a>,
     #[serde(borrow, rename = "Body")]
     body: Component<'a>,
-    #[serde(borrow, rename = "StandardTrailer")]
+    #[serde(borrow, rename = "Trailer")]
     std_trailer: Component<'a>,
 }
 
@@ -223,7 +225,7 @@ impl<'a> MessageInternal<'a> {
     fn field_raw(&self, name: &str, location: FieldLocation) -> Option<&str> {
         match location {
             FieldLocation::Body => self.body.get(name).and_then(|field_or_group| {
-                if let FieldOrGroup::Field { value } = field_or_group {
+                if let FieldOrGroup::Field(value) = field_or_group {
                     Some(value.borrow())
                 } else {
                     None

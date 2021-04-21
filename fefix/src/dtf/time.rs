@@ -130,7 +130,7 @@ impl Time {
     /// use fefix::dtf::Time;
     ///
     /// let dtf = Time::parse(b"12:45:00").unwrap();
-    /// assert_eq!(dtf.minute(), 00)
+    /// assert_eq!(dtf.minute(), 45)
     /// ```
     ///
     /// Leap second:
