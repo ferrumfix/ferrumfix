@@ -72,7 +72,6 @@ mod data_type;
 pub mod dictionary;
 pub mod dtf;
 pub mod fast;
-pub mod fields;
 pub mod fixs;
 pub mod json;
 pub mod models;
@@ -84,6 +83,25 @@ pub mod sofh;
 mod tagmap;
 pub mod tagvalue;
 
+#[rustfmt::skip]
+pub mod fix40;
+#[rustfmt::skip]
+pub mod fix41;
+#[rustfmt::skip]
+pub mod fix42;
+#[rustfmt::skip]
+pub mod fix43;
+#[rustfmt::skip]
+pub mod fix44;
+#[rustfmt::skip]
+pub mod fix50;
+#[rustfmt::skip]
+pub mod fix50sp1;
+#[rustfmt::skip]
+pub mod fix50sp2;
+#[rustfmt::skip]
+pub mod fixt11;
+
 pub use app_version::AppVersion;
 pub use buffer::Buffer;
 pub use data_type::DataType;
@@ -93,6 +111,7 @@ pub use models::{FieldsIter, FixFieldAccess, FixFieldsIter, FixMessage};
 pub use quickfix_specs::quickfix_spec;
 pub use tagmap::TagMap;
 
+pub use dtf::DataField;
 pub use fefix_derive::DataField;
 
 #[cfg(expose_openssl)]
@@ -100,3 +119,47 @@ pub extern crate openssl;
 
 #[cfg(not(expose_openssl))]
 pub(crate) extern crate openssl;
+
+use std::marker::PhantomData;
+
+#[derive(Debug, Clone)]
+pub struct FieldDef<'a, V>
+where
+    V: DataField<'a>,
+{
+    pub name: &'a str,
+    pub tag: u32,
+    pub is_group_leader: bool,
+    pub data_type: DataType,
+    pub location: FieldLocation,
+    pub phantom: PhantomData<V>,
+}
+
+/// The expected location of a field within a FIX message (i.e. header, body, or
+/// trailer).
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum FieldLocation {
+    StdHeader,
+    Body,
+    Trailer,
+}
+
+impl<'a, V> FieldDef<'a, V>
+where
+    V: DataField<'a>,
+{
+    /// Returns the numeric tag associated with `self`.
+    pub fn tag(&self) -> u32 {
+        self.tag
+    }
+
+    /// Returns the human-readable name given to `self`.
+    pub fn name(&self) -> &'a str {
+        self.name
+    }
+
+    /// Returns the [`DataType`] of `self`.
+    pub fn data_type(&self) -> DataType {
+        self.data_type
+    }
+}

@@ -1,5 +1,5 @@
 [package]
-name = "codegen_webserver"
+name = "example_codegen_webserver"
 version = "0.1.0"
 edition = "2018"
 

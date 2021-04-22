@@ -1,8 +1,8 @@
 use super::{Config, Configure, DecodeError};
 use crate::dtf;
-use crate::fields::{FieldDef, FieldLocation};
 use crate::tagvalue::Fv;
 use crate::Dictionary;
+use crate::{FieldDef, FieldLocation};
 use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;

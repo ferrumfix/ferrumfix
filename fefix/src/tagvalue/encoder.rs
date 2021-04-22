@@ -1,7 +1,8 @@
-use super::{Config, Configure};
+use super::{Config, Configure, FvWrite};
 use crate::buffer::Buffer;
 use crate::dtf::{CheckSum, DataField};
-use crate::fields::{fixt11, FieldDef};
+use crate::fixt11;
+use crate::FieldDef;
 use std::ops::Range;
 
 /// A buffered, content-agnostic FIX encoder.
@@ -169,6 +170,31 @@ where
     fn write_checksum(&mut self) {
         let checksum = CheckSum::compute(self.raw_encoder.buffer.as_slice());
         self.set(fixt11::CHECK_SUM, checksum);
+    }
+}
+
+impl<'a, B, C> FvWrite<'a> for EncoderHandle<'a, B, C>
+where
+    B: Buffer,
+    C: Configure,
+{
+    type Key = u32;
+
+    fn set_fv_with_key<'b, T>(&'b mut self, key: &Self::Key, value: T)
+    where
+        'b: 'a,
+        T: DataField<'b>,
+    {
+        self.set_any(*key, value);
+    }
+
+    fn set_fv<'b, T, S>(&'b mut self, field: &FieldDef<'b, T>, value: S)
+    where
+        'b: 'a,
+        T: DataField<'b>,
+        S: DataField<'b>,
+    {
+        self.set_fv_with_key(&field.tag(), value);
     }
 }
 

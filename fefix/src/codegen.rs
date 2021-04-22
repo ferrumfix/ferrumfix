@@ -2,8 +2,8 @@
 
 use super::data_type::DataType;
 use super::dictionary::{Dictionary, Field, LayoutItem, LayoutItemKind, Message};
-use indoc::indoc;
 use heck::{CamelCase, ShoutySnakeCase, SnakeCase};
+use indoc::indoc;
 
 fn generated_code_notice() -> String {
     use chrono::prelude::*;
@@ -141,20 +141,19 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
 
             {notice}
 
-            use {fefix_path}::fields::{{FieldDef, FieldLocation}};
+            use {fefix_path}::{{FieldDef, FieldLocation}};
             use {fefix_path}::{{DataType, Buffer}};
-            use {fefix_path}::dtf::DataField;
+            {import_data_field}
             use std::marker::PhantomData;
-            use {fefix_derive_path}::DataField;
 
             {field_defs}
             "#
         ),
         notice = generated_code_notice(),
-        fefix_derive_path = if fefix_path == "fefix" {
-            "fefix"
+        import_data_field = if fefix_path == "fefix" {
+            "use fefix::DataField;"
         } else {
-            "fefix_derive"
+            "use crate::DataField;"
         },
         field_defs = field_defs,
         fefix_path = fefix_path,

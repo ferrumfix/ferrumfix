@@ -11,7 +11,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 fn main() -> std::io::Result<()> {
-    let generated_path = project_root().join("src").join("fields");
+    let generated_path = project_root().join("src");
     create_dir_all(generated_path.as_path())?;
     fefix_barebones::AppVersion::ALL
         .par_iter()

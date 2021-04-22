@@ -1,5 +1,5 @@
 use crate::dtf::DataField;
-use crate::fields::FieldDef;
+use crate::FieldDef;
 
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]

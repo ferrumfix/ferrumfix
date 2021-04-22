@@ -1,6 +1,6 @@
 use super::{FieldType, PrimitiveType, Template};
-use indoc::indoc;
 use heck::CamelCase;
+use indoc::indoc;
 
 const GENERATED_CODE_NOTICE: &str = indoc!(
     r#"

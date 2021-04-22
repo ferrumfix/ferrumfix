@@ -11,11 +11,13 @@ members = [
     "fefix",
     "fefix_derive",
     # Private crates.
-    "examples/codegen_fix42",
+    "examples/00_decode_fix",
+    "examples/03_decode_fix_stream",
+    "examples/05_coinbase_codegen",
+    "examples/10_encode_new_order_single",
     "examples/codegen_webserver",
-    "examples/decode_fix_message",
     "examples/web_json_to_tagvalue",
-    "examples/tcp_sofh",
+    "examples/30_tcp_sofh",
     "examples/tls_fixua_acceptor",
     "tests/codegen_fix44",
 ]

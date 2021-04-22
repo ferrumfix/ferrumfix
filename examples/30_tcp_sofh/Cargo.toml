@@ -1,5 +1,5 @@
 [package]
-name = "codegen_fix42"
+name = "example_tcp_sofh"
 version = "0.1.0"
 edition = "2018"
 

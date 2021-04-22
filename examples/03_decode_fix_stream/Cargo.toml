@@ -1,5 +1,5 @@
 [package]
-name = "decode_fix_message"
+name = "example_decode_fix_stream"
 version = "0.1.0"
 edition = "2018"
 

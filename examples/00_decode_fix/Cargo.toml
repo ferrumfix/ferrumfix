@@ -1,5 +1,5 @@
 [package]
-name = "tcp_sofh"
+name = "example_decode_fix"
 version = "0.1.0"
 edition = "2018"
 

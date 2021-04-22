@@ -1,6 +1,9 @@
-use super::{Config, Configure, DecodeError, DecodeError as Error, FieldAccess, Fv, OptionalFieldError, RawDecoder, RawDecoderBuffered, RawFrame};
-use crate::fields::fix44 as fields;
-use crate::{dtf, dtf::DataField, fields::FieldDef, DataType, Dictionary};
+use super::{
+    Config, Configure, DecodeError, DecodeError as Error, FieldAccess, Fv, OptionalFieldError,
+    RawDecoder, RawDecoderBuffered, RawFrame,
+};
+use crate::fix44;
+use crate::{dtf, dtf::DataField, DataType, Dictionary, FieldDef};
 use fnv::FnvHashMap;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -124,7 +127,7 @@ where
         let mut i_equal_sign = 0usize;
         self.builder
             .add_field(
-                Context::top_level(fields::BEGIN_STRING.tag()),
+                Context::top_level(fix44::BEGIN_STRING.tag()),
                 BEGIN_STRING_OFFSET,
                 frame.begin_string().len(),
             )
@@ -503,16 +506,16 @@ impl<'a> Message<'a> {
     }
 
     pub fn f_msg_type(&self) -> Option<&str> {
-        self.field_as_str(fields::MSG_TYPE.tag())
+        self.field_as_str(fix44::MSG_TYPE.tag())
     }
 
     pub fn f_seq_num(&self) -> Option<u64> {
-        self.field_as_i64(fields::MSG_SEQ_NUM.tag())
+        self.field_as_i64(fix44::MSG_SEQ_NUM.tag())
             .map(|x| x as u64)
     }
 
     pub fn f_test_indicator(&self) -> Option<bool> {
-        self.field_as_bool(fields::TEST_MESSAGE_INDICATOR.tag())
+        self.field_as_bool(fix44::TEST_MESSAGE_INDICATOR.tag())
     }
 }
 
@@ -767,7 +770,7 @@ pub struct GroupRefIter<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{fields::fix44 as fields, tagvalue::Config, AppVersion};
+    use crate::{fix44, tagvalue::Config, AppVersion};
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
@@ -819,7 +822,7 @@ mod test {
         assert_eq!(
             group
                 .entry(0)
-                .field_ref(fields::MD_ENTRY_ID)
+                .field_ref(fix44::MD_ENTRY_ID)
                 .unwrap()
                 .unwrap(),
             b"BID"
@@ -853,8 +856,8 @@ mod test {
         codec.config_mut().set_verify_checksum(false);
         let message = codec.decode(&mut RANDOM_MESSAGES[0].as_bytes()).unwrap();
         assert_eq!(
-            message.field_ref(fields::MSG_TYPE),
-            Ok(fields::MsgType::Heartbeat)
+            message.field_ref(fix44::MSG_TYPE),
+            Ok(fix44::MsgType::Heartbeat)
         );
         assert_eq!(message.field_raw(8), Some(b"FIX.4.2" as &[u8]));
         assert_eq!(message.field_raw(35), Some(b"0" as &[u8]),);

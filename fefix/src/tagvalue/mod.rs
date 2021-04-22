@@ -4,7 +4,8 @@
 //! currently used by the FIX session layer.
 
 use super::dtf;
-use super::fields::FieldDef;
+use super::FieldDef;
+use crate::DataField;
 use std::fmt;
 use std::fmt::Debug;
 use std::io;
@@ -73,6 +74,21 @@ pub trait MapGroup<'a> {
     fn len(&self) -> usize;
 
     fn entry(&self) -> Self::Entry;
+}
+
+pub trait FvWrite<'a> {
+    type Key;
+
+    fn set_fv_with_key<'b, T>(&'b mut self, key: &Self::Key, value: T)
+    where
+        'b: 'a,
+        T: DataField<'b>;
+
+    fn set_fv<'b, T, S>(&'b mut self, field: &FieldDef<'b, T>, value: S)
+    where
+        'b: 'a,
+        T: DataField<'b>,
+        S: DataField<'b>;
 }
 
 /// A trait to retrieve field values in a FIX message.

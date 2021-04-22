@@ -178,6 +178,23 @@ impl<'a> DataField<'a> for bool {
     }
 }
 
+impl<'a> DataField<'a> for &'a str {
+    type Error = std::str::Utf8Error;
+    type SerializeSettings = ();
+
+    fn serialize<B>(&self, buffer: &mut B) -> usize
+    where
+        B: Buffer,
+    {
+        buffer.extend_from_slice(self.as_bytes());
+        self.as_bytes().len()
+    }
+
+    fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
+        std::str::from_utf8(data)
+    }
+}
+
 impl<'a> DataField<'a> for u8 {
     type Error = error::Int;
     type SerializeSettings = ();
