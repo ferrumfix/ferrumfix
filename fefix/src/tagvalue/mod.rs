@@ -3,6 +3,8 @@
 //! This is the original encoding used for FIX messages and also the encoding
 //! currently used by the FIX session layer.
 
+use super::dtf;
+use super::fields::FieldDef;
 use std::fmt;
 use std::fmt::Debug;
 use std::io;
@@ -53,5 +55,85 @@ impl std::error::Error for DecodeError {
 impl From<io::Error> for DecodeError {
     fn from(_err: io::Error) -> Self {
         Self::Invalid // FIXME
+    }
+}
+
+pub trait MapFields<'a>
+where
+    Self: Fv<'a>,
+{
+    type Group: MapGroup<'a>;
+
+    fn group(&'a self) -> Self::Group;
+}
+
+pub trait MapGroup<'a> {
+    type Entry: MapFields<'a>;
+
+    fn len(&self) -> usize;
+
+    fn entry(&self) -> Self::Entry;
+}
+
+/// A trait to retrieve field values in a FIX message.
+pub trait Fv<'a> {
+    type Key;
+
+    fn fv_raw_with_key<'b>(&'b self, key: &Self::Key) -> Option<&'b [u8]>;
+
+    fn fv_raw<'b, T>(&'b self, field: &FieldDef<'b, T>) -> Option<&'b [u8]>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>;
+
+    fn fv_opt<'b, T, S>(&'b self, field: &FieldDef<'b, T>) -> Option<Result<S, S::Error>>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>,
+        S: dtf::SubDataField<'b, T>,
+    {
+        self.fv_raw(field).map(|raw| match T::deserialize(raw) {
+            Ok(value) => S::convert(value),
+            Err(err) => Err(err.into()),
+        })
+    }
+
+    fn fv<'b, T, S>(&'b self, field: &FieldDef<'b, T>) -> Result<S, OptionalFieldError<S::Error>>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>,
+        S: dtf::SubDataField<'b, T>,
+    {
+        match self.fv_opt(field) {
+            Some(Ok(x)) => Ok(x),
+            Some(Err(err)) => Err(OptionalFieldError::Invalid(err)),
+            None => Err(OptionalFieldError::Missing),
+        }
+    }
+
+    fn fvl_opt<'b, T, S>(&'b self, field: &FieldDef<'b, T>) -> Option<Result<S, S::Error>>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>,
+        S: dtf::SubDataField<'b, T>,
+    {
+        self.fv_raw(field)
+            .map(|raw| match T::deserialize_lossy(raw) {
+                Ok(value) => S::convert(value),
+                Err(err) => Err(err.into()),
+            })
+    }
+
+    fn fvl<'b, T, S>(&'b self, field: &FieldDef<'b, T>) -> Result<S, OptionalFieldError<S::Error>>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>,
+        S: dtf::SubDataField<'b, T>,
+    {
+        match self.fvl_opt(field) {
+            Some(Ok(x)) => Ok(x),
+            Some(Err(err)) => Err(OptionalFieldError::Invalid(err)),
+            None => Err(OptionalFieldError::Missing),
+        }
     }
 }

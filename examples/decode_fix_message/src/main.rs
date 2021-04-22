@@ -1,5 +1,5 @@
 use fefix::fields::fix42;
-use fefix::tagvalue::{Config, Decoder};
+use fefix::tagvalue::{Config, Decoder, Fv};
 use fefix::{AppVersion, Dictionary};
 
 const FIX_MESSAGE: &[u8] = b"8=FIX.4.2|9=97|35=6|49=BKR|56=IM|34=14|52=20100204-09:18:42|23=115685|28=N|55=SPMI.MI|54=2|44=2200.75|27=S|25=H|10=248|";
@@ -12,20 +12,17 @@ fn main() {
     let msg = fix_decoder
         .decode(FIX_MESSAGE)
         .expect("Invalid FIX message");
-    assert_eq!(msg.field_ref(fix42::BEGIN_STRING), Ok(b"FIX.4.2" as &[u8]));
+    assert_eq!(msg.fv(fix42::BEGIN_STRING), Ok("FIX.4.2"));
     assert_eq!(
-        msg.field_ref(fix42::MSG_TYPE),
+        msg.fv(fix42::MSG_TYPE),
         Ok(fix42::MsgType::IndicationOfInterest)
     );
-    assert_eq!(msg.field_ref(fix42::SENDER_COMP_ID), Ok(b"BKR" as &[u8]));
-    assert_eq!(msg.field_ref(fix42::TARGET_COMP_ID), Ok(b"IM" as &[u8]));
-    assert_eq!(msg.field_ref(fix42::MSG_SEQ_NUM), Ok(14));
-    assert_eq!(msg.field_ref(fix42::IO_IID), Ok(b"115685" as &[u8]));
-    assert_eq!(
-        msg.field_ref(fix42::IOI_TRANS_TYPE),
-        Ok(fix42::IoiTransType::New)
-    );
-    assert_eq!(msg.field_ref(fix42::SYMBOL), Ok(b"SPMI.MI" as &[u8]));
-    assert_eq!(msg.field_ref(fix42::SIDE), Ok(fix42::Side::Sell));
-    assert_eq!(msg.field_ref(fix42::IOI_QLTY_IND), Ok(fix42::IoiQltyInd::High));
+    assert_eq!(msg.fv(fix42::SENDER_COMP_ID), Ok("BKR"));
+    assert_eq!(msg.fv(fix42::TARGET_COMP_ID), Ok("IM"));
+    assert_eq!(msg.fv(fix42::MSG_SEQ_NUM), Ok(14));
+    assert_eq!(msg.fv(fix42::IO_IID), Ok("115685"));
+    assert_eq!(msg.fv(fix42::IOI_TRANS_TYPE), Ok(fix42::IoiTransType::New));
+    assert_eq!(msg.fv(fix42::SYMBOL), Ok("SPMI.MI"));
+    assert_eq!(msg.fv(fix42::SIDE), Ok(fix42::Side::Sell));
+    assert_eq!(msg.fv(fix42::IOI_QLTY_IND), Ok(fix42::IoiQltyInd::High));
 }

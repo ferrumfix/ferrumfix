@@ -81,6 +81,27 @@ use rust_decimal::Decimal;
 use std::convert::TryInto;
 use std::str::FromStr;
 
+pub trait SubDataField<'a, T>
+where
+    Self: Sized,
+    T: DataField<'a>,
+{
+    type Error: From<T::Error>;
+
+    fn convert(dtf: T) -> Result<Self, Self::Error>;
+}
+
+impl<'a, T> SubDataField<'a, T> for T
+where
+    T: DataField<'a>,
+{
+    type Error = <T as DataField<'a>>::Error;
+
+    fn convert(dtf: T) -> Result<Self, Self::Error> {
+        Ok(dtf)
+    }
+}
+
 /// A trait for serializing data directly into a [`Buffer`].
 pub trait DataField<'a>
 where
@@ -188,6 +209,14 @@ impl<'a> DataField<'a> for &'a [u8] {
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         Ok(data)
+    }
+}
+
+impl<'a> SubDataField<'a, &'a [u8]> for &'a str {
+    type Error = ();
+
+    fn convert(bytes: &'a [u8]) -> Result<Self, Self::Error> {
+        std::str::from_utf8(bytes).map_err(|_| ())
     }
 }
 

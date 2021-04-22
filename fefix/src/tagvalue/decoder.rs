@@ -1,7 +1,4 @@
-use super::{
-    Config, Configure, DecodeError, DecodeError as Error, FieldAccess, OptionalFieldError,
-    RawDecoder, RawDecoderBuffered, RawFrame,
-};
+use super::{Config, Configure, DecodeError, DecodeError as Error, FieldAccess, Fv, OptionalFieldError, RawDecoder, RawDecoderBuffered, RawFrame};
 use crate::fields::fix44 as fields;
 use crate::{dtf, dtf::DataField, fields::FieldDef, DataType, Dictionary};
 use fnv::FnvHashMap;
@@ -391,15 +388,15 @@ impl<'a> Message<'a> {
         })
     }
 
-    pub fn field(&self, tag: u32) -> Option<FieldRef> {
-        let context = Context::top_level(tag);
-        Some(FieldRef {
-            message: self.clone(),
-            field: self.builder.fields.get(&context)?,
-        })
-    }
+    //pub fn field(&self, tag: u32) -> Option<FieldRef> {
+    //    let context = Context::top_level(tag);
+    //    Some(FieldRef {
+    //        message: self.clone(),
+    //        field: self.builder.fields.get(&context)?,
+    //    })
+    //}
 
-    pub fn field_ref<'b, T>(
+    fn field_ref_simple<'b, T>(
         &'b self,
         field_def: &FieldDef<'b, T>,
     ) -> Result<T, OptionalFieldError<<T as dtf::DataField<'b>>::Error>>
@@ -419,6 +416,24 @@ impl<'a> Message<'a> {
             .and_then(|bytes| {
                 T::deserialize_lossy(bytes).map_err(|err| OptionalFieldError::Invalid(err))
             })
+    }
+
+    pub fn field_ref<'b, T, S>(
+        &'b self,
+        field_def: &FieldDef<'b, T>,
+    ) -> Result<S, OptionalFieldError<<S as dtf::SubDataField<'b, T>>::Error>>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>,
+        S: dtf::SubDataField<'b, T>,
+    {
+        match self.field_ref_simple(field_def) {
+            Ok(dtf) => S::convert(dtf).map_err(|err| OptionalFieldError::Invalid(err)),
+            Err(OptionalFieldError::Invalid(err)) => {
+                Err(OptionalFieldError::Invalid(S::Error::from(err)))
+            }
+            Err(OptionalFieldError::Missing) => Err(OptionalFieldError::Missing),
+        }
     }
 
     pub fn field_ref_opt<'b, T>(
@@ -498,6 +513,22 @@ impl<'a> Message<'a> {
 
     pub fn f_test_indicator(&self) -> Option<bool> {
         self.field_as_bool(fields::TEST_MESSAGE_INDICATOR.tag())
+    }
+}
+
+impl<'a> Fv<'a> for Message<'a> {
+    type Key = u32;
+
+    fn fv_raw_with_key<'b>(&'b self, key: &Self::Key) -> Option<&'b [u8]> {
+        self.field_raw(*key)
+    }
+
+    fn fv_raw<'b, T>(&'b self, field: &FieldDef<'b, T>) -> Option<&'b [u8]>
+    where
+        'b: 'a,
+        T: dtf::DataField<'b>,
+    {
+        self.fv_raw_with_key(&field.tag())
     }
 }
 

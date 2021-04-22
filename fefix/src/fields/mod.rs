@@ -19,10 +19,9 @@ pub mod fix50sp2;
 #[rustfmt::skip]
 pub mod fixt11;
 
-use std::marker::PhantomData;
-
 use crate::dtf::DataField;
 use crate::DataType;
+use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
 pub struct FieldDef<'a, V>
