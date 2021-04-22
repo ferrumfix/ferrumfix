@@ -16,7 +16,7 @@ fn main() {
         fix44::HANDL_INST,
         fix44::HandlInst::AutomatedExecutionOrderPrivateNoBrokerIntervention,
     );
-    msg.set_fv(fix44::ORD_TYPE, fix44::OrdType::P);
+    msg.set_fv(fix44::ORD_TYPE, fix44::OrdType::Limit);
     msg.set_fv(fix44::PRICE, dec!(150.08));
     msg.set_fv(fix44::SIDE, fix44::Side::Buy);
     msg.set_fv(fix44::TIME_IN_FORCE, fix44::TimeInForce::Day);

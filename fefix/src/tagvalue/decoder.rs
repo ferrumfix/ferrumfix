@@ -1,9 +1,10 @@
 use super::{
-    Config, Configure, DecodeError, DecodeError as Error, FieldAccess, Fv, OptionalFieldError,
-    RawDecoder, RawDecoderBuffered, RawFrame,
+    Config, Configure, DecodeError, DecodeError as Error, FieldAccess, Fv, RawDecoder,
+    RawDecoderBuffered, RawFrame,
 };
 use crate::fix44;
 use crate::{dtf, dtf::DataField, DataType, Dictionary, FieldDef};
+use crate::{OptError, OptResult};
 use fnv::FnvHashMap;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -399,10 +400,7 @@ impl<'a> Message<'a> {
     //    })
     //}
 
-    fn field_ref_simple<'b, T>(
-        &'b self,
-        field_def: &FieldDef<'b, T>,
-    ) -> Result<T, OptionalFieldError<<T as dtf::DataField<'b>>::Error>>
+    fn field_ref_simple<'b, T>(&'b self, field_def: &FieldDef<'b, T>) -> OptResult<T, T::Error>
     where
         'b: 'a,
         T: dtf::DataField<'b>,
@@ -414,28 +412,21 @@ impl<'a> Message<'a> {
         self.builder
             .fields
             .get(&context)
-            .ok_or(OptionalFieldError::Missing)
+            .ok_or(OptError::None)
             .map(|field| &self.bytes[field.range.clone()])
-            .and_then(|bytes| {
-                T::deserialize_lossy(bytes).map_err(|err| OptionalFieldError::Invalid(err))
-            })
+            .and_then(|bytes| T::deserialize_lossy(bytes).map_err(|err| OptError::Other(err)))
     }
 
-    pub fn field_ref<'b, T, S>(
-        &'b self,
-        field_def: &FieldDef<'b, T>,
-    ) -> Result<S, OptionalFieldError<<S as dtf::SubDataField<'b, T>>::Error>>
+    pub fn field_ref<'b, T, S>(&'b self, field_def: &FieldDef<'b, T>) -> OptResult<S, S::Error>
     where
         'b: 'a,
         T: dtf::DataField<'b>,
         S: dtf::SubDataField<'b, T>,
     {
         match self.field_ref_simple(field_def) {
-            Ok(dtf) => S::convert(dtf).map_err(|err| OptionalFieldError::Invalid(err)),
-            Err(OptionalFieldError::Invalid(err)) => {
-                Err(OptionalFieldError::Invalid(S::Error::from(err)))
-            }
-            Err(OptionalFieldError::Missing) => Err(OptionalFieldError::Missing),
+            Ok(dtf) => S::convert(dtf).map_err(|err| OptError::Other(err)),
+            Err(OptError::Other(err)) => Err(OptError::Other(S::Error::from(err))),
+            Err(OptError::None) => Err(OptError::None),
         }
     }
 

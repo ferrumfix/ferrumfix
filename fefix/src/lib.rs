@@ -76,11 +76,9 @@ pub mod fixs;
 pub mod json;
 pub mod models;
 pub mod msgs;
-mod msgtypemap;
 mod quickfix_specs;
 pub mod session;
 pub mod sofh;
-mod tagmap;
 pub mod tagvalue;
 
 #[rustfmt::skip]
@@ -106,10 +104,8 @@ pub use app_version::AppVersion;
 pub use buffer::Buffer;
 pub use data_type::DataType;
 pub use dictionary::Dictionary;
-pub use fefix_derive::*;
 pub use models::{FieldsIter, FixFieldAccess, FixFieldsIter, FixMessage};
 pub use quickfix_specs::quickfix_spec;
-pub use tagmap::TagMap;
 
 pub use dtf::DataField;
 pub use fefix_derive::DataField;
@@ -162,4 +158,14 @@ where
     pub fn data_type(&self) -> DataType {
         self.data_type
     }
+}
+
+/// Wrapper type for dealing with `Result<None, ...>` as errors.
+pub type OptResult<T, E> = Result<T, OptError<E>>;
+
+/// The error variant of [`OptResult`].
+#[derive(Clone, Debug, PartialEq)]
+pub enum OptError<E> {
+    None,
+    Other(E),
 }

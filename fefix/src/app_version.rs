@@ -73,6 +73,42 @@ impl AppVersion {
             _ => return None,
         })
     }
+
+    pub fn standard(&self) -> &str {
+        if let Self::Fixt11 = self {
+            "FIXT"
+        } else {
+            "FIX"
+        }
+    }
+
+    pub fn major(&self) -> u32 {
+        match self {
+            Self::Fix40 => 4,
+            Self::Fix41 => 4,
+            Self::Fix42 => 4,
+            Self::Fix43 => 4,
+            Self::Fix44 => 4,
+            Self::Fix50 => 5,
+            Self::Fix50SP1 => 5,
+            Self::Fix50SP2 => 5,
+            Self::Fixt11 => 1,
+        }
+    }
+
+    pub fn minor(&self) -> u32 {
+        match self {
+            Self::Fix40 => 0,
+            Self::Fix41 => 1,
+            Self::Fix42 => 2,
+            Self::Fix43 => 3,
+            Self::Fix44 => 4,
+            Self::Fix50 => 0,
+            Self::Fix50SP1 => 0,
+            Self::Fix50SP2 => 0,
+            Self::Fixt11 => 1,
+        }
+    }
 }
 
 impl fmt::Display for AppVersion {

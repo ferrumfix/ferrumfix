@@ -5,7 +5,7 @@
 
 use super::dtf;
 use super::FieldDef;
-use crate::DataField;
+use crate::{DataField, OptError, OptResult};
 use std::fmt;
 use std::fmt::Debug;
 use std::io;
@@ -18,10 +18,7 @@ mod raw_decoder;
 mod utils;
 
 pub use config::{Config, Configure};
-pub use decoder::{
-    Decoder, DecoderBuffered, GroupRef, GroupRefIter, Message, MessageBuilder, MessageGroup,
-    MessageGroupEntry,
-};
+pub use decoder::{Decoder, DecoderBuffered, Message, MessageGroup, MessageGroupEntry};
 pub use encoder::{Encoder, EncoderHandle};
 pub use field_access::FieldAccess;
 pub use raw_decoder::{RawDecoder, RawDecoderBuffered, RawFrame};
@@ -33,12 +30,6 @@ pub enum DecodeError {
     /// Invalid FIX message syntax.
     Invalid,
     CheckSum,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum OptionalFieldError<E> {
-    Missing,
-    Invalid(E),
 }
 
 impl fmt::Display for DecodeError {
@@ -81,12 +72,10 @@ pub trait FvWrite<'a> {
 
     fn set_fv_with_key<'b, T>(&'b mut self, key: &Self::Key, value: T)
     where
-        'b: 'a,
         T: DataField<'b>;
 
     fn set_fv<'b, T, S>(&'b mut self, field: &FieldDef<'b, T>, value: S)
     where
-        'b: 'a,
         T: DataField<'b>,
         S: DataField<'b>;
 }
@@ -114,7 +103,7 @@ pub trait Fv<'a> {
         })
     }
 
-    fn fv<'b, T, S>(&'b self, field: &FieldDef<'b, T>) -> Result<S, OptionalFieldError<S::Error>>
+    fn fv<'b, T, S>(&'b self, field: &FieldDef<'b, T>) -> OptResult<S, S::Error>
     where
         'b: 'a,
         T: dtf::DataField<'b>,
@@ -122,8 +111,8 @@ pub trait Fv<'a> {
     {
         match self.fv_opt(field) {
             Some(Ok(x)) => Ok(x),
-            Some(Err(err)) => Err(OptionalFieldError::Invalid(err)),
-            None => Err(OptionalFieldError::Missing),
+            Some(Err(err)) => Err(OptError::Other(err)),
+            None => Err(OptError::None),
         }
     }
 
@@ -140,7 +129,7 @@ pub trait Fv<'a> {
             })
     }
 
-    fn fvl<'b, T, S>(&'b self, field: &FieldDef<'b, T>) -> Result<S, OptionalFieldError<S::Error>>
+    fn fvl<'b, T, S>(&'b self, field: &FieldDef<'b, T>) -> Result<S, OptError<S::Error>>
     where
         'b: 'a,
         T: dtf::DataField<'b>,
@@ -148,8 +137,8 @@ pub trait Fv<'a> {
     {
         match self.fvl_opt(field) {
             Some(Ok(x)) => Ok(x),
-            Some(Err(err)) => Err(OptionalFieldError::Invalid(err)),
-            None => Err(OptionalFieldError::Missing),
+            Some(Err(err)) => Err(OptError::Other(err)),
+            None => Err(OptError::None),
         }
     }
 }

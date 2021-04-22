@@ -116,16 +116,16 @@ where
     C: Configure,
 {
     /// Adds a `field` with a `value` to the current message.
-    pub fn set<T>(&mut self, field: &FieldDef<'a, T>, value: T)
+    pub fn set<'b, T>(&mut self, field: &FieldDef<'b, T>, value: T)
     where
-        T: DataField<'a>,
+        T: DataField<'b>,
     {
         self.set_any(field.tag(), value)
     }
 
-    pub fn set_any<T>(&mut self, tag: u32, value: T)
+    pub fn set_any<'b, T>(&mut self, tag: u32, value: T)
     where
-        T: DataField<'a>,
+        T: DataField<'b>,
     {
         tag.serialize(&mut self.raw_encoder.buffer);
         self.raw_encoder.buffer.extend_from_slice(b"=" as &[u8]);
@@ -182,7 +182,6 @@ where
 
     fn set_fv_with_key<'b, T>(&'b mut self, key: &Self::Key, value: T)
     where
-        'b: 'a,
         T: DataField<'b>,
     {
         self.set_any(*key, value);
@@ -190,7 +189,6 @@ where
 
     fn set_fv<'b, T, S>(&'b mut self, field: &FieldDef<'b, T>, value: S)
     where
-        'b: 'a,
         T: DataField<'b>,
         S: DataField<'b>,
     {

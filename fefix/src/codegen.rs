@@ -85,13 +85,14 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
             format!(
                 indoc!(
                     r#"
-
+                    /// Field type variants for [`{struct_name}`].
                     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, DataField)]
                     pub enum {identifier} {{
                     {variants}
                     }}
                 "#
                 ),
+                struct_name = field.name().to_shouty_snake_case(),
                 identifier = field.name().to_camel_case(),
                 variants = variants.join("\n")
             ),
@@ -102,6 +103,8 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
     format!(
         indoc!(
             r#"
+            /// Field attributes for [`{name} <{tag}>`]
+            /// (https://www.onixs.biz/fix-dictionary/{major}.{minor}/tagnum_{tag}.html).
             pub const {identifier}: &FieldDef<'static, {type_param}> = &FieldDef{{
                 name: "{name}",
                 tag: {tag},
@@ -113,6 +116,8 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
             {enum_variants}
             "#
         ),
+        major = "4",
+        minor = "4",
         identifier = name,
         type_param = suggested_type(
             field.tag(),
@@ -137,6 +142,8 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
     let code = format!(
         indoc!(
             r#"
+            //! Field and message definitions for {version}.
+
             #![allow(dead_code)]
 
             {notice}
@@ -149,6 +156,7 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
             {field_defs}
             "#
         ),
+        version = dict.get_version(),
         notice = generated_code_notice(),
         import_data_field = if fefix_path == "fefix" {
             "use fefix::DataField;"
