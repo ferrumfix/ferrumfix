@@ -76,7 +76,7 @@ pub use tz::Tz;
 pub use tz_time::TzTime;
 pub use tz_timestamp::TzTimestamp;
 
-use crate::Buffer;
+use crate::{Buffer, TagU16};
 use rust_decimal::Decimal;
 use std::convert::TryInto;
 use std::str::FromStr;
@@ -251,6 +251,36 @@ impl<'a, const N: usize> DataField<'a> for &'a [u8; N] {
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         data.try_into().map_err(|_| ())
+    }
+}
+
+impl<'a> DataField<'a> for TagU16 {
+    type Error = error::Int;
+    type SerializeSettings = ();
+
+    fn serialize<B>(&self, buffer: &mut B) -> usize
+    where
+        B: Buffer,
+    {
+        let s = self.to_string();
+        buffer.extend_from_slice(s.as_bytes());
+        s.len()
+    }
+
+    fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
+        let s = std::str::from_utf8(data).map_err(|_| Self::Error::InvalidUtf8)?;
+        s.parse().map_err(|_| Self::Error::Other)
+    }
+
+    fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
+        fn ascii_digit_to_u16(digit: u8) -> u16 {
+            (digit as u16).wrapping_sub(b'0' as u16)
+        }
+        let mut n = 0u16;
+        for byte in data.iter().copied() {
+            n = n.wrapping_mul(10).wrapping_add(ascii_digit_to_u16(byte));
+        }
+        TagU16::new(n).ok_or(Self::Error::Other)
     }
 }
 

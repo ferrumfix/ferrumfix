@@ -2,6 +2,7 @@
 
 use super::data_type::DataType;
 use super::dictionary::{Dictionary, Field, LayoutItem, LayoutItemKind, Message};
+use super::TagU16;
 use heck::{CamelCase, ShoutySnakeCase, SnakeCase};
 use indoc::indoc;
 
@@ -109,7 +110,7 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
             /// (https://www.onixs.biz/fix-dictionary/{major}.{minor}/tagnum_{tag}.html).
             pub const {identifier}: &FieldDef<'static, {type_param}> = &FieldDef{{
                 name: "{name}",
-                tag: {tag},
+                tag: unsafe {{ TagU16::new_unchecked({tag}) }},
                 is_group_leader: {group},
                 data_type: DataType::{data_type},
                 phantom: PhantomData,
@@ -150,7 +151,7 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
 
             {notice}
 
-            use {fefix_path}::{{FieldDef, FieldLocation}};
+            use {fefix_path}::{{FieldDef, FieldLocation, TagU16}};
             use {fefix_path}::{{DataType, Buffer}};
             {import_data_field}
             use std::marker::PhantomData;
@@ -172,7 +173,7 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
 }
 
 fn suggested_type(
-    tag: u32,
+    tag: TagU16,
     data_type: DataType,
     enum_type_name: Option<String>,
     fefix_path: &str,
@@ -180,7 +181,7 @@ fn suggested_type(
     if let Some(name) = enum_type_name {
         return name;
     }
-    if tag == 10 {
+    if tag.get() == 10 {
         return format!("{}::dtf::CheckSum", fefix_path);
     }
     if data_type.base_type() == DataType::Float {
@@ -207,8 +208,8 @@ fn suggested_type(
     }
 }
 
-fn suggested_type_with_lifetime(tag: u32, data_type: DataType) -> &'static str {
-    if tag == 10 {
+fn suggested_type_with_lifetime(tag: TagU16, data_type: DataType) -> &'static str {
+    if tag.get() == 10 {
         return "crate::dtf::CheckSum";
     }
     if data_type.base_type() == DataType::Float {

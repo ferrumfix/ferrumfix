@@ -117,7 +117,9 @@ pub extern crate openssl;
 #[cfg(not(expose_openssl))]
 pub(crate) extern crate openssl;
 
-use std::marker::PhantomData;
+use std::{marker::PhantomData, num::NonZeroU16};
+
+pub type TagU16 = NonZeroU16;
 
 #[derive(Debug, Clone)]
 pub struct FieldDef<'a, V>
@@ -125,7 +127,7 @@ where
     V: DataField<'a>,
 {
     pub name: &'a str,
-    pub tag: u32,
+    pub tag: TagU16,
     pub is_group_leader: bool,
     pub data_type: DataType,
     pub location: FieldLocation,
@@ -146,7 +148,7 @@ where
     V: DataField<'a>,
 {
     /// Returns the numeric tag associated with `self`.
-    pub fn tag(&self) -> u32 {
+    pub fn tag(&self) -> TagU16 {
         self.tag
     }
 

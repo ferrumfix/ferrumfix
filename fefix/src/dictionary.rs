@@ -2,6 +2,7 @@
 
 use self::symbol_table::{Key, KeyRef, SymbolTable, SymbolTableIndex};
 use super::AppVersion;
+use super::TagU16;
 use super::{quickfix_spec, DataType};
 use fnv::FnvHashMap;
 use quickfix::{ParseDictionaryError, QuickFixReader};
@@ -708,8 +709,8 @@ impl<'a> Field<'a> {
 
     /// Returns the numeric tag of `self`. Field tags are unique across each FIX
     /// [`Dictionary`].
-    pub fn tag(&self) -> u32 {
-        self.1.tag
+    pub fn tag(&self) -> TagU16 {
+        TagU16::new(self.1.tag as u16).unwrap()
     }
 
     pub fn enums(&self) -> Option<impl Iterator<Item = FieldEnum>> {
@@ -878,7 +879,7 @@ impl<'a> Message<'a> {
         &self.1.description
     }
 
-    pub fn group_info(&self, num_in_group_tag: u32) -> Option<u32> {
+    pub fn group_info(&self, num_in_group_tag: TagU16) -> Option<TagU16> {
         self.layout().find_map(|layout_item| {
             if let LayoutItemKind::Group(field, items) = layout_item.kind() {
                 if field.tag() == num_in_group_tag {

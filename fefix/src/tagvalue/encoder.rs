@@ -3,6 +3,7 @@ use crate::buffer::Buffer;
 use crate::dtf::{CheckSum, DataField};
 use crate::fixt11;
 use crate::FieldDef;
+use crate::TagU16;
 use std::ops::Range;
 
 /// A buffered, content-agnostic FIX encoder.
@@ -123,7 +124,7 @@ where
         self.set_any(field.tag(), value)
     }
 
-    pub fn set_any<'b, T>(&mut self, tag: u32, value: T)
+    pub fn set_any<'b, T>(&mut self, tag: TagU16, value: T)
     where
         T: DataField<'b>,
     {
@@ -178,7 +179,7 @@ where
     B: Buffer,
     C: Configure,
 {
-    type Key = u32;
+    type Key = TagU16;
 
     fn set_fv_with_key<'b, T>(&'b mut self, key: &Self::Key, value: T)
     where

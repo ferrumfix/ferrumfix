@@ -13,12 +13,14 @@ pub trait Configure: Clone + Default {
     /// ASCII 0x1 (SOH) is the default separator character.
     ///
     /// This setting is relevant for both encoding and decoding operations.
+    #[inline]
     fn separator(&self) -> u8 {
         SOH
     }
 
     /// The maximum allowed size for any single FIX message. No restrictions are
     /// imposed when it is `None`.
+    #[inline]
     fn max_message_size(&self) -> Option<usize> {
         Some(DEFAULT_MAX_MESSAGE_SIZE)
     }
@@ -26,7 +28,22 @@ pub trait Configure: Clone + Default {
     /// Determines wheather or not `CheckSum(10)` should be verified.
     ///
     /// This setting has no effect when encoding FIX messages.
+    #[inline]
     fn verify_checksum(&self) -> bool {
+        true
+    }
+
+    /// Determines wheather or not the decoder needs to have access to
+    /// associative FIX fields.
+    #[inline]
+    fn should_decode_associative(&self) -> bool {
+        true
+    }
+
+    /// Determines wheather or not the decoder needs to have access to
+    /// sequential FIX fields.
+    #[inline]
+    fn should_decode_sequential(&self) -> bool {
         true
     }
 }
@@ -37,6 +54,8 @@ pub struct Config {
     separator: u8,
     max_message_size: Option<usize>,
     verify_checksum: bool,
+    should_decode_associative: bool,
+    should_decode_sequential: bool,
 }
 
 impl Config {
@@ -70,7 +89,7 @@ impl Config {
         self
     }
 
-    /// Turns on or off `ChekSum(10)` verification. On by default.
+    /// Turns on or off `CheckSum <10>` verification. On by default.
     ///
     /// # Examples
     ///
@@ -90,19 +109,49 @@ impl Config {
         self.verify_checksum = verify;
         self
     }
+
+    /// Enables or disables random access of fields within a
+    /// [`Message`](super::Message). When this setting is turned off fields can
+    /// only be accessed iteratively.
+    ///
+    /// Enabled by default.
+    pub fn set_decode_assoc(&mut self, should: bool) {
+        self.should_decode_associative = should;
+    }
+
+    /// Enables or disables iterative access of fields within a
+    /// [`Message`](super::Message).
+    ///
+    /// Enabled by default.
+    pub fn set_decode_seq(&mut self, should: bool) {
+        self.should_decode_sequential = should;
+    }
 }
 
 impl Configure for Config {
+    #[inline]
     fn separator(&self) -> u8 {
         self.separator
     }
 
+    #[inline]
     fn verify_checksum(&self) -> bool {
         self.verify_checksum
     }
 
+    #[inline]
     fn max_message_size(&self) -> Option<usize> {
         self.max_message_size
+    }
+
+    #[inline]
+    fn should_decode_associative(&self) -> bool {
+        self.should_decode_associative
+    }
+
+    #[inline]
+    fn should_decode_sequential(&self) -> bool {
+        self.should_decode_sequential
     }
 }
 
@@ -112,6 +161,8 @@ impl Default for Config {
             max_message_size: Some(DEFAULT_MAX_MESSAGE_SIZE),
             separator: SOH,
             verify_checksum: true,
+            should_decode_associative: true,
+            should_decode_sequential: true,
         }
     }
 }

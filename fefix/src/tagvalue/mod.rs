@@ -141,4 +141,15 @@ pub trait Fv<'a> {
             None => Err(OptError::None),
         }
     }
+
+    fn fv_with_key<'b, T>(&'b self, key: &Self::Key) -> OptResult<T, T::Error>
+    where
+        T: dtf::DataField<'b>,
+    {
+        match self.fv_raw_with_key(key).map(|raw| T::deserialize(raw)) {
+            Some(Ok(x)) => Ok(x),
+            Some(Err(e)) => Err(OptError::Other(e)),
+            None => Err(OptError::None),
+        }
+    }
 }

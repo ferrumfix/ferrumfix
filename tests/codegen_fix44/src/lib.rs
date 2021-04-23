@@ -9,7 +9,7 @@ mod tests {
     #[test]
     fn info_about_begin_string_field_is_correct() {
         assert_eq!(fields::BEGIN_STRING.name(), "BeginString");
-        assert_eq!(fields::BEGIN_STRING.tag(), 8);
+        assert_eq!(fields::BEGIN_STRING.tag().get(), 8);
         assert_eq!(fields::BEGIN_STRING.data_type(), DataType::String);
     }
 }

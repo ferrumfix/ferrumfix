@@ -13,3 +13,7 @@ pub mod quickfix_specs;
 pub use app_version::AppVersion;
 pub use data_type::DataType;
 pub use quickfix_specs::quickfix_spec;
+
+use std::num::NonZeroU16;
+
+pub type TagU16 = NonZeroU16;
