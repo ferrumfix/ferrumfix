@@ -66,6 +66,7 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
                 format!(
                     indoc!(
                         r#"
+                        {indentation}/// {doc}
                         {indentation}#[fefix(variant = "{variant}")]
                         {indentation}{}{},"#
                     ),
@@ -75,6 +76,7 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
                         ""
                     },
                     e.description().to_camel_case(),
+                    doc = format!("Field variant '{}'.", e.value()),
                     variant = e.value(),
                     indentation = "    ",
                 )

@@ -23,7 +23,7 @@ impl Timestamp {
             return None;
         }
         let date = Date::deserialize(&data[0..8]).ok()?;
-        let time = Time::parse(&data[9..])?;
+        let time = Time::deserialize(&data[9..]).ok()?;
         Some(Self::new(date, time))
     }
 

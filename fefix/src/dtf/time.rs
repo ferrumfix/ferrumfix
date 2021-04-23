@@ -48,35 +48,6 @@ impl Time {
         }
     }
 
-    pub fn parse(data: &[u8]) -> Option<Self> {
-        let mut milli = 0;
-        if data.len() == LEN_IN_BYTES_WITH_MILLI {
-            milli = ascii_digit_to_u32(data[9], 100)
-                + ascii_digit_to_u32(data[10], 10)
-                + ascii_digit_to_u32(data[11], 1);
-            if data[8] != b'.' {
-                return None;
-            }
-        } else if data.len() != LEN_IN_BYTES_NO_MILLI {
-            return None;
-        }
-        let digits_are_ok = data[2] == b':'
-            && data[5] == b':'
-            && is_ascii_digit(data[0])
-            && is_ascii_digit(data[1])
-            && is_ascii_digit(data[3])
-            && is_ascii_digit(data[4])
-            && is_ascii_digit(data[6])
-            && is_ascii_digit(data[7]);
-        if !digits_are_ok {
-            return None;
-        }
-        let hour = ascii_digit_to_u32(data[0], 10) + ascii_digit_to_u32(data[1], 1);
-        let minute = ascii_digit_to_u32(data[3], 10) + ascii_digit_to_u32(data[4], 1);
-        let second = ascii_digit_to_u32(data[6], 10) + ascii_digit_to_u32(data[7], 1);
-        Self::from_hmsm(hour, minute, second, milli)
-    }
-
     pub const fn to_bytes(&self) -> [u8; LEN_IN_BYTES_WITH_MILLI] {
         [
             (self.hour() / 10) as u8 + b'0',
@@ -174,7 +145,32 @@ impl<'a> DataField<'a> for Time {
     }
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        Self::parse(data).ok_or(Self::Error::Other)
+        let mut milli = 0;
+        if data.len() == LEN_IN_BYTES_WITH_MILLI {
+            milli = ascii_digit_to_u32(data[9], 100)
+                + ascii_digit_to_u32(data[10], 10)
+                + ascii_digit_to_u32(data[11], 1);
+            if data[8] != b'.' {
+                return Err(Self::Error::Other);
+            }
+        } else if data.len() != LEN_IN_BYTES_NO_MILLI {
+            return Err(Self::Error::Other);
+        }
+        let digits_are_ok = data[2] == b':'
+            && data[5] == b':'
+            && is_ascii_digit(data[0])
+            && is_ascii_digit(data[1])
+            && is_ascii_digit(data[3])
+            && is_ascii_digit(data[4])
+            && is_ascii_digit(data[6])
+            && is_ascii_digit(data[7]);
+        if !digits_are_ok {
+            return Err(Self::Error::Other);
+        }
+        let hour = ascii_digit_to_u32(data[0], 10) + ascii_digit_to_u32(data[1], 1);
+        let minute = ascii_digit_to_u32(data[3], 10) + ascii_digit_to_u32(data[4], 1);
+        let second = ascii_digit_to_u32(data[6], 10) + ascii_digit_to_u32(data[7], 1);
+        Self::from_hmsm(hour, minute, second, milli).ok_or(Self::Error::Other)
     }
 }
 
@@ -226,7 +222,7 @@ mod test {
     #[test]
     fn valid_test_cases() {
         for test_case in VALID_TEST_CASES {
-            let dtf = Time::parse(test_case.bytes).unwrap();
+            let dtf = Time::deserialize(test_case.bytes).unwrap();
             assert_eq!(dtf.hour(), test_case.hour);
             assert_eq!(dtf.minute(), test_case.minute);
             assert_eq!(dtf.second(), test_case.second);

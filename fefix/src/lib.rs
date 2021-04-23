@@ -55,6 +55,7 @@
 #![deny(
     unused,
     missing_debug_implementations,
+    //missing_docs,
     unstable_name_collisions,
     clippy::useless_conversion,
     clippy::missing_panics_docs,

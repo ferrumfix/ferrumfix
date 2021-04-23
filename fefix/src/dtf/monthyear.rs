@@ -20,32 +20,7 @@ pub struct MonthYear {
 }
 
 impl MonthYear {
-    pub fn parse(data: &[u8]) -> Option<Self> {
-        if !validate(data) {
-            None
-        } else {
-            Self::parse_speedy(data)
-        }
-    }
-
-    pub fn parse_speedy(data: &[u8]) -> Option<Self> {
-        let year = from_digit(data[0]) as u32 * 1000
-            + from_digit(data[1]) as u32 * 100
-            + from_digit(data[2]) as u32 * 10
-            + from_digit(data[3]) as u32;
-        let month = from_digit(data[4]) as u32 * 10 + from_digit(data[5]) as u32;
-        let day_or_week = if data[6] == b'w' {
-            DayOrWeek::Week(from_digit(data[7]) as u32)
-        } else {
-            DayOrWeek::Day(from_digit(data[6]) as u32 * 10 + from_digit(data[7]) as u32)
-        };
-        Some(Self {
-            year,
-            month,
-            day_or_week,
-        })
-    }
-
+    /// Converts `self` to a byte array.
     pub fn to_bytes(&self) -> [u8; LEN_IN_BYTES] {
         let day_or_week_1 = match self.day_or_week {
             DayOrWeek::Day(day) => (day / 10) as u8 + b'0',
@@ -169,7 +144,29 @@ impl<'a> DataField<'a> for MonthYear {
     }
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        Self::parse(data).ok_or(Self::Error::Other)
+        if validate(data) {
+            Self::deserialize_lossy(data)
+        } else {
+            Err(Self::Error::Other)
+        }
+    }
+
+    fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
+        let year = from_digit(data[0]) as u32 * 1000
+            + from_digit(data[1]) as u32 * 100
+            + from_digit(data[2]) as u32 * 10
+            + from_digit(data[3]) as u32;
+        let month = from_digit(data[4]) as u32 * 10 + from_digit(data[5]) as u32;
+        let day_or_week = if data[6] == b'w' {
+            DayOrWeek::Week(from_digit(data[7]) as u32)
+        } else {
+            DayOrWeek::Day(from_digit(data[6]) as u32 * 10 + from_digit(data[7]) as u32)
+        };
+        Ok(Self {
+            year,
+            month,
+            day_or_week,
+        })
     }
 }
 

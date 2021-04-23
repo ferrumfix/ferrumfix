@@ -36,6 +36,12 @@ where
     /// necessary.
     fn extend_from_slice(&mut self, extend: &[u8]);
 
+    /// Resizes this [`Buffer`] in-place so that its new `len()` is equal to
+    /// `new_len`.
+    ///
+    /// If `new_len` is greater than `len()`, `self` is extended by the difference,
+    /// with each additional slot filled with `filler`. If `new_len` is less than `len()`,
+    /// `self` is simply truncated.
     fn resize(&mut self, new_len: usize, filler: u8) {
         for _ in 0..new_len - self.as_slice().len() {
             self.extend_from_slice(&[filler]);

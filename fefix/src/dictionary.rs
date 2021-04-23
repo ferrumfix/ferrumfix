@@ -570,13 +570,17 @@ impl<'a> Component<'a> {
     }
 }
 
-// FIXME: this is FIXML-specific stuff.
+/// Component type (FIXML-specific information).
 #[derive(Clone, Debug, PartialEq)]
 #[allow(dead_code)]
 pub enum ComponentType {
+    /// A repeating block.
     BlockRepeating,
+    /// A non-repeating block.
     Block,
+    /// An implicit block.
     ImplicitBlockRepeating,
+    /// An implicit non-repeating block.
     ImplicitBlock,
     OptimisedBlockRepeating,
     OptimisedImplicitBlockRepeating,

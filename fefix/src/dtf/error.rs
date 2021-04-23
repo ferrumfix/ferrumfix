@@ -1,3 +1,5 @@
+//! Error types for [`DataField`](super::DataField) implementors.
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Decimal {
     NotUtf8,

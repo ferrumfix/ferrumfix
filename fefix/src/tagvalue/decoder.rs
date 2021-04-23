@@ -718,7 +718,7 @@ impl<'a> FieldAccess<()> for FieldRef<'a> {
     }
 
     fn as_time(&self) -> Result<dtf::Time, ()> {
-        Ok(dtf::Time::parse(self.raw()?).ok_or(())?)
+        dtf::Time::deserialize(self.raw()?).map_err(|_| ())
     }
 
     fn as_float(&self) -> Result<(), ()> {
@@ -731,7 +731,7 @@ impl<'a> FieldAccess<()> for FieldRef<'a> {
 
     fn as_month_year(&self) -> Result<dtf::MonthYear, ()> {
         let data = self.raw()?;
-        dtf::MonthYear::parse(data).ok_or(())
+        dtf::MonthYear::deserialize(data).map_err(|_| ())
     }
 }
 
