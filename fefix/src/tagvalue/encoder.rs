@@ -1,7 +1,7 @@
 use super::{Config, Configure, FvWrite};
 use crate::buffer::Buffer;
 use crate::dtf::{CheckSum, DataField};
-use crate::fixt11;
+use crate::definitions::fixt11;
 use crate::FieldDef;
 use crate::TagU16;
 use std::ops::Range;

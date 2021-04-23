@@ -1,4 +1,4 @@
-use fefix::fix42;
+use fefix::definitions::fix42;
 use fefix::tagvalue::{Config, Decoder, Fv};
 use fefix::{AppVersion, Dictionary};
 

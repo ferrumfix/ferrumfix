@@ -3,9 +3,10 @@
 use strum::IntoEnumIterator;
 use strum_macros::{EnumIter, IntoStaticStr};
 
-/// Sum type for all possible FIX data types ever defined across all versions of the
-/// FIX protocol.
+/// Sum type for all possible FIX data types ever defined across all FIX
+/// application versions.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
+#[repr(u8)]
 #[non_exhaustive]
 pub enum DataType {
     /// Single character value, can include any alphanumeric character or

@@ -1,4 +1,4 @@
-use fefix::fix44;
+use fefix::definitions::fix44;
 use fefix::tagvalue::{Config, Encoder, FvWrite};
 use rust_decimal_macros::dec;
 

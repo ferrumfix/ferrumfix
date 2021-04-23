@@ -2,7 +2,7 @@ use super::{
     Config, Configure, DecodeError, DecodeError as Error, FieldAccess, Fv, RawDecoder,
     RawDecoderBuffered, RawFrame,
 };
-use crate::fix44;
+use crate::definitions::fix44;
 use crate::{dtf, dtf::DataField, DataType, Dictionary, FieldDef};
 use crate::{OptError, OptResult, TagU16};
 use std::collections::HashMap;
@@ -753,7 +753,7 @@ pub struct GroupRefIter<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{fix44, tagvalue::Config, AppVersion};
+    use crate::{definitions::fix44, tagvalue::Config, AppVersion};
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
