@@ -3,7 +3,7 @@
 use self::symbol_table::{Key, KeyRef, SymbolTable, SymbolTableIndex};
 use super::AppVersion;
 use super::TagU16;
-use super::{quickfix_spec, DataType};
+use super::{quickfix_spec, FixDataType};
 use fnv::FnvHashMap;
 use quickfix::{ParseDictionaryError, QuickFixReader};
 use std::fmt;
@@ -592,7 +592,7 @@ pub enum ComponentType {
 #[derive(Clone, Debug, PartialEq)]
 struct DatatypeData {
     /// **Primary key.** Identifier of the datatype.
-    datatype: DataType,
+    datatype: FixDataType,
     /// Human readable description of this Datatype.
     description: String,
     /// A string that contains examples values for a datatype
@@ -608,7 +608,7 @@ impl<'a> Datatype<'a> {
         self.1.datatype.name()
     }
 
-    pub fn basetype(&self) -> DataType {
+    pub fn basetype(&self) -> FixDataType {
         self.1.datatype
     }
 }
@@ -697,7 +697,7 @@ impl<'a> Field<'a> {
     }
 
     /// Returns the [`BaseType`] of `self`.
-    pub fn basetype(&self) -> DataType {
+    pub fn basetype(&self) -> FixDataType {
         self.data_type().basetype()
     }
 
@@ -1356,7 +1356,7 @@ mod quickfix {
             // The idenfier that QuickFIX uses for this type.
             let quickfix_name = node.attribute("type").unwrap();
             // Translate that into a real datatype.
-            DataType::from_quickfix_name(quickfix_name).unwrap()
+            FixDataType::from_quickfix_name(quickfix_name).unwrap()
         };
         // Get the official (not QuickFIX's) name of `datatype`.
         let name = datatype.name();

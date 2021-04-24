@@ -1,5 +1,5 @@
 const SOH: u8 = 0x1;
-const DEFAULT_MAX_MESSAGE_SIZE: usize = 65_536;
+const DEFAULT_MAX_MESSAGE_SIZE: usize = 0xffff;
 
 /// Collection of configuration options related to FIX encoding and decoding.
 ///
@@ -13,14 +13,14 @@ pub trait Configure: Clone + Default {
     /// ASCII 0x1 (SOH) is the default separator character.
     ///
     /// This setting is relevant for both encoding and decoding operations.
-    #[inline]
+    #[inline(always)]
     fn separator(&self) -> u8 {
         SOH
     }
 
     /// The maximum allowed size for any single FIX message. No restrictions are
     /// imposed when it is `None`.
-    #[inline]
+    #[inline(always)]
     fn max_message_size(&self) -> Option<usize> {
         Some(DEFAULT_MAX_MESSAGE_SIZE)
     }
@@ -28,21 +28,21 @@ pub trait Configure: Clone + Default {
     /// Determines wheather or not `CheckSum(10)` should be verified.
     ///
     /// This setting has no effect when encoding FIX messages.
-    #[inline]
+    #[inline(always)]
     fn verify_checksum(&self) -> bool {
         true
     }
 
     /// Determines wheather or not the decoder needs to have access to
     /// associative FIX fields.
-    #[inline]
+    #[inline(always)]
     fn should_decode_associative(&self) -> bool {
         true
     }
 
     /// Determines wheather or not the decoder needs to have access to
     /// sequential FIX fields.
-    #[inline]
+    #[inline(always)]
     fn should_decode_sequential(&self) -> bool {
         true
     }
@@ -129,27 +129,27 @@ impl Config {
 }
 
 impl Configure for Config {
-    #[inline]
+    #[inline(always)]
     fn separator(&self) -> u8 {
         self.separator
     }
 
-    #[inline]
+    #[inline(always)]
     fn verify_checksum(&self) -> bool {
         self.verify_checksum
     }
 
-    #[inline]
+    #[inline(always)]
     fn max_message_size(&self) -> Option<usize> {
         self.max_message_size
     }
 
-    #[inline]
+    #[inline(always)]
     fn should_decode_associative(&self) -> bool {
         self.should_decode_associative
     }
 
-    #[inline]
+    #[inline(always)]
     fn should_decode_sequential(&self) -> bool {
         self.should_decode_sequential
     }

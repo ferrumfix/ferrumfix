@@ -8,7 +8,7 @@ use strum_macros::{EnumIter, IntoStaticStr};
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
 #[repr(u8)]
 #[non_exhaustive]
-pub enum DataType {
+pub enum FixDataType {
     /// Single character value, can include any alphanumeric character or
     /// punctuation except the delimiter. All char fields are case sensitive
     /// (i.e. m != M). The following fields are based on char.
@@ -145,7 +145,7 @@ pub enum DataType {
     Country,
 }
 
-impl DataType {
+impl FixDataType {
     /// Compares `name` to the set of strings commonly used by QuickFIX's custom
     /// specification format and returns its associated [`DataType`] if a match
     /// was found. The query is case-insensitive.
@@ -163,38 +163,38 @@ impl DataType {
     pub fn from_quickfix_name(name: &str) -> Option<Self> {
         // https://github.com/quickfix/quickfix/blob/b6760f55ac6a46306b4e081bb13b65e6220ab02d/src/C%2B%2B/DataDictionary.cpp#L646-L680
         Some(match name.to_ascii_uppercase().as_str() {
-            "AMT" => DataType::Amt,
-            "BOOLEAN" => DataType::Boolean,
-            "CHAR" => DataType::Char,
-            "COUNTRY" => DataType::Country,
-            "CURRENCY" => DataType::Currency,
-            "DATA" => DataType::Data,
-            "DATE" => DataType::UtcDateOnly, // FIXME?
-            "DAYOFMONTH" => DataType::DayOfMonth,
-            "EXCHANGE" => DataType::Exchange,
-            "FLOAT" => DataType::Float,
-            "INT" => DataType::Int,
-            "LANGUAGE" => DataType::Language,
-            "LENGTH" => DataType::Int,
-            "LOCALMKTDATE" => DataType::LocalMktDate,
-            "MONTHYEAR" => DataType::MonthYear,
-            "MULTIPLECHARVALUE" | "MULTIPLEVALUESTRING" => DataType::MultipleCharValue,
-            "MULTIPLESTRINGVALUE" => DataType::MultipleStringValue,
-            "NUMINGROUP" => DataType::NumInGroup,
-            "PERCENTAGE" => DataType::Percentage,
-            "PRICE" => DataType::Price,
-            "PRICEOFFSET" => DataType::PriceOffset,
-            "QTY" => DataType::Qty,
-            "STRING" => DataType::String,
-            "TZTIMEONLY" => DataType::UtcTimeOnly,   // FIXME
-            "TZTIMESTAMP" => DataType::UtcTimestamp, // FIXME
-            "UTCDATE" => DataType::UtcDateOnly,
-            "UTCDATEONLY" => DataType::UtcDateOnly,
-            "UTCTIMEONLY" => DataType::UtcTimeOnly,
-            "UTCTIMESTAMP" => DataType::UtcTimestamp,
-            "SEQNUM" => DataType::Int,
-            "TIME" => DataType::UtcTimestamp,
-            "XMLDATA" => DataType::XmlData,
+            "AMT" => FixDataType::Amt,
+            "BOOLEAN" => FixDataType::Boolean,
+            "CHAR" => FixDataType::Char,
+            "COUNTRY" => FixDataType::Country,
+            "CURRENCY" => FixDataType::Currency,
+            "DATA" => FixDataType::Data,
+            "DATE" => FixDataType::UtcDateOnly, // FIXME?
+            "DAYOFMONTH" => FixDataType::DayOfMonth,
+            "EXCHANGE" => FixDataType::Exchange,
+            "FLOAT" => FixDataType::Float,
+            "INT" => FixDataType::Int,
+            "LANGUAGE" => FixDataType::Language,
+            "LENGTH" => FixDataType::Int,
+            "LOCALMKTDATE" => FixDataType::LocalMktDate,
+            "MONTHYEAR" => FixDataType::MonthYear,
+            "MULTIPLECHARVALUE" | "MULTIPLEVALUESTRING" => FixDataType::MultipleCharValue,
+            "MULTIPLESTRINGVALUE" => FixDataType::MultipleStringValue,
+            "NUMINGROUP" => FixDataType::NumInGroup,
+            "PERCENTAGE" => FixDataType::Percentage,
+            "PRICE" => FixDataType::Price,
+            "PRICEOFFSET" => FixDataType::PriceOffset,
+            "QTY" => FixDataType::Qty,
+            "STRING" => FixDataType::String,
+            "TZTIMEONLY" => FixDataType::UtcTimeOnly, // FIXME
+            "TZTIMESTAMP" => FixDataType::UtcTimestamp, // FIXME
+            "UTCDATE" => FixDataType::UtcDateOnly,
+            "UTCDATEONLY" => FixDataType::UtcDateOnly,
+            "UTCTIMEONLY" => FixDataType::UtcTimeOnly,
+            "UTCTIMESTAMP" => FixDataType::UtcTimestamp,
+            "SEQNUM" => FixDataType::Int,
+            "TIME" => FixDataType::UtcTimestamp,
+            "XMLDATA" => FixDataType::XmlData,
             _ => {
                 return None;
             }
@@ -204,34 +204,34 @@ impl DataType {
     /// Returns the name adopted by QuickFIX for `self`.
     pub fn to_quickfix_name(&self) -> &str {
         match self {
-            DataType::Int => "INT",
-            DataType::Length => "LENGTH",
-            DataType::Char => "CHAR",
-            DataType::Boolean => "BOOLEAN",
-            DataType::Float => "FLOAT",
-            DataType::Amt => "AMT",
-            DataType::Price => "PRICE",
-            DataType::PriceOffset => "PRICEOFFSET",
-            DataType::Qty => "QTY",
-            DataType::Percentage => "PERCENTAGE",
-            DataType::DayOfMonth => "DAYOFMONTH",
-            DataType::NumInGroup => "NUMINGROUP",
-            DataType::Language => "LANGUAGE",
-            DataType::SeqNum => "SEQNUM",
-            DataType::TagNum => "TAGNUM",
-            DataType::String => "STRING",
-            DataType::Data => "DATA",
-            DataType::MonthYear => "MONTHYEAR",
-            DataType::Currency => "CURRENCY",
-            DataType::Exchange => "EXCHANGE",
-            DataType::LocalMktDate => "LOCALMKTDATE",
-            DataType::MultipleStringValue => "MULTIPLESTRINGVALUE",
-            DataType::UtcTimeOnly => "UTCTIMEONLY",
-            DataType::UtcTimestamp => "UTCTIMESTAMP",
-            DataType::UtcDateOnly => "UTCDATEONLY",
-            DataType::Country => "COUNTRY",
-            DataType::MultipleCharValue => "MULTIPLECHARVALUE",
-            DataType::XmlData => "XMLDATA",
+            FixDataType::Int => "INT",
+            FixDataType::Length => "LENGTH",
+            FixDataType::Char => "CHAR",
+            FixDataType::Boolean => "BOOLEAN",
+            FixDataType::Float => "FLOAT",
+            FixDataType::Amt => "AMT",
+            FixDataType::Price => "PRICE",
+            FixDataType::PriceOffset => "PRICEOFFSET",
+            FixDataType::Qty => "QTY",
+            FixDataType::Percentage => "PERCENTAGE",
+            FixDataType::DayOfMonth => "DAYOFMONTH",
+            FixDataType::NumInGroup => "NUMINGROUP",
+            FixDataType::Language => "LANGUAGE",
+            FixDataType::SeqNum => "SEQNUM",
+            FixDataType::TagNum => "TAGNUM",
+            FixDataType::String => "STRING",
+            FixDataType::Data => "DATA",
+            FixDataType::MonthYear => "MONTHYEAR",
+            FixDataType::Currency => "CURRENCY",
+            FixDataType::Exchange => "EXCHANGE",
+            FixDataType::LocalMktDate => "LOCALMKTDATE",
+            FixDataType::MultipleStringValue => "MULTIPLESTRINGVALUE",
+            FixDataType::UtcTimeOnly => "UTCTIMEONLY",
+            FixDataType::UtcTimestamp => "UTCTIMESTAMP",
+            FixDataType::UtcDateOnly => "UTCDATEONLY",
+            FixDataType::Country => "COUNTRY",
+            FixDataType::MultipleCharValue => "MULTIPLECHARVALUE",
+            FixDataType::XmlData => "XMLDATA",
         }
     }
 
@@ -256,34 +256,34 @@ impl DataType {
         //    Why, you ask? Oh, you sweet summer child. You'll learn soon enough
         //    that nothing makes sense in FIX land.
         match self {
-            DataType::Int => "int",
-            DataType::Length => "Length",
-            DataType::Char => "char",
-            DataType::Boolean => "Boolean",
-            DataType::Float => "float",
-            DataType::Amt => "Amt",
-            DataType::Price => "Price",
-            DataType::PriceOffset => "PriceOffset",
-            DataType::Qty => "Qty",
-            DataType::Percentage => "Percentage",
-            DataType::DayOfMonth => "DayOfMonth",
-            DataType::NumInGroup => "NumInGroup",
-            DataType::Language => "Language",
-            DataType::SeqNum => "SeqNum",
-            DataType::TagNum => "TagNum",
-            DataType::String => "String",
-            DataType::Data => "data",
-            DataType::MonthYear => "MonthYear",
-            DataType::Currency => "Currency",
-            DataType::Exchange => "Exchange",
-            DataType::LocalMktDate => "LocalMktDate",
-            DataType::MultipleStringValue => "MultipleStringValue",
-            DataType::UtcTimeOnly => "UTCTimeOnly",
-            DataType::UtcTimestamp => "UTCTimestamp",
-            DataType::UtcDateOnly => "UTCDateOnly",
-            DataType::Country => "Country",
-            DataType::MultipleCharValue => "MultipleCharValue",
-            DataType::XmlData => "XMLData",
+            FixDataType::Int => "int",
+            FixDataType::Length => "Length",
+            FixDataType::Char => "char",
+            FixDataType::Boolean => "Boolean",
+            FixDataType::Float => "float",
+            FixDataType::Amt => "Amt",
+            FixDataType::Price => "Price",
+            FixDataType::PriceOffset => "PriceOffset",
+            FixDataType::Qty => "Qty",
+            FixDataType::Percentage => "Percentage",
+            FixDataType::DayOfMonth => "DayOfMonth",
+            FixDataType::NumInGroup => "NumInGroup",
+            FixDataType::Language => "Language",
+            FixDataType::SeqNum => "SeqNum",
+            FixDataType::TagNum => "TagNum",
+            FixDataType::String => "String",
+            FixDataType::Data => "data",
+            FixDataType::MonthYear => "MonthYear",
+            FixDataType::Currency => "Currency",
+            FixDataType::Exchange => "Exchange",
+            FixDataType::LocalMktDate => "LocalMktDate",
+            FixDataType::MultipleStringValue => "MultipleStringValue",
+            FixDataType::UtcTimeOnly => "UTCTimeOnly",
+            FixDataType::UtcTimestamp => "UTCTimestamp",
+            FixDataType::UtcDateOnly => "UTCDateOnly",
+            FixDataType::Country => "Country",
+            FixDataType::MultipleCharValue => "MultipleCharValue",
+            FixDataType::XmlData => "XMLData",
         }
     }
 
@@ -351,8 +351,8 @@ mod test {
 
     #[test]
     fn iter_all_unique() {
-        let as_vec = DataType::iter_all().collect::<Vec<DataType>>();
-        let as_set = DataType::iter_all().collect::<HashSet<DataType>>();
+        let as_vec = FixDataType::iter_all().collect::<Vec<FixDataType>>();
+        let as_set = FixDataType::iter_all().collect::<HashSet<FixDataType>>();
         assert_eq!(as_vec.len(), as_set.len());
     }
 
@@ -361,15 +361,15 @@ mod test {
         // According to the official documentation, FIX has "about 20 data
         // types". Including recent revisions, we should well exceed that
         // number.
-        assert!(DataType::iter_all().count() > 20);
+        assert!(FixDataType::iter_all().count() > 20);
     }
 
     #[test]
     fn names_are_unique() {
-        let as_vec = DataType::iter_all()
+        let as_vec = FixDataType::iter_all()
             .map(|dt| dt.name())
             .collect::<Vec<&str>>();
-        let as_set = DataType::iter_all()
+        let as_set = FixDataType::iter_all()
             .map(|dt| dt.name())
             .collect::<HashSet<&str>>();
         assert_eq!(as_vec.len(), as_set.len());
@@ -377,7 +377,7 @@ mod test {
 
     #[test]
     fn base_type_is_itself() {
-        for dt in DataType::iter_all() {
+        for dt in FixDataType::iter_all() {
             if dt.is_base_type() {
                 assert_eq!(dt.base_type(), dt);
             } else {
@@ -388,7 +388,7 @@ mod test {
 
     #[test]
     fn base_type_is_actually_base_type() {
-        for dt in DataType::iter_all() {
+        for dt in FixDataType::iter_all() {
             assert!(dt.base_type().is_base_type());
         }
     }

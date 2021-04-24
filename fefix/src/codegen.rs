@@ -1,7 +1,7 @@
 //! Code generation utilities.
 
-use super::data_type::DataType;
 use super::dictionary::{Dictionary, Field, LayoutItem, LayoutItemKind, Message};
+use super::fix_data_type::FixDataType;
 use super::TagU16;
 use heck::{CamelCase, ShoutySnakeCase, SnakeCase};
 use indoc::indoc;
@@ -112,7 +112,7 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
                 name: "{name}",
                 tag: unsafe {{ TagU16::new_unchecked({tag}) }},
                 is_group_leader: {group},
-                data_type: DataType::{data_type},
+                data_type: FixDataType::{data_type},
                 phantom: PhantomData,
                 location: FieldLocation::Body,
             }};
@@ -132,7 +132,7 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
         tag = tag,
         enum_variants = enum_variants,
         group = field.name().ends_with("Len"),
-        data_type = <&'static str as From<DataType>>::from(field.data_type().basetype()),
+        data_type = <&'static str as From<FixDataType>>::from(field.data_type().basetype()),
     )
 }
 
@@ -152,7 +152,7 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
             {notice}
 
             use {fefix_path}::{{FieldDef, FieldLocation, TagU16}};
-            use {fefix_path}::{{DataType, Buffer}};
+            use {fefix_path}::{{FixDataType, Buffer}};
             {import_data_field}
             use std::marker::PhantomData;
 
@@ -174,7 +174,7 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
 
 fn suggested_type(
     tag: TagU16,
-    data_type: DataType,
+    data_type: FixDataType,
     enum_type_name: Option<String>,
     fefix_path: &str,
 ) -> String {
@@ -184,54 +184,54 @@ fn suggested_type(
     if tag.get() == 10 {
         return format!("{}::dtf::CheckSum", fefix_path);
     }
-    if data_type.base_type() == DataType::Float {
+    if data_type.base_type() == FixDataType::Float {
         return "rust_decimal::Decimal".to_string();
     }
     match data_type {
-        DataType::String => "&[u8]".to_string(),
-        DataType::Char => "u8".to_string(),
-        DataType::Boolean => "bool".to_string(),
-        DataType::Country => "&[u8; 2]".to_string(),
-        DataType::Currency => "&[u8; 3]".to_string(),
-        DataType::Exchange => "&[u8; 4]".to_string(),
-        DataType::Data => "&[u8]".to_string(),
-        DataType::Length => "usize".to_string(),
-        DataType::DayOfMonth => "u32".to_string(),
-        DataType::Int => "i64".to_string(),
-        DataType::Language => "&[u8; 2]".to_string(),
-        DataType::SeqNum => "u64".to_string(),
-        DataType::NumInGroup => "usize".to_string(),
-        DataType::UtcDateOnly => format!("{}::dtf::Date", fefix_path),
-        DataType::UtcTimeOnly => format!("{}::dtf::Time", fefix_path),
-        DataType::UtcTimestamp => format!("{}::dtf::Timestamp", fefix_path),
+        FixDataType::String => "&[u8]".to_string(),
+        FixDataType::Char => "u8".to_string(),
+        FixDataType::Boolean => "bool".to_string(),
+        FixDataType::Country => "&[u8; 2]".to_string(),
+        FixDataType::Currency => "&[u8; 3]".to_string(),
+        FixDataType::Exchange => "&[u8; 4]".to_string(),
+        FixDataType::Data => "&[u8]".to_string(),
+        FixDataType::Length => "usize".to_string(),
+        FixDataType::DayOfMonth => "u32".to_string(),
+        FixDataType::Int => "i64".to_string(),
+        FixDataType::Language => "&[u8; 2]".to_string(),
+        FixDataType::SeqNum => "u64".to_string(),
+        FixDataType::NumInGroup => "usize".to_string(),
+        FixDataType::UtcDateOnly => format!("{}::dtf::Date", fefix_path),
+        FixDataType::UtcTimeOnly => format!("{}::dtf::Time", fefix_path),
+        FixDataType::UtcTimestamp => format!("{}::dtf::Timestamp", fefix_path),
         _ => "&[u8]".to_string(), // TODO
     }
 }
 
-fn suggested_type_with_lifetime(tag: TagU16, data_type: DataType) -> &'static str {
+fn suggested_type_with_lifetime(tag: TagU16, data_type: FixDataType) -> &'static str {
     if tag.get() == 10 {
         return "crate::dtf::CheckSum";
     }
-    if data_type.base_type() == DataType::Float {
+    if data_type.base_type() == FixDataType::Float {
         return "rust_decimal::Decimal";
     }
     match data_type {
-        DataType::String => "&'a [u8]",
-        DataType::Char => "u8",
-        DataType::Boolean => "bool",
-        DataType::Country => "[u8; 2]",
-        DataType::Currency => "[u8; 3]",
-        DataType::Exchange => "[u8; 4]",
-        DataType::Data => "&'a [u8]",
-        DataType::Length => "usize",
-        DataType::DayOfMonth => "u32",
-        DataType::Int => "i64",
-        DataType::Language => "[u8; 2]",
-        DataType::SeqNum => "u64",
-        DataType::NumInGroup => "usize",
-        DataType::UtcDateOnly => "crate::dtf::Date",
-        DataType::UtcTimeOnly => "crate::dtf::Time",
-        DataType::UtcTimestamp => "crate::dtf::Timestamp",
+        FixDataType::String => "&'a [u8]",
+        FixDataType::Char => "u8",
+        FixDataType::Boolean => "bool",
+        FixDataType::Country => "[u8; 2]",
+        FixDataType::Currency => "[u8; 3]",
+        FixDataType::Exchange => "[u8; 4]",
+        FixDataType::Data => "&'a [u8]",
+        FixDataType::Length => "usize",
+        FixDataType::DayOfMonth => "u32",
+        FixDataType::Int => "i64",
+        FixDataType::Language => "[u8; 2]",
+        FixDataType::SeqNum => "u64",
+        FixDataType::NumInGroup => "usize",
+        FixDataType::UtcDateOnly => "crate::dtf::Date",
+        FixDataType::UtcTimeOnly => "crate::dtf::Time",
+        FixDataType::UtcTimestamp => "crate::dtf::Timestamp",
         _ => "&'a [u8]", // TODO
     }
 }

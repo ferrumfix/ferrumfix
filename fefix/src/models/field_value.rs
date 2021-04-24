@@ -1,4 +1,4 @@
-use crate::DataType;
+use crate::FixDataType;
 use std::collections::BTreeMap;
 use std::convert::TryInto;
 use std::fmt::{self, Write};
@@ -138,9 +138,9 @@ pub enum FieldValue<'a> {
 }
 
 impl<'a> FieldValue<'a> {
-    pub fn decode(dt: DataType, data: &[u8]) -> Option<Self> {
+    pub fn decode(dt: FixDataType, data: &[u8]) -> Option<Self> {
         match dt {
-            DataType::Int => {
+            FixDataType::Int => {
                 let mut n: i64 = 0;
                 for byte in data {
                     if *byte >= '0' as u8 && *byte <= '9' as u8 {
@@ -154,31 +154,33 @@ impl<'a> FieldValue<'a> {
                 }
                 Some(Self::int(n as i64))
             }
-            DataType::Char => Some(Self::char(data[0] as char)),
-            DataType::Boolean => Some(Self::bool(data[0] == 'Y' as u8)),
-            DataType::Country => {
+            FixDataType::Char => Some(Self::char(data[0] as char)),
+            FixDataType::Boolean => Some(Self::bool(data[0] == 'Y' as u8)),
+            FixDataType::Country => {
                 if data.len() != 2 {
                     None
                 } else {
                     Some(FieldValue::Country(Country(data.try_into().unwrap())))
                 }
             }
-            DataType::Exchange => Some(Self::Exchange(Exchange(
+            FixDataType::Exchange => Some(Self::Exchange(Exchange(
                 std::str::from_utf8(data).unwrap().to_string(),
             ))),
-            DataType::DayOfMonth => {
+            FixDataType::DayOfMonth => {
                 let n = str::parse::<u8>(std::str::from_utf8(data).unwrap()).unwrap();
                 Some(Self::day_of_month(n))
             }
-            DataType::SeqNum => {
+            FixDataType::SeqNum => {
                 let mut n: u64 = 0;
                 for byte in data.iter() {
                     n = n * 10 + (byte - '0' as u8) as u64;
                 }
                 Some(Self::seq_num(n))
             }
-            DataType::String => Some(Self::string(std::str::from_utf8(data).unwrap().to_string())),
-            DataType::XmlData => Some(FieldValue::XmlData(XmlData(
+            FixDataType::String => {
+                Some(Self::string(std::str::from_utf8(data).unwrap().to_string()))
+            }
+            FixDataType::XmlData => Some(FieldValue::XmlData(XmlData(
                 std::str::from_utf8(data).unwrap().to_string().into_bytes(),
             ))),
             _ => unimplemented!(),

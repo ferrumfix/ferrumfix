@@ -69,11 +69,11 @@ mod utils;
 mod app_version;
 mod buffer;
 pub mod codegen;
-mod data_type;
 pub mod definitions;
 pub mod dictionary;
 pub mod dtf;
 pub mod fast;
+mod fix_data_type;
 pub mod fixs;
 pub mod json;
 pub mod models;
@@ -84,8 +84,8 @@ pub mod tagvalue;
 
 pub use app_version::AppVersion;
 pub use buffer::Buffer;
-pub use data_type::DataType;
 pub use dictionary::Dictionary;
+pub use fix_data_type::FixDataType;
 pub use models::{FieldsIter, FixFieldAccess, FixFieldsIter, FixMessage};
 pub use quickfix_specs::quickfix_spec;
 
@@ -110,7 +110,7 @@ where
     pub name: &'a str,
     pub tag: TagU16,
     pub is_group_leader: bool,
-    pub data_type: DataType,
+    pub data_type: FixDataType,
     pub location: FieldLocation,
     pub phantom: PhantomData<V>,
 }
@@ -139,7 +139,7 @@ where
     }
 
     /// Returns the [`DataType`] of `self`.
-    pub fn data_type(&self) -> DataType {
+    pub fn data_type(&self) -> FixDataType {
         self.data_type
     }
 }

@@ -3,7 +3,7 @@ use super::{
     RawDecoderBuffered, RawFrame,
 };
 use crate::definitions::fix44;
-use crate::{dtf, dtf::DataField, DataType, Dictionary, FieldDef};
+use crate::{dtf, dtf::DataField, Dictionary, FieldDef, FixDataType};
 use crate::{OptError, OptResult, TagU16};
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -190,7 +190,7 @@ where
         self.builder
             .add_field(context, start, len, config_assoc, config_seq)
             .unwrap();
-        if entry.data_type() == DataType::NumInGroup {
+        if entry.data_type() == FixDataType::NumInGroup {
             self.is_beginning_group = true;
             let s = std::str::from_utf8(content).unwrap();
             let entries_count = str::parse::<u16>(s).unwrap();
@@ -288,12 +288,12 @@ where
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct TagLookupEntry {
-    data_type: DataType,
+    data_type: FixDataType,
     first_tag_of_group: TagU16,
 }
 
 impl TagLookupEntry {
-    pub fn data_type(&self) -> DataType {
+    pub fn data_type(&self) -> FixDataType {
         self.data_type
     }
 }
