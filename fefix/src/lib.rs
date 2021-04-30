@@ -69,7 +69,6 @@ mod utils;
 mod app_version;
 mod buffer;
 pub mod codegen;
-pub mod datatypes;
 pub mod definitions;
 pub mod dict;
 pub mod fast;
@@ -83,9 +82,9 @@ pub mod tagvalue;
 
 pub use app_version::AppVersion;
 pub use buffer::Buffer;
-pub use datatypes::DataType;
+pub use tagvalue::datatypes::FixFieldValue;
 pub use dict::Dictionary;
-pub use fefix_derive::DataType;
+pub use fefix_derive::FixFieldValue;
 pub use fix_data_type::FixDataType;
 
 #[cfg(expose_openssl)]

@@ -1,5 +1,5 @@
 use super::{Config, Configure, DecodeError};
-use crate::datatypes;
+use crate::tagvalue::datatypes;
 use crate::dict;
 use crate::dict::FieldLocation;
 use crate::dict::IsFieldDefinition;
@@ -61,7 +61,7 @@ impl<'a> MessageGroupEntry<'a> {
     where
         'b: 'a,
         F: dict::IsFieldDefinition,
-        T: datatypes::DataType<'b>,
+        T: datatypes::FixFieldValue<'b>,
     {
         None
     }
@@ -69,11 +69,11 @@ impl<'a> MessageGroupEntry<'a> {
     pub fn field_ref<'b, F, T>(
         &'b self,
         _field_def: &F,
-    ) -> Option<Result<T, <T as datatypes::DataType<'b>>::Error>>
+    ) -> Option<Result<T, <T as datatypes::FixFieldValue<'b>>::Error>>
     where
         'b: 'a,
         F: dict::IsFieldDefinition,
-        T: datatypes::DataType<'b>,
+        T: datatypes::FixFieldValue<'b>,
     {
         unimplemented!()
     }
@@ -98,7 +98,7 @@ impl<'a> Message<'a> {
     where
         'b: 'a,
         F: dict::IsFieldDefinition,
-        T: datatypes::DataType<'b>,
+        T: datatypes::FixFieldValue<'b>,
     {
         None
     }
@@ -106,11 +106,11 @@ impl<'a> Message<'a> {
     pub fn field_ref<'b, F, T>(
         &'b self,
         field_def: &F,
-    ) -> Option<Result<T, <T as datatypes::DataType<'b>>::Error>>
+    ) -> Option<Result<T, <T as datatypes::FixFieldValue<'b>>::Error>>
     where
         'b: 'a,
         F: dict::IsFieldDefinition,
-        T: datatypes::DataType<'b>,
+        T: datatypes::FixFieldValue<'b>,
     {
         self.internal.field_ref(field_def)
     }
@@ -236,11 +236,11 @@ impl<'a> MessageInternal<'a> {
     pub fn field_ref<'b, F, T>(
         &'b self,
         field_def: &F,
-    ) -> Option<Result<T, <T as datatypes::DataType<'b>>::Error>>
+    ) -> Option<Result<T, <T as datatypes::FixFieldValue<'b>>::Error>>
     where
         'b: 'a,
         F: IsFieldDefinition,
-        T: datatypes::DataType<'b>,
+        T: datatypes::FixFieldValue<'b>,
     {
         self.field_raw(field_def.name(), field_def.location())
             .map(|s| T::deserialize(s.as_bytes()))

@@ -80,7 +80,7 @@ use std::convert::TryInto;
 use std::str::FromStr;
 
 /// A trait for serializing data directly into a [`Buffer`].
-pub trait DataType<'a>
+pub trait FixFieldValue<'a>
 where
     Self: Sized,
 {
@@ -120,7 +120,7 @@ impl Padding {
 #[derive(Debug, Copy, Clone)]
 pub struct WithMilliseconds(pub bool);
 
-impl<'a> DataType<'a> for chrono::DateTime<chrono::Utc> {
+impl<'a> FixFieldValue<'a> for chrono::DateTime<chrono::Utc> {
     type Error = ();
     type SerializeSettings = WithMilliseconds;
 
@@ -163,7 +163,7 @@ impl<'a> DataType<'a> for chrono::DateTime<chrono::Utc> {
     }
 }
 
-impl<'a> DataType<'a> for Decimal {
+impl<'a> FixFieldValue<'a> for Decimal {
     type Error = error::Decimal;
     type SerializeSettings = ();
 
@@ -185,7 +185,7 @@ impl<'a> DataType<'a> for Decimal {
     }
 }
 
-impl<'a> DataType<'a> for bool {
+impl<'a> FixFieldValue<'a> for bool {
     type Error = error::Bool;
     type SerializeSettings = ();
 
@@ -222,7 +222,7 @@ impl<'a> DataType<'a> for bool {
     }
 }
 
-impl<'a> DataType<'a> for &'a str {
+impl<'a> FixFieldValue<'a> for &'a str {
     type Error = std::str::Utf8Error;
     type SerializeSettings = ();
 
@@ -241,7 +241,7 @@ impl<'a> DataType<'a> for &'a str {
     }
 }
 
-impl<'a> DataType<'a> for u8 {
+impl<'a> FixFieldValue<'a> for u8 {
     type Error = error::Int;
     type SerializeSettings = ();
 
@@ -260,7 +260,7 @@ impl<'a> DataType<'a> for u8 {
     }
 }
 
-impl<'a> DataType<'a> for &'a [u8] {
+impl<'a> FixFieldValue<'a> for &'a [u8] {
     type Error = ();
     type SerializeSettings = ();
 
@@ -279,7 +279,7 @@ impl<'a> DataType<'a> for &'a [u8] {
     }
 }
 
-impl<'a, const N: usize> DataType<'a> for &'a [u8; N] {
+impl<'a, const N: usize> FixFieldValue<'a> for &'a [u8; N] {
     type Error = ();
     type SerializeSettings = ();
 
@@ -298,7 +298,7 @@ impl<'a, const N: usize> DataType<'a> for &'a [u8; N] {
     }
 }
 
-impl<'a> DataType<'a> for TagU16 {
+impl<'a> FixFieldValue<'a> for TagU16 {
     type Error = error::Int;
     type SerializeSettings = ();
 
@@ -331,7 +331,7 @@ impl<'a> DataType<'a> for TagU16 {
     }
 }
 
-impl<'a> DataType<'a> for u32 {
+impl<'a> FixFieldValue<'a> for u32 {
     type Error = error::Int;
     type SerializeSettings = Padding;
 
@@ -377,7 +377,7 @@ impl<'a> DataType<'a> for u32 {
     }
 }
 
-impl<'a> DataType<'a> for i32 {
+impl<'a> FixFieldValue<'a> for i32 {
     type Error = error::Int;
     type SerializeSettings = ();
 
@@ -411,7 +411,7 @@ impl<'a> DataType<'a> for i32 {
     }
 }
 
-impl<'a> DataType<'a> for u64 {
+impl<'a> FixFieldValue<'a> for u64 {
     type Error = error::Int;
     type SerializeSettings = ();
 
@@ -444,7 +444,7 @@ impl<'a> DataType<'a> for u64 {
     }
 }
 
-impl<'a> DataType<'a> for i64 {
+impl<'a> FixFieldValue<'a> for i64 {
     type Error = error::Int;
     type SerializeSettings = ();
 
@@ -478,7 +478,7 @@ impl<'a> DataType<'a> for i64 {
     }
 }
 
-impl<'a> DataType<'a> for usize {
+impl<'a> FixFieldValue<'a> for usize {
     type Error = error::Int;
     type SerializeSettings = ();
 
@@ -513,13 +513,13 @@ impl<'a> DataType<'a> for usize {
 
 pub trait SuperDataType<'a, T>
 where
-    Self: DataType<'a>,
-    T: DataType<'a>,
+    Self: FixFieldValue<'a>,
+    T: FixFieldValue<'a>,
 {
 }
 
 /// A [`DataType`] is always a [`SuperDataType`] of itself.
-impl<'a, T> SuperDataType<'a, T> for T where T: DataType<'a> {}
+impl<'a, T> SuperDataType<'a, T> for T where T: FixFieldValue<'a> {}
 
 impl<'a> SuperDataType<'a, &'a str> for &'a [u8] {}
 impl<'a> SuperDataType<'a, i64> for &'a [u8] {}

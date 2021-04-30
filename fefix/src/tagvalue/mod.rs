@@ -4,12 +4,13 @@
 //! currently used by the FIX session layer.
 
 use crate::dict::IsTypedFieldDefinition;
-use crate::{datatypes::SuperDataType, DataType};
+use datatypes::{FixFieldValue, SuperDataType};
 use std::fmt;
 use std::fmt::Debug;
 use std::io;
 
 mod config;
+pub mod datatypes;
 mod decoder;
 mod encoder;
 mod field_getters;
@@ -71,11 +72,11 @@ pub trait FvWrite<'a> {
 
     fn set_fv_with_key<'b, T>(&'b mut self, key: &Self::Key, value: T)
     where
-        T: DataType<'b>;
+        T: FixFieldValue<'b>;
 
     fn set_fv<'b, V, T, F>(&'b mut self, field: &F, value: V)
     where
-        V: DataType<'b>,
+        V: FixFieldValue<'b>,
         T: SuperDataType<'b, V>,
         F: IsTypedFieldDefinition<T>;
 }

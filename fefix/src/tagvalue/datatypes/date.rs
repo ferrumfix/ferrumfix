@@ -1,5 +1,5 @@
 use super::error;
-use crate::datatypes::DataType;
+use crate::FixFieldValue;
 use crate::Buffer;
 
 const LEN_IN_BYTES: usize = 8;
@@ -118,7 +118,7 @@ impl Date {
     }
 }
 
-impl<'a> DataType<'a> for Date {
+impl<'a> FixFieldValue<'a> for Date {
     type Error = error::Date;
     type SerializeSettings = ();
 

@@ -1,5 +1,5 @@
 use super::error;
-use crate::{datatypes::DataType, datatypes::Date, datatypes::Time, Buffer};
+use crate::{tagvalue::datatypes::Date, tagvalue::datatypes::Time, Buffer, FixFieldValue};
 
 /// Canonical data field (DTF) for
 /// [DataType::UtcTimestamp](super::DataType::UtcTimeStamp).
@@ -52,7 +52,7 @@ impl Timestamp {
     }
 }
 
-impl<'a> DataType<'a> for Timestamp {
+impl<'a> FixFieldValue<'a> for Timestamp {
     type Error = error::Timestamp;
     type SerializeSettings = ();
 

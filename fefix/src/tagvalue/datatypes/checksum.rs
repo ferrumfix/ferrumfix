@@ -1,5 +1,5 @@
 use super::error;
-use crate::datatypes::DataType;
+use crate::FixFieldValue;
 use crate::Buffer;
 use std::convert::TryInto;
 
@@ -20,7 +20,7 @@ impl CheckSum {
     }
 }
 
-impl<'a> DataType<'a> for CheckSum {
+impl<'a> FixFieldValue<'a> for CheckSum {
     type Error = error::CheckSum;
     type SerializeSettings = ();
 

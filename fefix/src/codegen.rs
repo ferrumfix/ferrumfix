@@ -89,7 +89,7 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
                 indoc!(
                     r#"
                     /// Field type variants for [`{struct_name}`].
-                    #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, DataType)]
+                    #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, FixFieldValue)]
                     pub enum {identifier} {{
                     {variants}
                     }}
@@ -164,9 +164,9 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
         version = dict.get_version(),
         notice = generated_code_notice(),
         import_data_field = if fefix_path == "fefix" {
-            "use fefix::DataType;"
+            "use fefix::FixFieldValue;"
         } else {
-            "use crate::DataType;"
+            "use crate::FixFieldValue;"
         },
         field_defs = field_defs,
         fefix_path = fefix_path,
@@ -184,7 +184,7 @@ fn suggested_type(
         return name;
     }
     if tag.get() == 10 {
-        return format!("{}::datatypes::CheckSum", fefix_path);
+        return format!("{}::tagvalue::datatypes::CheckSum", fefix_path);
     }
     if data_type.base_type() == FixDataType::Float {
         return "rust_decimal::Decimal".to_string();
@@ -203,16 +203,16 @@ fn suggested_type(
         FixDataType::Language => "&[u8; 2]".to_string(),
         FixDataType::SeqNum => "u64".to_string(),
         FixDataType::NumInGroup => "usize".to_string(),
-        FixDataType::UtcDateOnly => format!("{}::datatypes::Date", fefix_path),
-        FixDataType::UtcTimeOnly => format!("{}::datatypes::Time", fefix_path),
-        FixDataType::UtcTimestamp => format!("{}::datatypes::Timestamp", fefix_path),
+        FixDataType::UtcDateOnly => format!("{}::tagvalue::datatypes::Date", fefix_path),
+        FixDataType::UtcTimeOnly => format!("{}::tagvalue::datatypes::Time", fefix_path),
+        FixDataType::UtcTimestamp => format!("{}::tagvalue::datatypes::Timestamp", fefix_path),
         _ => "&[u8]".to_string(), // TODO
     }
 }
 
 fn suggested_type_with_lifetime(tag: TagU16, data_type: FixDataType) -> &'static str {
     if tag.get() == 10 {
-        return "crate::datatypes::CheckSum";
+        return "crate::tagvalue::datatypes::CheckSum";
     }
     if data_type.base_type() == FixDataType::Float {
         return "rust_decimal::Decimal";
@@ -231,9 +231,9 @@ fn suggested_type_with_lifetime(tag: TagU16, data_type: FixDataType) -> &'static
         FixDataType::Language => "[u8; 2]",
         FixDataType::SeqNum => "u64",
         FixDataType::NumInGroup => "usize",
-        FixDataType::UtcDateOnly => "crate::datatypes::Date",
-        FixDataType::UtcTimeOnly => "crate::datatypes::Time",
-        FixDataType::UtcTimestamp => "crate::datatypes::Timestamp",
+        FixDataType::UtcDateOnly => "crate::tagvalue::datatypes::Date",
+        FixDataType::UtcTimeOnly => "crate::tagvalue::datatypes::Time",
+        FixDataType::UtcTimestamp => "crate::tagvalue::datatypes::Timestamp",
         _ => "&'a [u8]", // TODO
     }
 }

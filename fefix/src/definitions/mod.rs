@@ -19,13 +19,13 @@ pub mod fix50sp2;
 #[rustfmt::skip]
 pub mod fixt11;
 
-use crate::{dict, DataType, FixDataType, TagU16};
+use crate::{dict, FixFieldValue, FixDataType, TagU16};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
 pub struct GeneratedFieldDef<'a, V>
 where
-    V: DataType<'a>,
+    V: FixFieldValue<'a>,
 {
     pub name: &'static str,
     pub tag: u16,
@@ -37,7 +37,7 @@ where
 
 impl<'a, V> dict::IsFieldDefinition for GeneratedFieldDef<'a, V>
 where
-    V: DataType<'a>,
+    V: FixFieldValue<'a>,
 {
     #[inline(always)]
     fn tag(&self) -> TagU16 {
@@ -55,4 +55,4 @@ where
     }
 }
 
-impl<'a, V> dict::IsTypedFieldDefinition<V> for GeneratedFieldDef<'a, V> where V: DataType<'a> {}
+impl<'a, V> dict::IsTypedFieldDefinition<V> for GeneratedFieldDef<'a, V> where V: FixFieldValue<'a> {}

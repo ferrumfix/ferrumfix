@@ -1,5 +1,5 @@
 use super::error;
-use super::DataType;
+use super::FixFieldValue;
 use crate::Buffer;
 use std::time::Duration;
 
@@ -43,7 +43,7 @@ impl TzTime {
     }
 }
 
-impl<'a> DataType<'a> for TzTime {
+impl<'a> FixFieldValue<'a> for TzTime {
     type Error = error::Time;
     type SerializeSettings = ();
 
@@ -126,7 +126,7 @@ const fn ascii_digit_to_u32(digit: u8, multiplier: u32) -> u32 {
 
 #[cfg(test)]
 mod test {
-    use super::DataType;
+    use super::FixFieldValue;
     use super::*;
 
     struct TestCase {
