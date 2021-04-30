@@ -49,32 +49,79 @@ pub enum Response<'a> {
 //        None
 //    }
 //}
-//
-//#[derive(Debug, Clone)]
-//pub struct FixConnectionBuilder {
-//    pub begin_string: String,
-//    pub environment: Environment,
-//    pub heartbeat: Duration,
-//    pub seq_numbers: SeqNumbers,
-//    pub sender_comp_id: String,
-//    pub target_comp_id: String,
-//}
-//
-//impl FixConnectionBuilder {
-//    pub fn build(self) -> FixConnection {
-//        FixConnection {
-//            begin_string: self.begin_string,
-//            environment: self.environment,
-//            heartbeat: self.heartbeat,
-//            seq_numbers: self.seq_numbers,
-//            sender_comp_id: self.sender_comp_id,
-//            target_comp_id: self.target_comp_id,
-//            encoder: RawEncoder::from_buffer(Vec::new()),
-//            log: true,
-//        }
-//    }
-//}
-//
+
+#[derive(Debug, Clone)]
+pub struct FixConnectionBuilder {
+    begin_string: String,
+    environment: Environment,
+    heartbeat: Duration,
+    seq_numbers: SeqNumbers,
+    sender_comp_id: String,
+    target_comp_id: String,
+}
+
+impl FixConnectionBuilder {
+    pub fn set_begin_string<S>(&mut self, begin_string: S)
+    where
+        S: Into<String>,
+    {
+        self.begin_string = begin_string.into();
+    }
+
+    pub fn set_environmen(&mut self, env: Environment) {
+        self.environment = env;
+    }
+
+    pub fn set_seq_numbers(&mut self, inbound: u64, outbound: u64) {
+        if inbound == 0 || outbound == 0 {
+            panic!("FIX sequence numbers must be strictly positive");
+        }
+        self.seq_numbers = SeqNumbers {
+            next_inbound: inbound,
+            next_outbound: outbound,
+        };
+    }
+
+    pub fn set_sender_comp_id<S>(&mut self, sender_comp_id: S)
+    where
+        S: Into<String>,
+    {
+        self.sender_comp_id = sender_comp_id.into();
+    }
+
+    pub fn set_target_comp_id<S>(&mut self, target_comp_id: S)
+    where
+        S: Into<String>,
+    {
+        self.target_comp_id = target_comp_id.into();
+    }
+
+    pub fn build(self) -> FixConnection<LogNone> {
+        FixConnection {
+            begin_string: self.begin_string,
+            environment: self.environment,
+            encoder: Encoder::from_buffer(Vec::new()),
+            heartbeat: self.heartbeat,
+            seq_numbers: self.seq_numbers,
+            sender_comp_id: self.sender_comp_id,
+            target_comp_id: self.target_comp_id,
+            logger: LogNone {},
+        }
+    }
+}
+
+impl Default for FixConnectionBuilder {
+    fn default() -> Self {
+        Self {
+            begin_string: "FIX-4.4".to_string(),
+            environment: Environment::Testing,
+            heartbeat: Duration::from_secs(30),
+            seq_numbers: SeqNumbers::default(),
+            sender_comp_id: "ABC".to_string(),
+            target_comp_id: "XYZ".to_string(),
+        }
+    }
+}
 
 pub trait Logger {
     fn log_inbound(&mut self, _fix_message: &[u8]) {}
@@ -123,6 +170,7 @@ where
             msg.set(fixt11::TARGET_COMP_ID, target_comp_id);
             msg.set(fixt11::MSG_SEQ_NUM, msg_seq_num);
             msg.set(fixt11::HEART_BT_INT, self.heartbeat.as_secs());
+            msg.set(fixt11::SENDING_TIME, chrono::Utc::now());
             msg.wrap()
         };
         output.write(logon).await.unwrap();

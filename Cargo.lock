@@ -870,6 +870,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "example_fix_initiator"
+version = "0.1.0"
+dependencies = [
+ "fefix",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "example_tcp_sofh"
 version = "0.1.0"
 dependencies = [
@@ -2535,6 +2544,21 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "tokio-util"
+version = "0.6.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "940a12c99365c31ea8dd9ba04ec1be183ffe4920102bb7122c2f515437601e8e"
+dependencies = [
+ "bytes",
+ "futures-core",
+ "futures-io",
+ "futures-sink",
+ "log",
+ "pin-project-lite 0.2.0",
+ "tokio",
 ]
 
 [[package]]
