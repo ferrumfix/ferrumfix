@@ -298,7 +298,8 @@ mod test {
     use super::*;
 
     fn new_decoder() -> RawDecoder {
-        let config = Config::default().with_separator(b'|');
+        let mut config = Config::default();
+        config.set_separator(b'|');
         RawDecoder::with_config(config)
     }
 
@@ -356,7 +357,8 @@ mod test {
     }
 
     fn new_decoder_buffered() -> RawDecoderBuffered {
-        let config = Config::default().with_separator(b'|');
+        let mut config = Config::default();
+        config.set_separator(b'|');
         RawDecoder::with_config(config).buffered()
     }
     #[test]

@@ -11,7 +11,7 @@ fn main() {
     msg.set_fv(fix44::SENDER_COMP_ID, "CLIENT12");
     msg.set_fv(fix44::TARGET_COMP_ID, "B");
     msg.set_fv(fix44::ACCOUNT, "Marcel");
-    msg.set_fv(fix44::CL_ORD_ID, 13346);
+    msg.set_fv(fix44::CL_ORD_ID, "13346");
     msg.set_fv(
         fix44::HANDL_INST,
         fix44::HandlInst::AutomatedExecutionOrderPrivateNoBrokerIntervention,

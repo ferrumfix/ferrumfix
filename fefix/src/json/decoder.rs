@@ -1,8 +1,10 @@
 use super::{Config, Configure, DecodeError};
-use crate::dtf;
+use crate::datatypes;
+use crate::dict;
+use crate::dict::FieldLocation;
+use crate::dict::IsFieldDefinition;
 use crate::tagvalue::Fv;
 use crate::Dictionary;
-use crate::{FieldDef, FieldLocation};
 use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
@@ -16,16 +18,16 @@ pub struct Message<'a> {
 impl<'a> Fv<'a> for Message<'a> {
     type Key = (FieldLocation, &'a str);
 
-    fn fv_raw_with_key<'b>(&'b self, key: &Self::Key) -> Option<&'b [u8]> {
+    fn fv_raw_with_key<'b>(&'b self, key: Self::Key) -> Option<&'b [u8]> {
         self.field_raw(key.1, key.0).map(|s| s.as_bytes())
     }
 
-    fn fv_raw<'b, T>(&'b self, field: &FieldDef<'b, T>) -> Option<&'b [u8]>
+    fn fv_raw<'b, F>(&'b self, field: &'a F) -> Option<&'b [u8]>
     where
         'b: 'a,
-        T: dtf::DataField<'b>,
+        F: dict::IsFieldDefinition,
     {
-        self.fv_raw_with_key(&(field.location, field.name()))
+        self.fv_raw_with_key((field.location(), field.name()))
     }
 }
 
@@ -55,21 +57,23 @@ pub struct MessageGroupEntry<'a> {
 }
 
 impl<'a> MessageGroupEntry<'a> {
-    pub fn group<'b, T>(&'b self, _field_def: &FieldDef<'b, T>) -> Option<MessageGroup<'b>>
+    pub fn group<'b, F, T>(&'b self, _field_def: &F) -> Option<MessageGroup<'b>>
     where
         'b: 'a,
-        T: dtf::DataField<'b>,
+        F: dict::IsFieldDefinition,
+        T: datatypes::DataType<'b>,
     {
         None
     }
 
-    pub fn field_ref<'b, T>(
+    pub fn field_ref<'b, F, T>(
         &'b self,
-        _field_def: &FieldDef<'b, T>,
-    ) -> Option<Result<T, <T as dtf::DataField<'b>>::Error>>
+        _field_def: &F,
+    ) -> Option<Result<T, <T as datatypes::DataType<'b>>::Error>>
     where
         'b: 'a,
-        T: dtf::DataField<'b>,
+        F: dict::IsFieldDefinition,
+        T: datatypes::DataType<'b>,
     {
         unimplemented!()
     }
@@ -90,26 +94,28 @@ impl<'a> MessageGroupEntry<'a> {
 }
 
 impl<'a> Message<'a> {
-    pub fn group<'b, T>(&'b self, _field_def: &FieldDef<'b, T>) -> Option<MessageGroup<'b>>
+    pub fn group<'b, F, T>(&'b self, _field_def: &F) -> Option<MessageGroup<'b>>
     where
         'b: 'a,
-        T: dtf::DataField<'b>,
+        F: dict::IsFieldDefinition,
+        T: datatypes::DataType<'b>,
     {
         None
     }
 
-    pub fn field_ref<'b, T>(
+    pub fn field_ref<'b, F, T>(
         &'b self,
-        field_def: &FieldDef<'b, T>,
-    ) -> Option<Result<T, <T as dtf::DataField<'b>>::Error>>
+        field_def: &F,
+    ) -> Option<Result<T, <T as datatypes::DataType<'b>>::Error>>
     where
         'b: 'a,
-        T: dtf::DataField<'b>,
+        F: dict::IsFieldDefinition,
+        T: datatypes::DataType<'b>,
     {
         self.internal.field_ref(field_def)
     }
 
-    pub fn field_raw(&self, name: &str, location: FieldLocation) -> Option<&str> {
+    pub fn field_raw<'b>(&'b self, name: &str, location: FieldLocation) -> Option<&'b str> {
         self.internal.field_raw(name, location)
     }
 
@@ -227,15 +233,16 @@ impl<'a> MessageInternal<'a> {
         self.std_trailer.clear();
     }
 
-    pub fn field_ref<'b, T>(
+    pub fn field_ref<'b, F, T>(
         &'b self,
-        field_def: &FieldDef<'b, T>,
-    ) -> Option<Result<T, <T as dtf::DataField<'b>>::Error>>
+        field_def: &F,
+    ) -> Option<Result<T, <T as datatypes::DataType<'b>>::Error>>
     where
         'b: 'a,
-        T: dtf::DataField<'b>,
+        F: IsFieldDefinition,
+        T: datatypes::DataType<'b>,
     {
-        self.field_raw(field_def.name(), field_def.location)
+        self.field_raw(field_def.name(), field_def.location())
             .map(|s| T::deserialize(s.as_bytes()))
     }
 

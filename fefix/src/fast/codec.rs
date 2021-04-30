@@ -237,6 +237,7 @@ pub fn decode_stop_bit_entity(input: &mut impl io::Read) -> io::Result<Vec<u8>> 
     Ok(bytes)
 }
 
+#[allow(dead_code)]
 pub fn decode_stop_bit_bitvec(input: &mut impl io::Read) -> io::Result<BitVec> {
     let mut bits = BitVec::new();
     let mut stop_bit = false;

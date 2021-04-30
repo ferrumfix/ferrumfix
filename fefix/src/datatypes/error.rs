@@ -1,4 +1,4 @@
-//! Error types for [`DataField`](super::DataField) implementors.
+//! Error types for [`DataType`](super::DataType) implementors.
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Decimal {

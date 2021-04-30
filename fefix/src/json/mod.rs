@@ -1,4 +1,4 @@
-//! JSON encoding for FIX messages.
+//! Encoding and decoding of FIX messages using JSON.
 
 use std::error::Error;
 use std::fmt;

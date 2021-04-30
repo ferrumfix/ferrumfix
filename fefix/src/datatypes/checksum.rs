@@ -1,6 +1,7 @@
 use super::error;
-use crate::dtf::DataField;
+use crate::datatypes::DataType;
 use crate::Buffer;
+use std::convert::TryInto;
 
 const LEN_IN_BYTES: usize = 3;
 
@@ -19,7 +20,7 @@ impl CheckSum {
     }
 }
 
-impl<'a> DataField<'a> for CheckSum {
+impl<'a> DataType<'a> for CheckSum {
     type Error = error::CheckSum;
     type SerializeSettings = ();
 
@@ -36,25 +37,27 @@ impl<'a> DataField<'a> for CheckSum {
     }
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        if data.len() != LEN_IN_BYTES {
-            Err(Self::Error::WrongLength)
+        if let Ok(digits) = data.try_into() {
+            if is_ascii_digit(data[0]) & is_ascii_digit(data[1]) & is_ascii_digit(data[2]) {
+                Ok(checksum_from_digits(digits))
+            } else {
+                Err(Self::Error::NotAsciiDigits)
+            }
         } else {
-            Ok(checksum_from_digits(data))
+            Err(Self::Error::WrongLength)
         }
     }
 
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
-        if data.len() != LEN_IN_BYTES {
-            Err(Self::Error::WrongLength)
-        } else if !is_ascii_digit(data[0]) || !is_ascii_digit(data[1]) || !is_ascii_digit(data[2]) {
-            Err(Self::Error::NotAsciiDigits)
+        if let Ok(digits) = data.try_into() {
+            Ok(checksum_from_digits(digits))
         } else {
-            Ok(checksum_from_digits(data))
+            Err(Self::Error::WrongLength)
         }
     }
 }
 
-fn checksum_from_digits(data: &[u8]) -> CheckSum {
+fn checksum_from_digits(data: [u8; 3]) -> CheckSum {
     CheckSum(
         ascii_digit_to_u8(data[0], 100)
             .wrapping_add(ascii_digit_to_u8(data[1], 10))
@@ -71,7 +74,7 @@ fn digit_to_ascii(byte: u8) -> u8 {
 }
 
 fn ascii_digit_to_u8(digit: u8, multiplier: u8) -> u8 {
-    (digit.wrapping_sub(b'0')) * multiplier
+    digit.wrapping_sub(b'0').wrapping_mul(multiplier)
 }
 
 #[cfg(test)]

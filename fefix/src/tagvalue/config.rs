@@ -75,18 +75,8 @@ impl Config {
         self.separator = separator;
     }
 
-    pub fn with_separator(mut self, separator: u8) -> Self {
-        self.separator = separator;
-        self
-    }
-
     pub fn set_max_message_size(&mut self, max_message_size: Option<usize>) {
         self.max_message_size = max_message_size;
-    }
-
-    pub fn with_max_message_size(mut self, max_message_size: Option<usize>) -> Self {
-        self.max_message_size = max_message_size;
-        self
     }
 
     /// Turns on or off `CheckSum <10>` verification. On by default.
@@ -103,11 +93,6 @@ impl Config {
     /// ```
     pub fn set_verify_checksum(&mut self, verify: bool) {
         self.verify_checksum = verify;
-    }
-
-    pub fn with_checksum_verification(mut self, verify: bool) -> Self {
-        self.verify_checksum = verify;
-        self
     }
 
     /// Enables or disables random access of fields within a

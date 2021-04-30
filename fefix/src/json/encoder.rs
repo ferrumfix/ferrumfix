@@ -1,5 +1,5 @@
-use crate::dtf::DataField;
-use crate::FieldDef;
+use crate::datatypes::DataType;
+use crate::dict::IsFieldDefinition;
 
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]
@@ -52,9 +52,10 @@ pub mod encoder_states {
         fn encoder_mut(&mut self) -> &mut Encoder;
 
         /// Adds a `field` with a `value` to the current message.
-        fn set<'a, T>(mut self, field: &FieldDef<'a, T>, value: T) -> Self
+        fn set<'a, T, F>(mut self, field: &F, value: T) -> Self
         where
-            T: DataField<'a>,
+            T: DataType<'a>,
+            F: IsFieldDefinition,
         {
             debug_assert!(field.name().is_ascii());
             let encoder = self.encoder_mut();
@@ -82,9 +83,10 @@ pub mod encoder_states {
             }
         }
 
-        pub fn set<T>(self, field: &FieldDef<'a, T>, value: T) -> Self
+        pub fn set<T, F>(self, field: &F, value: T) -> Self
         where
-            T: DataField<'a>,
+            T: DataType<'a>,
+            F: IsFieldDefinition,
         {
             EncoderStateAtTopLevel::set(self, field, value)
         }
@@ -113,9 +115,10 @@ pub mod encoder_states {
             }
         }
 
-        pub fn set<T>(self, field: &FieldDef<'a, T>, value: T) -> Self
+        pub fn set<T, F>(self, field: &F, value: T) -> Self
         where
-            T: DataField<'a>,
+            T: DataType<'a>,
+            F: IsFieldDefinition,
         {
             EncoderStateAtTopLevel::set(self, field, value)
         }
@@ -140,9 +143,10 @@ pub mod encoder_states {
             std::str::from_utf8(&self.encoder.buffer[..]).unwrap()
         }
 
-        pub fn set<T>(self, field: &FieldDef<'a, T>, value: T) -> Self
+        pub fn set<T, F>(self, field: &F, value: T) -> Self
         where
-            T: DataField<'a>,
+            T: DataType<'a>,
+            F: IsFieldDefinition,
         {
             EncoderStateAtTopLevel::set(self, field, value)
         }

@@ -69,28 +69,24 @@ mod utils;
 mod app_version;
 mod buffer;
 pub mod codegen;
+pub mod datatypes;
 pub mod definitions;
-pub mod dictionary;
-pub mod dtf;
+pub mod dict;
 pub mod fast;
 mod fix_data_type;
+pub mod fixp;
 pub mod fixs;
 pub mod json;
-pub mod models;
-mod quickfix_specs;
 pub mod session;
 pub mod sofh;
 pub mod tagvalue;
 
 pub use app_version::AppVersion;
 pub use buffer::Buffer;
-pub use dictionary::Dictionary;
+pub use datatypes::DataType;
+pub use dict::Dictionary;
+pub use fefix_derive::DataType;
 pub use fix_data_type::FixDataType;
-pub use models::{FieldsIter, FixFieldAccess, FixFieldsIter, FixMessage};
-pub use quickfix_specs::quickfix_spec;
-
-pub use dtf::DataField;
-pub use fefix_derive::DataField;
 
 #[cfg(expose_openssl)]
 pub extern crate openssl;
@@ -98,51 +94,60 @@ pub extern crate openssl;
 #[cfg(not(expose_openssl))]
 pub(crate) extern crate openssl;
 
-use std::{marker::PhantomData, num::NonZeroU16};
+use std::num::NonZeroU16;
 
+/// Type alias for FIX tags: 16-bit unsigned integers, strictly positive.
 pub type TagU16 = NonZeroU16;
 
-#[derive(Debug, Clone)]
-pub struct FieldDef<'a, V>
-where
-    V: DataField<'a>,
-{
-    pub name: &'a str,
-    pub tag: TagU16,
-    pub is_group_leader: bool,
-    pub data_type: FixDataType,
-    pub location: FieldLocation,
-    pub phantom: PhantomData<V>,
-}
-
-/// The expected location of a field within a FIX message (i.e. header, body, or
-/// trailer).
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum FieldLocation {
-    StdHeader,
-    Body,
-    Trailer,
-}
-
-impl<'a, V> FieldDef<'a, V>
-where
-    V: DataField<'a>,
-{
-    /// Returns the numeric tag associated with `self`.
-    pub fn tag(&self) -> TagU16 {
-        self.tag
-    }
-
-    /// Returns the human-readable name given to `self`.
-    pub fn name(&self) -> &'a str {
-        self.name
-    }
-
-    /// Returns the [`DataType`] of `self`.
-    pub fn data_type(&self) -> FixDataType {
-        self.data_type
-    }
-}
+//#[derive(Debug, Clone)]
+//pub struct FieldDef<'a, V>
+//where
+//    V: DataType<'a>,
+//{
+//    pub name: &'a str,
+//    pub tag: TagU16,
+//    pub is_group_leader: bool,
+//    pub data_type: FixDataType,
+//    pub location: dict::FieldLocation,
+//    pub phantom: PhantomData<V>,
+//}
+//
+//impl<'a, V> dict::IsFieldDefinition for FieldDef<'a, V>
+//where
+//    V: DataType<'a>,
+//{
+//    fn tag(&self) -> TagU16 {
+//        self.tag
+//    }
+//
+//    fn name(&self) -> &str {
+//        self.name
+//    }
+//
+//    fn location(&self) -> dict::FieldLocation {
+//        dict::FieldLocation::Body // FIXME
+//    }
+//}
+//
+//impl<'a, V> FieldDef<'a, V>
+//where
+//    V: DataType<'a>,
+//{
+//    /// Returns the numeric tag associated with `self`.
+//    pub fn tag(&self) -> TagU16 {
+//        self.tag
+//    }
+//
+//    /// Returns the human-readable name given to `self`.
+//    pub fn name(&self) -> &'a str {
+//        self.name
+//    }
+//
+//    /// Returns the [`DataType`] of `self`.
+//    pub fn data_type(&self) -> FixDataType {
+//        self.data_type
+//    }
+//}
 
 /// Wrapper type for dealing with `Result<None, ...>` as errors.
 pub type OptResult<T, E> = Result<T, OptError<E>>;

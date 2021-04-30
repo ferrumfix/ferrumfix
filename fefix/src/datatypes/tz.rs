@@ -1,5 +1,5 @@
 use super::error;
-use super::DataField;
+use super::DataType;
 use crate::Buffer;
 use std::{
     hash::{Hash, Hasher},
@@ -35,7 +35,7 @@ impl Tz {
     }
 }
 
-impl<'a> DataField<'a> for Tz {
+impl<'a> DataType<'a> for Tz {
     type Error = error::Timestamp;
     type SerializeSettings = ();
 

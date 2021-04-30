@@ -1,4 +1,5 @@
-//! FIX-over-TLS (FIXS) utilities.
+//! *FIX-over-TLS* ([FIXS](https://www.fixtrading.org/standards/fixs/))
+//! utilities.
 
 mod iana2openssl;
 

@@ -1,8 +1,10 @@
 use super::{Config, Configure, FvWrite};
 use crate::buffer::Buffer;
+use crate::datatypes::{CheckSum, DataType, SuperDataType};
 use crate::definitions::fixt11;
-use crate::dtf::{CheckSum, DataField};
-use crate::FieldDef;
+use crate::dict;
+use crate::dict::IsFieldDefinition;
+use crate::dict::IsTypedFieldDefinition;
 use crate::TagU16;
 use std::ops::Range;
 
@@ -117,16 +119,17 @@ where
     C: Configure,
 {
     /// Adds a `field` with a `value` to the current message.
-    pub fn set<'b, T>(&mut self, field: &FieldDef<'b, T>, value: T)
+    pub fn set<'b, F, T>(&mut self, field: &F, value: T)
     where
-        T: DataField<'b>,
+        F: dict::IsFieldDefinition,
+        T: DataType<'b>,
     {
         self.set_any(field.tag(), value)
     }
 
     pub fn set_any<'b, T>(&mut self, tag: TagU16, value: T)
     where
-        T: DataField<'b>,
+        T: DataType<'b>,
     {
         tag.serialize(&mut self.raw_encoder.buffer);
         self.raw_encoder.buffer.extend_from_slice(b"=" as &[u8]);
@@ -183,15 +186,16 @@ where
 
     fn set_fv_with_key<'b, T>(&'b mut self, key: &Self::Key, value: T)
     where
-        T: DataField<'b>,
+        T: DataType<'b>,
     {
         self.set_any(*key, value);
     }
 
-    fn set_fv<'b, T, S>(&'b mut self, field: &FieldDef<'b, T>, value: S)
+    fn set_fv<'b, V, T, F>(&'b mut self, field: &F, value: V)
     where
-        T: DataField<'b>,
-        S: DataField<'b>,
+        V: DataType<'b>,
+        T: SuperDataType<'b, V>,
+        F: IsTypedFieldDefinition<T>,
     {
         self.set_fv_with_key(&field.tag(), value);
     }

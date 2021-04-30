@@ -13,6 +13,7 @@
 //! point, namely [`Initiator::feed`] and [`Acceptor::feed`].
 
 //pub mod abstract_connection;
+mod config;
 mod connection;
 mod errs;
 mod heartbeat_rule;
@@ -20,6 +21,7 @@ mod resend_request_range;
 mod seq_numbers;
 
 //pub use abstract_connection::AbstractConnection;
+pub use config::{Config, Configure};
 pub use connection::*;
 pub use heartbeat_rule::HeartbeatRule;
 pub use resend_request_range::ResendRequestRange;

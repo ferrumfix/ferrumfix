@@ -1,4 +1,4 @@
-use crate::dtf::CheckSum;
+use crate::datatypes::CheckSum;
 use crate::tagvalue::DecodeError;
 use std::convert::TryInto;
 

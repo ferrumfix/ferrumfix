@@ -3,7 +3,7 @@ use proc_macro::TokenStream;
 use proc_macro2::{Literal, TokenTree};
 use quote::quote;
 
-pub fn derive_data_field(input: TokenStream) -> TokenStream {
+pub fn derive_data_type(input: TokenStream) -> TokenStream {
     let ast: syn::DeriveInput = syn::parse(input).unwrap();
     let darling_context = DataFieldWithVariants::from_derive_input(&ast).unwrap();
     let identifier = darling_context.ident;
@@ -38,7 +38,7 @@ pub fn derive_data_field(input: TokenStream) -> TokenStream {
         .take_enum()
         .expect("Invalid enum");
     let gen = quote! {
-        impl<'a> DataField<'a> for #identifier {
+        impl<'a> DataType<'a> for #identifier {
             type Error = ();
             type SerializeSettings = ();
 
@@ -51,7 +51,7 @@ pub fn derive_data_field(input: TokenStream) -> TokenStream {
                 }
             }
 
-            fn deserialize(data: &'a [u8]) -> Result<Self, <Self as DataField<'a>>::Error> {
+            fn deserialize(data: &'a [u8]) -> Result<Self, <Self as DataType<'a>>::Error> {
                 match data {
                     #(#deserialize_matching_cases),*,
                     _ => Err(())

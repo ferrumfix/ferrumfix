@@ -23,7 +23,7 @@ fn main() -> std::io::Result<()> {
 }
 
 fn codegen(app_version: AppVersion, dir: PathBuf) -> io::Result<()> {
-    let fix_dictionary = fefix_barebones::dictionary::Dictionary::from_version(app_version);
+    let fix_dictionary = fefix_barebones::dict::Dictionary::from_version(app_version);
     let mut filename: String = app_version
         .name()
         .chars()

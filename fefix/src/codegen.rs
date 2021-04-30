@@ -1,6 +1,6 @@
 //! Code generation utilities.
 
-use super::dictionary::{Dictionary, Field, LayoutItem, LayoutItemKind, Message};
+use super::dict::{Dictionary, Field, LayoutItem, LayoutItemKind, Message};
 use super::fix_data_type::FixDataType;
 use super::TagU16;
 use heck::{CamelCase, ShoutySnakeCase, SnakeCase};
@@ -89,7 +89,7 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
                 indoc!(
                     r#"
                     /// Field type variants for [`{struct_name}`].
-                    #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, DataField)]
+                    #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, DataType)]
                     pub enum {identifier} {{
                     {variants}
                     }}
@@ -106,11 +106,10 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
     format!(
         indoc!(
             r#"
-            /// Field attributes for [`{name} <{tag}>`]
-            /// (https://www.onixs.biz/fix-dictionary/{major}.{minor}/tagnum_{tag}.html).
-            pub const {identifier}: &FieldDef<'static, {type_param}> = &FieldDef{{
+            /// Field attributes for [`{name} <{tag}>`](https://www.onixs.biz/fix-dictionary/{major}.{minor}/tagnum_{tag}.html).
+            pub const {identifier}: &GeneratedFieldDef<'static, {type_param}> = &GeneratedFieldDef{{
                 name: "{name}",
-                tag: unsafe {{ TagU16::new_unchecked({tag}) }},
+                tag: {tag},
                 is_group_leader: {group},
                 data_type: FixDataType::{data_type},
                 phantom: PhantomData,
@@ -136,6 +135,8 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
     )
 }
 
+/// Generates `const` implementors of
+/// [`IsFieldDefinition`](super::dict::IsFieldDefinition).
 pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
     let field_defs = dict
         .iter_fields()
@@ -151,8 +152,9 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
 
             {notice}
 
-            use {fefix_path}::{{FieldDef, FieldLocation, TagU16}};
+            use {fefix_path}::dict::FieldLocation;
             use {fefix_path}::{{FixDataType, Buffer}};
+            use {fefix_path}::definitions::GeneratedFieldDef;
             {import_data_field}
             use std::marker::PhantomData;
 
@@ -162,9 +164,9 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
         version = dict.get_version(),
         notice = generated_code_notice(),
         import_data_field = if fefix_path == "fefix" {
-            "use fefix::DataField;"
+            "use fefix::DataType;"
         } else {
-            "use crate::DataField;"
+            "use crate::DataType;"
         },
         field_defs = field_defs,
         fefix_path = fefix_path,
@@ -182,7 +184,7 @@ fn suggested_type(
         return name;
     }
     if tag.get() == 10 {
-        return format!("{}::dtf::CheckSum", fefix_path);
+        return format!("{}::datatypes::CheckSum", fefix_path);
     }
     if data_type.base_type() == FixDataType::Float {
         return "rust_decimal::Decimal".to_string();
@@ -201,16 +203,16 @@ fn suggested_type(
         FixDataType::Language => "&[u8; 2]".to_string(),
         FixDataType::SeqNum => "u64".to_string(),
         FixDataType::NumInGroup => "usize".to_string(),
-        FixDataType::UtcDateOnly => format!("{}::dtf::Date", fefix_path),
-        FixDataType::UtcTimeOnly => format!("{}::dtf::Time", fefix_path),
-        FixDataType::UtcTimestamp => format!("{}::dtf::Timestamp", fefix_path),
+        FixDataType::UtcDateOnly => format!("{}::datatypes::Date", fefix_path),
+        FixDataType::UtcTimeOnly => format!("{}::datatypes::Time", fefix_path),
+        FixDataType::UtcTimestamp => format!("{}::datatypes::Timestamp", fefix_path),
         _ => "&[u8]".to_string(), // TODO
     }
 }
 
 fn suggested_type_with_lifetime(tag: TagU16, data_type: FixDataType) -> &'static str {
     if tag.get() == 10 {
-        return "crate::dtf::CheckSum";
+        return "crate::datatypes::CheckSum";
     }
     if data_type.base_type() == FixDataType::Float {
         return "rust_decimal::Decimal";
@@ -229,70 +231,37 @@ fn suggested_type_with_lifetime(tag: TagU16, data_type: FixDataType) -> &'static
         FixDataType::Language => "[u8; 2]",
         FixDataType::SeqNum => "u64",
         FixDataType::NumInGroup => "usize",
-        FixDataType::UtcDateOnly => "crate::dtf::Date",
-        FixDataType::UtcTimeOnly => "crate::dtf::Time",
-        FixDataType::UtcTimestamp => "crate::dtf::Timestamp",
+        FixDataType::UtcDateOnly => "crate::datatypes::Date",
+        FixDataType::UtcTimeOnly => "crate::datatypes::Time",
+        FixDataType::UtcTimestamp => "crate::datatypes::Timestamp",
         _ => "&'a [u8]", // TODO
     }
 }
 
-fn make_type_optional(required: bool, typ: String) -> String {
-    if required {
-        typ
-    } else {
-        format!("::std::option::Option<{}>", typ)
+struct RustTypeName {
+    s: String,
+}
+
+impl RustTypeName {
+    fn new<S>(name: S) -> Self
+    where
+        S: Into<String>,
+    {
+        Self { s: name.into() }
+    }
+
+    fn optional(self, opt: bool) -> Self {
+        if opt {
+            Self {
+                s: format!("::std::option::Option<{}>", self.s),
+            }
+        } else {
+            self
+        }
     }
 }
 
 impl Dictionary {
-    //fn build_message_struct(&self, msg_type: &str) -> String {
-    //    let message = self.message_by_msgtype(msg_type).unwrap();
-    //    let fields: Vec<String> = message
-    //        .layout()
-    //        .map(|layout_item| {
-    //            self.translate_layout_item_to_struct_field(&layout_item, layout_item.required())
-    //        })
-    //        .filter(|opt| opt.is_some())
-    //        .map(|opt| opt.unwrap())
-    //        .collect();
-    //    format!(
-    //        r#"
-    //        /// Message information: {msg_name}
-    //        #[derive(Debug, Clone, ReadFields)]
-    //        #[fefix(msg_type = "{msg_type}")]
-    //        pub struct {msg_name} {{
-    //            {fields}
-    //        }}
-    //        "#,
-    //        msg_type = message.msg_type(),
-    //        msg_name = message.name(),
-    //        fields = fields.join(", ")
-    //    )
-    //}
-
-    //fn build_component_struct(&self, component: &Component) -> String {
-    //    let fields: Vec<String> = component
-    //        .items()
-    //        .map(|layout_item| {
-    //            self.translate_layout_item_to_struct_field(&layout_item, layout_item.required())
-    //        })
-    //        .filter(|opt| opt.is_some())
-    //        .map(|opt| opt.unwrap())
-    //        .collect();
-    //    format!(
-    //        r#"
-    //        /// Component information: {msg_name}
-    //        #[fefix(msg_type = "TODO")]
-    //        #[derive(Debug, Clone, ReadFields)]
-    //        pub struct {msg_name} {{
-    //            {fields}
-    //        }}
-    //        "#,
-    //        msg_name = component.name(),
-    //        fields = fields.join(", ")
-    //    )
-    //}
-
     fn translate_layout_item_to_struct_field(
         &self,
         item: &LayoutItem,
@@ -325,7 +294,7 @@ impl Dictionary {
             pub {identifier}: {field_type},
             "#,
             identifier = field_name,
-            field_type = make_type_optional(required, field_type)
+            field_type = RustTypeName::new(field_type).optional(!required).s
         ))
     }
 }

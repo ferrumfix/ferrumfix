@@ -1,5 +1,5 @@
 use super::error;
-use crate::dtf::DataField;
+use crate::datatypes::DataType;
 use crate::Buffer;
 
 const LEN_IN_BYTES_NO_MILLI: usize = 8;
@@ -70,7 +70,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::dtf::Time;
+    /// use fefix::datatypes::Time;
     ///
     /// let dtf = Time::parse(b"12:45:00").unwrap();
     /// assert_eq!(dtf.hour(), 12)
@@ -84,7 +84,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::dtf::Time;
+    /// use fefix::datatypes::Time;
     ///
     /// let dtf = Time::parse(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
@@ -98,7 +98,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::dtf::Time;
+    /// use fefix::datatypes::Time;
     ///
     /// let dtf = Time::parse(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
@@ -107,7 +107,7 @@ impl Time {
     /// Leap second:
     ///
     /// ```
-    /// use fefix::dtf::Time;
+    /// use fefix::datatypes::Time;
     ///
     /// let dtf = Time::parse(b"23:59:60").unwrap();
     /// assert_eq!(dtf.second(), 60)
@@ -121,7 +121,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::dtf::Time;
+    /// use fefix::datatypes::Time;
     ///
     /// let dtf = Time::parse(b"12:45:00.328").unwrap();
     /// assert_eq!(dtf.milli(), 328)
@@ -131,7 +131,7 @@ impl Time {
     }
 }
 
-impl<'a> DataField<'a> for Time {
+impl<'a> DataType<'a> for Time {
     type Error = error::Time;
     type SerializeSettings = ();
 

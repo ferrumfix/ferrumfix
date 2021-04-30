@@ -2,9 +2,9 @@
 //!
 //! This module introduces reusable, allocation-free data structures that can be
 //! used to store [`DataType`](crate::DataType) values. This is done via the
-//! [`DataField`] trait, which allows both serialization and deserialization.
+//! [`DataType`] trait, which allows both serialization and deserialization.
 //!
-//! FerrumFIX maps FIX date types to the following [`DataField`] implementors:
+//! FerrumFIX maps FIX date types to the following [`DataType`] implementors:
 //!
 //! - `int`: any Rust primitive integer type;
 //! - `Length`: [`usize`];
@@ -29,26 +29,24 @@
 //! - `TZTimeOnly`: [`TzTime`];
 //! - `TZTimestamp`: [`TzTimestamp`];
 //!
-//! The module name (`dtf`) is short for **D**a**T**a **F**ields.
-//!
-//! # Quick tour of [`DataField`]
+//! # Quick tour of [`DataType`]
 //!
 //! ```
-//! use fefix::dtf::{DataField, Timestamp};
+//! use fefix::datatypes::{DataType, Timestamp};
 //!
 //! let bytes = b"20130422-12:30:00.000";
 //!
-//! // You can use `DataField::deserialize` to parse data fields.
+//! // You can use `DataType::deserialize` to parse data fields.
 //! let timestamp = Timestamp::deserialize(bytes).unwrap();
 //! assert_eq!(timestamp.date().year(), 2013);
 //!
-//! // `DataField::deserialize_lossy` is like `DataField::deserialize`, but it's
+//! // `DataType::deserialize_lossy` is like `DataType::deserialize`, but it's
 //! // allowed to skip some format verification for the sake of speed.
 //! assert!(u32::deserialize(b"invalid integer").is_err());
 //! assert!(u32::deserialize_lossy(b"invalid integer").is_ok());
 //!
 //! let buffer: &mut Vec<u8> = &mut vec![];
-//! // Use `DataField::serialize` to write values to buffers.
+//! // Use `DataType::serialize` to write values to buffers.
 //! 1337u32.serialize(buffer);
 //! assert_eq!(&buffer[..], b"1337" as &[u8]);
 //! ```
@@ -81,29 +79,8 @@ use rust_decimal::Decimal;
 use std::convert::TryInto;
 use std::str::FromStr;
 
-pub trait SubDataField<'a, T>
-where
-    Self: Sized,
-    T: DataField<'a>,
-{
-    type Error: From<T::Error>;
-
-    fn convert(dtf: T) -> Result<Self, Self::Error>;
-}
-
-impl<'a, T> SubDataField<'a, T> for T
-where
-    T: DataField<'a>,
-{
-    type Error = <T as DataField<'a>>::Error;
-
-    fn convert(dtf: T) -> Result<Self, Self::Error> {
-        Ok(dtf)
-    }
-}
-
 /// A trait for serializing data directly into a [`Buffer`].
-pub trait DataField<'a>
+pub trait DataType<'a>
 where
     Self: Sized,
 {
@@ -114,7 +91,7 @@ where
     where
         B: Buffer;
 
-    fn serialize_custom<B>(&self, buffer: &mut B, _settings: &Self::SerializeSettings) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: &Self::SerializeSettings) -> usize
     where
         B: Buffer,
     {
@@ -128,7 +105,7 @@ where
     }
 }
 
-impl<'a> DataField<'a> for Decimal {
+impl<'a> DataType<'a> for Decimal {
     type Error = error::Decimal;
     type SerializeSettings = ();
 
@@ -148,7 +125,7 @@ impl<'a> DataField<'a> for Decimal {
     }
 }
 
-impl<'a> DataField<'a> for bool {
+impl<'a> DataType<'a> for bool {
     type Error = error::Bool;
     type SerializeSettings = ();
 
@@ -178,7 +155,7 @@ impl<'a> DataField<'a> for bool {
     }
 }
 
-impl<'a> DataField<'a> for &'a str {
+impl<'a> DataType<'a> for &'a str {
     type Error = std::str::Utf8Error;
     type SerializeSettings = ();
 
@@ -195,7 +172,7 @@ impl<'a> DataField<'a> for &'a str {
     }
 }
 
-impl<'a> DataField<'a> for u8 {
+impl<'a> DataType<'a> for u8 {
     type Error = error::Int;
     type SerializeSettings = ();
 
@@ -212,7 +189,7 @@ impl<'a> DataField<'a> for u8 {
     }
 }
 
-impl<'a> DataField<'a> for &'a [u8] {
+impl<'a> DataType<'a> for &'a [u8] {
     type Error = ();
     type SerializeSettings = ();
 
@@ -229,15 +206,7 @@ impl<'a> DataField<'a> for &'a [u8] {
     }
 }
 
-impl<'a> SubDataField<'a, &'a [u8]> for &'a str {
-    type Error = ();
-
-    fn convert(bytes: &'a [u8]) -> Result<Self, Self::Error> {
-        std::str::from_utf8(bytes).map_err(|_| ())
-    }
-}
-
-impl<'a, const N: usize> DataField<'a> for &'a [u8; N] {
+impl<'a, const N: usize> DataType<'a> for &'a [u8; N] {
     type Error = ();
     type SerializeSettings = ();
 
@@ -254,7 +223,7 @@ impl<'a, const N: usize> DataField<'a> for &'a [u8; N] {
     }
 }
 
-impl<'a> DataField<'a> for TagU16 {
+impl<'a> DataType<'a> for TagU16 {
     type Error = error::Int;
     type SerializeSettings = ();
 
@@ -284,7 +253,7 @@ impl<'a> DataField<'a> for TagU16 {
     }
 }
 
-impl<'a> DataField<'a> for u32 {
+impl<'a> DataType<'a> for u32 {
     type Error = error::Int;
     type SerializeSettings = ();
 
@@ -314,7 +283,7 @@ impl<'a> DataField<'a> for u32 {
     }
 }
 
-impl<'a> DataField<'a> for i32 {
+impl<'a> DataType<'a> for i32 {
     type Error = error::Int;
     type SerializeSettings = ();
 
@@ -345,7 +314,7 @@ impl<'a> DataField<'a> for i32 {
     }
 }
 
-impl<'a> DataField<'a> for u64 {
+impl<'a> DataType<'a> for u64 {
     type Error = error::Int;
     type SerializeSettings = ();
 
@@ -375,7 +344,7 @@ impl<'a> DataField<'a> for u64 {
     }
 }
 
-impl<'a> DataField<'a> for i64 {
+impl<'a> DataType<'a> for i64 {
     type Error = error::Int;
     type SerializeSettings = ();
 
@@ -406,7 +375,7 @@ impl<'a> DataField<'a> for i64 {
     }
 }
 
-impl<'a> DataField<'a> for usize {
+impl<'a> DataType<'a> for usize {
     type Error = error::Int;
     type SerializeSettings = ();
 
@@ -435,6 +404,21 @@ impl<'a> DataField<'a> for usize {
         Ok(n)
     }
 }
+
+pub trait SuperDataType<'a, T>
+where
+    Self: DataType<'a>,
+    T: DataType<'a>,
+{
+}
+
+/// A [`DataType`] is always a [`SuperDataType`] of itself.
+impl<'a, T> SuperDataType<'a, T> for T where T: DataType<'a> {}
+
+impl<'a> SuperDataType<'a, &'a str> for &'a [u8] {}
+impl<'a> SuperDataType<'a, i64> for &'a [u8] {}
+impl<'a> SuperDataType<'a, u32> for u64 {}
+impl<'a> SuperDataType<'a, i32> for i64 {}
 
 #[cfg(test)]
 mod test {

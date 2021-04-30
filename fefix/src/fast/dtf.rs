@@ -1,1 +1,1 @@
-pub trait DataField {}
+pub trait DataType {}

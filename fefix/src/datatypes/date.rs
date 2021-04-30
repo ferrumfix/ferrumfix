@@ -1,5 +1,5 @@
 use super::error;
-use crate::dtf::DataField;
+use crate::datatypes::DataType;
 use crate::Buffer;
 
 const LEN_IN_BYTES: usize = 8;
@@ -38,7 +38,7 @@ impl Date {
     /// # Examples
     ///
     /// ```
-    /// use fefix::dtf::Date;
+    /// use fefix::datatypes::Date;
     ///
     /// assert!(Date::new(2021, 4, 16).is_ok());
     /// assert!(Date::new(2021, 13, 32).is_err());
@@ -71,7 +71,7 @@ impl Date {
     /// # Examples
     ///
     /// ```
-    /// use fefix::dtf::Date;
+    /// use fefix::datatypes::Date;
     ///
     /// assert_eq!(&Date::new(2021, 01, 01).unwrap().to_bytes(), b"20210101");
     /// ```
@@ -118,7 +118,7 @@ impl Date {
     }
 }
 
-impl<'a> DataField<'a> for Date {
+impl<'a> DataType<'a> for Date {
     type Error = error::Date;
     type SerializeSettings = ();
 

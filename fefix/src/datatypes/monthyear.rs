@@ -1,5 +1,5 @@
 use super::error;
-use crate::dtf::DataField;
+use crate::datatypes::DataType;
 use crate::Buffer;
 
 const LEN_IN_BYTES: usize = 8;
@@ -47,7 +47,7 @@ impl MonthYear {
     /// # Examples
     ///
     /// ```
-    /// use fefix::dtf::MonthYear;
+    /// use fefix::datatypes::MonthYear;
     ///
     /// let dtf = MonthYear::parse(b"19390901").unwrap();
     /// assert_eq!(dtf.year(), 1939)
@@ -61,7 +61,7 @@ impl MonthYear {
     /// # Examples
     ///
     /// ```
-    /// use fefix::dtf::MonthYear;
+    /// use fefix::datatypes::MonthYear;
     ///
     /// let dtf = MonthYear::parse(b"20000101").unwrap();
     /// assert_eq!(dtf.month(), 1)
@@ -77,7 +77,7 @@ impl MonthYear {
     /// Day included in the definition:
     ///
     /// ```
-    /// use fefix::dtf::MonthYear;
+    /// use fefix::datatypes::MonthYear;
     ///
     /// let dtf = MonthYear::parse(b"20191225").unwrap();
     /// assert_eq!(dtf.day(), Some(25))
@@ -86,7 +86,7 @@ impl MonthYear {
     /// Day not included:
     ///
     /// ```
-    /// use fefix::dtf::MonthYear;
+    /// use fefix::datatypes::MonthYear;
     ///
     /// let dtf = MonthYear::parse(b"201801w3").unwrap();
     /// assert_eq!(dtf.day(), None)
@@ -107,7 +107,7 @@ impl MonthYear {
     /// Present week code:
     ///
     /// ```
-    /// use fefix::dtf::MonthYear;
+    /// use fefix::datatypes::MonthYear;
     ///
     /// let dtf = MonthYear::parse(b"201912w1").unwrap();
     /// assert_eq!(dtf.week(), Some(1))
@@ -116,7 +116,7 @@ impl MonthYear {
     /// Absent week code:
     ///
     /// ```
-    /// use fefix::dtf::MonthYear;
+    /// use fefix::datatypes::MonthYear;
     ///
     /// let dtf = MonthYear::parse(b"20191225").unwrap();
     /// assert_eq!(dtf.week(), None)
@@ -130,7 +130,7 @@ impl MonthYear {
     }
 }
 
-impl<'a> DataField<'a> for MonthYear {
+impl<'a> DataType<'a> for MonthYear {
     type Error = error::MonthYear;
     type SerializeSettings = ();
 

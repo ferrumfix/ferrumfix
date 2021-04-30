@@ -1,5 +1,5 @@
 use super::error;
-use super::DataField;
+use super::DataType;
 use crate::Buffer;
 use std::time::Duration;
 
@@ -21,7 +21,7 @@ impl TzTime {
     /// # Examples
     ///
     /// ```
-    /// use fefix::dtf::{DataField, TzTime};
+    /// use fefix::datatypes::{DataType, TzTime};
     ///
     /// let dtf = TzTime::deserialize(b"12:45:00Z").unwrap();
     /// assert_eq!(dtf.minute(), 45);
@@ -43,7 +43,7 @@ impl TzTime {
     }
 }
 
-impl<'a> DataField<'a> for TzTime {
+impl<'a> DataType<'a> for TzTime {
     type Error = error::Time;
     type SerializeSettings = ();
 
@@ -126,7 +126,7 @@ const fn ascii_digit_to_u32(digit: u8, multiplier: u32) -> u32 {
 
 #[cfg(test)]
 mod test {
-    use super::DataField;
+    use super::DataType;
     use super::*;
 
     struct TestCase {

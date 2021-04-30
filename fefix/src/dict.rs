@@ -2,13 +2,23 @@
 
 use self::symbol_table::{Key, KeyRef, SymbolTable, SymbolTableIndex};
 use super::AppVersion;
+use super::FixDataType;
 use super::TagU16;
-use super::{quickfix_spec, FixDataType};
 use fnv::FnvHashMap;
 use quickfix::{ParseDictionaryError, QuickFixReader};
+use quickfix_spec::quickfix_spec;
 use std::fmt;
 use std::io;
 use std::sync::Arc;
+
+/// The expected location of a field within a FIX message (i.e. header, body, or
+/// trailer).
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum FieldLocation {
+    StdHeader,
+    Body,
+    Trailer,
+}
 
 /// Value for the field `MsgType (35)`.
 #[derive(Copy, Debug, Clone, PartialEq, Eq, Hash)]
@@ -479,6 +489,7 @@ impl<'a> Abbreviation<'a> {
         self.1.abbreviation.as_str()
     }
 }
+
 #[derive(Clone, Debug)]
 struct CategoryData {
     /// **Primary key**. A string uniquely identifying this category.
@@ -600,10 +611,13 @@ struct DatatypeData {
     // TODO: 'XML'.
 }
 
+/// A FIX data type defined as part of a [`Dictionary`].
 #[derive(Debug)]
 pub struct Datatype<'a>(&'a Dictionary, &'a DatatypeData);
 
 impl<'a> Datatype<'a> {
+    /// Returns the name of `self`.  This is also guaranteed to be a valid Rust
+    /// identifier.
     pub fn name(&self) -> &str {
         self.1.datatype.name()
     }
@@ -612,9 +626,6 @@ impl<'a> Datatype<'a> {
         self.1.datatype
     }
 }
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Enum {}
 
 /// A field is identified by a unique tag number and a name. Each field in a
 /// message is associated with a value.
@@ -651,7 +662,8 @@ struct FieldEnumData {
     description: String,
 }
 
-/// An allowed variant for a FIX field definition.
+/// A limitation imposed on the value of a specific FIX [`Field`].  Also known as
+/// "code set".
 #[derive(Debug)]
 pub struct FieldEnum<'a>(&'a Dictionary, &'a FieldEnumData);
 
@@ -673,6 +685,20 @@ impl<'a> FieldEnum<'a> {
 /// enumeration.
 #[derive(Debug)]
 pub struct Field<'a>(&'a Dictionary, &'a FieldData);
+
+impl<'a> IsFieldDefinition for Field<'a> {
+    fn name(&self) -> &str {
+        self.1.name.as_str()
+    }
+
+    fn tag(&self) -> TagU16 {
+        TagU16::new(self.1.tag as u16).unwrap()
+    }
+
+    fn location(&self) -> FieldLocation {
+        FieldLocation::Body // FIXME
+    }
+}
 
 impl<'a> Field<'a> {
     pub fn doc_url_onixs(&self, version: &str) -> String {
@@ -697,7 +723,7 @@ impl<'a> Field<'a> {
     }
 
     /// Returns the [`BaseType`] of `self`.
-    pub fn basetype(&self) -> FixDataType {
+    pub fn fix_datatype(&self) -> FixDataType {
         self.data_type().basetype()
     }
 
@@ -752,6 +778,19 @@ struct LayoutItemData {
     required: bool,
     kind: LayoutItemKindData,
 }
+
+pub trait IsFieldDefinition {
+    fn tag(&self) -> TagU16;
+
+    fn name(&self) -> &str;
+
+    #[inline(always)]
+    fn location(&self) -> FieldLocation {
+        FieldLocation::Body // FIXME
+    }
+}
+
+pub trait IsTypedFieldDefinition<V>: IsFieldDefinition {}
 
 fn layout_item_kind<'a>(item: &'a LayoutItemKindData, dict: &'a Dictionary) -> LayoutItemKind<'a> {
     match item {
@@ -1470,6 +1509,77 @@ mod quickfix {
     pub enum ParseDictionaryError {
         InvalidFormat,
         InvalidData(String),
+    }
+}
+
+mod quickfix_spec {
+    use super::AppVersion;
+    use std::borrow::Cow;
+
+    const SPEC_FIX_40: &str = include_str!("../resources/quickfix/FIX-4.0.xml");
+    const SPEC_FIX_41: &str = include_str!("../resources/quickfix/FIX-4.1.xml");
+    const SPEC_FIX_42: &str = include_str!("../resources/quickfix/FIX-4.2.xml");
+    const SPEC_FIX_43: &str = include_str!("../resources/quickfix/FIX-4.3.xml");
+    const SPEC_FIX_44: &str = include_str!("../resources/quickfix/FIX-4.4.xml");
+    const SPEC_FIX_50: &str = include_str!("../resources/quickfix/FIX-5.0.xml");
+    const SPEC_FIX_50SP1: &str = include_str!("../resources/quickfix/FIX-5.0-SP1.xml");
+    const SPEC_FIX_50SP2: &str = include_str!("../resources/quickfix/FIX-5.0-SP2.xml");
+    const SPEC_FIXT_11: &str = include_str!("../resources/quickfix/FIXT-1.1.xml");
+
+    /// Returns a string with the QuickFIX definition file for `self`
+    /// as its content.
+    ///
+    /// The QuickFix definition files are extracted and
+    /// decompressed
+    /// from the binary without filesystem access.
+    pub fn quickfix_spec(version: AppVersion) -> Cow<'static, str> {
+        (match version {
+            AppVersion::Fix40 => SPEC_FIX_40,
+            AppVersion::Fix41 => SPEC_FIX_41,
+            AppVersion::Fix42 => SPEC_FIX_42,
+            AppVersion::Fix43 => SPEC_FIX_43,
+            AppVersion::Fix44 => SPEC_FIX_44,
+            AppVersion::Fix50 => SPEC_FIX_50,
+            AppVersion::Fix50SP1 => SPEC_FIX_50SP1,
+            AppVersion::Fix50SP2 => SPEC_FIX_50SP2,
+            AppVersion::Fixt11 => SPEC_FIXT_11,
+        })
+        .into()
+    }
+
+    #[cfg(test)]
+    mod test {
+        use super::*;
+        use std::collections::HashSet;
+
+        #[test]
+        fn all_versions_have_quickfix_spec() {
+            assert!(AppVersion::ALL
+                .iter()
+                .copied()
+                .map(|version| quickfix_spec(version))
+                .all(|spec| spec.len() > 0));
+        }
+
+        #[test]
+        fn all_versions_have_different_quickfix_spec() {
+            let mut set: HashSet<String> = HashSet::default();
+            AppVersion::ALL
+                .iter()
+                .copied()
+                .map(|version| set.insert(quickfix_spec(version).to_string()))
+                .count();
+            assert_eq!(set.len(), AppVersion::ALL.iter().copied().count());
+        }
+
+        #[test]
+        fn all_versions_have_xml_valid_quickfix_spec() {
+            assert!(AppVersion::ALL
+                .iter()
+                .copied()
+                .map(|version| quickfix_spec(version))
+                .all(|spec| roxmltree::Document::parse(&spec).is_ok()));
+        }
     }
 }
 
