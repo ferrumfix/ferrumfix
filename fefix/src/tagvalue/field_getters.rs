@@ -1,4 +1,4 @@
-use crate::{tagvalue::datatypes, dict};
+use crate::{dict, tagvalue::datatypes};
 use crate::{OptError, OptResult};
 
 /// A trait to retrieve field values in a FIX message.

@@ -105,6 +105,7 @@ where
     }
 }
 
+/// Byte-padding instructions for byte strings.
 #[derive(Debug, Copy, Clone)]
 pub struct Padding {
     pub len: usize,
@@ -350,12 +351,15 @@ impl<'a> FixFieldValue<'a> for u32 {
     where
         B: Buffer,
     {
-        //buffer.extend_from_slice([settings.byte; settings.len]);
-        for _ in 0..settings.len {
-            // FIXME
-            buffer.extend_from_slice(&[((self / 10) + b'0' as u32) as u8]);
+        let initial_len = buffer.len();
+        buffer.resize(buffer.len() + settings.len, settings.byte);
+        let bytes = buffer.as_mut_slice();
+        let mut multiplier = 1;
+        for i in (0..settings.len).rev() {
+            bytes[i + initial_len] = ((self / multiplier) % 10).wrapping_add(b'0' as u32) as u8;
+            multiplier *= 10;
         }
-        self.serialize(buffer)
+        settings.len
     }
 
     #[inline(always)]
@@ -529,6 +533,7 @@ impl<'a> SuperDataType<'a, i32> for i64 {}
 #[cfg(test)]
 mod test {
     use super::*;
+    use quickcheck_macros::quickcheck;
 
     #[test]
     fn serialize_bools() {
@@ -538,14 +543,22 @@ mod test {
         assert_eq!(&buffer[..], b"YN" as &[u8]);
     }
 
-    #[test]
-    fn serialize_bytes() {
-        let data: &[&[u8]] = &[b"hello", b"", b" ", b"foo"];
+    #[quickcheck]
+    fn serialize_bytes(data: Vec<Vec<u8>>) -> bool {
         let mut buffer = Vec::new();
-        for slice in data {
-            assert_eq!(slice.serialize(&mut buffer), slice.len());
+        for slice in data.iter() {
+            assert_eq!((&slice[..]).serialize(&mut buffer), slice.len());
         }
-        assert_eq!(&buffer[..], b"hello foo" as &[u8]);
+        &buffer[..] == &data.iter().flatten().copied().collect::<Vec<u8>>()[..]
+    }
+
+    #[quickcheck]
+    fn u32_serialize(n: u32) -> bool {
+        let buffer = &mut Vec::new();
+        let s = n.to_string();
+        let bytes = s.as_bytes();
+        let len = n.serialize(buffer);
+        bytes == buffer.as_slice() && len == bytes.len()
     }
 
     #[test]

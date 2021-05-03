@@ -1,8 +1,8 @@
 use super::{Config, Configure, DecodeError};
-use crate::tagvalue::datatypes;
 use crate::dict;
 use crate::dict::FieldLocation;
 use crate::dict::IsFieldDefinition;
+use crate::tagvalue::datatypes;
 use crate::tagvalue::Fv;
 use crate::Dictionary;
 use serde::{Deserialize, Serialize};

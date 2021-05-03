@@ -16,7 +16,7 @@ pub fn derive_field_value(input: TokenStream) -> TokenStream {
             let enum_variant = enum_variant.ident;
             quote! {
                 Self::#enum_variant => {
-                    buffer.extend_from_slice(stringify!(#enum_discriminant).as_bytes());
+                    buffer.extend_from_slice(#enum_discriminant.as_bytes());
                     #enum_discriminant_len
                 },
             }

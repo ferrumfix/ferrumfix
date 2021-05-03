@@ -72,7 +72,6 @@ pub mod codegen;
 pub mod definitions;
 pub mod dict;
 pub mod fast;
-mod fix_data_type;
 pub mod fixp;
 pub mod fixs;
 pub mod json;
@@ -82,10 +81,9 @@ pub mod tagvalue;
 
 pub use app_version::AppVersion;
 pub use buffer::Buffer;
-pub use tagvalue::datatypes::FixFieldValue;
 pub use dict::Dictionary;
 pub use fefix_derive::FixFieldValue;
-pub use fix_data_type::FixDataType;
+pub use tagvalue::datatypes::FixFieldValue;
 
 #[cfg(expose_openssl)]
 pub extern crate openssl;

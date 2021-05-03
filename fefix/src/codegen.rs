@@ -1,7 +1,6 @@
 //! Code generation utilities.
 
-use super::dict::{Dictionary, Field, LayoutItem, LayoutItemKind, Message};
-use super::fix_data_type::FixDataType;
+use super::dict::{Dictionary, Field, FixDataType, LayoutItem, LayoutItemKind, Message};
 use super::TagU16;
 use heck::{CamelCase, ShoutySnakeCase, SnakeCase};
 use indoc::indoc;
@@ -153,7 +152,7 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
             {notice}
 
             use {fefix_path}::dict::FieldLocation;
-            use {fefix_path}::{{FixDataType, Buffer}};
+            use {fefix_path}::{{dict::FixDataType, Buffer}};
             use {fefix_path}::definitions::GeneratedFieldDef;
             {import_data_field}
             use std::marker::PhantomData;

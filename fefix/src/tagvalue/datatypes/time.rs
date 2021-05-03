@@ -1,6 +1,6 @@
 use super::error;
-use crate::FixFieldValue;
 use crate::Buffer;
+use crate::FixFieldValue;
 
 const LEN_IN_BYTES_NO_MILLI: usize = 8;
 const LEN_IN_BYTES_WITH_MILLI: usize = 12;

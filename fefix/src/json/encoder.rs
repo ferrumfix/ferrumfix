@@ -1,5 +1,5 @@
-use crate::FixFieldValue;
 use crate::dict::IsFieldDefinition;
+use crate::FixFieldValue;
 
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]

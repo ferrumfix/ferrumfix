@@ -19,9 +19,10 @@ pub mod fix50sp2;
 #[rustfmt::skip]
 pub mod fixt11;
 
-use crate::{dict, FixFieldValue, FixDataType, TagU16};
+use crate::{dict, dict::FixDataType, FixFieldValue, TagU16};
 use std::marker::PhantomData;
 
+/// A generated field definition.
 #[derive(Debug, Clone)]
 pub struct GeneratedFieldDef<'a, V>
 where

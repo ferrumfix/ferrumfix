@@ -187,6 +187,11 @@ where
         self.decoder.config_mut()
     }
 
+    pub fn clear(&mut self) {
+        self.buffer.clear();
+        self.error = None;
+    }
+
     /// Provides a buffer that must be filled before re-attempting to deserialize
     /// the next [`RawFrame`].
     pub fn supply_buffer(&mut self) -> &mut [u8] {

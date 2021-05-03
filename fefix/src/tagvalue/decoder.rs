@@ -6,7 +6,7 @@ use crate::definitions::fix44;
 use crate::dict;
 use crate::dict::IsFieldDefinition;
 use crate::TagU16;
-use crate::{tagvalue::datatypes, Dictionary, FixDataType};
+use crate::{dict::FixDataType, tagvalue::datatypes, Dictionary};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::{BuildHasher, Hasher};
@@ -282,6 +282,11 @@ where
     }
 
     #[inline]
+    pub fn clear(&mut self) {
+        self.raw_decoder.clear();
+    }
+
+    #[inline]
     pub fn current_message(&mut self) -> Result<Option<Message>, DecodeError> {
         match self.raw_decoder.current_frame() {
             Ok(Some(frame)) => self.decoder.from_frame(frame).map(|msg| Some(msg)),
@@ -430,7 +435,7 @@ impl<'a> MessageGroupEntry<'a> {
 }
 
 /// FIX message data structure with fast associative and sequential access.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Message<'a> {
     bytes: &'a [u8],
     builder: &'a MessageBuilder<'a>,
@@ -477,6 +482,24 @@ impl<'a> Fv<'a> for Message<'a> {
         F: dict::IsFieldDefinition,
     {
         self.fv_raw_with_key(field.tag())
+    }
+}
+
+impl<'a> slog::Value for Message<'a> {
+    fn serialize(
+        &self,
+        _rec: &slog::Record,
+        key: slog::Key,
+        serializer: &mut dyn slog::Serializer,
+    ) -> slog::Result {
+        for tag_value in self.builder.insertion_order.iter() {
+            serializer.emit_u16(key, tag_value.tag.get())?;
+            serializer.emit_char(key, '=')?;
+            // FIXME
+            serializer.emit_char(key, '?')?;
+            serializer.emit_char(key, '|')?;
+        }
+        Ok(())
     }
 }
 
