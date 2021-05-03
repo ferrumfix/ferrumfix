@@ -106,21 +106,23 @@ impl Date {
         self.day
     }
 
-    #[cfg(feature = "chrono-time")]
-    pub fn to_chrono_utc_date(&self) -> chrono::Date {
-        let naive = self.to_chrono_naivedate();
-        chrono::Date::from_utc(naive, chrono::Utc)
+    #[cfg(feature = "chrono_time")]
+    pub fn to_chrono_utc(&self) -> Option<chrono::Date<chrono::Utc>> {
+        let naive = self.to_chrono_naive()?;
+        Some(chrono::Date::from_utc(naive, chrono::Utc))
     }
 
-    #[cfg(feature = "chrono-time")]
-    pub fn to_chrono_naivedate(&self) -> chrono::NaiveDate {
-        chrono::NaiveDate::from_ymd_opt(self.year(), self.month(), self.day())
+    #[cfg(feature = "chrono_time")]
+    pub fn to_chrono_naive(&self) -> Option<chrono::NaiveDate> {
+        chrono::NaiveDate::from_ymd_opt(self.year() as i32, self.month(), self.day())
     }
 }
 
 impl<'a> FixFieldValue<'a> for Date {
     type Error = error::Date;
     type SerializeSettings = ();
+
+    const IS_ASCII: bool = true;
 
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where

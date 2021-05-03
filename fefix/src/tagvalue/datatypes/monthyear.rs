@@ -134,6 +134,8 @@ impl<'a> FixFieldValue<'a> for MonthYear {
     type Error = error::MonthYear;
     type SerializeSettings = ();
 
+    const IS_ASCII: bool = true;
+
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
         B: Buffer,

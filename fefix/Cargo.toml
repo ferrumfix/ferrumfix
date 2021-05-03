@@ -20,8 +20,8 @@ name = "fix_decode"
 harness = false
 
 [features]
-default = ["repo_v2010", "repo_v50sp2ep254", "expose_openssl", "expose_tokio"]
-chrono-time = []
+default = ["repo_v2010", "repo_v50sp2ep254", "expose_openssl", "expose_tokio", "chrono_time"]
+chrono_time = []
 repo_v50sp2ep254 = []
 repo_v2010 = []
 expose_openssl = []

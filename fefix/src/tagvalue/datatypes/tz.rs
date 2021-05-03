@@ -39,6 +39,8 @@ impl<'a> FixFieldValue<'a> for Tz {
     type Error = error::Timestamp;
     type SerializeSettings = ();
 
+    const IS_ASCII: bool = true;
+
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
         B: Buffer,

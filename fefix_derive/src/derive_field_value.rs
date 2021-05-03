@@ -42,6 +42,8 @@ pub fn derive_field_value(input: TokenStream) -> TokenStream {
             type Error = ();
             type SerializeSettings = ();
 
+            const IS_ASCII: bool = true;
+
             fn serialize<B>(&self, buffer: &mut B) -> usize
             where
                 B: Buffer,

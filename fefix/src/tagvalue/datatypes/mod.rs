@@ -79,29 +79,57 @@ use rust_decimal::Decimal;
 use std::convert::TryInto;
 use std::str::FromStr;
 
-/// A trait for serializing data directly into a [`Buffer`].
+/// A trait for (de)serializing data directly into a [`Buffer`].
 pub trait FixFieldValue<'a>
 where
     Self: Sized,
 {
     type Error;
-    type SerializeSettings;
+    type SerializeSettings: Default;
 
+    /// Flag that is enabled if and only if the byte representation of `Self` is
+    /// always valid ASCII.
+    ///
+    /// This flag is currently not used, but it will be once Rust supports
+    /// fully-fledged `const` generics.
+    const IS_ASCII: bool;
+
+    /// Writes `self` to `buffer` using default settings.
+    #[inline(always)]
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
-        B: Buffer;
+        B: Buffer,
+    {
+        self.serialize_with(buffer, Self::SerializeSettings::default())
+    }
 
-    fn serialize_with<B>(&self, buffer: &mut B, _settings: &Self::SerializeSettings) -> usize
+    /// Writes `self` to `buffer` using custom serialization `settings`.
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: Self::SerializeSettings) -> usize
     where
         B: Buffer,
     {
         self.serialize(buffer)
     }
 
+    /// Parses and deserializes from `data`.
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error>;
 
+    /// Like [`Self::deserialize`], but it's allowed to skip *some* amount of
+    /// input checking. Invalid inputs might not trigger errors and instead be
+    /// deserialized as random values.
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
         Self::deserialize(data)
+    }
+
+    /// Serializes `self` to a [`Vec`] of bytes, allocated on the fly.
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut buffer = Vec::new();
+        self.serialize(&mut buffer);
+        buffer
+    }
+
+    fn to_string_opt(&self) -> Option<String> {
+        String::from_utf8(self.to_bytes()).ok()
     }
 }
 
@@ -112,7 +140,15 @@ pub struct Padding {
     pub byte: u8,
 }
 
+impl Default for Padding {
+    #[inline(always)]
+    fn default() -> Self {
+        Self { len: 0, byte: 0 }
+    }
+}
+
 impl Padding {
+    #[inline(always)]
     pub fn zeros(len: usize) -> Self {
         Self { len, byte: b'0' }
     }
@@ -121,9 +157,18 @@ impl Padding {
 #[derive(Debug, Copy, Clone)]
 pub struct WithMilliseconds(pub bool);
 
+impl Default for WithMilliseconds {
+    fn default() -> Self {
+        Self(true)
+    }
+}
+
+#[cfg(feature = "chrono_time")]
 impl<'a> FixFieldValue<'a> for chrono::DateTime<chrono::Utc> {
-    type Error = ();
+    type Error = &'static str;
     type SerializeSettings = WithMilliseconds;
+
+    const IS_ASCII: bool = true;
 
     #[inline(always)]
     fn serialize<B>(&self, buffer: &mut B) -> usize
@@ -131,27 +176,27 @@ impl<'a> FixFieldValue<'a> for chrono::DateTime<chrono::Utc> {
         B: Buffer,
     {
         // Serialize with milliseconds by default.
-        self.serialize_with(buffer, &WithMilliseconds(true))
+        self.serialize_with(buffer, WithMilliseconds(true))
     }
 
     #[inline(always)]
-    fn serialize_with<B>(&self, buffer: &mut B, settings: &Self::SerializeSettings) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, settings: Self::SerializeSettings) -> usize
     where
         B: Buffer,
     {
         use chrono::{Datelike, Timelike};
-        (self.year() as u32).serialize_with(buffer, &Padding::zeros(4));
-        (self.month() as u32).serialize_with(buffer, &Padding::zeros(2));
-        (self.day() as u32).serialize_with(buffer, &Padding::zeros(2));
+        (self.year() as u32).serialize_with(buffer, Padding::zeros(4));
+        (self.month() as u32).serialize_with(buffer, Padding::zeros(2));
+        (self.day() as u32).serialize_with(buffer, Padding::zeros(2));
         buffer.extend_from_slice(b"-");
-        (self.hour() as u32).serialize_with(buffer, &Padding::zeros(2));
+        (self.hour() as u32).serialize_with(buffer, Padding::zeros(2));
         buffer.extend_from_slice(b":");
-        (self.minute() as u32).serialize_with(buffer, &Padding::zeros(2));
+        (self.minute() as u32).serialize_with(buffer, Padding::zeros(2));
         buffer.extend_from_slice(b":");
-        (self.second() as u32).serialize_with(buffer, &Padding::zeros(2));
+        (self.second() as u32).serialize_with(buffer, Padding::zeros(2));
         if settings.0 {
             buffer.extend_from_slice(b".");
-            (self.nanosecond() / 10E6 as u32).serialize_with(buffer, &Padding::zeros(3));
+            (self.nanosecond() / 10E6 as u32).serialize_with(buffer, Padding::zeros(3));
             21
         } else {
             17
@@ -160,13 +205,47 @@ impl<'a> FixFieldValue<'a> for chrono::DateTime<chrono::Utc> {
 
     #[inline(always)]
     fn deserialize(_data: &'a [u8]) -> Result<Self, Self::Error> {
-        Err(())
+        Err("TODO")
+    }
+}
+
+#[cfg(feature = "chrono_time")]
+impl<'a> FixFieldValue<'a> for chrono::NaiveDate {
+    type Error = &'static str;
+    type SerializeSettings = ();
+
+    const IS_ASCII: bool = true;
+
+    #[inline(always)]
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: Self::SerializeSettings) -> usize
+    where
+        B: Buffer,
+    {
+        use chrono::Datelike;
+        (self.year() as u32).serialize_with(buffer, Padding::zeros(4));
+        (self.month() as u32).serialize_with(buffer, Padding::zeros(2));
+        (self.day() as u32).serialize_with(buffer, Padding::zeros(2));
+        8
+    }
+
+    #[inline(always)]
+    fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
+        let date = Date::deserialize(data).map_err(|_| "Invalid date format.")?;
+        date.to_chrono_naive().ok_or("Invalid date range.")
+    }
+
+    #[inline(always)]
+    fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
+        let date = Date::deserialize_lossy(data).map_err(|_| "Invalid date format.")?;
+        date.to_chrono_naive().ok_or("Invalid date range.")
     }
 }
 
 impl<'a> FixFieldValue<'a> for Decimal {
     type Error = error::Decimal;
     type SerializeSettings = ();
+
+    const IS_ASCII: bool = true;
 
     #[inline(always)]
     fn serialize<B>(&self, buffer: &mut B) -> usize
@@ -189,6 +268,8 @@ impl<'a> FixFieldValue<'a> for Decimal {
 impl<'a> FixFieldValue<'a> for bool {
     type Error = error::Bool;
     type SerializeSettings = ();
+
+    const IS_ASCII: bool = true;
 
     #[inline(always)]
     fn serialize<B>(&self, buffer: &mut B) -> usize
@@ -227,6 +308,8 @@ impl<'a> FixFieldValue<'a> for &'a str {
     type Error = std::str::Utf8Error;
     type SerializeSettings = ();
 
+    const IS_ASCII: bool = true;
+
     #[inline(always)]
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -245,6 +328,8 @@ impl<'a> FixFieldValue<'a> for &'a str {
 impl<'a> FixFieldValue<'a> for u8 {
     type Error = error::Int;
     type SerializeSettings = ();
+
+    const IS_ASCII: bool = false;
 
     #[inline(always)]
     fn serialize<B>(&self, buffer: &mut B) -> usize
@@ -265,6 +350,8 @@ impl<'a> FixFieldValue<'a> for &'a [u8] {
     type Error = ();
     type SerializeSettings = ();
 
+    const IS_ASCII: bool = false;
+
     #[inline(always)]
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -284,6 +371,8 @@ impl<'a, const N: usize> FixFieldValue<'a> for &'a [u8; N] {
     type Error = ();
     type SerializeSettings = ();
 
+    const IS_ASCII: bool = false;
+
     #[inline(always)]
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -302,6 +391,8 @@ impl<'a, const N: usize> FixFieldValue<'a> for &'a [u8; N] {
 impl<'a> FixFieldValue<'a> for TagU16 {
     type Error = error::Int;
     type SerializeSettings = ();
+
+    const IS_ASCII: bool = true;
 
     #[inline(always)]
     fn serialize<B>(&self, buffer: &mut B) -> usize
@@ -336,6 +427,8 @@ impl<'a> FixFieldValue<'a> for u32 {
     type Error = error::Int;
     type SerializeSettings = Padding;
 
+    const IS_ASCII: bool = true;
+
     #[inline(always)]
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -347,7 +440,7 @@ impl<'a> FixFieldValue<'a> for u32 {
     }
 
     #[inline(always)]
-    fn serialize_with<B>(&self, buffer: &mut B, settings: &Self::SerializeSettings) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, settings: Self::SerializeSettings) -> usize
     where
         B: Buffer,
     {
@@ -385,6 +478,8 @@ impl<'a> FixFieldValue<'a> for i32 {
     type Error = error::Int;
     type SerializeSettings = ();
 
+    const IS_ASCII: bool = true;
+
     #[inline(always)]
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -419,6 +514,8 @@ impl<'a> FixFieldValue<'a> for u64 {
     type Error = error::Int;
     type SerializeSettings = ();
 
+    const IS_ASCII: bool = true;
+
     #[inline(always)]
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -451,6 +548,8 @@ impl<'a> FixFieldValue<'a> for u64 {
 impl<'a> FixFieldValue<'a> for i64 {
     type Error = error::Int;
     type SerializeSettings = ();
+
+    const IS_ASCII: bool = true;
 
     #[inline(always)]
     fn serialize<B>(&self, buffer: &mut B) -> usize
@@ -485,6 +584,8 @@ impl<'a> FixFieldValue<'a> for i64 {
 impl<'a> FixFieldValue<'a> for usize {
     type Error = error::Int;
     type SerializeSettings = ();
+
+    const IS_ASCII: bool = true;
 
     #[inline(always)]
     fn serialize<B>(&self, buffer: &mut B) -> usize

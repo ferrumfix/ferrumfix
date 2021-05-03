@@ -28,6 +28,8 @@ impl<'a> FixFieldValue<'a> for CheckSum {
     type Error = error::CheckSum;
     type SerializeSettings = ();
 
+    const IS_ASCII: bool = true;
+
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
         B: Buffer,
