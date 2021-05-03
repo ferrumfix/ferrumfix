@@ -5,12 +5,16 @@ use std::convert::TryInto;
 
 const LEN_IN_BYTES: usize = 3;
 
-/// A [`CheckSum`] contains the result of a FIX checksum calculation.
+/// The result of a FIX checksum calculation.
+///
+/// [`CheckSum`] implements [`FixFieldValue`] as a zero-padded, unsigned integer
+/// field of three bytes.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct CheckSum(pub u8);
 
 impl CheckSum {
-    /// Returns the [`CheckSum`] of `data`.
+    /// Returns the [`CheckSum`] of `data`. The result is always the sum of each
+    /// byte in `data` wrapped at 0xFF, as per the FIX specification.
     pub fn compute(data: &[u8]) -> Self {
         let mut value = 0u8;
         for byte in data {
