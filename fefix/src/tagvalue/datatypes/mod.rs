@@ -106,10 +106,7 @@ where
     /// Writes `self` to `buffer` using custom serialization `settings`.
     fn serialize_with<B>(&self, buffer: &mut B, _settings: Self::SerializeSettings) -> usize
     where
-        B: Buffer,
-    {
-        self.serialize(buffer)
-    }
+        B: Buffer;
 
     /// Parses and deserializes from `data`.
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error>;
@@ -248,7 +245,7 @@ impl<'a> FixFieldValue<'a> for Decimal {
     const IS_ASCII: bool = true;
 
     #[inline(always)]
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -272,7 +269,7 @@ impl<'a> FixFieldValue<'a> for bool {
     const IS_ASCII: bool = true;
 
     #[inline(always)]
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -311,7 +308,7 @@ impl<'a> FixFieldValue<'a> for &'a str {
     const IS_ASCII: bool = true;
 
     #[inline(always)]
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -332,7 +329,7 @@ impl<'a> FixFieldValue<'a> for u8 {
     const IS_ASCII: bool = false;
 
     #[inline(always)]
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -353,7 +350,7 @@ impl<'a> FixFieldValue<'a> for &'a [u8] {
     const IS_ASCII: bool = false;
 
     #[inline(always)]
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -374,7 +371,7 @@ impl<'a, const N: usize> FixFieldValue<'a> for &'a [u8; N] {
     const IS_ASCII: bool = false;
 
     #[inline(always)]
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -395,7 +392,7 @@ impl<'a> FixFieldValue<'a> for TagU16 {
     const IS_ASCII: bool = true;
 
     #[inline(always)]
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -430,29 +427,24 @@ impl<'a> FixFieldValue<'a> for u32 {
     const IS_ASCII: bool = true;
 
     #[inline(always)]
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, padding: Self::SerializeSettings) -> usize
     where
         B: Buffer,
     {
-        let s = self.to_string();
-        buffer.extend_from_slice(s.as_bytes());
-        s.len()
-    }
-
-    #[inline(always)]
-    fn serialize_with<B>(&self, buffer: &mut B, settings: Self::SerializeSettings) -> usize
-    where
-        B: Buffer,
-    {
+        if padding.len == 0 {
+            let s = self.to_string();
+            buffer.extend_from_slice(s.as_bytes());
+            return s.len();
+        }
         let initial_len = buffer.len();
-        buffer.resize(buffer.len() + settings.len, settings.byte);
+        buffer.resize(buffer.len() + padding.len, padding.byte);
         let bytes = buffer.as_mut_slice();
         let mut multiplier = 1;
-        for i in (0..settings.len).rev() {
+        for i in (0..padding.len).rev() {
             bytes[i + initial_len] = ((self / multiplier) % 10).wrapping_add(b'0' as u32) as u8;
             multiplier *= 10;
         }
-        settings.len
+        padding.len
     }
 
     #[inline(always)]
@@ -481,7 +473,7 @@ impl<'a> FixFieldValue<'a> for i32 {
     const IS_ASCII: bool = true;
 
     #[inline(always)]
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -517,7 +509,7 @@ impl<'a> FixFieldValue<'a> for u64 {
     const IS_ASCII: bool = true;
 
     #[inline(always)]
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -552,7 +544,7 @@ impl<'a> FixFieldValue<'a> for i64 {
     const IS_ASCII: bool = true;
 
     #[inline(always)]
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -588,7 +580,7 @@ impl<'a> FixFieldValue<'a> for usize {
     const IS_ASCII: bool = true;
 
     #[inline(always)]
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {

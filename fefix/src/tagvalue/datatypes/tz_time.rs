@@ -49,7 +49,7 @@ impl<'a> FixFieldValue<'a> for TzTime {
 
     const IS_ASCII: bool = true;
 
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {

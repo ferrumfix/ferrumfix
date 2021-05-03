@@ -44,7 +44,7 @@ pub fn derive_field_value(input: TokenStream) -> TokenStream {
 
             const IS_ASCII: bool = true;
 
-            fn serialize<B>(&self, buffer: &mut B) -> usize
+            fn serialize_with<B>(&self, buffer: &mut B, _settings: Self::SerializeSettings) -> usize
             where
                 B: Buffer,
             {

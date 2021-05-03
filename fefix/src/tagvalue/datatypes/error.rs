@@ -18,13 +18,6 @@ pub enum Int {
     Other,
 }
 
-/// Type error for [`CheckSum`](super::CheckSum).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum CheckSum {
-    WrongLength,
-    NotAsciiDigits,
-}
-
 /// Error type for [`MonthYear`](super::MonthYear).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MonthYear {

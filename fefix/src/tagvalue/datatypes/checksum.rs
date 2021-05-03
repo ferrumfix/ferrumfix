@@ -1,9 +1,11 @@
-use super::error;
 use crate::Buffer;
 use crate::FixFieldValue;
 use std::convert::TryInto;
 
 const LEN_IN_BYTES: usize = 3;
+
+const ERR_LENGTH: &str = "Expected exactly three bytes for CheckSum.";
+const ERR_ASCII_DIGITS: &str = "Expected ASCII digits, found invalid characters.";
 
 /// The result of a FIX checksum calculation.
 ///
@@ -25,12 +27,12 @@ impl CheckSum {
 }
 
 impl<'a> FixFieldValue<'a> for CheckSum {
-    type Error = error::CheckSum;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = true;
 
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -47,23 +49,24 @@ impl<'a> FixFieldValue<'a> for CheckSum {
             if is_ascii_digit(data[0]) & is_ascii_digit(data[1]) & is_ascii_digit(data[2]) {
                 Ok(checksum_from_digits(digits))
             } else {
-                Err(Self::Error::NotAsciiDigits)
+                Err(ERR_ASCII_DIGITS)
             }
         } else {
-            Err(Self::Error::WrongLength)
+            Err(ERR_LENGTH)
         }
     }
 
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
+        // Skip ASCII digits checking.
         if let Ok(digits) = data.try_into() {
             Ok(checksum_from_digits(digits))
         } else {
-            Err(Self::Error::WrongLength)
+            Err(ERR_LENGTH)
         }
     }
 }
 
-fn checksum_from_digits(data: [u8; 3]) -> CheckSum {
+fn checksum_from_digits(data: [u8; LEN_IN_BYTES]) -> CheckSum {
     CheckSum(
         ascii_digit_to_u8(data[0], 100)
             .wrapping_add(ascii_digit_to_u8(data[1], 10))
@@ -71,14 +74,17 @@ fn checksum_from_digits(data: [u8; 3]) -> CheckSum {
     )
 }
 
+#[inline(always)]
 fn is_ascii_digit(byte: u8) -> bool {
     byte >= b'0' && byte <= b'9'
 }
 
+#[inline(always)]
 fn digit_to_ascii(byte: u8) -> u8 {
     byte + b'0'
 }
 
+#[inline(always)]
 fn ascii_digit_to_u8(digit: u8, multiplier: u8) -> u8 {
     digit.wrapping_sub(b'0').wrapping_mul(multiplier)
 }
