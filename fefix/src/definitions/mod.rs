@@ -12,7 +12,6 @@ pub mod fix42;
 #[cfg(feature = "fix43")]
 #[rustfmt::skip]
 pub mod fix43;
-#[cfg(feature = "fix44")]
 #[rustfmt::skip]
 pub mod fix44;
 #[cfg(feature = "fix50")]

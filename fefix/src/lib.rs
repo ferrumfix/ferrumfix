@@ -76,11 +76,16 @@ pub use fefix_core::codegen;
 pub use fefix_core::dict;
 pub use fefix_core::TagU16;
 pub mod definitions;
+#[cfg(feature = "fast-encoding")]
 pub mod fast;
+#[cfg(feature = "fixp")]
 pub mod fixp;
+#[cfg(feature = "fixs")]
 pub mod fixs;
+#[cfg(feature = "json-encoding")]
 pub mod json;
 pub mod session;
+#[cfg(feature = "sofh")]
 pub mod sofh;
 pub mod tagvalue;
 
@@ -89,10 +94,10 @@ pub use dict::Dictionary;
 pub use fefix_derive::FixFieldValue;
 pub use tagvalue::datatypes::FixFieldValue;
 
-#[cfg(expose_openssl)]
+#[cfg(all(feature = "fixs", expose_openssl))]
 pub extern crate openssl;
 
-#[cfg(not(expose_openssl))]
+#[cfg(all(feature = "fixs", not(expose_openssl)))]
 pub(crate) extern crate openssl;
 
 /// Wrapper type for dealing with `Result<None, ...>` as errors.

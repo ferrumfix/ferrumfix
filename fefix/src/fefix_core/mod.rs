@@ -1,4 +1,5 @@
 /// FerrumFIX code generation utilities.
+
 pub mod codegen;
 pub mod dict;
 

@@ -20,19 +20,21 @@ name = "fix_decode"
 harness = false
 
 [features]
-default = ["fix44", "expose_openssl", "expose_tokio", "chrono_time"]
+default = ["expose_openssl", "expose_tokio", "chrono_time"]
 fix40 = []
 fix41 = []
 fix42 = []
 fix43 = []
-fix44 = []
 fix50 = []
 fix50sp1 = []
 fix50sp2 = []
 fixt11 = []
+fast-encoding = []
+json-encoding = []
+fixs = []
+fixp = []
+sofh = []
 chrono_time = []
-repo_v50sp2ep254 = []
-repo_v2010 = []
 expose_openssl = []
 expose_tokio = []
 
@@ -90,13 +92,9 @@ syn = { version = "1", features = ["parsing"] }
 [dev-dependencies.fefix]
 path = "."
 features = [
-    "fix40",
-    "fix41",
-    "fix42",
-    "fix43",
-    "fix44",
-    "fix50",
-    "fix50sp1",
-    "fix50sp2",
-    "fixt11"
+    "fast-encoding",
+    "json-encoding",
+    "fixp",
+    "fixs",
+    "sofh",
 ]

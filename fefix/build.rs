@@ -23,7 +23,6 @@ fn main() -> io::Result<()> {
     codegen(Dictionary::fix42(), "fix42.rs", dir)?;
     #[cfg(feature = "fix43")]
     codegen(Dictionary::fix43(), "fix43.rs", dir)?;
-    #[cfg(feature = "fix44")]
     codegen(Dictionary::fix44(), "fix44.rs", dir)?;
     #[cfg(feature = "fix50")]
     codegen(Dictionary::fix50(), "fix50.rs", dir)?;

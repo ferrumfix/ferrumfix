@@ -22,24 +22,15 @@ const SPEC_FIX_50SP2: &str = include_str!("resources/quickfix/FIX-5.0-SP2.xml");
 const SPEC_FIXT_11: &str = include_str!("resources/quickfix/FIXT-1.1.xml");
 
 lazy_static! {
-    static ref DICT_FIX_40: Dictionary =
-        Dictionary::from_quickfix_spec(SPEC_FIX_40).unwrap();
-    static ref DICT_FIX_41: Dictionary =
-        Dictionary::from_quickfix_spec(SPEC_FIX_41).unwrap();
-    static ref DICT_FIX_42: Dictionary =
-        Dictionary::from_quickfix_spec(SPEC_FIX_42).unwrap();
-    static ref DICT_FIX_43: Dictionary =
-        Dictionary::from_quickfix_spec(SPEC_FIX_43).unwrap();
-    static ref DICT_FIX_44: Dictionary =
-        Dictionary::from_quickfix_spec(SPEC_FIX_44).unwrap();
-    static ref DICT_FIX_50: Dictionary =
-        Dictionary::from_quickfix_spec(SPEC_FIX_50).unwrap();
-    static ref DICT_FIX_50SP1: Dictionary =
-        Dictionary::from_quickfix_spec(SPEC_FIX_50SP1).unwrap();
-    static ref DICT_FIX_50SP2: Dictionary =
-        Dictionary::from_quickfix_spec(SPEC_FIX_50SP2).unwrap();
-    static ref DICT_FIXT_11: Dictionary =
-        Dictionary::from_quickfix_spec(SPEC_FIXT_11).unwrap();
+    static ref DICT_FIX_40: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_40).unwrap();
+    static ref DICT_FIX_41: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_41).unwrap();
+    static ref DICT_FIX_42: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_42).unwrap();
+    static ref DICT_FIX_43: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_43).unwrap();
+    static ref DICT_FIX_44: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_44).unwrap();
+    static ref DICT_FIX_50: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_50).unwrap();
+    static ref DICT_FIX_50SP1: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_50SP1).unwrap();
+    static ref DICT_FIX_50SP2: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_50SP2).unwrap();
+    static ref DICT_FIXT_11: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIXT_11).unwrap();
 }
 
 /// The expected location of a field within a FIX message (i.e. header, body, or
@@ -162,11 +153,7 @@ impl fmt::Display for Dictionary {
     }
 }
 
-fn display_layout_item(
-    indent: u32,
-    item: LayoutItem,
-    f: &mut fmt::Formatter,
-) -> fmt::Result {
+fn display_layout_item(indent: u32, item: LayoutItem, f: &mut fmt::Formatter) -> fmt::Result {
     for _ in 0..indent {
         write!(f, " ")?;
     }
@@ -235,9 +222,7 @@ impl Dictionary {
 
     /// Attempts to read a QuickFIX-style specification file and convert it into
     /// a [`Dictionary`].
-    pub fn from_quickfix_spec<S: AsRef<str>>(
-        input: S,
-    ) -> Result<Self, ParseDictionaryError> {
+    pub fn from_quickfix_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
         let xml_document = roxmltree::Document::parse(input.as_ref())
             .map_err(|_| ParseDictionaryError::InvalidFormat)?;
         QuickFixReader::new(&xml_document)
@@ -282,7 +267,6 @@ impl Dictionary {
         DICT_FIX_43.clone()
     }
 
-    #[cfg(feature = "fix44")]
     pub fn fix44() -> Self {
         DICT_FIX_44.clone()
     }
@@ -310,14 +294,22 @@ impl Dictionary {
     #[cfg(test)]
     pub fn all() -> Vec<Dictionary> {
         vec![
+            #[cfg(feature = "fix40")]
             Self::fix40(),
+            #[cfg(feature = "fix41")]
             Self::fix41(),
+            #[cfg(feature = "fix42")]
             Self::fix42(),
+            #[cfg(feature = "fix43")]
             Self::fix43(),
             Self::fix44(),
+            #[cfg(feature = "fix50")]
             Self::fix50(),
+            #[cfg(feature = "fix50sp1")]
             Self::fix50sp1(),
+            #[cfg(feature = "fix50sp2")]
             Self::fix50sp2(),
+            #[cfg(feature = "fixt11")]
             Self::fixt11(),
         ]
     }
@@ -534,9 +526,7 @@ impl DictionaryBuilder {
         self.symbol_table
             .insert(Key::MessageByName(message.name.clone()), iid);
         self.symbol_table.insert(
-            Key::MessageByMsgType(
-                MsgType::from_bytes(message.msg_type.as_bytes()).unwrap(),
-            ),
+            Key::MessageByMsgType(MsgType::from_bytes(message.msg_type.as_bytes()).unwrap()),
             iid,
         );
         self.messages.push(message);
@@ -905,9 +895,7 @@ mod datatype {
                 "LENGTH" => FixDataType::Int,
                 "LOCALMKTDATE" => FixDataType::LocalMktDate,
                 "MONTHYEAR" => FixDataType::MonthYear,
-                "MULTIPLECHARVALUE" | "MULTIPLEVALUESTRING" => {
-                    FixDataType::MultipleCharValue
-                }
+                "MULTIPLECHARVALUE" | "MULTIPLEVALUESTRING" => FixDataType::MultipleCharValue,
                 "MULTIPLESTRINGVALUE" => FixDataType::MultipleStringValue,
                 "NUMINGROUP" => FixDataType::NumInGroup,
                 "PERCENTAGE" => FixDataType::Percentage,
@@ -1289,10 +1277,7 @@ pub trait IsFieldDefinition {
 
 pub trait IsTypedFieldDefinition<V>: IsFieldDefinition {}
 
-fn layout_item_kind<'a>(
-    item: &'a LayoutItemKindData,
-    dict: &'a Dictionary,
-) -> LayoutItemKind<'a> {
+fn layout_item_kind<'a>(item: &'a LayoutItemKindData, dict: &'a Dictionary) -> LayoutItemKind<'a> {
     match item {
         LayoutItemKindData::Component { iid } => LayoutItemKind::Component(Component(
             dict,
@@ -1310,10 +1295,9 @@ fn layout_item_kind<'a>(
             let len_field = Field(dict, len_field_data);
             LayoutItemKind::Group(len_field, items)
         }
-        LayoutItemKindData::Field { iid } => LayoutItemKind::Field(Field(
-            dict,
-            dict.inner.fields.get(*iid as usize).unwrap(),
-        )),
+        LayoutItemKindData::Field { iid } => {
+            LayoutItemKind::Field(Field(dict, dict.inner.fields.get(*iid as usize).unwrap()))
+        }
     }
 }
 
@@ -1557,12 +1541,8 @@ mod quickfix {
             LayoutItemKind::Field(_) => {
                 writer
                     .write_event(Event::Empty(BytesStart::borrowed(
-                        format!(
-                            "field name='{}' required='{}' ",
-                            item.tag_text(),
-                            required
-                        )
-                        .as_bytes(),
+                        format!("field name='{}' required='{}' ", item.tag_text(), required)
+                            .as_bytes(),
                         b"field".len(),
                     )))
                     .unwrap();
@@ -1570,12 +1550,8 @@ mod quickfix {
             LayoutItemKind::Group(_, fields) => {
                 writer
                     .write_event(Event::Start(BytesStart::borrowed(
-                        format!(
-                            "group name='{}' required='{}' ",
-                            item.tag_text(),
-                            required
-                        )
-                        .as_bytes(),
+                        format!("group name='{}' required='{}' ", item.tag_text(), required)
+                            .as_bytes(),
                         b"group".len(),
                     )))
                     .unwrap();
@@ -1713,9 +1689,7 @@ mod quickfix {
     }
 
     impl<'a> QuickFixReader<'a> {
-        pub fn new(
-            xml_document: &'a roxmltree::Document<'a>,
-        ) -> ParseResult<Dictionary> {
+        pub fn new(xml_document: &'a roxmltree::Document<'a>) -> ParseResult<Dictionary> {
             let mut reader = Self::empty(&xml_document)?;
             for child in reader.node_with_fields.children() {
                 if child.is_element() {
@@ -1758,17 +1732,14 @@ mod quickfix {
                 root.children()
                     .find(|n| n.has_tag_name(tag))
                     .ok_or_else(|| {
-                        ParseDictionaryError::InvalidData(format!(
-                            "<{}> tag not found",
-                            tag
-                        ))
+                        ParseDictionaryError::InvalidData(format!("<{}> tag not found", tag))
                     })
             };
-            let version_type =
-                root.attribute("type")
-                    .ok_or(ParseDictionaryError::InvalidData(
-                        "No version attribute.".to_string(),
-                    ))?;
+            let version_type = root
+                .attribute("type")
+                .ok_or(ParseDictionaryError::InvalidData(
+                    "No version attribute.".to_string(),
+                ))?;
             let version_major =
                 root.attribute("major")
                     .ok_or(ParseDictionaryError::InvalidData(
@@ -1902,10 +1873,7 @@ mod quickfix {
         }
     }
 
-    fn import_datatype(
-        builder: &mut DictionaryBuilder,
-        node: roxmltree::Node,
-    ) -> InternalId {
+    fn import_datatype(builder: &mut DictionaryBuilder, node: roxmltree::Node) -> InternalId {
         // References should only happen at <field> tags.
         debug_assert_eq!(node.tag_name().name(), "field");
         let datatype = {
@@ -2046,8 +2014,8 @@ mod test {
     }
 
     #[test]
-    fn fixt11_quickfix_is_ok() {
-        let dict = Dictionary::fixt11();
+    fn fix44_quickfix_is_ok() {
+        let dict = Dictionary::fix44();
         let msg_heartbeat = dict.message_by_name("Heartbeat").unwrap();
         assert_eq!(msg_heartbeat.msg_type(), "0");
         assert_eq!(msg_heartbeat.name(), "Heartbeat".to_string());
@@ -2058,19 +2026,6 @@ mod test {
                 false
             }
         }));
-    }
-
-    #[test]
-    fn standard_dictionaries_dont_panic() {
-        Dictionary::fix40();
-        Dictionary::fix41();
-        Dictionary::fix42();
-        Dictionary::fix43();
-        Dictionary::fix44();
-        Dictionary::fix50();
-        Dictionary::fix50sp1();
-        Dictionary::fix50sp2();
-        Dictionary::fixt11();
     }
 
     #[test]
