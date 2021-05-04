@@ -1007,7 +1007,7 @@ dependencies = [
 
 [[package]]
 name = "fefix"
-version = "0.4.0"
+version = "0.1.0"
 dependencies = [
  "arbitrary",
  "bitvec 0.18.4",
@@ -1048,7 +1048,7 @@ dependencies = [
 
 [[package]]
 name = "fefix_derive"
-version = "0.4.0"
+version = "0.1.0"
 dependencies = [
  "darling",
  "proc-macro2",

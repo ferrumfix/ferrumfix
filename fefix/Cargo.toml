@@ -1,6 +1,6 @@
 [package]
 name = "fefix"
-version = "0.4.0"
+version = "0.1.0"
 edition = "2018"
 authors = ["Filippo Costa @neysofu"]
 homepage = "https://github.com/neysofu/ferrum-fix"
