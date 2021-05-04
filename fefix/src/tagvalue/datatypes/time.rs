@@ -129,6 +129,16 @@ impl Time {
     pub const fn milli(&self) -> u32 {
         self.milli
     }
+
+    #[cfg(feature = "chrono_time")]
+    pub fn to_chrono_naive(&self) -> Option<chrono::NaiveTime> {
+        chrono::NaiveTime::from_hms_milli_opt(
+            self.hour(),
+            self.minute(),
+            self.second(),
+            self.milli(),
+        )
+    }
 }
 
 impl<'a> FixFieldValue<'a> for Time {

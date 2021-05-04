@@ -1,4 +1,3 @@
-use super::error;
 use crate::{tagvalue::datatypes::Date, tagvalue::datatypes::Time, Buffer, FixFieldValue};
 
 /// Canonical data field (DTF) for
@@ -10,16 +9,14 @@ pub struct Timestamp {
 }
 
 impl Timestamp {
+    /// Combines `date` and `time` into a [`Timestamp`].
     pub fn new(date: Date, time: Time) -> Self {
         Self { date, time }
     }
 
     /// Parses from a `"YYYYMMDD"` format.
     pub fn parse(data: &[u8]) -> Option<Self> {
-        if data.len() < 12 {
-            return None;
-        }
-        if data[8] != b'-' {
+        if data.len() < 12 || data[8] != b'-' {
             return None;
         }
         let date = Date::deserialize(&data[0..8]).ok()?;
@@ -50,10 +47,23 @@ impl Timestamp {
     pub fn time(&self) -> Time {
         self.time
     }
+
+    #[cfg(feature = "chrono_time")]
+    pub fn to_chrono_utc(&self) -> Option<chrono::DateTime<chrono::Utc>> {
+        let naive = self.to_chrono_naive()?;
+        Some(chrono::DateTime::from_utc(naive, chrono::Utc))
+    }
+
+    #[cfg(feature = "chrono_time")]
+    pub fn to_chrono_naive(&self) -> Option<chrono::NaiveDateTime> {
+        let date = self.date().to_chrono_naive()?;
+        let time = self.time().to_chrono_naive()?;
+        Some(chrono::NaiveDateTime::new(date, time))
+    }
 }
 
 impl<'a> FixFieldValue<'a> for Timestamp {
-    type Error = error::Timestamp;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = true;
@@ -66,7 +76,7 @@ impl<'a> FixFieldValue<'a> for Timestamp {
     }
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        Self::parse(data).ok_or(Self::Error::Other)
+        Self::parse(data).ok_or("Invalid timestamp format")
     }
 }
 
