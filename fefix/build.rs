@@ -31,7 +31,7 @@ fn codegen(app_version: AppVersion, dir: PathBuf) -> io::Result<()> {
         .map(|c| c.to_ascii_lowercase())
         .collect();
     filename.push_str(".rs");
-    let code = codegen::fields(fix_dictionary, "crate");
+    let code = codegen::module_with_field_definitions(fix_dictionary, "crate");
     let path = dir.join(filename);
     let mut file = File::create(path)?;
     file.write_all(code.as_bytes())?;

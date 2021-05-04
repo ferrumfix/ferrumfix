@@ -364,6 +364,26 @@ impl<'a> FixFieldValue<'a> for &'a [u8] {
     }
 }
 
+impl<'a, const N: usize> FixFieldValue<'a> for [u8; N] {
+    type Error = ();
+    type SerializeSettings = ();
+
+    const IS_ASCII: bool = false;
+
+    #[inline(always)]
+    fn serialize_with<B>(&self, buffer: &mut B, settings: ()) -> usize
+    where
+        B: Buffer,
+    {
+        (&self).serialize_with(buffer, settings)
+    }
+
+    #[inline(always)]
+    fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
+        data.try_into().map_err(|_| ())
+    }
+}
+
 impl<'a, const N: usize> FixFieldValue<'a> for &'a [u8; N] {
     type Error = ();
     type SerializeSettings = ();

@@ -1,9 +1,11 @@
 //! Code generation utilities.
 
-use super::dict::{Dictionary, Field, FixDataType, LayoutItem, LayoutItemKind, Message};
+use super::dict::{Dictionary, Field, FieldEnum, FixDataType, LayoutItem, LayoutItemKind, Message};
 use super::TagU16;
 use heck::{CamelCase, ShoutySnakeCase, SnakeCase};
 use indoc::indoc;
+
+const FEFIX_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 fn generated_code_notice() -> String {
     use chrono::prelude::*;
@@ -14,15 +16,12 @@ fn generated_code_notice() -> String {
             //
             // DO NOT MODIFY MANUALLY.
             // DO NOT COMMIT TO VERSION CONTROL.
-            // ALL CHANGES WILL BE OVERWRITTEN.
-            "#
+            // ALL CHANGES WILL BE OVERWRITTEN."#
         ),
         FEFIX_VERSION,
         Utc::now().to_rfc2822(),
     )
 }
-
-const FEFIX_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 pub fn message(dict: Dictionary, message: Message, custom_derive_line: &str) -> String {
     let identifier = message.name().to_camel_case();
@@ -47,8 +46,7 @@ pub fn message(dict: Dictionary, message: Message, custom_derive_line: &str) -> 
 
             impl<'a> {identifier}<'a> {{
                 pub const MSG_TYPE: &'static [u8] = b"{msg_type}";
-            }}
-            "#
+            }}"#
         ),
         custom_derive_line = custom_derive_line,
         identifier = identifier,
@@ -57,51 +55,55 @@ pub fn message(dict: Dictionary, message: Message, custom_derive_line: &str) -> 
     )
 }
 
-pub fn field_def(field: Field, fefix_path: &str) -> String {
+pub fn enum_variant(field_enum: FieldEnum) -> String {
+    let name_is_valid_rust_identifier = field_enum
+        .description()
+        .chars()
+        .next()
+        .unwrap()
+        .is_ascii_alphabetic();
+    let rust_identifier = if name_is_valid_rust_identifier {
+        field_enum.description().to_camel_case()
+    } else {
+        format!("_{}", field_enum.description().to_camel_case())
+    };
+    format!(
+        indoc!(
+            r#"
+            {indentation}/// {doc}
+            {indentation}#[fefix(variant = "{variant}")]
+            {indentation}{},"#
+        ),
+        rust_identifier,
+        doc = format!("Field variant '{}'.", field_enum.value()),
+        variant = field_enum.value(),
+        indentation = "    ",
+    )
+}
+
+pub fn enum_definition(field: Field) -> Option<String> {
+    let variants = field.enums()?;
+    Some(format!(
+        indoc!(
+            r#"
+            /// Field type variants for [`{struct_name}`].
+            #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, FixFieldValue)]
+            pub enum {identifier} {{
+            {variants}
+            }}"#
+        ),
+        struct_name = field.name().to_shouty_snake_case(),
+        identifier = field.name().to_camel_case(),
+        variants = variants
+            .map(|v| enum_variant(v))
+            .collect::<Vec<String>>()
+            .join("\n")
+    ))
+}
+
+pub fn field_definition(field: Field, type_param: &str) -> String {
     let name = field.name().to_shouty_snake_case();
     let tag = field.tag().to_string();
-    let (enum_type_name, enum_variants) = if let Some(variants) = field.enums() {
-        let variants: Vec<String> = variants
-            .map(|e| {
-                format!(
-                    indoc!(
-                        r#"
-                        {indentation}/// {doc}
-                        {indentation}#[fefix(variant = "{variant}")]
-                        {indentation}{}{},"#
-                    ),
-                    if e.description().chars().next().unwrap().is_ascii_digit() {
-                        "N"
-                    } else {
-                        ""
-                    },
-                    e.description().to_camel_case(),
-                    doc = format!("Field variant '{}'.", e.value()),
-                    variant = e.value(),
-                    indentation = "    ",
-                )
-            })
-            .collect();
-        (
-            Some(field.name().to_camel_case()),
-            format!(
-                indoc!(
-                    r#"
-                    /// Field type variants for [`{struct_name}`].
-                    #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, FixFieldValue)]
-                    pub enum {identifier} {{
-                    {variants}
-                    }}
-                "#
-                ),
-                struct_name = field.name().to_shouty_snake_case(),
-                identifier = field.name().to_camel_case(),
-                variants = variants.join("\n")
-            ),
-        )
-    } else {
-        (None, String::new())
-    };
     format!(
         indoc!(
             r#"
@@ -113,33 +115,43 @@ pub fn field_def(field: Field, fefix_path: &str) -> String {
                 data_type: FixDataType::{data_type},
                 phantom: PhantomData,
                 location: FieldLocation::Body,
-            }};
-            {enum_variants}
-            "#
+            }};"#
         ),
         major = "4",
         minor = "4",
         identifier = name,
-        type_param = suggested_type(
-            field.tag(),
-            field.data_type().basetype(),
-            enum_type_name,
-            fefix_path
-        ),
         name = field.name(),
         tag = tag,
-        enum_variants = enum_variants,
+        type_param = type_param,
         group = field.name().ends_with("Len"),
         data_type = <&'static str as From<FixDataType>>::from(field.data_type().basetype()),
-    )
+    ).trim().to_string()
 }
 
 /// Generates `const` implementors of
 /// [`IsFieldDefinition`](super::dict::IsFieldDefinition).
-pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
+pub fn module_with_field_definitions(dict: Dictionary, fefix_path: &str) -> String {
+    let enums = dict
+        .iter_fields()
+        .filter_map(|field| enum_definition(field))
+        .collect::<Vec<String>>()
+        .join("\n\n");
     let field_defs = dict
         .iter_fields()
-        .map(|field| field_def(field, fefix_path))
+        .map(|field| {
+            let is_enum = field.enums().is_some();
+            let rust_type = if is_enum {
+                field.name().to_camel_case()
+            } else {
+                fix_to_rust_type(
+                    field.tag(),
+                    field.data_type().basetype(),
+                    fefix_path,
+                    "static",
+                )
+            };
+            field_definition(field, rust_type.as_str())
+        })
         .collect::<Vec<String>>()
         .join("\n");
     let code = format!(
@@ -157,8 +169,9 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
             {import_data_field}
             use std::marker::PhantomData;
 
-            {field_defs}
-            "#
+            {enums}
+
+            {field_defs}"#
         ),
         version = dict.get_version(),
         notice = generated_code_notice(),
@@ -167,73 +180,45 @@ pub fn fields(dict: Dictionary, fefix_path: &str) -> String {
         } else {
             "use crate::FixFieldValue;"
         },
+        enums = enums,
         field_defs = field_defs,
         fefix_path = fefix_path,
     );
     code
 }
 
-fn suggested_type(
+fn fix_to_rust_type(
     tag: TagU16,
     data_type: FixDataType,
-    enum_type_name: Option<String>,
     fefix_path: &str,
+    lifetime: &str,
 ) -> String {
-    if let Some(name) = enum_type_name {
-        return name;
-    }
     if tag.get() == 10 {
         return format!("{}::tagvalue::datatypes::CheckSum", fefix_path);
     }
     if data_type.base_type() == FixDataType::Float {
         return "rust_decimal::Decimal".to_string();
     }
+    let bytes = format!("&'{} [u8]", lifetime);
     match data_type {
-        FixDataType::String => "&[u8]".to_string(),
+        // FIX strings are encoded as Latin-1, which is not compatible with
+        // UTF-8 and thus Rust strings. This is hardly ever a problem as most
+        // strings are ASCII, but we can't do any hazardous assumptions.
+        FixDataType::String | FixDataType::Data => bytes,
         FixDataType::Char => "u8".to_string(),
         FixDataType::Boolean => "bool".to_string(),
-        FixDataType::Country => "&[u8; 2]".to_string(),
-        FixDataType::Currency => "&[u8; 3]".to_string(),
-        FixDataType::Exchange => "&[u8; 4]".to_string(),
-        FixDataType::Data => "&[u8]".to_string(),
+        FixDataType::Country | FixDataType::Language => "[u8; 2]".to_string(),
+        FixDataType::Currency => "[u8; 3]".to_string(),
+        FixDataType::Exchange => "[u8; 4]".to_string(),
         FixDataType::Length => "usize".to_string(),
         FixDataType::DayOfMonth => "u32".to_string(),
         FixDataType::Int => "i64".to_string(),
-        FixDataType::Language => "&[u8; 2]".to_string(),
         FixDataType::SeqNum => "u64".to_string(),
         FixDataType::NumInGroup => "usize".to_string(),
         FixDataType::UtcDateOnly => format!("{}::tagvalue::datatypes::Date", fefix_path),
         FixDataType::UtcTimeOnly => format!("{}::tagvalue::datatypes::Time", fefix_path),
         FixDataType::UtcTimestamp => format!("{}::tagvalue::datatypes::Timestamp", fefix_path),
-        _ => "&[u8]".to_string(), // TODO
-    }
-}
-
-fn suggested_type_with_lifetime(tag: TagU16, data_type: FixDataType) -> &'static str {
-    if tag.get() == 10 {
-        return "crate::tagvalue::datatypes::CheckSum";
-    }
-    if data_type.base_type() == FixDataType::Float {
-        return "rust_decimal::Decimal";
-    }
-    match data_type {
-        FixDataType::String => "&'a [u8]",
-        FixDataType::Char => "u8",
-        FixDataType::Boolean => "bool",
-        FixDataType::Country => "[u8; 2]",
-        FixDataType::Currency => "[u8; 3]",
-        FixDataType::Exchange => "[u8; 4]",
-        FixDataType::Data => "&'a [u8]",
-        FixDataType::Length => "usize",
-        FixDataType::DayOfMonth => "u32",
-        FixDataType::Int => "i64",
-        FixDataType::Language => "[u8; 2]",
-        FixDataType::SeqNum => "u64",
-        FixDataType::NumInGroup => "usize",
-        FixDataType::UtcDateOnly => "crate::tagvalue::datatypes::Date",
-        FixDataType::UtcTimeOnly => "crate::tagvalue::datatypes::Time",
-        FixDataType::UtcTimestamp => "crate::tagvalue::datatypes::Timestamp",
-        _ => "&'a [u8]", // TODO
+        _ => bytes,
     }
 }
 
@@ -275,7 +260,7 @@ impl Dictionary {
             LayoutItemKind::Component(_c) => "()".to_string(),
             LayoutItemKind::Group(_, _) => "()".to_string(),
             LayoutItemKind::Field(f) => {
-                suggested_type_with_lifetime(f.tag(), f.data_type().basetype()).to_string()
+                fix_to_rust_type(f.tag(), f.data_type().basetype(), "crate", "static").to_string()
             }
         };
         //let field_tag = match item.kind() {
@@ -324,7 +309,7 @@ mod test {
     #[test]
     fn fix_v42_syntax() {
         let fix_v42 = Dictionary::from_version(AppVersion::Fix42);
-        let code = fields(fix_v42, "fefix");
+        let code = module_with_field_definitions(fix_v42, "fefix");
         assert!(syn::parse_file(code.as_str()).is_ok());
     }
 
@@ -332,7 +317,7 @@ mod test {
     fn syntax_of_field_tags_is_ok() {
         for version in AppVersion::ALL.iter().copied() {
             let dict = Dictionary::from_version(version);
-            let code = fields(dict, "crate");
+            let code = module_with_field_definitions(dict, "crate");
             syn::parse_file(code.as_str()).unwrap();
         }
     }
