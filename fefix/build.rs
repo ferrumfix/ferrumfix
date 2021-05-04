@@ -1,41 +1,43 @@
-mod src;
+#[path = "src/fefix_core/mod.rs"]
+#[allow(warnings)]
+mod fefix_core;
 
-use src as fefix_barebones;
-
-use fefix_barebones::codegen;
-use fefix_barebones::AppVersion;
-use rayon::prelude::*;
+use fefix_core::{codegen, dict::Dictionary};
 use std::fs::{create_dir_all, File};
 use std::io;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-fn main() -> std::io::Result<()> {
-    let generated_path = project_root().join("src").join("definitions");
-    create_dir_all(generated_path.as_path())?;
-    fefix_barebones::AppVersion::ALL
-        .par_iter()
-        .copied()
-        .try_for_each::<_, std::io::Result<()>>(|app_version| {
-            codegen(app_version, generated_path.clone())
-        })?;
+fn main() -> io::Result<()> {
+    let dir_buf = project_root().join("src").join("definitions");
+    let dir = dir_buf.as_path();
+    create_dir_all(dir)?;
+    #[cfg(feature = "fix40")]
+    codegen(Dictionary::fix40(), "fix40.rs", dir)?;
+    #[cfg(feature = "fix41")]
+    codegen(Dictionary::fix41(), "fix41.rs", dir)?;
+    #[cfg(feature = "fix42")]
+    codegen(Dictionary::fix42(), "fix42.rs", dir)?;
+    #[cfg(feature = "fix43")]
+    codegen(Dictionary::fix43(), "fix43.rs", dir)?;
+    #[cfg(feature = "fix44")]
+    codegen(Dictionary::fix44(), "fix44.rs", dir)?;
+    #[cfg(feature = "fix50")]
+    codegen(Dictionary::fix50(), "fix50.rs", dir)?;
+    #[cfg(feature = "fix50sp1")]
+    codegen(Dictionary::fix50sp1(), "fix50sp1.rs", dir)?;
+    #[cfg(feature = "fix50sp2")]
+    codegen(Dictionary::fix50sp2(), "fix50sp2.rs", dir)?;
+    #[cfg(feature = "fixt11")]
+    codegen(Dictionary::fixt11(), "fixt11.rs", dir)?;
     Ok(())
 }
 
-fn codegen(app_version: AppVersion, dir: PathBuf) -> io::Result<()> {
-    let fix_dictionary = fefix_barebones::dict::Dictionary::from_version(app_version);
-    let mut filename: String = app_version
-        .name()
-        .chars()
-        .filter(|c| c.is_ascii_alphanumeric())
-        .map(|c| c.to_ascii_lowercase())
-        .collect();
-    filename.push_str(".rs");
+fn codegen(fix_dictionary: Dictionary, filename: &str, dir: &Path) -> io::Result<()> {
     let code = codegen::module_with_field_definitions(fix_dictionary, "crate");
-    let path = dir.join(filename);
-    let mut file = File::create(path)?;
+    let path = dir.to_path_buf().join(filename);
+    let file = &mut File::create(path)?;
     file.write_all(code.as_bytes())?;
-    println!("{}", code);
     Ok(())
 }
 

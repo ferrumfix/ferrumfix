@@ -30,7 +30,8 @@ pub fn derive_field_value(input: TokenStream) -> TokenStream {
             let enum_discriminant = enum_variant.variant.as_str();
             let enum_variant = enum_variant.ident;
             let bstring: proc_macro2::TokenStream =
-                TokenTree::from(Literal::byte_string(enum_discriminant.as_bytes())).into();
+                TokenTree::from(Literal::byte_string(enum_discriminant.as_bytes()))
+                    .into();
             quote! {
                 #bstring => Ok(Self::#enum_variant)
             }

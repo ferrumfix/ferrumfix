@@ -1,4 +1,6 @@
-use crate::{tagvalue::datatypes::Date, tagvalue::datatypes::Time, Buffer, FixFieldValue};
+use crate::{
+    tagvalue::datatypes::Date, tagvalue::datatypes::Time, Buffer, FixFieldValue,
+};
 
 /// Canonical data field (DTF) for
 /// [DataType::UtcTimestamp](super::DataType::UtcTimeStamp).
@@ -72,7 +74,9 @@ impl<'a> FixFieldValue<'a> for Timestamp {
     where
         B: Buffer,
     {
-        self.date().serialize(buffer) + b"-".serialize(buffer) + self.time().serialize(buffer)
+        self.date().serialize(buffer)
+            + b"-".serialize(buffer)
+            + self.time().serialize(buffer)
     }
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {

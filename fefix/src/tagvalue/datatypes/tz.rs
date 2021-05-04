@@ -102,7 +102,8 @@ impl<'a> FixFieldValue<'a> for Tz {
             1 => Ok(Self::UTC),
             3 => {
                 let sign = if data[0] == b'+' { 1 } else { -1 };
-                let hour = ascii_digit_to_u32(data[1], 10) + ascii_digit_to_u32(data[2], 1);
+                let hour =
+                    ascii_digit_to_u32(data[1], 10) + ascii_digit_to_u32(data[2], 1);
                 Ok(Self {
                     sign,
                     offset: Duration::from_secs((hour * HOUR) as u64),
@@ -112,8 +113,10 @@ impl<'a> FixFieldValue<'a> for Tz {
             }
             6 => {
                 let sign = if data[0] == b'+' { 1 } else { -1 };
-                let hour = ascii_digit_to_u32(data[1], 10) + ascii_digit_to_u32(data[2], 1);
-                let minute = ascii_digit_to_u32(data[4], 10) + ascii_digit_to_u32(data[5], 1);
+                let hour =
+                    ascii_digit_to_u32(data[1], 10) + ascii_digit_to_u32(data[2], 1);
+                let minute =
+                    ascii_digit_to_u32(data[4], 10) + ascii_digit_to_u32(data[5], 1);
                 Ok(Self {
                     sign,
                     offset: Duration::from_secs((hour * HOUR + minute * MINUTE) as u64),

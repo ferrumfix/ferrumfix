@@ -1,21 +1,30 @@
 //! Field and message definitions for all FIX application versions.
 
+#[cfg(feature = "fix40")]
 #[rustfmt::skip]
 pub mod fix40;
+#[cfg(feature = "fix41")]
 #[rustfmt::skip]
 pub mod fix41;
+#[cfg(feature = "fix42")]
 #[rustfmt::skip]
 pub mod fix42;
+#[cfg(feature = "fix43")]
 #[rustfmt::skip]
 pub mod fix43;
+#[cfg(feature = "fix44")]
 #[rustfmt::skip]
 pub mod fix44;
+#[cfg(feature = "fix50")]
 #[rustfmt::skip]
 pub mod fix50;
+#[cfg(feature = "fix50sp1")]
 #[rustfmt::skip]
 pub mod fix50sp1;
+#[cfg(feature = "fix50sp2")]
 #[rustfmt::skip]
 pub mod fix50sp2;
+#[cfg(feature = "fixt11")]
 #[rustfmt::skip]
 pub mod fixt11;
 
@@ -64,4 +73,7 @@ where
     }
 }
 
-impl<'a, V> dict::IsTypedFieldDefinition<V> for GeneratedFieldDef<'a, V> where V: FixFieldValue<'a> {}
+impl<'a, V> dict::IsTypedFieldDefinition<V> for GeneratedFieldDef<'a, V> where
+    V: FixFieldValue<'a>
+{
+}

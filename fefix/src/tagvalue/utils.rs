@@ -24,9 +24,11 @@ pub fn checksum_digits(message: &[u8]) -> [u8; 3] {
 }
 
 pub fn verify_checksum(headerless_msg: &[u8]) -> Result<(), DecodeError> {
-    let msg_contents = &headerless_msg[..headerless_msg.len() - FIELD_CHECKSUM_LEN_IN_BYTES];
-    let nominal_checksum = CheckSum::deserialize_lossy(&checksum_digits(headerless_msg)[..])
-        .map_err(|_| DecodeError::CheckSum)?;
+    let msg_contents =
+        &headerless_msg[..headerless_msg.len() - FIELD_CHECKSUM_LEN_IN_BYTES];
+    let nominal_checksum =
+        CheckSum::deserialize_lossy(&checksum_digits(headerless_msg)[..])
+            .map_err(|_| DecodeError::CheckSum)?;
     let actual_checksum = CheckSum::compute(msg_contents);
     if nominal_checksum == actual_checksum {
         Ok(())

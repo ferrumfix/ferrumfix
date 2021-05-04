@@ -1,5 +1,5 @@
 use super::errs;
-use crate::definitions::fixt11;
+use crate::definitions::fix44;
 use crate::dict::IsFieldDefinition;
 use crate::session::{Environment, SeqNumbers};
 use crate::tagvalue::Fv;
@@ -176,7 +176,11 @@ pub trait Application: Clone {
     fn on_outbound_message(&mut self, message: &[u8]) -> Result<(), Self::Error>;
 
     #[inline(always)]
-    fn on_inbound_message(&mut self, message: Message, is_app: bool) -> Result<(), Self::Error> {
+    fn on_inbound_message(
+        &mut self,
+        message: Message,
+        is_app: bool,
+    ) -> Result<(), Self::Error> {
         println!("received message");
         if is_app {
             self.on_inbound_app_message(message)
@@ -213,12 +217,12 @@ impl FixConnection {
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let mut msg = self.encoder.start_message(begin_string, b"A");
-            msg.set(fixt11::SENDER_COMP_ID, sender_comp_id);
-            msg.set(fixt11::TARGET_COMP_ID, target_comp_id);
-            msg.set(fixt11::SENDING_TIME, chrono::Utc::now());
-            msg.set(fixt11::MSG_SEQ_NUM, msg_seq_num);
-            msg.set(fixt11::ENCRYPT_METHOD, fixt11::EncryptMethod::NoneOther);
-            msg.set(fixt11::HEART_BT_INT, self.heartbeat.as_secs());
+            msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
+            msg.set(fix44::TARGET_COMP_ID, target_comp_id);
+            msg.set(fix44::SENDING_TIME, chrono::Utc::now());
+            msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
+            msg.set(fix44::ENCRYPT_METHOD, fix44::EncryptMethod::None);
+            msg.set(fix44::HEART_BT_INT, self.heartbeat.as_secs());
             msg.wrap()
         };
         output.write(logon).await.unwrap();
@@ -278,8 +282,7 @@ impl FixConnection {
                     }
                     heartbeat_timer = x;
                 }
-                Either::Right((y, _)) => {
-                    y.unwrap();
+                Either::Right((_y, _)) => {
                     let heartbeat = self.on_heartbeat_is_due();
                     output.write_all(heartbeat).await.unwrap();
                     app.on_outbound_message(heartbeat).ok();
@@ -289,8 +292,13 @@ impl FixConnection {
         }
     }
 
-    pub async fn accept<A, I, O>(&mut self, app: A, data: I, output: O, decoder: DecoderBuffered)
-    where
+    pub async fn accept<A, I, O>(
+        &mut self,
+        app: A,
+        data: I,
+        output: O,
+        decoder: DecoderBuffered,
+    ) where
         A: Application,
         I: AsyncRead + std::marker::Unpin,
         O: AsyncWrite + std::marker::Unpin,
@@ -322,20 +330,24 @@ impl FixConnection {
         self.begin_string.as_bytes()
     }
 
-    fn on_inbound_message<'a, A>(&'a mut self, msg: Message<'a>, app: &mut A) -> Response<'a>
+    fn on_inbound_message<'a, A>(
+        &'a mut self,
+        msg: Message<'a>,
+        app: &mut A,
+    ) -> Response<'a>
     where
         A: Application,
     {
         let env = self.environment();
         // Check `TestMessageIndicator <464>`.
-        if let Ok(indicator) = msg.fv::<bool, _>(fixt11::TEST_MESSAGE_INDICATOR) {
+        if let Ok(indicator) = msg.fv::<bool, _>(fix44::TEST_MESSAGE_INDICATOR) {
             if !env.allows_testing() && indicator {
                 return self.on_wrong_environment(msg);
             }
         }
         // Compare seq. numbers.
         let msg_seq_num_cmp = msg
-            .fv::<u64, _>(fixt11::MSG_SEQ_NUM)
+            .fv::<u64, _>(fix44::MSG_SEQ_NUM)
             .map(|seqnum| seqnum.cmp(&self.msg_seq_num_inbound.expected()));
         // Compare the incoming seq. number to the one we expected and act
         // accordingly.
@@ -356,7 +368,7 @@ impl FixConnection {
         if !self.sending_time_is_ok(&msg) {
             return self.make_reject_for_inaccurate_sending_time(msg);
         }
-        match msg.fv::<&[u8], _>(fixt11::MSG_TYPE) {
+        match msg.fv::<&[u8], _>(fix44::MSG_TYPE) {
             Ok(b"A") => {
                 self.on_logon(msg);
                 app.on_inbound_message(msg, false).ok();
@@ -385,7 +397,7 @@ impl FixConnection {
     }
 
     fn sending_time_is_ok(&self, msg: &Message) -> bool {
-        let sending_time = msg.fv::<&str, _>(fixt11::SENDING_TIME);
+        let sending_time = msg.fv::<&str, _>(fix44::SENDING_TIME);
         if let Ok(_sending_time) = sending_time {
             // TODO
             true
@@ -395,8 +407,8 @@ impl FixConnection {
     }
 
     fn add_comp_id(msg: &mut EncoderHandle, sender: &str, target: &str) {
-        msg.set(fixt11::SENDER_COMP_ID, sender);
-        msg.set(fixt11::TARGET_COMP_ID, target);
+        msg.set(fix44::SENDER_COMP_ID, sender);
+        msg.set(fix44::TARGET_COMP_ID, target);
     }
 
     //    fn add_seqnum(&self, msg: &mut RawEncoderState) {
@@ -416,10 +428,10 @@ impl FixConnection {
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let mut msg = self.encoder.start_message(begin_string, b"0");
-            msg.set(fixt11::SENDER_COMP_ID, sender_comp_id);
-            msg.set(fixt11::TARGET_COMP_ID, target_comp_id);
-            msg.set(fixt11::MSG_SEQ_NUM, msg_seq_num);
-            msg.set(fixt11::SENDING_TIME, chrono::Utc::now());
+            msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
+            msg.set(fix44::TARGET_COMP_ID, target_comp_id);
+            msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
+            msg.set(fix44::SENDING_TIME, chrono::Utc::now());
             msg.wrap()
         };
         fix_message
@@ -430,18 +442,18 @@ impl FixConnection {
     }
 
     fn on_test_request(&mut self, msg: Message) -> &[u8] {
-        let test_req_id = msg.fv::<&[u8], _>(fixt11::TEST_REQ_ID).unwrap();
+        let test_req_id = msg.fv::<&[u8], _>(fix44::TEST_REQ_ID).unwrap();
         let fix_message = {
             let begin_string = self.begin_string.as_bytes();
             let sender_comp_id = self.sender_comp_id.as_str();
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let mut msg = self.encoder.start_message(begin_string, b"1");
-            msg.set(fixt11::SENDER_COMP_ID, sender_comp_id);
-            msg.set(fixt11::TARGET_COMP_ID, target_comp_id);
-            msg.set(fixt11::MSG_SEQ_NUM, msg_seq_num);
-            msg.set(fixt11::SENDING_TIME, chrono::Utc::now());
-            msg.set(fixt11::TEST_REQ_ID, test_req_id);
+            msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
+            msg.set(fix44::TARGET_COMP_ID, target_comp_id);
+            msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
+            msg.set(fix44::SENDING_TIME, chrono::Utc::now());
+            msg.set(fix44::TEST_REQ_ID, test_req_id);
             msg.wrap()
         };
         fix_message
@@ -459,11 +471,11 @@ impl FixConnection {
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let text = errs::msg_seq_num(self.msg_seq_num_inbound.0 + 1);
             let mut msg = self.encoder.start_message(begin_string, b"FIXME");
-            msg.set(fixt11::MSG_TYPE, "5");
-            msg.set(fixt11::SENDER_COMP_ID, sender_comp_id);
-            msg.set(fixt11::TARGET_COMP_ID, target_comp_id);
-            msg.set(fixt11::MSG_SEQ_NUM, msg_seq_num);
-            msg.set(fixt11::TEXT, text.as_str());
+            msg.set(fix44::MSG_TYPE, "5");
+            msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
+            msg.set(fix44::TARGET_COMP_ID, target_comp_id);
+            msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
+            msg.set(fix44::TEXT, text.as_str());
             msg.wrap()
         };
         fix_message
@@ -471,8 +483,8 @@ impl FixConnection {
 
     fn on_missing_seqnum(&mut self, _message: Message) -> Response {
         self.make_logout(errs::missing_field(
-            fixt11::MSG_SEQ_NUM.name(),
-            fixt11::MSG_SEQ_NUM.tag().get().into(),
+            fix44::MSG_SEQ_NUM.name(),
+            fix44::MSG_SEQ_NUM.tag().get().into(),
         ))
     }
 
@@ -494,30 +506,33 @@ impl FixConnection {
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let mut msg = self.encoder.start_message(begin_string, b"3");
-            msg.set(fixt11::SENDER_COMP_ID, sender_comp_id);
-            msg.set(fixt11::TARGET_COMP_ID, target_comp_id);
-            msg.set(fixt11::MSG_SEQ_NUM, msg_seq_num);
+            msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
+            msg.set(fix44::TARGET_COMP_ID, target_comp_id);
+            msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
             if let Some(ref_tag) = ref_tag {
-                msg.set(fixt11::REF_TAG_ID, ref_tag);
+                msg.set(fix44::REF_TAG_ID, ref_tag);
             }
             if let Some(ref_msg_type) = ref_msg_type {
-                msg.set(fixt11::REF_MSG_TYPE, ref_msg_type);
+                msg.set(fix44::REF_MSG_TYPE, ref_msg_type);
             }
-            msg.set(fixt11::SESSION_REJECT_REASON, reason);
-            msg.set(fixt11::TEXT, err_text.as_str());
+            msg.set(fix44::SESSION_REJECT_REASON, reason);
+            msg.set(fix44::TEXT, err_text.as_str());
             msg.wrap()
         };
         Response::OutboundBytes(fix_message)
     }
 
-    fn make_reject_for_inaccurate_sending_time(&mut self, offender: Message) -> Response {
-        let ref_seq_num = offender.fv(fixt11::MSG_SEQ_NUM).unwrap();
-        let ref_msg_type = offender.fv::<&str, _>(fixt11::MSG_TYPE).unwrap();
+    fn make_reject_for_inaccurate_sending_time(
+        &mut self,
+        offender: Message,
+    ) -> Response {
+        let ref_seq_num = offender.fv(fix44::MSG_SEQ_NUM).unwrap();
+        let ref_msg_type = offender.fv::<&str, _>(fix44::MSG_TYPE).unwrap();
         self.on_reject(
             ref_seq_num,
-            Some(fixt11::SENDING_TIME.tag().get().into()),
+            Some(fix44::SENDING_TIME.tag().get().into()),
             Some(ref_msg_type.as_bytes()),
-            fixt11::SessionRejectReason::SendingtimeAccuracyProblem as u32,
+            fix44::SessionRejectReason::SendingtimeAccuracyProblem as u32,
             "Bad SendingTime".to_string(),
         )
     }
@@ -529,10 +544,10 @@ impl FixConnection {
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let mut msg = self.encoder.start_message(begin_string, b"5");
-            msg.set(fixt11::SENDER_COMP_ID, sender_comp_id);
-            msg.set(fixt11::TARGET_COMP_ID, target_comp_id);
-            msg.set(fixt11::MSG_SEQ_NUM, msg_seq_num);
-            msg.set(fixt11::TEXT, text.as_str());
+            msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
+            msg.set(fix44::TARGET_COMP_ID, target_comp_id);
+            msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
+            msg.set(fix44::TEXT, text.as_str());
             msg.wrap()
         };
         Response::OutboundBytes(fix_message)
@@ -544,13 +559,13 @@ impl FixConnection {
         //Self::add_comp_id(msg);
         //self.add_sending_time(msg);
         //self.add_seqnum(msg);
-        msg.set(fixt11::BEGIN_SEQ_NO, start);
-        msg.set(fixt11::END_SEQ_NO, end);
+        msg.set(fix44::BEGIN_SEQ_NO, start);
+        msg.set(fix44::END_SEQ_NO, end);
         Response::OutboundBytes(msg.wrap())
     }
 
     fn on_high_seqnum(&mut self, msg: Message) -> Response {
-        let msg_seq_num = msg.fv(fixt11::MSG_SEQ_NUM).unwrap();
+        let msg_seq_num = msg.fv(fix44::MSG_SEQ_NUM).unwrap();
         self.make_resend_request(self.seq_numbers().next_inbound(), msg_seq_num);
         todo!()
     }
@@ -572,7 +587,7 @@ impl FixConnection {
 //    // https://www.onixs.biz/fix-dictionary/4.4/index.html#UTCTimestamp.
 //    let time = chrono::Utc::now();
 //    let timestamp = time.format("%Y%m%d-%H:%M:%S.%.3f");
-//    msg.set(fixt11::SENDING_TIME, timestamp.to_string().as_str());
+//    msg.set(fix44::SENDING_TIME, timestamp.to_string().as_str());
 //}
 
 //#[cfg(test)]

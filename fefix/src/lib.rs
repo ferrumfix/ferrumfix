@@ -64,13 +64,13 @@
     clippy::needless_lifetimes
 )]
 
-mod utils;
-
-mod app_version;
 mod buffer;
-pub mod codegen;
+mod fefix_core;
+mod utils;
+pub use fefix_core::codegen;
+pub use fefix_core::dict;
+pub use fefix_core::TagU16;
 pub mod definitions;
-pub mod dict;
 pub mod fast;
 pub mod fixp;
 pub mod fixs;
@@ -79,7 +79,6 @@ pub mod session;
 pub mod sofh;
 pub mod tagvalue;
 
-pub use app_version::AppVersion;
 pub use buffer::Buffer;
 pub use dict::Dictionary;
 pub use fefix_derive::FixFieldValue;
@@ -90,9 +89,6 @@ pub extern crate openssl;
 
 #[cfg(not(expose_openssl))]
 pub(crate) extern crate openssl;
-
-/// Type alias for FIX tags: 16-bit unsigned integers, strictly positive.
-pub type TagU16 = std::num::NonZeroU16;
 
 /// Wrapper type for dealing with `Result<None, ...>` as errors.
 pub type OptResult<T, E> = Result<T, OptError<E>>;

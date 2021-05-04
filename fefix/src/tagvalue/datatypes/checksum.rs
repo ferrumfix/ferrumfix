@@ -46,7 +46,10 @@ impl<'a> FixFieldValue<'a> for CheckSum {
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         if let Ok(digits) = data.try_into() {
-            if is_ascii_digit(data[0]) & is_ascii_digit(data[1]) & is_ascii_digit(data[2]) {
+            if is_ascii_digit(data[0])
+                & is_ascii_digit(data[1])
+                & is_ascii_digit(data[2])
+            {
                 Ok(checksum_from_digits(digits))
             } else {
                 Err(ERR_ASCII_DIGITS)

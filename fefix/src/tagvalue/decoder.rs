@@ -1,6 +1,6 @@
 use super::{
-    Config, Configure, DecodeError, DecodeError as Error, Fv, RawDecoder, RawDecoderBuffered,
-    RawFrame,
+    Config, Configure, DecodeError, DecodeError as Error, Fv, RawDecoder,
+    RawDecoderBuffered, RawFrame,
 };
 use crate::definitions::fix44;
 use crate::dict;
@@ -118,7 +118,10 @@ where
     /// );
     /// ```
     #[inline]
-    pub fn decode<'a>(&'a mut self, bytes: &'a [u8]) -> Result<Message<'a>, DecodeError> {
+    pub fn decode<'a>(
+        &'a mut self,
+        bytes: &'a [u8],
+    ) -> Result<Message<'a>, DecodeError> {
         let frame = self.raw_decoder.decode(bytes)?;
         self.from_frame(frame)
     }
@@ -131,7 +134,10 @@ where
         unsafe { std::mem::transmute(&mut self.builder) }
     }
 
-    fn from_frame<'a>(&'a mut self, frame: RawFrame<'a>) -> Result<Message<'a>, DecodeError> {
+    fn from_frame<'a>(
+        &'a mut self,
+        frame: RawFrame<'a>,
+    ) -> Result<Message<'a>, DecodeError> {
         self.builder.clear();
         let bytes = frame.as_bytes();
         let mut tag_num = 0u16;
@@ -144,7 +150,8 @@ where
         builder
             .add_field(
                 Context::top_level(fix44::BEGIN_STRING.tag()),
-                &bytes[BEGIN_STRING_OFFSET..BEGIN_STRING_OFFSET + frame.begin_string().len()],
+                &bytes[BEGIN_STRING_OFFSET
+                    ..BEGIN_STRING_OFFSET + frame.begin_string().len()],
                 should_assoc,
                 should_seq,
             )
@@ -174,7 +181,14 @@ where
         Ok(self.message_builder_mut().build(bytes))
     }
 
-    fn store_field(&mut self, tag: TagU16, content: &[u8], start: usize, len: usize, bytes: &[u8]) {
+    fn store_field(
+        &mut self,
+        tag: TagU16,
+        content: &[u8],
+        start: usize,
+        len: usize,
+        bytes: &[u8],
+    ) {
         let config_assoc = self.config().should_decode_associative();
         let config_seq = self.config().should_decode_sequential();
         let msg = self.message_builder().build(bytes);
@@ -659,7 +673,7 @@ pub struct GroupRefIter<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{definitions::fix44, tagvalue::Config, AppVersion};
+    use crate::{definitions::fix44, tagvalue::Config};
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
@@ -668,7 +682,7 @@ mod test {
     }
 
     fn decoder() -> Decoder<Config> {
-        let dict = Dictionary::from_version(AppVersion::Fix44);
+        let dict = Dictionary::fix44();
         let mut config = Config::default();
         config.set_separator(b'|');
         Decoder::with_config(dict, config)
@@ -723,7 +737,7 @@ mod test {
     #[test]
     fn no_skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
-        let mut codec = Decoder::<Config>::new(Dictionary::from_version(AppVersion::Fix44));
+        let mut codec = Decoder::<Config>::new(Dictionary::fix44());
         codec.config_mut().set_separator(b'|');
         codec.config_mut().set_verify_checksum(true);
         let result = codec.decode(message.as_bytes());
@@ -762,7 +776,7 @@ mod test {
         let message = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
         let mut config = Config::default();
         config.set_separator(b'|');
-        let mut codec = Decoder::with_config(Dictionary::from_version(AppVersion::Fix44), config);
+        let mut codec = Decoder::with_config(Dictionary::fix44(), config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
     }

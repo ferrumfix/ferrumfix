@@ -1,6 +1,6 @@
 //! Starts an HTTP server on any open port and listens for JSON FIX messages.
 
-use fefix::{json, tagvalue, AppVersion, Dictionary};
+use fefix::{json, tagvalue, Dictionary};
 
 #[tokio::main]
 async fn main() -> tide::Result<()> {
@@ -32,7 +32,7 @@ impl State {
 
 impl Default for State {
     fn default() -> Self {
-        let dictionary = Dictionary::from_version(AppVersion::Fix42);
+        let dictionary = Dictionary::fix42();
         let mut config = json::Config::default();
         config.set_pretty_print(true);
         Self {

@@ -1,5 +1,4 @@
 use fefix::session::FixConnectionBuilder;
-use fefix::AppVersion;
 use fefix::{
     tagvalue::{Config, Decoder, Fv},
     Dictionary,
@@ -25,7 +24,7 @@ async fn main() -> io::Result<()> {
         builder.set_begin_string("FIX.4.2");
         builder.set_target_comp_id("TW");
         builder.set_sender_comp_id("INCA");
-        let fix_dictionary = Dictionary::from_version(AppVersion::Fix42);
+        let fix_dictionary = Dictionary::fix42();
         let fix_decoder = Decoder::new(fix_dictionary);
         let (reader, writer) = tokio::io::split(tcp_stream);
         builder

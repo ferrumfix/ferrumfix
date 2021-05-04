@@ -1,6 +1,8 @@
 //! Code generation utilities.
 
-use super::dict::{Dictionary, Field, FieldEnum, FixDataType, LayoutItem, LayoutItemKind, Message};
+use super::dict::{
+    Dictionary, Field, FieldEnum, FixDataType, LayoutItem, LayoutItemKind, Message,
+};
 use super::TagU16;
 use heck::{CamelCase, ShoutySnakeCase, SnakeCase};
 use indoc::indoc;
@@ -28,7 +30,10 @@ pub fn message(dict: Dictionary, message: Message, custom_derive_line: &str) -> 
     let fields = message
         .layout()
         .map(|layout_item| {
-            dict.translate_layout_item_to_struct_field(&layout_item, layout_item.required())
+            dict.translate_layout_item_to_struct_field(
+                &layout_item,
+                layout_item.required(),
+            )
         })
         .filter(|opt| opt.is_some())
         .map(|opt| opt.unwrap())
@@ -215,9 +220,15 @@ fn fix_to_rust_type(
         FixDataType::Int => "i64".to_string(),
         FixDataType::SeqNum => "u64".to_string(),
         FixDataType::NumInGroup => "usize".to_string(),
-        FixDataType::UtcDateOnly => format!("{}::tagvalue::datatypes::Date", fefix_path),
-        FixDataType::UtcTimeOnly => format!("{}::tagvalue::datatypes::Time", fefix_path),
-        FixDataType::UtcTimestamp => format!("{}::tagvalue::datatypes::Timestamp", fefix_path),
+        FixDataType::UtcDateOnly => {
+            format!("{}::tagvalue::datatypes::Date", fefix_path)
+        }
+        FixDataType::UtcTimeOnly => {
+            format!("{}::tagvalue::datatypes::Time", fefix_path)
+        }
+        FixDataType::UtcTimestamp => {
+            format!("{}::tagvalue::datatypes::Timestamp", fefix_path)
+        }
         _ => bytes,
     }
 }
@@ -260,7 +271,8 @@ impl Dictionary {
             LayoutItemKind::Component(_c) => "()".to_string(),
             LayoutItemKind::Group(_, _) => "()".to_string(),
             LayoutItemKind::Field(f) => {
-                fix_to_rust_type(f.tag(), f.data_type().basetype(), "crate", "static").to_string()
+                fix_to_rust_type(f.tag(), f.data_type().basetype(), "crate", "static")
+                    .to_string()
             }
         };
         //let field_tag = match item.kind() {
@@ -271,7 +283,9 @@ impl Dictionary {
         let _field_doc = match item.kind() {
             LayoutItemKind::Component(_c) => "///".to_string(),
             LayoutItemKind::Group(_, _) => "///".to_string(),
-            LayoutItemKind::Field(f) => docs::gen_field(self.get_version().to_string(), &f),
+            LayoutItemKind::Field(f) => {
+                docs::gen_field(self.get_version().to_string(), &f)
+            }
         };
         Some(format!(
             r#"
@@ -304,21 +318,20 @@ mod docs {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::AppVersion;
 
     #[test]
-    fn fix_v42_syntax() {
-        let fix_v42 = Dictionary::from_version(AppVersion::Fix42);
+    fn fix_v44_syntax() {
+        let fix_v42 = Dictionary::fix44();
         let code = module_with_field_definitions(fix_v42, "fefix");
         assert!(syn::parse_file(code.as_str()).is_ok());
     }
 
-    #[test]
-    fn syntax_of_field_tags_is_ok() {
-        for version in AppVersion::ALL.iter().copied() {
-            let dict = Dictionary::from_version(version);
-            let code = module_with_field_definitions(dict, "crate");
-            syn::parse_file(code.as_str()).unwrap();
-        }
-    }
+    //#[test]
+    //fn syntax_of_field_tags_is_ok() {
+    //    for version in AppVersion::ALL.iter().copied() {
+    //        let dict = Dictionary::from_version(version);
+    //        let code = module_with_field_definitions(dict, "crate");
+    //        syn::parse_file(code.as_str()).unwrap();
+    //    }
+    //}
 }

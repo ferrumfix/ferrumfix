@@ -1,6 +1,6 @@
 use super::{Config, Configure, FvWrite};
 use crate::buffer::Buffer;
-use crate::definitions::fixt11;
+use crate::definitions::fix44;
 use crate::dict;
 use crate::dict::IsFieldDefinition;
 use crate::dict::IsTypedFieldDefinition;
@@ -78,7 +78,7 @@ where
             raw_encoder: self,
             body_start_i: 0,
         };
-        state.set(fixt11::BEGIN_STRING, begin_string);
+        state.set(fix44::BEGIN_STRING, begin_string);
         // The second field is supposed to be `BodyLength(9)`, but obviously
         // the length of the message is unknow until later in the
         // serialization phase. This alone would usually require to
@@ -94,9 +94,9 @@ where
         // some bytes but the benefits largely outweight the costs.
         //
         // Six digits (~1MB) ought to be enough for every message.
-        state.set_any(fixt11::BODY_LENGTH.tag(), b"000000" as &[u8]);
+        state.set_any(fix44::BODY_LENGTH.tag(), b"000000" as &[u8]);
         state.body_start_i = state.raw_encoder.buffer.len();
-        state.set_any(fixt11::MSG_TYPE.tag(), msg_type);
+        state.set_any(fix44::MSG_TYPE.tag(), msg_type);
         state
     }
 }
@@ -173,7 +173,7 @@ where
 
     fn write_checksum(&mut self) {
         let checksum = CheckSum::compute(self.raw_encoder.buffer.as_slice());
-        self.set(fixt11::CHECK_SUM, checksum);
+        self.set(fix44::CHECK_SUM, checksum);
     }
 }
 
