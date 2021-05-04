@@ -1007,7 +1007,7 @@ dependencies = [
 
 [[package]]
 name = "fefix"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "arbitrary",
  "bitvec 0.18.4",
@@ -1017,7 +1017,7 @@ dependencies = [
  "criterion",
  "enum-as-inner",
  "fefix",
- "fefix_derive",
+ "fefix_derive 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "fixed",
  "fnv",
  "futures",
@@ -1048,7 +1048,19 @@ dependencies = [
 
 [[package]]
 name = "fefix_derive"
-version = "0.4.0"
+version = "0.5.0"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "fefix_derive"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1a93db91a2a59a98385ab1bacc9a0dc39f22a33f7bbddae7be870b7051ae6637"
 dependencies = [
  "darling",
  "proc-macro2",

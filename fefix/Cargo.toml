@@ -1,6 +1,6 @@
 [package]
 name = "fefix"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2018"
 authors = ["Filippo Costa @neysofu"]
 homepage = "https://github.com/neysofu/ferrum-fix"
@@ -64,7 +64,7 @@ strum = "0.20"
 strum_macros = "0.20"
 tokio = { version = "1", features = ["full"] }
 uuid = { version = "0.8.1", features = ["v4"] }
-fefix_derive = { path = "../fefix_derive" }
+fefix_derive = "0.5.0"
 
 [build-dependencies]
 chrono = "0.4"
