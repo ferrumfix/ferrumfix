@@ -10,6 +10,4 @@ pub mod dict;
 
 pub use app_version::AppVersion;
 
-use std::num::NonZeroU16;
-
-pub type TagU16 = NonZeroU16;
+pub type TagU16 = std::num::NonZeroU16;

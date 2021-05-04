@@ -22,16 +22,24 @@ pub mod fixt11;
 use crate::{dict, dict::FixDataType, FixFieldValue, TagU16};
 use std::marker::PhantomData;
 
-/// A generated field definition.
+/// Metadata about a specific FIX tag. Designed for code generation.
+///
+/// # Type signature
+///
+/// `V` is the suggested [`FixFieldValue`] for this FIX field.
 #[derive(Debug, Clone)]
 pub struct GeneratedFieldDef<'a, V>
 where
     V: FixFieldValue<'a>,
 {
+    /// Human-readable ASCII name of this FIX field, e.g. `MsgSeqNum`.
     pub name: &'static str,
+    /// Numeric tag associated with this FIX field.
     pub tag: u16,
     pub is_group_leader: bool,
     pub data_type: FixDataType,
+    /// Expected location of this FIX field within messages - header, body, or
+    /// trailer. Used for JSON-encoded FIX messages.
     pub location: dict::FieldLocation,
     pub phantom: PhantomData<&'a V>,
 }

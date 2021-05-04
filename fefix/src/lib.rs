@@ -91,60 +91,8 @@ pub extern crate openssl;
 #[cfg(not(expose_openssl))]
 pub(crate) extern crate openssl;
 
-use std::num::NonZeroU16;
-
 /// Type alias for FIX tags: 16-bit unsigned integers, strictly positive.
-pub type TagU16 = NonZeroU16;
-
-//#[derive(Debug, Clone)]
-//pub struct FieldDef<'a, V>
-//where
-//    V: DataType<'a>,
-//{
-//    pub name: &'a str,
-//    pub tag: TagU16,
-//    pub is_group_leader: bool,
-//    pub data_type: FixDataType,
-//    pub location: dict::FieldLocation,
-//    pub phantom: PhantomData<V>,
-//}
-//
-//impl<'a, V> dict::IsFieldDefinition for FieldDef<'a, V>
-//where
-//    V: DataType<'a>,
-//{
-//    fn tag(&self) -> TagU16 {
-//        self.tag
-//    }
-//
-//    fn name(&self) -> &str {
-//        self.name
-//    }
-//
-//    fn location(&self) -> dict::FieldLocation {
-//        dict::FieldLocation::Body // FIXME
-//    }
-//}
-//
-//impl<'a, V> FieldDef<'a, V>
-//where
-//    V: DataType<'a>,
-//{
-//    /// Returns the numeric tag associated with `self`.
-//    pub fn tag(&self) -> TagU16 {
-//        self.tag
-//    }
-//
-//    /// Returns the human-readable name given to `self`.
-//    pub fn name(&self) -> &'a str {
-//        self.name
-//    }
-//
-//    /// Returns the [`DataType`] of `self`.
-//    pub fn data_type(&self) -> FixDataType {
-//        self.data_type
-//    }
-//}
+pub type TagU16 = std::num::NonZeroU16;
 
 /// Wrapper type for dealing with `Result<None, ...>` as errors.
 pub type OptResult<T, E> = Result<T, OptError<E>>;
