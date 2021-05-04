@@ -1,10 +1,16 @@
 //! *FIX-over-TLS* ([FIXS](https://www.fixtrading.org/standards/fixs/))
 //! utilities.
 
-mod iana2openssl;
-
 use crate::openssl::ssl::*;
-use iana2openssl::IANA_TO_OPENSSL;
+use lazy_static::lazy_static;
+use std::collections::HashMap;
+
+lazy_static! {
+    static ref IANA_TO_OPENSSL: HashMap<String, String> = {
+        let json_file = include_str!("iana2openssl.json");
+        serde_json::from_str(json_file).unwrap()
+    };
+}
 
 /// Which version of FIX-over-TLS (FIXS) to use.
 #[derive(Debug, Copy, Clone)]
@@ -23,13 +29,16 @@ impl Version {
     /// let ciphersuites_iana = version.recommended_cs_iana(false);
     /// assert!(ciphersuites_iana.iter().any(|cs| cs == &"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"));
     /// ```
-    pub fn recommended_cs_iana(&self, psk: bool) -> Vec<&'static str> {
+    pub fn recommended_cs_iana(&self, psk: bool) -> Vec<String> {
         match (self, psk) {
-            (Version::V1Draft, false) => V1_DRAFT_RECOMMENDED_CIPHERSUITES.to_vec(),
+            (Version::V1Draft, false) => V1_DRAFT_RECOMMENDED_CIPHERSUITES
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             (Version::V1Draft, true) => V1_DRAFT_RECOMMENDED_CIPHERSUITES
                 .iter()
                 .chain(V1_DRAFT_RECOMMENDED_CIPHERSUITES_PSK_ONLY)
-                .copied()
+                .map(|s| s.to_string())
                 .collect(),
         }
     }
@@ -59,10 +68,10 @@ impl Version {
     /// let cipherlist = ciphersuites_openssl.join(":");
     /// println!("Supported ciphers: {}", cipherlist);
     /// ```
-    pub fn recommended_cs_openssl(&self, psk: bool) -> Vec<&'static str> {
+    pub fn recommended_cs_openssl(&self, psk: bool) -> Vec<String> {
         self.recommended_cs_iana(psk)
             .iter()
-            .map(|s| *IANA_TO_OPENSSL.get(s).unwrap())
+            .map(|s| IANA_TO_OPENSSL.get(s.as_str()).unwrap().clone())
             .collect()
     }
 
@@ -89,7 +98,7 @@ impl Version {
         context
     }
 
-    /// Creates an [`SslacceptorBuilder`] with fhe FIXS recommended settings.
+    /// Creates an [`SslAcceptorBuilder`] with fhe FIXS recommended settings.
     pub fn recommended_acceptor_builder(&self) -> SslAcceptorBuilder {
         let mut context = SslAcceptor::mozilla_intermediate_v5(SslMethod::tls()).unwrap();
         match self {
