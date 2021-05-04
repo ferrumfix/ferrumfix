@@ -92,6 +92,14 @@ fn ascii_digit_to_u8(digit: u8, multiplier: u8) -> u8 {
 #[cfg(test)]
 mod test {
     use super::*;
+    use quickcheck::{Arbitrary, Gen};
+    use quickcheck_macros::quickcheck;
+
+    impl Arbitrary for CheckSum {
+        fn arbitrary(g: &mut Gen) -> Self {
+            Self(u8::arbitrary(g))
+        }
+    }
 
     #[test]
     fn edges_cases() {
@@ -99,5 +107,22 @@ mod test {
         assert_eq!(CheckSum::compute(&[1]).0, 1);
         assert_eq!(CheckSum::compute(&[128, 127]).0, 255);
         assert_eq!(CheckSum::compute(&[128, 128]).0, 0);
+        assert_eq!(CheckSum::compute(&[128, 129]).0, 1);
+    }
+
+    #[quickcheck]
+    fn serialized_takes_three_bytes(checksum: CheckSum) -> bool {
+        checksum.to_bytes().len() == 3
+    }
+
+    #[quickcheck]
+    fn serializes_as_integer(checksum: CheckSum) -> bool {
+        let serialized_str = checksum.to_string_opt().unwrap();
+        serialized_str.parse::<u8>().unwrap() == checksum.0
+    }
+
+    #[quickcheck]
+    fn verify_serialization_behavior(checksum: CheckSum) -> bool {
+        super::super::verify_serialization_behavior(checksum)
     }
 }

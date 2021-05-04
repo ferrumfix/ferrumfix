@@ -69,3 +69,24 @@ impl<'a> FixFieldValue<'a> for Timestamp {
         Self::parse(data).ok_or(Self::Error::Other)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use quickcheck::{Arbitrary, Gen};
+    use quickcheck_macros::quickcheck;
+
+    impl Arbitrary for Timestamp {
+        fn arbitrary(g: &mut Gen) -> Self {
+            let date = Date::arbitrary(g).to_string_opt().unwrap();
+            let time = Time::arbitrary(g).to_string_opt().unwrap();
+            let s = format!("{}-{}", date, time);
+            Self::deserialize(s.as_bytes()).unwrap()
+        }
+    }
+
+    #[quickcheck]
+    fn verify_serialization_behavior(timestamp: Timestamp) -> bool {
+        super::super::verify_serialization_behavior(timestamp)
+    }
+}

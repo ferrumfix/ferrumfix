@@ -1,14 +1,9 @@
-use super::error;
 use crate::Buffer;
 use crate::FixFieldValue;
 
 const LEN_IN_BYTES: usize = 8;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-enum DayOrWeek {
-    Day(u32),
-    Week(u32),
-}
+const ERR_GENERIC: &str = "Invalid day or week format.";
 
 /// Canonical data field (DTF) for
 /// [`DataType::MonthYear`](crate::DataType::MonthYear).
@@ -17,6 +12,12 @@ pub struct MonthYear {
     year: u32,
     month: u32,
     day_or_week: DayOrWeek,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+enum DayOrWeek {
+    Day(u32),
+    Week(u32),
 }
 
 impl MonthYear {
@@ -131,7 +132,7 @@ impl MonthYear {
 }
 
 impl<'a> FixFieldValue<'a> for MonthYear {
-    type Error = error::MonthYear;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = true;
@@ -149,7 +150,7 @@ impl<'a> FixFieldValue<'a> for MonthYear {
         if validate(data) {
             Self::deserialize_lossy(data)
         } else {
-            Err(Self::Error::Other)
+            Err(ERR_GENERIC)
         }
     }
 
@@ -215,7 +216,34 @@ fn validate_day(data: &[u8]) -> bool {
 
 #[cfg(test)]
 mod test {
+    use super::*;
+    use quickcheck::{Arbitrary, Gen};
+    use quickcheck_macros::quickcheck;
 
-    #[test]
-    fn parse_speedy() {}
+    impl Arbitrary for MonthYear {
+        fn arbitrary(g: &mut Gen) -> Self {
+            let year = u32::arbitrary(g) % 10000;
+            let month = (u32::arbitrary(g) % 12) + 1;
+            let day_or_week = if bool::arbitrary(g) {
+                format!("{:02}", (u32::arbitrary(g) % 31) + 1)
+            } else {
+                format!("w{}", (u32::arbitrary(g) % 5) + 1)
+            };
+            let s = format!("{:04}{:02}{}", year, month, day_or_week);
+            MonthYear::deserialize(s.as_bytes()).unwrap()
+        }
+    }
+
+    #[quickcheck]
+    fn verify_serialization_behavior(my: MonthYear) -> bool {
+        super::super::verify_serialization_behavior(my)
+    }
+
+    #[quickcheck]
+    fn can_deserialize_after_serializing(my: MonthYear) -> bool {
+        let serialized = my.to_bytes();
+        let deserialized = MonthYear::deserialize(&serialized[..]).unwrap();
+        let deserialized_lossy = MonthYear::deserialize_lossy(&serialized[..]).unwrap();
+        deserialized == my && deserialized_lossy == my
+    }
 }

@@ -35,11 +35,3 @@ pub enum Time {
 pub enum Timestamp {
     Other,
 }
-
-/// Error type for [`Date`](super::Date).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Date {
-    WrongLength,
-    NotAsciiDigits,
-    OutsideBounds,
-}

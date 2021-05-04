@@ -624,6 +624,18 @@ impl<'a> SuperDataType<'a, u32> for u64 {}
 impl<'a> SuperDataType<'a, i32> for i64 {}
 
 #[cfg(test)]
+pub fn verify_serialization_behavior<T>(item: T) -> bool
+where
+    T: for<'a> FixFieldValue<'a> + PartialEq,
+{
+    let serialized = item.to_bytes();
+    let bytes = &serialized[..];
+    let deserialized = T::deserialize(bytes).ok().unwrap();
+    let deserialized_lossy = T::deserialize_lossy(bytes).ok().unwrap();
+    deserialized == item && deserialized_lossy == item
+}
+
+#[cfg(test)]
 mod test {
     use super::*;
     use quickcheck_macros::quickcheck;

@@ -187,6 +187,23 @@ const fn ascii_digit_to_u32(digit: u8, multiplier: u32) -> u32 {
 #[cfg(test)]
 mod test {
     use super::*;
+    use quickcheck::{Arbitrary, Gen};
+    use quickcheck_macros::quickcheck;
+
+    impl Arbitrary for Time {
+        fn arbitrary(g: &mut Gen) -> Self {
+            let hour = u32::arbitrary(g) % 24;
+            let minute = u32::arbitrary(g) % 60;
+            let second = u32::arbitrary(g) % 60;
+            let millisecond = if bool::arbitrary(g) {
+                format!(".{:03}", u32::arbitrary(g) % 1000)
+            } else {
+                String::new()
+            };
+            let s = format!("{:02}:{:02}:{:02}{}", hour, minute, second, millisecond);
+            Self::deserialize(s.as_bytes()).unwrap()
+        }
+    }
 
     struct TestCase {
         bytes: &'static [u8],
@@ -230,5 +247,10 @@ mod test {
             assert_eq!(dtf.second(), test_case.second);
             assert_eq!(dtf.milli(), test_case.milli);
         }
+    }
+
+    #[quickcheck]
+    fn verify_serialization_behavior(time: Time) -> bool {
+        super::super::verify_serialization_behavior(time)
     }
 }
