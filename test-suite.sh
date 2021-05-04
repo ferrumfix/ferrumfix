@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+git submodule init
+git submodule update
+
+mkdir lib/quickfix/build
+cd lib/quickfix/build
+
+cmake ..
+make
+
 QUICKCHECK_TESTS="2500"
 
 # Test problematic feature combinations.
