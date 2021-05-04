@@ -23,7 +23,17 @@
 //! Please check out the [README](https://github.com/neysofu/fefix/) for more
 //! general information regarding FerrumFIX.
 //!
-//! # Tongue-in-cheek FAQ
+//! # Optional features
+//!
+//! FerrumFIX puts a lot of functionality behind optional features in order to
+//! optimize compilation times for the most common use cases. The following
+//! features are available:
+//!
+//! - `fix40`, `fix41`, `fix42`, `fix43`, `fix44`, `fix50`, `fix50sp1`,
+//! `fix50sp2`, `fixt11` – Ergonomic utilities for the respective FIX versions.
+//! - `fixs` – FIX-over-TLS support.
+//!
+//! # FAQ
 //!
 //! - **Q.** I simply want to read FIX messages. Where do I start?  
 //!   **A.** Use [`fefix::tagvalue::Decoder`](crate::tagvalue::Decoder) and
@@ -42,11 +52,6 @@
 //! - **Q.** Is this production-ready?  
 //!   **A.** Not at the moment, but Bitwyre and other companies are looking to
 //!   adopt FerrumFIX within their tech stacks in production, i.e. soon it will be.
-//!
-//! - **Q.** Is this `async`?  
-//!   **A.** No, because it doesn't need to. By design, you'll be the done doing
-//!   the plumbing together with `tokio` or whatever library you use. FerrumFIX
-//!   itself doesn't care about I/O.
 //!
 //! - **Q.** Why isn't X supported?  
 //!   **A.** Time, mostly. Drop me an email or open an issue and let's see what I

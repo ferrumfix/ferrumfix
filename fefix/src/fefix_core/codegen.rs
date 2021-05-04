@@ -1,9 +1,6 @@
 //! Code generation utilities.
 
-use super::dict::{
-    Dictionary, Field, FieldEnum, FixDataType, LayoutItem, LayoutItemKind, Message,
-};
-use super::TagU16;
+use super::{dict, TagU16};
 use heck::{CamelCase, ShoutySnakeCase, SnakeCase};
 use indoc::indoc;
 
@@ -25,15 +22,12 @@ fn generated_code_notice() -> String {
     )
 }
 
-pub fn message(dict: Dictionary, message: Message, custom_derive_line: &str) -> String {
+pub fn message(dict: dict::Dictionary, message: dict::Message, custom_derive_line: &str) -> String {
     let identifier = message.name().to_camel_case();
     let fields = message
         .layout()
         .map(|layout_item| {
-            dict.translate_layout_item_to_struct_field(
-                &layout_item,
-                layout_item.required(),
-            )
+            dict.translate_layout_item_to_struct_field(&layout_item, layout_item.required())
         })
         .filter(|opt| opt.is_some())
         .map(|opt| opt.unwrap())
@@ -60,7 +54,7 @@ pub fn message(dict: Dictionary, message: Message, custom_derive_line: &str) -> 
     )
 }
 
-pub fn enum_variant(field_enum: FieldEnum) -> String {
+pub fn enum_variant(field_enum: dict::FieldEnum) -> String {
     let name_is_valid_rust_identifier = field_enum
         .description()
         .chars()
@@ -86,7 +80,7 @@ pub fn enum_variant(field_enum: FieldEnum) -> String {
     )
 }
 
-pub fn enum_definition(field: Field) -> Option<String> {
+pub fn enum_definition(field: dict::Field) -> Option<String> {
     let variants = field.enums()?;
     Some(format!(
         indoc!(
@@ -106,7 +100,7 @@ pub fn enum_definition(field: Field) -> Option<String> {
     ))
 }
 
-pub fn field_definition(field: Field, type_param: &str) -> String {
+pub fn field_definition(field: dict::Field, type_param: &str) -> String {
     let name = field.name().to_shouty_snake_case();
     let tag = field.tag().to_string();
     format!(
@@ -129,13 +123,13 @@ pub fn field_definition(field: Field, type_param: &str) -> String {
         tag = tag,
         type_param = type_param,
         group = field.name().ends_with("Len"),
-        data_type = <&'static str as From<FixDataType>>::from(field.data_type().basetype()),
+        data_type = <&'static str as From<dict::FixDataType>>::from(field.data_type().basetype()),
     ).trim().to_string()
 }
 
 /// Generates `const` implementors of
 /// [`IsFieldDefinition`](super::dict::IsFieldDefinition).
-pub fn module_with_field_definitions(dict: Dictionary, fefix_path: &str) -> String {
+pub fn module_with_field_definitions(dict: dict::Dictionary, fefix_path: &str) -> String {
     let enums = dict
         .iter_fields()
         .filter_map(|field| enum_definition(field))
@@ -194,14 +188,14 @@ pub fn module_with_field_definitions(dict: Dictionary, fefix_path: &str) -> Stri
 
 fn fix_to_rust_type(
     tag: TagU16,
-    data_type: FixDataType,
+    data_type: dict::FixDataType,
     fefix_path: &str,
     lifetime: &str,
 ) -> String {
     if tag.get() == 10 {
         return format!("{}::tagvalue::datatypes::CheckSum", fefix_path);
     }
-    if data_type.base_type() == FixDataType::Float {
+    if data_type.base_type() == dict::FixDataType::Float {
         return "rust_decimal::Decimal".to_string();
     }
     let bytes = format!("&'{} [u8]", lifetime);
@@ -209,24 +203,24 @@ fn fix_to_rust_type(
         // FIX strings are encoded as Latin-1, which is not compatible with
         // UTF-8 and thus Rust strings. This is hardly ever a problem as most
         // strings are ASCII, but we can't do any hazardous assumptions.
-        FixDataType::String | FixDataType::Data => bytes,
-        FixDataType::Char => "u8".to_string(),
-        FixDataType::Boolean => "bool".to_string(),
-        FixDataType::Country | FixDataType::Language => "[u8; 2]".to_string(),
-        FixDataType::Currency => "[u8; 3]".to_string(),
-        FixDataType::Exchange => "[u8; 4]".to_string(),
-        FixDataType::Length => "usize".to_string(),
-        FixDataType::DayOfMonth => "u32".to_string(),
-        FixDataType::Int => "i64".to_string(),
-        FixDataType::SeqNum => "u64".to_string(),
-        FixDataType::NumInGroup => "usize".to_string(),
-        FixDataType::UtcDateOnly => {
+        dict::FixDataType::String | dict::FixDataType::Data => bytes,
+        dict::FixDataType::Char => "u8".to_string(),
+        dict::FixDataType::Boolean => "bool".to_string(),
+        dict::FixDataType::Country | dict::FixDataType::Language => "[u8; 2]".to_string(),
+        dict::FixDataType::Currency => "[u8; 3]".to_string(),
+        dict::FixDataType::Exchange => "[u8; 4]".to_string(),
+        dict::FixDataType::Length => "usize".to_string(),
+        dict::FixDataType::DayOfMonth => "u32".to_string(),
+        dict::FixDataType::Int => "i64".to_string(),
+        dict::FixDataType::SeqNum => "u64".to_string(),
+        dict::FixDataType::NumInGroup => "usize".to_string(),
+        dict::FixDataType::UtcDateOnly => {
             format!("{}::tagvalue::datatypes::Date", fefix_path)
         }
-        FixDataType::UtcTimeOnly => {
+        dict::FixDataType::UtcTimeOnly => {
             format!("{}::tagvalue::datatypes::Time", fefix_path)
         }
-        FixDataType::UtcTimestamp => {
+        dict::FixDataType::UtcTimestamp => {
             format!("{}::tagvalue::datatypes::Timestamp", fefix_path)
         }
         _ => bytes,
@@ -256,23 +250,22 @@ impl RustTypeName {
     }
 }
 
-impl Dictionary {
+impl dict::Dictionary {
     fn translate_layout_item_to_struct_field(
         &self,
-        item: &LayoutItem,
+        item: &dict::LayoutItem,
         required: bool,
     ) -> Option<String> {
         let field_name = match item.kind() {
-            LayoutItemKind::Component(c) => c.name().to_snake_case(),
-            LayoutItemKind::Group(_, _) => return None,
-            LayoutItemKind::Field(f) => f.name().to_snake_case(),
+            dict::LayoutItemKind::Component(c) => c.name().to_snake_case(),
+            dict::LayoutItemKind::Group(_, _) => return None,
+            dict::LayoutItemKind::Field(f) => f.name().to_snake_case(),
         };
         let field_type = match item.kind() {
-            LayoutItemKind::Component(_c) => "()".to_string(),
-            LayoutItemKind::Group(_, _) => "()".to_string(),
-            LayoutItemKind::Field(f) => {
-                fix_to_rust_type(f.tag(), f.data_type().basetype(), "crate", "static")
-                    .to_string()
+            dict::LayoutItemKind::Component(_c) => "()".to_string(),
+            dict::LayoutItemKind::Group(_, _) => "()".to_string(),
+            dict::LayoutItemKind::Field(f) => {
+                fix_to_rust_type(f.tag(), f.data_type().basetype(), "crate", "static").to_string()
             }
         };
         //let field_tag = match item.kind() {
@@ -281,11 +274,9 @@ impl Dictionary {
         //    LayoutItemKind::Field(f) => f.tag(),
         //};
         let _field_doc = match item.kind() {
-            LayoutItemKind::Component(_c) => "///".to_string(),
-            LayoutItemKind::Group(_, _) => "///".to_string(),
-            LayoutItemKind::Field(f) => {
-                docs::gen_field(self.get_version().to_string(), &f)
-            }
+            dict::LayoutItemKind::Component(_c) => "///".to_string(),
+            dict::LayoutItemKind::Group(_, _) => "///".to_string(),
+            dict::LayoutItemKind::Field(f) => docs::gen_field(self.get_version().to_string(), &f),
         };
         Some(format!(
             r#"
@@ -300,7 +291,7 @@ impl Dictionary {
 mod docs {
     use super::*;
 
-    pub fn gen_field(version: String, field: &Field) -> String {
+    pub fn gen_field(version: String, field: &dict::Field) -> String {
         let onixs_link = field.doc_url_onixs(version.as_str());
         format!(
             "/// {}\n///\n/// # Field information\n///\n/// Tag Number: {}\n/// OnixS [reference]({}).",
@@ -320,18 +311,10 @@ mod test {
     use super::*;
 
     #[test]
-    fn fix_v44_syntax() {
-        let fix_v42 = Dictionary::fix44();
-        let code = module_with_field_definitions(fix_v42, "fefix");
-        assert!(syn::parse_file(code.as_str()).is_ok());
+    fn syntax_of_field_definitions_is_ok() {
+        for dict in dict::Dictionary::all().into_iter() {
+            let code = module_with_field_definitions(dict, "crate");
+            syn::parse_file(code.as_str()).unwrap();
+        }
     }
-
-    //#[test]
-    //fn syntax_of_field_tags_is_ok() {
-    //    for version in AppVersion::ALL.iter().copied() {
-    //        let dict = Dictionary::from_version(version);
-    //        let code = module_with_field_definitions(dict, "crate");
-    //        syn::parse_file(code.as_str()).unwrap();
-    //    }
-    //}
 }

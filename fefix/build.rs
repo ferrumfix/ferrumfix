@@ -1,5 +1,8 @@
-#[path = "src/fefix_core/mod.rs"]
+// `fefix_core` is part of the FerrumFIX codebase, so all warnings will get
+// caught anyway during compilation. Enabling compiler diagnostics would thus
+// have the undesirable effect of showing two identical warnings.
 #[allow(warnings)]
+#[path = "src/fefix_core/mod.rs"]
 mod fefix_core;
 
 use fefix_core::{codegen, dict::Dictionary};

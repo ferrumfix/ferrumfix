@@ -19,4 +19,4 @@ proc-macro = true
 darling = "0.12"
 proc-macro2 = "1"
 quote = "1"
-syn = "1"
+syn = { version = "1", features = ["derive", "parsing"] }

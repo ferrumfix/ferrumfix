@@ -83,4 +83,20 @@ enum-as-inner = "0.3"
 quickcheck = "1"
 quickcheck_derive = "0.3"
 quickcheck_macros = "1"
-syn = { version = "1", features = ["full"] }
+syn = { version = "1", features = ["parsing"] }
+
+# Dirty hack to enable all features for tests.
+# https://github.com/rust-lang/cargo/issues/2911#issuecomment-749580481
+[dev-dependencies.fefix]
+path = "."
+features = [
+    "fix40",
+    "fix41",
+    "fix42",
+    "fix43",
+    "fix44",
+    "fix50",
+    "fix50sp1",
+    "fix50sp2",
+    "fixt11"
+]

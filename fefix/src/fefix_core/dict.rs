@@ -11,15 +11,15 @@ use std::sync::Arc;
 
 pub use datatype::FixDataType;
 
-pub const SPEC_FIX_40: &str = include_str!("resources/quickfix/FIX-4.0.xml");
-pub const SPEC_FIX_41: &str = include_str!("resources/quickfix/FIX-4.1.xml");
-pub const SPEC_FIX_42: &str = include_str!("resources/quickfix/FIX-4.2.xml");
-pub const SPEC_FIX_43: &str = include_str!("resources/quickfix/FIX-4.3.xml");
-pub const SPEC_FIX_44: &str = include_str!("resources/quickfix/FIX-4.4.xml");
-pub const SPEC_FIX_50: &str = include_str!("resources/quickfix/FIX-5.0.xml");
-pub const SPEC_FIX_50SP1: &str = include_str!("resources/quickfix/FIX-5.0-SP1.xml");
-pub const SPEC_FIX_50SP2: &str = include_str!("resources/quickfix/FIX-5.0-SP2.xml");
-pub const SPEC_FIXT_11: &str = include_str!("resources/quickfix/FIXT-1.1.xml");
+const SPEC_FIX_40: &str = include_str!("resources/quickfix/FIX-4.0.xml");
+const SPEC_FIX_41: &str = include_str!("resources/quickfix/FIX-4.1.xml");
+const SPEC_FIX_42: &str = include_str!("resources/quickfix/FIX-4.2.xml");
+const SPEC_FIX_43: &str = include_str!("resources/quickfix/FIX-4.3.xml");
+const SPEC_FIX_44: &str = include_str!("resources/quickfix/FIX-4.4.xml");
+const SPEC_FIX_50: &str = include_str!("resources/quickfix/FIX-5.0.xml");
+const SPEC_FIX_50SP1: &str = include_str!("resources/quickfix/FIX-5.0-SP1.xml");
+const SPEC_FIX_50SP2: &str = include_str!("resources/quickfix/FIX-5.0-SP2.xml");
+const SPEC_FIXT_11: &str = include_str!("resources/quickfix/FIXT-1.1.xml");
 
 lazy_static! {
     static ref DICT_FIX_40: Dictionary =
@@ -304,7 +304,22 @@ impl Dictionary {
 
     #[cfg(feature = "fixt11")]
     pub fn fixt11() -> Self {
-        DICT_FIXT11.clone()
+        DICT_FIXT_11.clone()
+    }
+
+    #[cfg(test)]
+    pub fn all() -> Vec<Dictionary> {
+        vec![
+            Self::fix40(),
+            Self::fix41(),
+            Self::fix42(),
+            Self::fix43(),
+            Self::fix44(),
+            Self::fix50(),
+            Self::fix50sp1(),
+            Self::fix50sp2(),
+            Self::fixt11(),
+        ]
     }
 
     fn symbol(&self, pkey: KeyRef) -> Option<&u32> {
@@ -2014,164 +2029,101 @@ mod quickfix {
     }
 }
 
-mod quickfix_spec {
-    //use super::AppVersion;
-    //use std::borrow::Cow;
-
-    ///// Returns a string with the QuickFIX definition file for `self`
-    ///// as its content.
-    /////
-    ///// The QuickFix definition files are extracted and
-    ///// decompressed
-    ///// from the binary without filesystem access.
-    //pub fn quickfix_spec(version: AppVersion) -> Cow<'static, str> {
-    //    (match version {
-    //        AppVersion::Fix40 => SPEC_FIX_40,
-    //        AppVersion::Fix41 => SPEC_FIX_41,
-    //        AppVersion::Fix42 => SPEC_FIX_42,
-    //        AppVersion::Fix43 => SPEC_FIX_43,
-    //        AppVersion::Fix44 => SPEC_FIX_44,
-    //        AppVersion::Fix50 => SPEC_FIX_50,
-    //        AppVersion::Fix50SP1 => SPEC_FIX_50SP1,
-    //        AppVersion::Fix50SP2 => SPEC_FIX_50SP2,
-    //        AppVersion::Fixt11 => SPEC_FIXT_11,
-    //    })
-    //    .into()
-    //}
-
-    //#[cfg(test)]
-    //mod test {
-    //    use super::*;
-    //    use std::collections::HashSet;
-
-    //    #[test]
-    //    fn all_versions_have_quickfix_spec() {
-    //        assert!(AppVersion::ALL
-    //            .iter()
-    //            .copied()
-    //            .map(|version| quickfix_spec(version))
-    //            .all(|spec| spec.len() > 0));
-    //    }
-
-    //    #[test]
-    //    fn all_versions_have_different_quickfix_spec() {
-    //        let mut set: HashSet<String> = HashSet::default();
-    //        AppVersion::ALL
-    //            .iter()
-    //            .copied()
-    //            .map(|version| set.insert(quickfix_spec(version).to_string()))
-    //            .count();
-    //        assert_eq!(set.len(), AppVersion::ALL.iter().copied().count());
-    //    }
-
-    //    #[test]
-    //    fn all_versions_have_xml_valid_quickfix_spec() {
-    //        assert!(AppVersion::ALL
-    //            .iter()
-    //            .copied()
-    //            .map(|version| quickfix_spec(version))
-    //            .all(|spec| roxmltree::Document::parse(&spec).is_ok()));
-    //    }
-    //}
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
-    use quickcheck::QuickCheck;
+    use quickcheck_macros::quickcheck;
+    use std::collections::HashSet;
     use std::convert::TryInto;
 
-    #[test]
-    fn msg_type_conversion() {
-        fn prop(val: u16) -> bool {
-            let bytes = val.to_le_bytes();
-            let msg_type = MsgType::from_bytes(&bytes[..]).unwrap();
-            let mut buffer = vec![0, 0];
-            msg_type.write(&mut &mut buffer[..]).unwrap();
-            val == u16::from_le_bytes((&buffer[..]).try_into().unwrap())
-        }
-        QuickCheck::new()
-            .tests(1000)
-            .quickcheck(prop as fn(u16) -> bool)
+    #[quickcheck]
+    fn msg_type_conversion(val: u16) -> bool {
+        let bytes = val.to_le_bytes();
+        let msg_type = MsgType::from_bytes(&bytes[..]).unwrap();
+        let mut buffer = vec![0, 0];
+        msg_type.write(&mut &mut buffer[..]).unwrap();
+        val == u16::from_le_bytes((&buffer[..]).try_into().unwrap())
     }
 
-    //#[test]
-    //fn fixt11_quickfix_is_ok() {
-    //    let dict = Dictionary::from_version(AppVersion::Fixt11);
-    //    println!("{}", dict.to_quickfix_xml());
-    //    let msg_heartbeat = dict.message_by_name("Heartbeat").unwrap();
-    //    assert_eq!(msg_heartbeat.msg_type(), "0");
-    //    assert_eq!(msg_heartbeat.name(), "Heartbeat".to_string());
-    //    assert!(msg_heartbeat.layout().any(|c| {
-    //        if let LayoutItemKind::Field(f) = c.kind() {
-    //            f.name() == "TestReqID"
-    //        } else {
-    //            false
-    //        }
-    //    }));
-    //}
+    #[test]
+    fn fixt11_quickfix_is_ok() {
+        let dict = Dictionary::fixt11();
+        let msg_heartbeat = dict.message_by_name("Heartbeat").unwrap();
+        assert_eq!(msg_heartbeat.msg_type(), "0");
+        assert_eq!(msg_heartbeat.name(), "Heartbeat".to_string());
+        assert!(msg_heartbeat.layout().any(|c| {
+            if let LayoutItemKind::Field(f) = c.kind() {
+                f.name() == "TestReqID"
+            } else {
+                false
+            }
+        }));
+    }
 
-    //#[test]
-    //fn dictionary_from_quickfix_spec_is_ok() {
-    //    for version in AppVersion::ALL.iter().copied() {
-    //        Dictionary::from_version(version);
-    //    }
-    //}
+    #[test]
+    fn standard_dictionaries_dont_panic() {
+        Dictionary::fix40();
+        Dictionary::fix41();
+        Dictionary::fix42();
+        Dictionary::fix43();
+        Dictionary::fix44();
+        Dictionary::fix50();
+        Dictionary::fix50sp1();
+        Dictionary::fix50sp2();
+        Dictionary::fixt11();
+    }
 
-    //#[test]
-    //fn all_datatypes_are_used_at_least_once() {
-    //    for version in AppVersion::ALL.iter().copied() {
-    //        let dict = Dictionary::from_version(version);
-    //        let datatypes_count = dict.iter_datatypes().count();
-    //        let mut datatypes = HashSet::new();
-    //        for field in dict.iter_fields() {
-    //            datatypes.insert(field.data_type().name().to_string());
-    //        }
-    //        assert_eq!(datatypes_count, datatypes.len());
-    //    }
-    //}
+    #[test]
+    fn all_datatypes_are_used_at_least_once() {
+        for dict in Dictionary::all().iter() {
+            let datatypes_count = dict.iter_datatypes().count();
+            let mut datatypes = HashSet::new();
+            for field in dict.iter_fields() {
+                datatypes.insert(field.data_type().name().to_string());
+            }
+            assert_eq!(datatypes_count, datatypes.len());
+        }
+    }
 
-    //#[test]
-    //fn at_least_one_datatype() {
-    //    for version in AppVersion::ALL.iter().copied() {
-    //        let dict = Dictionary::from_version(version);
-    //        assert!(dict.iter_datatypes().count() >= 1);
-    //    }
-    //}
+    #[test]
+    fn at_least_one_datatype() {
+        for dict in Dictionary::all().iter() {
+            assert!(dict.iter_datatypes().count() >= 1);
+        }
+    }
 
-    //#[test]
-    //fn std_header_and_trailer_always_present() {
-    //    for version in AppVersion::ALL.iter().copied() {
-    //        let dict = Dictionary::from_version(version);
-    //        let std_header = dict.component_by_name("StandardHeader");
-    //        let std_trailer = dict.component_by_name("StandardTrailer");
-    //        assert!(std_header.is_some() && std_trailer.is_some());
-    //    }
-    //}
+    #[test]
+    fn std_header_and_trailer_always_present() {
+        for dict in Dictionary::all().iter() {
+            let std_header = dict.component_by_name("StandardHeader");
+            let std_trailer = dict.component_by_name("StandardTrailer");
+            assert!(std_header.is_some() && std_trailer.is_some());
+        }
+    }
 
-    //#[test]
-    //fn fix44_field_28_has_three_variants() {
-    //    let dict = Dictionary::from_version(AppVersion::Fix44);
-    //    let field_28 = dict.field_by_tag(28).unwrap();
-    //    assert_eq!(field_28.name(), "IOITransType");
-    //    assert_eq!(field_28.enums().unwrap().count(), 3);
-    //}
+    #[test]
+    fn fix44_field_28_has_three_variants() {
+        let dict = Dictionary::fix44();
+        let field_28 = dict.field_by_tag(28).unwrap();
+        assert_eq!(field_28.name(), "IOITransType");
+        assert_eq!(field_28.enums().unwrap().count(), 3);
+    }
 
-    //#[test]
-    //fn fix44_field_36_has_no_variants() {
-    //    let dict = Dictionary::from_version(AppVersion::Fix44);
-    //    let field_36 = dict.field_by_tag(36).unwrap();
-    //    assert_eq!(field_36.name(), "NewSeqNo");
-    //    assert!(field_36.enums().is_none());
-    //}
+    #[test]
+    fn fix44_field_36_has_no_variants() {
+        let dict = Dictionary::fix44();
+        let field_36 = dict.field_by_tag(36).unwrap();
+        assert_eq!(field_36.name(), "NewSeqNo");
+        assert!(field_36.enums().is_none());
+    }
 
-    //#[test]
-    //fn fix44_field_167_has_eucorp_variant() {
-    //    let dict = Dictionary::from_version(AppVersion::Fix44);
-    //    let field_167 = dict.field_by_tag(167).unwrap();
-    //    assert_eq!(field_167.name(), "SecurityType");
-    //    assert!(field_167.enums().unwrap().any(|e| e.value() == "EUCORP"));
-    //}
+    #[test]
+    fn fix44_field_167_has_eucorp_variant() {
+        let dict = Dictionary::fix44();
+        let field_167 = dict.field_by_tag(167).unwrap();
+        assert_eq!(field_167.name(), "SecurityType");
+        assert!(field_167.enums().unwrap().any(|e| e.value() == "EUCORP"));
+    }
 
     const INVALID_QUICKFIX_SPECS: &[&str] = &[
         include_str!("test_data/quickfix_specs/empty_file.xml"),
