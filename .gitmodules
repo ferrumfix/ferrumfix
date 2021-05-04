@@ -4,5 +4,3 @@
 [submodule "lib/quickfix"]
 	path = lib/quickfix
 	url = https://github.com/quickfix/quickfix
-	# Ignore compilation artifacts.
-	ignore = untracked

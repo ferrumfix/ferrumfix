@@ -3,12 +3,13 @@
 git submodule init
 git submodule update
 
-mkdir lib/quickfix/build
-cd lib/quickfix/build
-
+mkdir lib/quickfix/config
+cd lib/quickfix/config
 cmake ..
 make
+cd ../../..
 
+# Increase number of iteration for QuickCheck.
 QUICKCHECK_TESTS="2500"
 
 # Test problematic feature combinations.
