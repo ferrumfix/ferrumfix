@@ -6,7 +6,7 @@ use std::path::PathBuf;
 fn main() -> io::Result<()> {
     let path = project_root().join("src").join("generated_fix44.rs");
     let file = &mut File::create(path)?;
-    let fix_dictionary = Dictionary::fix42();
+    let fix_dictionary = Dictionary::fix44();
     let rust_code =
         fefix::codegen::module_with_field_definitions(fix_dictionary, "fefix");
     file.write_all(rust_code.as_bytes())?;

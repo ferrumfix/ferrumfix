@@ -1,4 +1,5 @@
 #[rustfmt::skip]
+#[allow(dead_code)]
 mod generated_fix44;
 
 #[cfg(test)]

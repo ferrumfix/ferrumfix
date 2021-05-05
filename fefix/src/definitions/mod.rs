@@ -1,30 +1,56 @@
 //! Field and message definitions for all FIX application versions.
 
 #[cfg(feature = "fix40")]
+#[allow(dead_code)]
 #[rustfmt::skip]
+/// Field and message definitions for FIX.4.0.
 pub mod fix40;
+
 #[cfg(feature = "fix41")]
+#[allow(dead_code)]
 #[rustfmt::skip]
+/// Field and message definitions for FIX.4.1.
 pub mod fix41;
+
 #[cfg(feature = "fix42")]
+#[allow(dead_code)]
 #[rustfmt::skip]
+/// Field and message definitions for FIX.4.2.
 pub mod fix42;
+
 #[cfg(feature = "fix43")]
+#[allow(dead_code)]
 #[rustfmt::skip]
+/// Field and message definitions for FIX.4.3.
 pub mod fix43;
+
+#[allow(dead_code)]
 #[rustfmt::skip]
+/// Field and message definitions for FIX.4.4.
 pub mod fix44;
+
 #[cfg(feature = "fix50")]
+#[allow(dead_code)]
 #[rustfmt::skip]
+/// Field and message definitions for FIX.5.0.
 pub mod fix50;
+
 #[cfg(feature = "fix50sp1")]
+#[allow(dead_code)]
 #[rustfmt::skip]
+/// Field and message definitions for FIX.5.0 SP1.
 pub mod fix50sp1;
+
 #[cfg(feature = "fix50sp2")]
+#[allow(dead_code)]
 #[rustfmt::skip]
+/// Field and message definitions for FIX.5.0 SP2.
 pub mod fix50sp2;
+
 #[cfg(feature = "fixt11")]
+#[allow(dead_code)]
 #[rustfmt::skip]
+/// Field and message definitions for FIXT.1.1.
 pub mod fixt11;
 
 use crate::{dict, dict::FixDataType, FixFieldValue, TagU16};
@@ -72,7 +98,4 @@ where
     }
 }
 
-impl<'a, V> dict::IsTypedFieldDefinition<V> for GeneratedFieldDef<'a, V> where
-    V: FixFieldValue<'a>
-{
-}
+impl<'a, V> dict::IsTypedFieldDefinition<V> for GeneratedFieldDef<'a, V> where V: FixFieldValue<'a> {}

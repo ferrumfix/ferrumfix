@@ -156,10 +156,6 @@ pub fn module_with_field_definitions(dict: dict::Dictionary, fefix_path: &str) -
     let code = format!(
         indoc!(
             r#"
-            //! Field and message definitions for {version}.
-
-            #![allow(dead_code)]
-
             {notice}
 
             use {fefix_path}::dict::FieldLocation;
@@ -172,7 +168,6 @@ pub fn module_with_field_definitions(dict: dict::Dictionary, fefix_path: &str) -
 
             {field_defs}"#
         ),
-        version = dict.get_version(),
         notice = generated_code_notice(),
         import_data_field = if fefix_path == "fefix" {
             "use fefix::FixFieldValue;"
