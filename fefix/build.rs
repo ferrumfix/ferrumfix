@@ -21,6 +21,7 @@ fn main() -> io::Result<()> {
     codegen(Dictionary::fix42(), "fix42.rs")?;
     #[cfg(feature = "fix43")]
     codegen(Dictionary::fix43(), "fix43.rs")?;
+    // FIX 4.4 is always available.
     codegen(Dictionary::fix44(), "fix44.rs")?;
     #[cfg(feature = "fix50")]
     codegen(Dictionary::fix50(), "fix50.rs")?;
@@ -34,6 +35,9 @@ fn main() -> io::Result<()> {
 }
 
 fn codegen(fix_dictionary: Dictionary, filename: &str) -> io::Result<()> {
+    // All generated code must go in `OUT_DIR`. We avoid writing directly to
+    // `src/` to avoid compilation issues on `crates.io`, which disallows
+    // writing.
     let dir = PathBuf::from(var("OUT_DIR").unwrap());
     let code = codegen::module_with_field_definitions(fix_dictionary, "crate");
     let path = dir.join(filename);

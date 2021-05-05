@@ -32,7 +32,7 @@
 //! # Quick tour of [`DataType`]
 //!
 //! ```
-//! use fefix::datatypes::{DataType, Timestamp};
+//! use fefix::tagvalue::datatypes::{FixFieldValue, Timestamp};
 //!
 //! let bytes = b"20130422-12:30:00.000";
 //!

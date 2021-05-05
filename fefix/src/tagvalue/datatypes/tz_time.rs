@@ -21,7 +21,7 @@ impl TzTime {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::{DataType, TzTime};
+    /// use fefix::tagvalue::datatypes::{FixFieldValue, TzTime};
     ///
     /// let dtf = TzTime::deserialize(b"12:45:00Z").unwrap();
     /// assert_eq!(dtf.minute(), 45);

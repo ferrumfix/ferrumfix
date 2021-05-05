@@ -6,7 +6,20 @@ use indoc::indoc;
 
 const FEFIX_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-fn generated_code_notice() -> String {
+/// Creates a `String` that contains a multiline Rust comment.
+///
+/// The following example is for illustrative purposes only and the actual
+/// contents might change. The string is guaranteed not to have any trailing or
+/// leading whitespace.
+///
+/// ```
+/// // Generated automatically by FerrumFIX v0.3 on Mon, 25 Dec 1995 13:30:00 GMT.
+/// //
+/// // DO NOT MODIFY MANUALLY.
+/// // DO NOT COMMIT TO VERSION CONTROL.
+/// // ALL CHANGES WILL BE OVERWRITTEN.
+/// ```
+pub fn generated_code_notice() -> String {
     use chrono::prelude::*;
     format!(
         indoc!(
@@ -129,6 +142,17 @@ pub fn field_definition(field: dict::Field, type_param: &str) -> String {
 
 /// Generates `const` implementors of
 /// [`IsFieldDefinition`](super::dict::IsFieldDefinition).
+///
+/// The generated module will contain:
+///
+/// - A generated code notice ([generated_code_notice]).
+/// - `enum` definitions for FIX fields.
+/// - A constant implementor of
+/// [`IsFieldDefinition`](super::dict::IsFieldDefinition) for each FIX field.
+///
+/// The Rust code will be free of any leading and trailing whitespace.
+/// An effort is made to provide good formatting, but users shouldn't rely on it
+/// and assume that formatting might be bad.
 pub fn module_with_field_definitions(dict: dict::Dictionary, fefix_path: &str) -> String {
     let enums = dict
         .iter_fields()

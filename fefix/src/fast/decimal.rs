@@ -261,7 +261,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(-130, -4);
     /// assert!(num.is_negative());
@@ -279,7 +279,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(1, -8);
     /// assert!(num.is_positive());
@@ -296,7 +296,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(11, -1);
     /// assert_eq!(num.pow(2), Decimal::new(121, -2));

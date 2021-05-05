@@ -42,19 +42,19 @@ impl Date {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::Date;
+    /// use fefix::tagvalue::datatypes::Date;
     ///
-    /// assert!(Date::new(2021, 4, 16).is_ok());
-    /// assert!(Date::new(2021, 13, 32).is_err());
+    /// assert!(Date::new(2021, 4, 16).is_some());
+    /// assert!(Date::new(2021, 13, 32).is_none());
     ///
     /// // Support from January 1, year zero (which doesn't actually exist) to
     /// // December 31, 9999.
-    /// assert!(Date::new(0, 1, 1).is_ok());
-    /// assert!(Date::new(9999, 12, 31).is_ok());
+    /// assert!(Date::new(0, 1, 1).is_some());
+    /// assert!(Date::new(9999, 12, 31).is_some());
     ///
     /// // We don't check month-aware day boundaries, i.e. go ahead and assume
     /// // every month has 31 days.
-    /// assert!(Date::new(2021, 2, 31).is_ok());
+    /// assert!(Date::new(2021, 2, 31).is_some());
     /// ```
     pub fn new(year: u32, month: u32, day: u32) -> Option<Self> {
         if year >= MIN_YEAR
@@ -75,7 +75,7 @@ impl Date {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::Date;
+    /// use fefix::tagvalue::datatypes::Date;
     ///
     /// assert_eq!(&Date::new(2021, 01, 01).unwrap().to_bytes(), b"20210101");
     /// ```

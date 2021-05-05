@@ -60,9 +60,9 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, Configure, Decoder};
-    /// use fefix::{AppVersion, Dictionary};
+    /// use fefix::Dictionary;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// let decoder = Decoder::<Config>::new(dict);
     /// assert_eq!(decoder.config().separator(), 0x1);
     /// ```
@@ -77,9 +77,9 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, Configure, Decoder};
-    /// use fefix::{AppVersion, Dictionary};
+    /// use fefix::Dictionary;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// let decoder = &mut Decoder::<Config>::new(dict);
     /// decoder.config_mut().set_separator(b'|');
     /// assert_eq!(decoder.config().separator(), b'|');
@@ -106,9 +106,9 @@ where
     /// ```
     /// use fefix::tagvalue::{Config, Decoder};
     /// use fefix::tags::fix42 as tags;
-    /// use fefix::{AppVersion, Dictionary, FixFieldAccess};
+    /// use fefix::{Dictionary, FixFieldAccess};
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// let decoder = &mut Decoder::<Config>::new(dict);
     /// let data = b"8=FIX.4.2\x019=42\x0135=0\x0149=A\x0156=B\x0134=12\x0152=20100304-07:59:30\x0110=185\x01";
     /// let message = decoder.decode(data).unwrap();
@@ -261,9 +261,9 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, Configure, Decoder};
-    /// use fefix::{AppVersion, Dictionary};
+    /// use fefix::Dictionary;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// let decoder = Decoder::<Config>::new(dict);
     /// assert_eq!(decoder.config().separator(), 0x1);
     /// ```
@@ -278,9 +278,9 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, Configure, Decoder};
-    /// use fefix::{AppVersion, Dictionary};
+    /// use fefix::Dictionary;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// let decoder = &mut Decoder::<Config>::new(dict);
     /// decoder.config_mut().set_separator(b'|');
     /// assert_eq!(decoder.config().separator(), b'|');

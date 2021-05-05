@@ -213,13 +213,6 @@ impl Dictionary {
         }
     }
 
-    /// Creates a new [`Dictionary`](Dictionary) according to the specification of
-    /// `version`.
-    //pub fn from_version(version: AppVersion) -> Self {
-    //    let spec = quickfix_spec(version);
-    //    Dictionary::from_quickfix_spec(spec).unwrap()
-    //}
-
     /// Attempts to read a QuickFIX-style specification file and convert it into
     /// a [`Dictionary`].
     pub fn from_quickfix_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
@@ -238,9 +231,8 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// assert_eq!(dict.get_version(), "FIX.4.4");
     /// ```
     pub fn get_version(&self) -> &str {
@@ -330,9 +322,8 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     ///
     /// let msg1 = dict.message_by_name("Heartbeat").unwrap();
     /// let msg2 = dict.message_by_msgtype("0").unwrap();
@@ -348,9 +339,8 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     ///
     /// let msg1 = dict.message_by_msgtype("0").unwrap();
     /// let msg2 = dict.message_by_name("Heartbeat").unwrap();
@@ -375,10 +365,8 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
-    ///
+    /// let dict = Dictionary::fix44();
     /// let dt = dict.datatype_by_name("String").unwrap();
     /// assert_eq!(dt.name(), "String");
     /// ```
@@ -392,10 +380,8 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
-    ///
+    /// let dict = Dictionary::fix44();
     /// let field1 = dict.field_by_tag(112).unwrap();
     /// let field2 = dict.field_by_name("TestReqID").unwrap();
     /// assert_eq!(field1.name(), field2.name());
@@ -418,9 +404,8 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix42);
+    /// let dict = Dictionary::fix42();
     /// // FIX 4.2 defines 19 datatypes.
     /// assert_eq!(dict.iter_datatypes().count(), 19);
     /// ```
@@ -436,9 +421,8 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// let msg = dict.iter_messages().find(|m| m.name() == "MarketDataRequest");
     /// assert_eq!(msg.unwrap().msg_type(), "V");
     /// ```
@@ -870,12 +854,12 @@ mod datatype {
         /// # Examples
         ///
         /// ```
-        /// use fefix::DataType;
+        /// use fefix::dict::FixDataType;
         ///
-        /// assert_eq!(DataType::from_quickfix_name("AMT"), Some(DataType::Amt));
-        /// assert_eq!(DataType::from_quickfix_name("Amt"), Some(DataType::Amt));
-        /// assert_eq!(DataType::from_quickfix_name("MONTHYEAR"), Some(DataType::MonthYear));
-        /// assert_eq!(DataType::from_quickfix_name(""), None);
+        /// assert_eq!(FixDataType::from_quickfix_name("AMT"), Some(FixDataType::Amt));
+        /// assert_eq!(FixDataType::from_quickfix_name("Amt"), Some(FixDataType::Amt));
+        /// assert_eq!(FixDataType::from_quickfix_name("MONTHYEAR"), Some(FixDataType::MonthYear));
+        /// assert_eq!(FixDataType::from_quickfix_name(""), None);
         /// ```
         pub fn from_quickfix_name(name: &str) -> Option<Self> {
             // https://github.com/quickfix/quickfix/blob/b6760f55ac6a46306b4e081bb13b65e6220ab02d/src/C%2B%2B/DataDictionary.cpp#L646-L680
@@ -960,11 +944,11 @@ mod datatype {
         /// # Examples
         ///
         /// ```
-        /// use fefix::DataType;
+        /// use fefix::dict::FixDataType;
         ///
-        /// assert_eq!(DataType::Qty.name(), "Qty");
-        /// assert_eq!(DataType::Float.name(), "float");
-        /// assert_eq!(DataType::String.name(), "String");
+        /// assert_eq!(FixDataType::Qty.name(), "Qty");
+        /// assert_eq!(FixDataType::Float.name(), "float");
+        /// assert_eq!(FixDataType::String.name(), "String");
         /// ```
         pub fn name(&self) -> &'static str {
             // 1. Most primitive data types have `snake_case` names.
@@ -1010,10 +994,10 @@ mod datatype {
         /// # Examples
         ///
         /// ```
-        /// use fefix::DataType;
+        /// use fefix::dict::FixDataType;
         ///
-        /// assert_eq!(DataType::Float.is_base_type(), true);
-        /// assert_eq!(DataType::Price.is_base_type(), false);
+        /// assert_eq!(FixDataType::Float.is_base_type(), true);
+        /// assert_eq!(FixDataType::Price.is_base_type(), false);
         /// ```
         pub fn is_base_type(&self) -> bool {
             match self {
@@ -1028,10 +1012,10 @@ mod datatype {
         /// # Examples
         ///
         /// ```
-        /// use fefix::DataType;
+        /// use fefix::dict::FixDataType;
         ///
-        /// assert_eq!(DataType::Float.base_type(), DataType::Float);
-        /// assert_eq!(DataType::Price.base_type(), DataType::Float);
+        /// assert_eq!(FixDataType::Float.base_type(), FixDataType::Float);
+        /// assert_eq!(FixDataType::Price.base_type(), FixDataType::Float);
         /// ```
         pub fn base_type(&self) -> Self {
             let dt = match self {

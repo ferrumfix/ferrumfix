@@ -6,7 +6,7 @@ const LEN_IN_BYTES: usize = 8;
 const ERR_GENERIC: &str = "Invalid day or week format.";
 
 /// Canonical data field (DTF) for
-/// [`DataType::MonthYear`](crate::DataType::MonthYear).
+/// [`FixDataType::MonthYear`](crate::dict::FixDataType::MonthYear).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MonthYear {
     year: u32,
@@ -48,9 +48,9 @@ impl MonthYear {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::MonthYear;
+    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
     ///
-    /// let dtf = MonthYear::parse(b"19390901").unwrap();
+    /// let dtf = MonthYear::deserialize(b"19390901").unwrap();
     /// assert_eq!(dtf.year(), 1939)
     /// ```
     pub fn year(&self) -> u32 {
@@ -62,9 +62,9 @@ impl MonthYear {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::MonthYear;
+    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
     ///
-    /// let dtf = MonthYear::parse(b"20000101").unwrap();
+    /// let dtf = MonthYear::deserialize(b"20000101").unwrap();
     /// assert_eq!(dtf.month(), 1)
     /// ```
     pub fn month(&self) -> u32 {
@@ -78,18 +78,18 @@ impl MonthYear {
     /// Day included in the definition:
     ///
     /// ```
-    /// use fefix::datatypes::MonthYear;
+    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
     ///
-    /// let dtf = MonthYear::parse(b"20191225").unwrap();
+    /// let dtf = MonthYear::deserialize(b"20191225").unwrap();
     /// assert_eq!(dtf.day(), Some(25))
     /// ```
     ///
     /// Day not included:
     ///
     /// ```
-    /// use fefix::datatypes::MonthYear;
+    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
     ///
-    /// let dtf = MonthYear::parse(b"201801w3").unwrap();
+    /// let dtf = MonthYear::deserialize(b"201801w3").unwrap();
     /// assert_eq!(dtf.day(), None)
     /// ```
     pub fn day(&self) -> Option<u32> {
@@ -108,18 +108,18 @@ impl MonthYear {
     /// Present week code:
     ///
     /// ```
-    /// use fefix::datatypes::MonthYear;
+    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
     ///
-    /// let dtf = MonthYear::parse(b"201912w1").unwrap();
+    /// let dtf = MonthYear::deserialize(b"201912w1").unwrap();
     /// assert_eq!(dtf.week(), Some(1))
     /// ```
     ///
     /// Absent week code:
     ///
     /// ```
-    /// use fefix::datatypes::MonthYear;
+    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
     ///
-    /// let dtf = MonthYear::parse(b"20191225").unwrap();
+    /// let dtf = MonthYear::deserialize(b"20191225").unwrap();
     /// assert_eq!(dtf.week(), None)
     /// ```
     pub fn week(&self) -> Option<u32> {

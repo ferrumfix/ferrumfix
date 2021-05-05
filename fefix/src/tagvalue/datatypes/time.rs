@@ -16,7 +16,7 @@ const MIN_SECOND: u32 = 0;
 const MIN_MILLISECOND: u32 = 0;
 
 /// Canonical data field (DTF) for
-/// [`DataType::UtcTimeOnly`](crate::DataType::UtcTimeOnly).
+/// [`FixDataType::UtcTimeOnly`](crate::dict::FixDataType::UtcTimeOnly).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Time {
     hour: u32,
@@ -70,9 +70,9 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::Time;
+    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
     ///
-    /// let dtf = Time::parse(b"12:45:00").unwrap();
+    /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.hour(), 12)
     /// ```
     pub const fn hour(&self) -> u32 {
@@ -84,9 +84,9 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::Time;
+    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
     ///
-    /// let dtf = Time::parse(b"12:45:00").unwrap();
+    /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
     /// ```
     pub const fn minute(&self) -> u32 {
@@ -98,18 +98,18 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::Time;
+    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
     ///
-    /// let dtf = Time::parse(b"12:45:00").unwrap();
+    /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
     /// ```
     ///
     /// Leap second:
     ///
     /// ```
-    /// use fefix::datatypes::Time;
+    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
     ///
-    /// let dtf = Time::parse(b"23:59:60").unwrap();
+    /// let dtf = Time::deserialize(b"23:59:60").unwrap();
     /// assert_eq!(dtf.second(), 60)
     /// ```
     pub const fn second(&self) -> u32 {
@@ -121,9 +121,9 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::Time;
+    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
     ///
-    /// let dtf = Time::parse(b"12:45:00.328").unwrap();
+    /// let dtf = Time::deserialize(b"12:45:00.328").unwrap();
     /// assert_eq!(dtf.milli(), 328)
     /// ```
     pub const fn milli(&self) -> u32 {
