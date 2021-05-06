@@ -23,7 +23,17 @@
 //! Please check out the [README](https://github.com/neysofu/fefix/) for more
 //! general information regarding FerrumFIX.
 //!
-//! # Tongue-in-cheek FAQ
+//! # Optional features
+//!
+//! FerrumFIX puts a lot of functionality behind optional features in order to
+//! optimize compilation times for the most common use cases. The following
+//! features are available:
+//!
+//! - `fix40`, `fix41`, `fix42`, `fix43`, `fix44`, `fix50`, `fix50sp1`,
+//! `fix50sp2`, `fixt11` – Ergonomic utilities for the respective FIX versions.
+//! - `fixs` – FIX-over-TLS support.
+//!
+//! # FAQ
 //!
 //! - **Q.** I simply want to read FIX messages. Where do I start?  
 //!   **A.** Use [`fefix::tagvalue::Decoder`](crate::tagvalue::Decoder) and
@@ -43,11 +53,6 @@
 //!   **A.** Not at the moment, but Bitwyre and other companies are looking to
 //!   adopt FerrumFIX within their tech stacks in production, i.e. soon it will be.
 //!
-//! - **Q.** Is this `async`?  
-//!   **A.** No, because it doesn't need to. By design, you'll be the done doing
-//!   the plumbing together with `tokio` or whatever library you use. FerrumFIX
-//!   itself doesn't care about I/O.
-//!
 //! - **Q.** Why isn't X supported?  
 //!   **A.** Time, mostly. Drop me an email or open an issue and let's see what I
 //!   can do.
@@ -64,92 +69,38 @@
     clippy::needless_lifetimes
 )]
 
-mod utils;
-
-mod app_version;
 mod buffer;
-pub mod codegen;
-pub mod datatypes;
+mod fefix_core;
+mod utils;
+pub use fefix_core::codegen;
+pub use fefix_core::dict;
+pub use fefix_core::TagU16;
 pub mod definitions;
-pub mod dict;
+#[cfg(feature = "fast-encoding")]
 pub mod fast;
-mod fix_data_type;
+#[cfg(feature = "fixp")]
 pub mod fixp;
+#[cfg(feature = "fixs")]
 pub mod fixs;
+#[cfg(feature = "json-encoding")]
 pub mod json;
 pub mod session;
+#[cfg(feature = "sofh")]
 pub mod sofh;
 pub mod tagvalue;
 
-pub use app_version::AppVersion;
 pub use buffer::Buffer;
-pub use datatypes::DataType;
 pub use dict::Dictionary;
-pub use fefix_derive::DataType;
-pub use fix_data_type::FixDataType;
+pub use fefix_derive::FixFieldValue;
+pub use tagvalue::datatypes::FixFieldValue;
 
-#[cfg(expose_openssl)]
+#[cfg(all(feature = "fixs", expose_openssl))]
 pub extern crate openssl;
 
-#[cfg(not(expose_openssl))]
+#[cfg(all(feature = "fixs", not(expose_openssl)))]
 pub(crate) extern crate openssl;
 
-use std::num::NonZeroU16;
-
-/// Type alias for FIX tags: 16-bit unsigned integers, strictly positive.
-pub type TagU16 = NonZeroU16;
-
-//#[derive(Debug, Clone)]
-//pub struct FieldDef<'a, V>
-//where
-//    V: DataType<'a>,
-//{
-//    pub name: &'a str,
-//    pub tag: TagU16,
-//    pub is_group_leader: bool,
-//    pub data_type: FixDataType,
-//    pub location: dict::FieldLocation,
-//    pub phantom: PhantomData<V>,
-//}
-//
-//impl<'a, V> dict::IsFieldDefinition for FieldDef<'a, V>
-//where
-//    V: DataType<'a>,
-//{
-//    fn tag(&self) -> TagU16 {
-//        self.tag
-//    }
-//
-//    fn name(&self) -> &str {
-//        self.name
-//    }
-//
-//    fn location(&self) -> dict::FieldLocation {
-//        dict::FieldLocation::Body // FIXME
-//    }
-//}
-//
-//impl<'a, V> FieldDef<'a, V>
-//where
-//    V: DataType<'a>,
-//{
-//    /// Returns the numeric tag associated with `self`.
-//    pub fn tag(&self) -> TagU16 {
-//        self.tag
-//    }
-//
-//    /// Returns the human-readable name given to `self`.
-//    pub fn name(&self) -> &'a str {
-//        self.name
-//    }
-//
-//    /// Returns the [`DataType`] of `self`.
-//    pub fn data_type(&self) -> FixDataType {
-//        self.data_type
-//    }
-//}
-
-/// Wrapper type for dealing with `Result<None, ...>` as errors.
+/// Wrapper type for dealing with `Ok<None>` as errors.
 pub type OptResult<T, E> = Result<T, OptError<E>>;
 
 /// The error variant of [`OptResult`].

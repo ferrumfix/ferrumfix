@@ -1,4 +1,4 @@
-use crate::{datatypes, dict};
+use crate::{dict, tagvalue::datatypes};
 use crate::{OptError, OptResult};
 
 /// A trait to retrieve field values in a FIX message.
@@ -15,7 +15,7 @@ pub trait FieldGetter<'a> {
     fn fv_opt<'b, V, F>(&'b self, field: &'a F) -> Option<Result<V, V::Error>>
     where
         'b: 'a,
-        V: datatypes::DataType<'b>,
+        V: datatypes::FixFieldValue<'b>,
         F: dict::IsFieldDefinition,
     {
         self.fv_raw(field).map(|raw| match V::deserialize(raw) {
@@ -27,7 +27,7 @@ pub trait FieldGetter<'a> {
     fn fv<'b, V, F>(&'b self, field: &'a F) -> OptResult<V, V::Error>
     where
         'b: 'a,
-        V: datatypes::DataType<'b>,
+        V: datatypes::FixFieldValue<'b>,
         F: dict::IsFieldDefinition,
     {
         match self.fv_opt(field) {
@@ -40,7 +40,7 @@ pub trait FieldGetter<'a> {
     fn fvu<'b, V, F>(&'b self, field: &'a F) -> OptResult<V, V::Error>
     where
         'b: 'a,
-        V: datatypes::DataType<'b>,
+        V: datatypes::FixFieldValue<'b>,
         F: dict::IsFieldDefinition,
     {
         match self.fvu_opt(field) {
@@ -53,7 +53,7 @@ pub trait FieldGetter<'a> {
     fn fvu_opt<'b, V, F>(&'b self, field: &'a F) -> Option<Result<V, V::Error>>
     where
         'b: 'a,
-        V: datatypes::DataType<'b>,
+        V: datatypes::FixFieldValue<'b>,
         F: dict::IsFieldDefinition,
     {
         self.fv_raw(field).map(|raw| V::deserialize(raw))
@@ -62,7 +62,7 @@ pub trait FieldGetter<'a> {
     fn fvl_opt<'b, V, F>(&'b self, field: &'a F) -> Option<Result<V, V::Error>>
     where
         'b: 'a,
-        V: datatypes::DataType<'b>,
+        V: datatypes::FixFieldValue<'b>,
         F: dict::IsFieldDefinition,
     {
         self.fv_raw(field)
@@ -75,7 +75,7 @@ pub trait FieldGetter<'a> {
     fn fvl<'b, V, F>(&'b self, field: &'a F) -> Result<V, OptError<V::Error>>
     where
         'b: 'a,
-        V: datatypes::DataType<'b>,
+        V: datatypes::FixFieldValue<'b>,
         F: dict::IsFieldDefinition,
     {
         match self.fvl_opt(field) {
@@ -88,7 +88,7 @@ pub trait FieldGetter<'a> {
     fn fvtl<'b, V, F>(&'b self, field: &'a F) -> OptResult<V, V::Error>
     where
         'b: 'a,
-        V: datatypes::DataType<'b>,
+        V: datatypes::FixFieldValue<'b>,
         F: dict::IsTypedFieldDefinition<V>,
     {
         match self.fvl_opt(field) {
@@ -100,7 +100,7 @@ pub trait FieldGetter<'a> {
 
     fn fv_with_key<'b, V>(&'b self, key: Self::Key) -> OptResult<V, V::Error>
     where
-        V: datatypes::DataType<'b>,
+        V: datatypes::FixFieldValue<'b>,
     {
         match self.fv_raw_with_key(key).map(|raw| V::deserialize(raw)) {
             Some(Ok(x)) => Ok(x),

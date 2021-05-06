@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 mod gdax;
 
 use fefix::tagvalue::{Config, Decoder, Fv};

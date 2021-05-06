@@ -1,22 +1,23 @@
-use super::error;
-use crate::datatypes::DataType;
 use crate::Buffer;
+use crate::FixFieldValue;
 
 const LEN_IN_BYTES: usize = 8;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-enum DayOrWeek {
-    Day(u32),
-    Week(u32),
-}
+const ERR_GENERIC: &str = "Invalid day or week format.";
 
 /// Canonical data field (DTF) for
-/// [`DataType::MonthYear`](crate::DataType::MonthYear).
+/// [`FixDataType::MonthYear`](crate::dict::FixDataType::MonthYear).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MonthYear {
     year: u32,
     month: u32,
     day_or_week: DayOrWeek,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+enum DayOrWeek {
+    Day(u32),
+    Week(u32),
 }
 
 impl MonthYear {
@@ -47,9 +48,9 @@ impl MonthYear {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::MonthYear;
+    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
     ///
-    /// let dtf = MonthYear::parse(b"19390901").unwrap();
+    /// let dtf = MonthYear::deserialize(b"19390901").unwrap();
     /// assert_eq!(dtf.year(), 1939)
     /// ```
     pub fn year(&self) -> u32 {
@@ -61,9 +62,9 @@ impl MonthYear {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::MonthYear;
+    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
     ///
-    /// let dtf = MonthYear::parse(b"20000101").unwrap();
+    /// let dtf = MonthYear::deserialize(b"20000101").unwrap();
     /// assert_eq!(dtf.month(), 1)
     /// ```
     pub fn month(&self) -> u32 {
@@ -77,18 +78,18 @@ impl MonthYear {
     /// Day included in the definition:
     ///
     /// ```
-    /// use fefix::datatypes::MonthYear;
+    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
     ///
-    /// let dtf = MonthYear::parse(b"20191225").unwrap();
+    /// let dtf = MonthYear::deserialize(b"20191225").unwrap();
     /// assert_eq!(dtf.day(), Some(25))
     /// ```
     ///
     /// Day not included:
     ///
     /// ```
-    /// use fefix::datatypes::MonthYear;
+    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
     ///
-    /// let dtf = MonthYear::parse(b"201801w3").unwrap();
+    /// let dtf = MonthYear::deserialize(b"201801w3").unwrap();
     /// assert_eq!(dtf.day(), None)
     /// ```
     pub fn day(&self) -> Option<u32> {
@@ -107,18 +108,18 @@ impl MonthYear {
     /// Present week code:
     ///
     /// ```
-    /// use fefix::datatypes::MonthYear;
+    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
     ///
-    /// let dtf = MonthYear::parse(b"201912w1").unwrap();
+    /// let dtf = MonthYear::deserialize(b"201912w1").unwrap();
     /// assert_eq!(dtf.week(), Some(1))
     /// ```
     ///
     /// Absent week code:
     ///
     /// ```
-    /// use fefix::datatypes::MonthYear;
+    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
     ///
-    /// let dtf = MonthYear::parse(b"20191225").unwrap();
+    /// let dtf = MonthYear::deserialize(b"20191225").unwrap();
     /// assert_eq!(dtf.week(), None)
     /// ```
     pub fn week(&self) -> Option<u32> {
@@ -130,11 +131,13 @@ impl MonthYear {
     }
 }
 
-impl<'a> DataType<'a> for MonthYear {
-    type Error = error::MonthYear;
+impl<'a> FixFieldValue<'a> for MonthYear {
+    type Error = &'static str;
     type SerializeSettings = ();
 
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    const IS_ASCII: bool = true;
+
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -147,7 +150,7 @@ impl<'a> DataType<'a> for MonthYear {
         if validate(data) {
             Self::deserialize_lossy(data)
         } else {
-            Err(Self::Error::Other)
+            Err(ERR_GENERIC)
         }
     }
 
@@ -213,7 +216,34 @@ fn validate_day(data: &[u8]) -> bool {
 
 #[cfg(test)]
 mod test {
+    use super::*;
+    use quickcheck::{Arbitrary, Gen};
+    use quickcheck_macros::quickcheck;
 
-    #[test]
-    fn parse_speedy() {}
+    impl Arbitrary for MonthYear {
+        fn arbitrary(g: &mut Gen) -> Self {
+            let year = u32::arbitrary(g) % 10000;
+            let month = (u32::arbitrary(g) % 12) + 1;
+            let day_or_week = if bool::arbitrary(g) {
+                format!("{:02}", (u32::arbitrary(g) % 31) + 1)
+            } else {
+                format!("w{}", (u32::arbitrary(g) % 5) + 1)
+            };
+            let s = format!("{:04}{:02}{}", year, month, day_or_week);
+            MonthYear::deserialize(s.as_bytes()).unwrap()
+        }
+    }
+
+    #[quickcheck]
+    fn verify_serialization_behavior(my: MonthYear) -> bool {
+        super::super::verify_serialization_behavior(my)
+    }
+
+    #[quickcheck]
+    fn can_deserialize_after_serializing(my: MonthYear) -> bool {
+        let serialized = my.to_bytes();
+        let deserialized = MonthYear::deserialize(&serialized[..]).unwrap();
+        let deserialized_lossy = MonthYear::deserialize_lossy(&serialized[..]).unwrap();
+        deserialized == my && deserialized_lossy == my
+    }
 }

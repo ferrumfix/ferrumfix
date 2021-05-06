@@ -2,14 +2,14 @@
 
 #![deny(missing_debug_implementations, clippy::useless_conversion)]
 
-mod derive_data_type;
+mod derive_field_value;
 mod derive_read_fields;
 
 use proc_macro::{Literal, TokenStream, TokenTree};
 
-#[proc_macro_derive(DataType, attributes(fefix))]
-pub fn derive_data_type(input: TokenStream) -> TokenStream {
-    derive_data_type::derive_data_type(input)
+#[proc_macro_derive(FixFieldValue, attributes(fefix))]
+pub fn derive_field_value(input: TokenStream) -> TokenStream {
+    derive_field_value::derive_field_value(input)
 }
 
 #[proc_macro_derive(ReadFields, attributes(fefix))]

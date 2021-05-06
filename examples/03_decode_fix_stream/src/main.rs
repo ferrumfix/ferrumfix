@@ -1,6 +1,6 @@
 use fefix::definitions::fix42;
 use fefix::tagvalue::{Config, Decoder, Fv};
-use fefix::{AppVersion, Dictionary};
+use fefix::Dictionary;
 use std::io::{Cursor, Read};
 
 const FIX_MESSAGES: &[&[u8]] = &[
@@ -12,7 +12,7 @@ fn fix_stream() -> Vec<u8> {
 }
 
 fn main() {
-    let fix_dictionary = Dictionary::from_version(AppVersion::Fix42);
+    let fix_dictionary = Dictionary::fix42();
     // Let's create a FIX decoder. This is an expensive operation, and it should
     // only be done once at the beginning of your program and/or FIX session.
     let fix_decoder = &mut Decoder::<Config>::new(fix_dictionary).buffered();

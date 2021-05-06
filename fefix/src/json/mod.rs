@@ -54,7 +54,9 @@ impl fmt::Display for DecodeError {
             Self::Schema => "The message is valid JSON, but not a valid FIX message.",
             Self::Syntax => "Bad JSON syntax.",
             Self::InvalidMsgType => "Unrecognized message type.",
-            Self::InvalidData => "The data does not conform to the specified message type.",
+            Self::InvalidData => {
+                "The data does not conform to the specified message type."
+            }
         };
         write!(f, "{}", err)
     }

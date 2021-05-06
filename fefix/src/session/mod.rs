@@ -12,7 +12,7 @@
 //! [`Acceptor`] abstract over such details and present users with a single entry
 //! point, namely [`Initiator::feed`] and [`Acceptor::feed`].
 
-//pub mod abstract_connection;
+pub mod backends;
 mod config;
 mod connection;
 mod errs;
@@ -20,23 +20,55 @@ mod heartbeat_rule;
 mod resend_request_range;
 mod seq_numbers;
 
-//pub use abstract_connection::AbstractConnection;
 pub use config::{Config, Configure};
 pub use connection::*;
 pub use heartbeat_rule::HeartbeatRule;
 pub use resend_request_range::ResendRequestRange;
 pub use seq_numbers::{SeqNumberError, SeqNumbers};
 
+use std::future::Future;
+use std::ops::Range;
+
+pub trait Backend<'a> {
+    type Error;
+    type IStore: Future<Output = Result<(), Self::Error>>;
+    type IMessages: Future<Output = Result<Vec<u8>, Self::Error>>;
+    type ISessionState: Future<Output = Result<Option<State>, Self::Error>>;
+    type ICreateSession: Future<Output = Result<u128, Self::Error>>;
+
+    fn create_session(&mut self) -> Self::ICreateSession;
+
+    fn session_state(&self, session_id: u128) -> Self::ISessionState;
+
+    fn messages(&'a self, session_id: u128, range: Range<u64>) -> Self::IMessages;
+
+    fn store(&mut self, session_id: u128, fix_message: &[u8]) -> Self::IStore;
+}
+
+#[derive(Debug, Clone)]
+pub struct State {
+    next_inbound: u64,
+    next_outbound: u64,
+}
+
 /// An indicator for the kind of environment relative to a FIX Connection.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Environment {
-    /// Test messages will be refused under this environment setting.
-    ProductionDisallowTest,
-    /// Test messages will be ignored under this environment setting.
-    ProductionAllowTest,
+    /// Test messages will be ignored or refused under this environment setting.
+    Production { allow_test: bool },
     /// Production messages will be refused under this environment setting.
     Testing,
+}
+
+impl Environment {
+    #[inline(always)]
+    pub fn allows_testing(&self) -> bool {
+        match self {
+            Self::Production { allow_test } => *allow_test,
+            Self::Testing => true,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

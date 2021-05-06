@@ -1,5 +1,5 @@
 use super::error;
-use super::DataType;
+use super::FixFieldValue;
 use crate::Buffer;
 use std::time::Duration;
 
@@ -21,7 +21,7 @@ impl TzTime {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::{DataType, TzTime};
+    /// use fefix::tagvalue::datatypes::{FixFieldValue, TzTime};
     ///
     /// let dtf = TzTime::deserialize(b"12:45:00Z").unwrap();
     /// assert_eq!(dtf.minute(), 45);
@@ -39,15 +39,19 @@ impl TzTime {
     }
 
     pub fn tz_offset(&self) -> Duration {
-        Duration::from_secs((self.tz_offset_hour * 3600 + self.tz_offset_minute * 60) as u64)
+        Duration::from_secs(
+            (self.tz_offset_hour * 3600 + self.tz_offset_minute * 60) as u64,
+        )
     }
 }
 
-impl<'a> DataType<'a> for TzTime {
+impl<'a> FixFieldValue<'a> for TzTime {
     type Error = error::Time;
     type SerializeSettings = ();
 
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    const IS_ASCII: bool = true;
+
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -88,7 +92,8 @@ impl<'a> DataType<'a> for TzTime {
         let minute = ascii_digit_to_u32(data[3], 10) + ascii_digit_to_u32(data[4], 1);
         match data[5] {
             b':' => {
-                let second = ascii_digit_to_u32(data[6], 10) + ascii_digit_to_u32(data[7], 1);
+                let second =
+                    ascii_digit_to_u32(data[6], 10) + ascii_digit_to_u32(data[7], 1);
                 let (is_utc, tz_offset_hour, tz_offset_minute) =
                     parse_timezone(&data[8..]).ok_or(Self::Error::Other)?;
                 Ok(TzTime {
@@ -126,7 +131,7 @@ const fn ascii_digit_to_u32(digit: u8, multiplier: u32) -> u32 {
 
 #[cfg(test)]
 mod test {
-    use super::DataType;
+    use super::FixFieldValue;
     use super::*;
 
     struct TestCase {

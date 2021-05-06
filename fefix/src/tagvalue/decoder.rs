@@ -6,7 +6,7 @@ use crate::definitions::fix44;
 use crate::dict;
 use crate::dict::IsFieldDefinition;
 use crate::TagU16;
-use crate::{datatypes, Dictionary, FixDataType};
+use crate::{dict::FixDataType, tagvalue::datatypes, Dictionary};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::{BuildHasher, Hasher};
@@ -60,9 +60,9 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, Configure, Decoder};
-    /// use fefix::{AppVersion, Dictionary};
+    /// use fefix::Dictionary;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// let decoder = Decoder::<Config>::new(dict);
     /// assert_eq!(decoder.config().separator(), 0x1);
     /// ```
@@ -77,9 +77,9 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, Configure, Decoder};
-    /// use fefix::{AppVersion, Dictionary};
+    /// use fefix::Dictionary;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// let decoder = &mut Decoder::<Config>::new(dict);
     /// decoder.config_mut().set_separator(b'|');
     /// assert_eq!(decoder.config().separator(), b'|');
@@ -104,17 +104,17 @@ where
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::{Config, Decoder};
-    /// use fefix::tags::fix42 as tags;
-    /// use fefix::{AppVersion, Dictionary, FixFieldAccess};
+    /// use fefix::tagvalue::{Fv, Config, Decoder};
+    /// use fefix::definitions::fix42;
+    /// use fefix::Dictionary;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix42();
     /// let decoder = &mut Decoder::<Config>::new(dict);
     /// let data = b"8=FIX.4.2\x019=42\x0135=0\x0149=A\x0156=B\x0134=12\x0152=20100304-07:59:30\x0110=185\x01";
     /// let message = decoder.decode(data).unwrap();
     /// assert_eq!(
-    ///     message.field_str(tags::SENDER_COMP_ID),
-    ///     Some("A")
+    ///     message.fv(fix42::SENDER_COMP_ID),
+    ///     Ok("A")
     /// );
     /// ```
     #[inline]
@@ -247,9 +247,9 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, Configure, Decoder};
-    /// use fefix::{AppVersion, Dictionary};
+    /// use fefix::Dictionary;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// let decoder = Decoder::<Config>::new(dict);
     /// assert_eq!(decoder.config().separator(), 0x1);
     /// ```
@@ -264,9 +264,9 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, Configure, Decoder};
-    /// use fefix::{AppVersion, Dictionary};
+    /// use fefix::Dictionary;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// let decoder = &mut Decoder::<Config>::new(dict);
     /// decoder.config_mut().set_separator(b'|');
     /// assert_eq!(decoder.config().separator(), b'|');
@@ -279,6 +279,11 @@ where
     #[inline]
     pub fn supply_buffer(&mut self) -> &mut [u8] {
         self.raw_decoder.supply_buffer()
+    }
+
+    #[inline]
+    pub fn clear(&mut self) {
+        self.raw_decoder.clear();
     }
 
     #[inline]
@@ -410,11 +415,11 @@ impl<'a> MessageGroupEntry<'a> {
     pub fn field_ref<'b, F, T>(
         &'b self,
         field_def: &'b F,
-    ) -> Option<Result<T, <T as datatypes::DataType<'b>>::Error>>
+    ) -> Option<Result<T, <T as datatypes::FixFieldValue<'b>>::Error>>
     where
         'b: 'a,
         F: dict::IsFieldDefinition,
-        T: datatypes::DataType<'b>,
+        T: datatypes::FixFieldValue<'b>,
     {
         let context = Context {
             tag: field_def.tag(),
@@ -430,7 +435,7 @@ impl<'a> MessageGroupEntry<'a> {
 }
 
 /// FIX message data structure with fast associative and sequential access.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Message<'a> {
     bytes: &'a [u8],
     builder: &'a MessageBuilder<'a>,
@@ -477,6 +482,24 @@ impl<'a> Fv<'a> for Message<'a> {
         F: dict::IsFieldDefinition,
     {
         self.fv_raw_with_key(field.tag())
+    }
+}
+
+impl<'a> slog::Value for Message<'a> {
+    fn serialize(
+        &self,
+        _rec: &slog::Record,
+        key: slog::Key,
+        serializer: &mut dyn slog::Serializer,
+    ) -> slog::Result {
+        for tag_value in self.builder.insertion_order.iter() {
+            serializer.emit_u16(key, tag_value.tag.get())?;
+            serializer.emit_char(key, '=')?;
+            // FIXME
+            serializer.emit_char(key, '?')?;
+            serializer.emit_char(key, '|')?;
+        }
+        Ok(())
     }
 }
 
@@ -549,7 +572,7 @@ impl Context {
 
 /// A zero-copy, allocation-free builder of [`Message`] instances.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MessageBuilder<'a> {
+struct MessageBuilder<'a> {
     fields: HashMap<Context, (&'a [u8], usize), TagHashBuilder>,
     insertion_order: Vec<Context>,
     owned_data: Vec<u8>,
@@ -561,16 +584,7 @@ pub struct MessageBuilder<'a> {
 }
 
 impl<'a> MessageBuilder<'a> {
-    /// Creates a new [`Message`] without any fields.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use fefix::MessageBuilder;
-    ///
-    /// let msg = MessageBuilder::new();
-    /// ```
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             fields: HashMap::with_capacity_and_hasher(20, TagHashBuilder {}),
             insertion_order: vec![],
@@ -584,7 +598,7 @@ impl<'a> MessageBuilder<'a> {
     }
 
     /// Removes all fields from `self`.
-    pub fn clear(&mut self) {
+    fn clear(&mut self) {
         // TODO: https://github.com/rust-lang/rust/issues/56431
         self.fields.clear();
         self.insertion_order.clear();
@@ -595,7 +609,7 @@ impl<'a> MessageBuilder<'a> {
         self.len_end_trailer = 0;
     }
 
-    pub fn add_field(
+    fn add_field(
         &mut self,
         context: Context,
         bytes: &'a [u8],
@@ -612,7 +626,7 @@ impl<'a> MessageBuilder<'a> {
         Ok(())
     }
 
-    pub fn build(&'a self, bytes: &'a [u8]) -> Message<'a> {
+    fn build(&'a self, bytes: &'a [u8]) -> Message<'a> {
         Message {
             bytes,
             builder: self,
@@ -636,7 +650,7 @@ pub struct GroupRefIter<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{definitions::fix44, tagvalue::Config, AppVersion};
+    use crate::{definitions::fix44, tagvalue::Config};
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
@@ -645,7 +659,7 @@ mod test {
     }
 
     fn decoder() -> Decoder<Config> {
-        let dict = Dictionary::from_version(AppVersion::Fix44);
+        let dict = Dictionary::fix44();
         let mut config = Config::default();
         config.set_separator(b'|');
         Decoder::with_config(dict, config)
@@ -700,7 +714,7 @@ mod test {
     #[test]
     fn no_skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
-        let mut codec = Decoder::<Config>::new(Dictionary::from_version(AppVersion::Fix44));
+        let mut codec = Decoder::<Config>::new(Dictionary::fix44());
         codec.config_mut().set_separator(b'|');
         codec.config_mut().set_verify_checksum(true);
         let result = codec.decode(message.as_bytes());
@@ -739,7 +753,7 @@ mod test {
         let message = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
         let mut config = Config::default();
         config.set_separator(b'|');
-        let mut codec = Decoder::with_config(Dictionary::from_version(AppVersion::Fix44), config);
+        let mut codec = Decoder::with_config(Dictionary::fix44(), config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
     }

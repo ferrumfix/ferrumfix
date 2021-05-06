@@ -1,15 +1,37 @@
 //! Access to FIX Dictionary reference and message specifications.
 
 use self::symbol_table::{Key, KeyRef, SymbolTable, SymbolTableIndex};
-use super::AppVersion;
-use super::FixDataType;
 use super::TagU16;
 use fnv::FnvHashMap;
+use lazy_static::lazy_static;
 use quickfix::{ParseDictionaryError, QuickFixReader};
-use quickfix_spec::quickfix_spec;
 use std::fmt;
 use std::io;
 use std::sync::Arc;
+
+pub use datatype::FixDataType;
+
+const SPEC_FIX_40: &str = include_str!("resources/quickfix/FIX-4.0.xml");
+const SPEC_FIX_41: &str = include_str!("resources/quickfix/FIX-4.1.xml");
+const SPEC_FIX_42: &str = include_str!("resources/quickfix/FIX-4.2.xml");
+const SPEC_FIX_43: &str = include_str!("resources/quickfix/FIX-4.3.xml");
+const SPEC_FIX_44: &str = include_str!("resources/quickfix/FIX-4.4.xml");
+const SPEC_FIX_50: &str = include_str!("resources/quickfix/FIX-5.0.xml");
+const SPEC_FIX_50SP1: &str = include_str!("resources/quickfix/FIX-5.0-SP1.xml");
+const SPEC_FIX_50SP2: &str = include_str!("resources/quickfix/FIX-5.0-SP2.xml");
+const SPEC_FIXT_11: &str = include_str!("resources/quickfix/FIXT-1.1.xml");
+
+lazy_static! {
+    static ref DICT_FIX_40: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_40).unwrap();
+    static ref DICT_FIX_41: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_41).unwrap();
+    static ref DICT_FIX_42: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_42).unwrap();
+    static ref DICT_FIX_43: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_43).unwrap();
+    static ref DICT_FIX_44: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_44).unwrap();
+    static ref DICT_FIX_50: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_50).unwrap();
+    static ref DICT_FIX_50SP1: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_50SP1).unwrap();
+    static ref DICT_FIX_50SP2: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_50SP2).unwrap();
+    static ref DICT_FIXT_11: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIXT_11).unwrap();
+}
 
 /// The expected location of a field within a FIX message (i.e. header, body, or
 /// trailer).
@@ -191,13 +213,6 @@ impl Dictionary {
         }
     }
 
-    /// Creates a new [`Dictionary`](Dictionary) according to the specification of
-    /// `version`.
-    pub fn from_version(version: AppVersion) -> Self {
-        let spec = quickfix_spec(version);
-        Dictionary::from_quickfix_spec(spec).unwrap()
-    }
-
     /// Attempts to read a QuickFIX-style specification file and convert it into
     /// a [`Dictionary`].
     pub fn from_quickfix_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
@@ -216,13 +231,79 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// assert_eq!(dict.get_version(), "FIX.4.4");
     /// ```
     pub fn get_version(&self) -> &str {
         self.inner.version.as_str()
+    }
+
+    #[cfg(feature = "fix40")]
+    pub fn fix40() -> Self {
+        DICT_FIX_40.clone()
+    }
+
+    #[cfg(feature = "fix41")]
+    pub fn fix41() -> Self {
+        DICT_FIX_41.clone()
+    }
+
+    #[cfg(feature = "fix42")]
+    pub fn fix42() -> Self {
+        DICT_FIX_42.clone()
+    }
+
+    #[cfg(feature = "fix43")]
+    pub fn fix43() -> Self {
+        DICT_FIX_43.clone()
+    }
+
+    pub fn fix44() -> Self {
+        DICT_FIX_44.clone()
+    }
+
+    #[cfg(feature = "fix50")]
+    pub fn fix50() -> Self {
+        DICT_FIX_50.clone()
+    }
+
+    #[cfg(feature = "fix50sp1")]
+    pub fn fix50sp1() -> Self {
+        DICT_FIX_50SP1.clone()
+    }
+
+    #[cfg(feature = "fix50sp2")]
+    pub fn fix50sp2() -> Self {
+        DICT_FIX_50SP2.clone()
+    }
+
+    #[cfg(feature = "fixt11")]
+    pub fn fixt11() -> Self {
+        DICT_FIXT_11.clone()
+    }
+
+    #[cfg(test)]
+    pub fn all() -> Vec<Dictionary> {
+        vec![
+            #[cfg(feature = "fix40")]
+            Self::fix40(),
+            #[cfg(feature = "fix41")]
+            Self::fix41(),
+            #[cfg(feature = "fix42")]
+            Self::fix42(),
+            #[cfg(feature = "fix43")]
+            Self::fix43(),
+            Self::fix44(),
+            #[cfg(feature = "fix50")]
+            Self::fix50(),
+            #[cfg(feature = "fix50sp1")]
+            Self::fix50sp1(),
+            #[cfg(feature = "fix50sp2")]
+            Self::fix50sp2(),
+            #[cfg(feature = "fixt11")]
+            Self::fixt11(),
+        ]
     }
 
     fn symbol(&self, pkey: KeyRef) -> Option<&u32> {
@@ -241,9 +322,8 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     ///
     /// let msg1 = dict.message_by_name("Heartbeat").unwrap();
     /// let msg2 = dict.message_by_msgtype("0").unwrap();
@@ -259,9 +339,8 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     ///
     /// let msg1 = dict.message_by_msgtype("0").unwrap();
     /// let msg2 = dict.message_by_name("Heartbeat").unwrap();
@@ -286,10 +365,8 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
-    ///
+    /// let dict = Dictionary::fix44();
     /// let dt = dict.datatype_by_name("String").unwrap();
     /// assert_eq!(dt.name(), "String");
     /// ```
@@ -303,10 +380,8 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
-    ///
+    /// let dict = Dictionary::fix44();
     /// let field1 = dict.field_by_tag(112).unwrap();
     /// let field2 = dict.field_by_name("TestReqID").unwrap();
     /// assert_eq!(field1.name(), field2.name());
@@ -329,9 +404,8 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix42);
+    /// let dict = Dictionary::fix42();
     /// // FIX 4.2 defines 19 datatypes.
     /// assert_eq!(dict.iter_datatypes().count(), 19);
     /// ```
@@ -347,9 +421,8 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// let msg = dict.iter_messages().find(|m| m.name() == "MarketDataRequest");
     /// assert_eq!(msg.unwrap().msg_type(), "V");
     /// ```
@@ -624,6 +697,402 @@ impl<'a> Datatype<'a> {
 
     pub fn basetype(&self) -> FixDataType {
         self.1.datatype
+    }
+}
+
+mod datatype {
+    use strum::IntoEnumIterator;
+    use strum_macros::{EnumIter, IntoStaticStr};
+
+    /// Sum type for all possible FIX data types ever defined across all FIX
+    /// application versions.
+    #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
+    #[repr(u8)]
+    #[non_exhaustive]
+    pub enum FixDataType {
+        /// Single character value, can include any alphanumeric character or
+        /// punctuation except the delimiter. All char fields are case sensitive
+        /// (i.e. m != M). The following fields are based on char.
+        Char,
+        /// char field containing one of two values: 'Y' = True/Yes 'N' = False/No.
+        Boolean,
+        /// Sequence of digits with optional decimal point and sign character (ASCII
+        /// characters "-", "0" - "9" and "."); the absence of the decimal point
+        /// within the string will be interpreted as the float representation of an
+        /// integer value. All float fields must accommodate up to fifteen
+        /// significant digits. The number of decimal places used should be a factor
+        /// of business/market needs and mutual agreement between counterparties.
+        /// Note that float values may contain leading zeros (e.g. "00023.23" =
+        /// "23.23") and may contain or omit trailing zeros after the decimal point
+        /// (e.g. "23.0" = "23.0000" = "23" = "23."). Note that fields which are
+        /// derived from float may contain negative values unless explicitly
+        /// specified otherwise. The following data types are based on float.
+        Float,
+        /// float field typically representing a Price times a Qty.
+        Amt,
+        /// float field representing a price. Note the number of decimal places may
+        /// vary. For certain asset classes prices may be negative values. For
+        /// example, prices for options strategies can be negative under certain
+        /// market conditions. Refer to Volume 7: FIX Usage by Product for asset
+        /// classes that support negative price values.
+        Price,
+        /// float field representing a price offset, which can be mathematically
+        /// added to a "Price". Note the number of decimal places may vary and some
+        /// fields such as LastForwardPoints may be negative.
+        PriceOffset,
+        /// float field capable of storing either a whole number (no decimal places)
+        /// of "shares" (securities denominated in whole units) or a decimal value
+        /// containing decimal places for non-share quantity asset classes
+        /// (securities denominated in fractional units).
+        Qty,
+        /// float field representing a percentage (e.g. 0.05 represents 5% and 0.9525
+        /// represents 95.25%). Note the number of decimal places may vary.
+        Percentage,
+        /// Sequence of digits without commas or decimals and optional sign character
+        /// (ASCII characters "-" and "0" - "9" ). The sign character utilizes one
+        /// byte (i.e. positive int is "99999" while negative int is "-99999"). Note
+        /// that int values may contain leading zeros (e.g. "00023" = "23").
+        /// Examples: 723 in field 21 would be mapped int as |21=723|. -723 in field
+        /// 12 would be mapped int as |12=-723| The following data types are based on
+        /// int.
+        Int,
+        /// int field representing a day during a particular monthy (values 1 to 31).
+        DayOfMonth,
+        /// int field representing the length in bytes. Value must be positive.
+        Length,
+        /// int field representing the number of entries in a repeating group. Value
+        /// must be positive.
+        NumInGroup,
+        /// int field representing a message sequence number. Value must be positive.
+        SeqNum,
+        /// `int` field representing a field's tag number when using FIX "Tag=Value"
+        /// syntax. Value must be positive and may not contain leading zeros.
+        TagNum,
+        /// Alpha-numeric free format strings, can include any character or
+        /// punctuation except the delimiter. All String fields are case sensitive
+        /// (i.e. morstatt != Morstatt).
+        String,
+        /// string field containing raw data with no format or content restrictions.
+        /// Data fields are always immediately preceded by a length field. The length
+        /// field should specify the number of bytes of the value of the data field
+        /// (up to but not including the terminating SOH). Caution: the value of one
+        /// of these fields may contain the delimiter (SOH) character. Note that the
+        /// value specified for this field should be followed by the delimiter (SOH)
+        /// character as all fields are terminated with an "SOH".
+        Data,
+        /// string field representing month of a year. An optional day of the month
+        /// can be appended or an optional week code. Valid formats: YYYYMM YYYYMMDD
+        /// YYYYMMWW Valid values: YYYY = 0000-9999; MM = 01-12; DD = 01-31; WW = w1,
+        /// w2, w3, w4, w5.
+        MonthYear,
+        /// string field containing one or more space delimited single character
+        /// values (e.g. |18=2 A F| ).
+        MultipleCharValue,
+        /// string field representing a currency type using ISO 4217 Currency code (3
+        /// character) values (see Appendix 6-A).
+        Currency,
+        /// string field representing a market or exchange using ISO 10383 Market
+        /// Identifier Code (MIC) values (see"Appendix 6-C).
+        Exchange,
+        /// Identifier for a national language - uses ISO 639-1 standard.
+        Language,
+        /// string field represening a Date of Local Market (as oppose to UTC) in
+        /// YYYYMMDD format. This is the "normal" date field used by the FIX
+        /// Protocol. Valid values: YYYY = 0000-9999, MM = 01-12, DD = 01-31.
+        LocalMktDate,
+        /// string field containing one or more space delimited multiple character
+        /// values (e.g. |277=AV AN A| ).
+        MultipleStringValue,
+        /// string field representing Date represented in UTC (Universal Time
+        /// Coordinated, also known as "GMT") in YYYYMMDD format. This
+        /// special-purpose field is paired with UTCTimeOnly to form a proper
+        /// UTCTimestamp for bandwidth-sensitive messages. Valid values: YYYY =
+        /// 0000-9999, MM = 01-12, DD = 01-31.
+        UtcDateOnly,
+        /// string field representing Time-only represented in UTC (Universal Time
+        /// Coordinated, also known as "GMT") in either HH:MM:SS (whole seconds) or
+        /// HH:MM:SS.sss (milliseconds) format, colons, and period required. This
+        /// special-purpose field is paired with UTCDateOnly to form a proper
+        /// UTCTimestamp for bandwidth-sensitive messages. Valid values: HH = 00-23,
+        /// MM = 00-60 (60 only if UTC leap second), SS = 00-59. (without
+        /// milliseconds) HH = 00-23, MM = 00-59, SS = 00-60 (60 only if UTC leap
+        /// second), sss=000-999 (indicating milliseconds).
+        UtcTimeOnly,
+        /// string field representing Time/date combination represented in UTC
+        /// (Universal Time Coordinated, also known as "GMT") in either
+        /// YYYYMMDD-HH:MM:SS (whole seconds) or YYYYMMDD-HH:MM:SS.sss (milliseconds)
+        /// format, colons, dash, and period required. Valid values: * YYYY =
+        /// 0000-9999, MM = 01-12, DD = 01-31, HH = 00-23, MM = 00-59, SS = 00-60 (60
+        /// only if UTC leap second) (without milliseconds). * YYYY = 0000-9999, MM =
+        /// 01-12, DD = 01-31, HH = 00-23, MM = 00-59, SS = 00-60 (60 only if UTC
+        /// leap second), sss=000-999 (indicating milliseconds). Leap Seconds: Note
+        /// that UTC includes corrections for leap seconds, which are inserted to
+        /// account for slowing of the rotation of the earth. Leap second insertion
+        /// is declared by the International Earth Rotation Service (IERS) and has,
+        /// since 1972, only occurred on the night of Dec. 31 or Jun 30. The IERS
+        /// considers March 31 and September 30 as secondary dates for leap second
+        /// insertion, but has never utilized these dates. During a leap second
+        /// insertion, a UTCTimestamp field may read "19981231-23:59:59",
+        /// "19981231-23:59:60", "19990101-00:00:00". (see
+        /// http://tycho.usno.navy.mil/leapsec.html)
+        UtcTimestamp,
+        /// Contains an XML document raw data with no format or content restrictions.
+        /// XMLData fields are always immediately preceded by a length field. The
+        /// length field should specify the number of bytes of the value of the data
+        /// field (up to but not including the terminating SOH).
+        XmlData,
+        /// string field representing a country using ISO 3166 Country code (2
+        /// character) values (see Appendix 6-B).
+        Country,
+    }
+
+    impl FixDataType {
+        /// Compares `name` to the set of strings commonly used by QuickFIX's custom
+        /// specification format and returns its associated [`DataType`] if a match
+        /// was found. The query is case-insensitive.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use fefix::dict::FixDataType;
+        ///
+        /// assert_eq!(FixDataType::from_quickfix_name("AMT"), Some(FixDataType::Amt));
+        /// assert_eq!(FixDataType::from_quickfix_name("Amt"), Some(FixDataType::Amt));
+        /// assert_eq!(FixDataType::from_quickfix_name("MONTHYEAR"), Some(FixDataType::MonthYear));
+        /// assert_eq!(FixDataType::from_quickfix_name(""), None);
+        /// ```
+        pub fn from_quickfix_name(name: &str) -> Option<Self> {
+            // https://github.com/quickfix/quickfix/blob/b6760f55ac6a46306b4e081bb13b65e6220ab02d/src/C%2B%2B/DataDictionary.cpp#L646-L680
+            Some(match name.to_ascii_uppercase().as_str() {
+                "AMT" => FixDataType::Amt,
+                "BOOLEAN" => FixDataType::Boolean,
+                "CHAR" => FixDataType::Char,
+                "COUNTRY" => FixDataType::Country,
+                "CURRENCY" => FixDataType::Currency,
+                "DATA" => FixDataType::Data,
+                "DATE" => FixDataType::UtcDateOnly, // FIXME?
+                "DAYOFMONTH" => FixDataType::DayOfMonth,
+                "EXCHANGE" => FixDataType::Exchange,
+                "FLOAT" => FixDataType::Float,
+                "INT" => FixDataType::Int,
+                "LANGUAGE" => FixDataType::Language,
+                "LENGTH" => FixDataType::Int,
+                "LOCALMKTDATE" => FixDataType::LocalMktDate,
+                "MONTHYEAR" => FixDataType::MonthYear,
+                "MULTIPLECHARVALUE" | "MULTIPLEVALUESTRING" => FixDataType::MultipleCharValue,
+                "MULTIPLESTRINGVALUE" => FixDataType::MultipleStringValue,
+                "NUMINGROUP" => FixDataType::NumInGroup,
+                "PERCENTAGE" => FixDataType::Percentage,
+                "PRICE" => FixDataType::Price,
+                "PRICEOFFSET" => FixDataType::PriceOffset,
+                "QTY" => FixDataType::Qty,
+                "STRING" => FixDataType::String,
+                "TZTIMEONLY" => FixDataType::UtcTimeOnly, // FIXME
+                "TZTIMESTAMP" => FixDataType::UtcTimestamp, // FIXME
+                "UTCDATE" => FixDataType::UtcDateOnly,
+                "UTCDATEONLY" => FixDataType::UtcDateOnly,
+                "UTCTIMEONLY" => FixDataType::UtcTimeOnly,
+                "UTCTIMESTAMP" => FixDataType::UtcTimestamp,
+                "SEQNUM" => FixDataType::Int,
+                "TIME" => FixDataType::UtcTimestamp,
+                "XMLDATA" => FixDataType::XmlData,
+                _ => {
+                    return None;
+                }
+            })
+        }
+
+        /// Returns the name adopted by QuickFIX for `self`.
+        pub fn to_quickfix_name(&self) -> &str {
+            match self {
+                FixDataType::Int => "INT",
+                FixDataType::Length => "LENGTH",
+                FixDataType::Char => "CHAR",
+                FixDataType::Boolean => "BOOLEAN",
+                FixDataType::Float => "FLOAT",
+                FixDataType::Amt => "AMT",
+                FixDataType::Price => "PRICE",
+                FixDataType::PriceOffset => "PRICEOFFSET",
+                FixDataType::Qty => "QTY",
+                FixDataType::Percentage => "PERCENTAGE",
+                FixDataType::DayOfMonth => "DAYOFMONTH",
+                FixDataType::NumInGroup => "NUMINGROUP",
+                FixDataType::Language => "LANGUAGE",
+                FixDataType::SeqNum => "SEQNUM",
+                FixDataType::TagNum => "TAGNUM",
+                FixDataType::String => "STRING",
+                FixDataType::Data => "DATA",
+                FixDataType::MonthYear => "MONTHYEAR",
+                FixDataType::Currency => "CURRENCY",
+                FixDataType::Exchange => "EXCHANGE",
+                FixDataType::LocalMktDate => "LOCALMKTDATE",
+                FixDataType::MultipleStringValue => "MULTIPLESTRINGVALUE",
+                FixDataType::UtcTimeOnly => "UTCTIMEONLY",
+                FixDataType::UtcTimestamp => "UTCTIMESTAMP",
+                FixDataType::UtcDateOnly => "UTCDATEONLY",
+                FixDataType::Country => "COUNTRY",
+                FixDataType::MultipleCharValue => "MULTIPLECHARVALUE",
+                FixDataType::XmlData => "XMLDATA",
+            }
+        }
+
+        /// Returns the name of `self`, character by character identical to the name
+        /// that appears in the official guidelines. **Generally** primitive datatypes
+        /// will use `snake_case` and non-primitive ones will have `PascalCase`, but
+        /// that's not true for every [`DataType`].
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use fefix::dict::FixDataType;
+        ///
+        /// assert_eq!(FixDataType::Qty.name(), "Qty");
+        /// assert_eq!(FixDataType::Float.name(), "float");
+        /// assert_eq!(FixDataType::String.name(), "String");
+        /// ```
+        pub fn name(&self) -> &'static str {
+            // 1. Most primitive data types have `snake_case` names.
+            // 2. Most derivative data types have `PascalCase` names.
+            // 3. `data` and `String` ruin the party and mess it up.
+            //    Why, you ask? Oh, you sweet summer child. You'll learn soon enough
+            //    that nothing makes sense in FIX land.
+            match self {
+                FixDataType::Int => "int",
+                FixDataType::Length => "Length",
+                FixDataType::Char => "char",
+                FixDataType::Boolean => "Boolean",
+                FixDataType::Float => "float",
+                FixDataType::Amt => "Amt",
+                FixDataType::Price => "Price",
+                FixDataType::PriceOffset => "PriceOffset",
+                FixDataType::Qty => "Qty",
+                FixDataType::Percentage => "Percentage",
+                FixDataType::DayOfMonth => "DayOfMonth",
+                FixDataType::NumInGroup => "NumInGroup",
+                FixDataType::Language => "Language",
+                FixDataType::SeqNum => "SeqNum",
+                FixDataType::TagNum => "TagNum",
+                FixDataType::String => "String",
+                FixDataType::Data => "data",
+                FixDataType::MonthYear => "MonthYear",
+                FixDataType::Currency => "Currency",
+                FixDataType::Exchange => "Exchange",
+                FixDataType::LocalMktDate => "LocalMktDate",
+                FixDataType::MultipleStringValue => "MultipleStringValue",
+                FixDataType::UtcTimeOnly => "UTCTimeOnly",
+                FixDataType::UtcTimestamp => "UTCTimestamp",
+                FixDataType::UtcDateOnly => "UTCDateOnly",
+                FixDataType::Country => "Country",
+                FixDataType::MultipleCharValue => "MultipleCharValue",
+                FixDataType::XmlData => "XMLData",
+            }
+        }
+
+        /// Returns `true` if and only if `self` is a "base type", i.e. a primitive;
+        /// returns `false` otherwise.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use fefix::dict::FixDataType;
+        ///
+        /// assert_eq!(FixDataType::Float.is_base_type(), true);
+        /// assert_eq!(FixDataType::Price.is_base_type(), false);
+        /// ```
+        pub fn is_base_type(&self) -> bool {
+            match self {
+                Self::Char | Self::Float | Self::Int | Self::String => true,
+                _ => false,
+            }
+        }
+
+        /// Returns the primitive [`DataType`] from which `self` is derived. If
+        /// `self` is primitive already, returns `self` unchanged.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use fefix::dict::FixDataType;
+        ///
+        /// assert_eq!(FixDataType::Float.base_type(), FixDataType::Float);
+        /// assert_eq!(FixDataType::Price.base_type(), FixDataType::Float);
+        /// ```
+        pub fn base_type(&self) -> Self {
+            let dt = match self {
+                Self::Char | Self::Boolean => Self::Char,
+                Self::Float
+                | Self::Amt
+                | Self::Price
+                | Self::PriceOffset
+                | Self::Qty
+                | Self::Percentage => Self::Float,
+                Self::Int
+                | Self::DayOfMonth
+                | Self::Length
+                | Self::NumInGroup
+                | Self::SeqNum
+                | Self::TagNum => Self::Int,
+                _ => Self::String,
+            };
+            debug_assert!(dt.is_base_type());
+            dt
+        }
+
+        /// Returns an [`Iterator`] over all variants of
+        /// [`DataType`].
+        pub fn iter_all() -> impl Iterator<Item = Self> {
+            <Self as IntoEnumIterator>::iter()
+        }
+    }
+
+    #[cfg(test)]
+    mod test {
+        use super::*;
+        use std::collections::HashSet;
+
+        #[test]
+        fn iter_all_unique() {
+            let as_vec = FixDataType::iter_all().collect::<Vec<FixDataType>>();
+            let as_set = FixDataType::iter_all().collect::<HashSet<FixDataType>>();
+            assert_eq!(as_vec.len(), as_set.len());
+        }
+
+        #[test]
+        fn more_than_20_datatypes() {
+            // According to the official documentation, FIX has "about 20 data
+            // types". Including recent revisions, we should well exceed that
+            // number.
+            assert!(FixDataType::iter_all().count() > 20);
+        }
+
+        #[test]
+        fn names_are_unique() {
+            let as_vec = FixDataType::iter_all()
+                .map(|dt| dt.name())
+                .collect::<Vec<&str>>();
+            let as_set = FixDataType::iter_all()
+                .map(|dt| dt.name())
+                .collect::<HashSet<&str>>();
+            assert_eq!(as_vec.len(), as_set.len());
+        }
+
+        #[test]
+        fn base_type_is_itself() {
+            for dt in FixDataType::iter_all() {
+                if dt.is_base_type() {
+                    assert_eq!(dt.base_type(), dt);
+                } else {
+                    assert_ne!(dt.base_type(), dt);
+                }
+            }
+        }
+
+        #[test]
+        fn base_type_is_actually_base_type() {
+            for dt in FixDataType::iter_all() {
+                assert!(dt.base_type().is_base_type());
+            }
+        }
     }
 }
 
@@ -1512,103 +1981,25 @@ mod quickfix {
     }
 }
 
-mod quickfix_spec {
-    use super::AppVersion;
-    use std::borrow::Cow;
-
-    const SPEC_FIX_40: &str = include_str!("../resources/quickfix/FIX-4.0.xml");
-    const SPEC_FIX_41: &str = include_str!("../resources/quickfix/FIX-4.1.xml");
-    const SPEC_FIX_42: &str = include_str!("../resources/quickfix/FIX-4.2.xml");
-    const SPEC_FIX_43: &str = include_str!("../resources/quickfix/FIX-4.3.xml");
-    const SPEC_FIX_44: &str = include_str!("../resources/quickfix/FIX-4.4.xml");
-    const SPEC_FIX_50: &str = include_str!("../resources/quickfix/FIX-5.0.xml");
-    const SPEC_FIX_50SP1: &str = include_str!("../resources/quickfix/FIX-5.0-SP1.xml");
-    const SPEC_FIX_50SP2: &str = include_str!("../resources/quickfix/FIX-5.0-SP2.xml");
-    const SPEC_FIXT_11: &str = include_str!("../resources/quickfix/FIXT-1.1.xml");
-
-    /// Returns a string with the QuickFIX definition file for `self`
-    /// as its content.
-    ///
-    /// The QuickFix definition files are extracted and
-    /// decompressed
-    /// from the binary without filesystem access.
-    pub fn quickfix_spec(version: AppVersion) -> Cow<'static, str> {
-        (match version {
-            AppVersion::Fix40 => SPEC_FIX_40,
-            AppVersion::Fix41 => SPEC_FIX_41,
-            AppVersion::Fix42 => SPEC_FIX_42,
-            AppVersion::Fix43 => SPEC_FIX_43,
-            AppVersion::Fix44 => SPEC_FIX_44,
-            AppVersion::Fix50 => SPEC_FIX_50,
-            AppVersion::Fix50SP1 => SPEC_FIX_50SP1,
-            AppVersion::Fix50SP2 => SPEC_FIX_50SP2,
-            AppVersion::Fixt11 => SPEC_FIXT_11,
-        })
-        .into()
-    }
-
-    #[cfg(test)]
-    mod test {
-        use super::*;
-        use std::collections::HashSet;
-
-        #[test]
-        fn all_versions_have_quickfix_spec() {
-            assert!(AppVersion::ALL
-                .iter()
-                .copied()
-                .map(|version| quickfix_spec(version))
-                .all(|spec| spec.len() > 0));
-        }
-
-        #[test]
-        fn all_versions_have_different_quickfix_spec() {
-            let mut set: HashSet<String> = HashSet::default();
-            AppVersion::ALL
-                .iter()
-                .copied()
-                .map(|version| set.insert(quickfix_spec(version).to_string()))
-                .count();
-            assert_eq!(set.len(), AppVersion::ALL.iter().copied().count());
-        }
-
-        #[test]
-        fn all_versions_have_xml_valid_quickfix_spec() {
-            assert!(AppVersion::ALL
-                .iter()
-                .copied()
-                .map(|version| quickfix_spec(version))
-                .all(|spec| roxmltree::Document::parse(&spec).is_ok()));
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::AppVersion;
-    use quickcheck::QuickCheck;
+    use quickcheck_macros::quickcheck;
     use std::collections::HashSet;
     use std::convert::TryInto;
 
-    #[test]
-    fn msg_type_conversion() {
-        fn prop(val: u16) -> bool {
-            let bytes = val.to_le_bytes();
-            let msg_type = MsgType::from_bytes(&bytes[..]).unwrap();
-            let mut buffer = vec![0, 0];
-            msg_type.write(&mut &mut buffer[..]).unwrap();
-            val == u16::from_le_bytes((&buffer[..]).try_into().unwrap())
-        }
-        QuickCheck::new()
-            .tests(1000)
-            .quickcheck(prop as fn(u16) -> bool)
+    #[quickcheck]
+    fn msg_type_conversion(val: u16) -> bool {
+        let bytes = val.to_le_bytes();
+        let msg_type = MsgType::from_bytes(&bytes[..]).unwrap();
+        let mut buffer = vec![0, 0];
+        msg_type.write(&mut &mut buffer[..]).unwrap();
+        val == u16::from_le_bytes((&buffer[..]).try_into().unwrap())
     }
 
     #[test]
-    fn fixt11_quickfix_is_ok() {
-        let dict = Dictionary::from_version(AppVersion::Fixt11);
-        println!("{}", dict.to_quickfix_xml());
+    fn fix44_quickfix_is_ok() {
+        let dict = Dictionary::fix44();
         let msg_heartbeat = dict.message_by_name("Heartbeat").unwrap();
         assert_eq!(msg_heartbeat.msg_type(), "0");
         assert_eq!(msg_heartbeat.name(), "Heartbeat".to_string());
@@ -1622,16 +2013,8 @@ mod test {
     }
 
     #[test]
-    fn dictionary_from_quickfix_spec_is_ok() {
-        for version in AppVersion::ALL.iter().copied() {
-            Dictionary::from_version(version);
-        }
-    }
-
-    #[test]
     fn all_datatypes_are_used_at_least_once() {
-        for version in AppVersion::ALL.iter().copied() {
-            let dict = Dictionary::from_version(version);
+        for dict in Dictionary::all().iter() {
             let datatypes_count = dict.iter_datatypes().count();
             let mut datatypes = HashSet::new();
             for field in dict.iter_fields() {
@@ -1643,16 +2026,14 @@ mod test {
 
     #[test]
     fn at_least_one_datatype() {
-        for version in AppVersion::ALL.iter().copied() {
-            let dict = Dictionary::from_version(version);
+        for dict in Dictionary::all().iter() {
             assert!(dict.iter_datatypes().count() >= 1);
         }
     }
 
     #[test]
     fn std_header_and_trailer_always_present() {
-        for version in AppVersion::ALL.iter().copied() {
-            let dict = Dictionary::from_version(version);
+        for dict in Dictionary::all().iter() {
             let std_header = dict.component_by_name("StandardHeader");
             let std_trailer = dict.component_by_name("StandardTrailer");
             assert!(std_header.is_some() && std_trailer.is_some());
@@ -1661,7 +2042,7 @@ mod test {
 
     #[test]
     fn fix44_field_28_has_three_variants() {
-        let dict = Dictionary::from_version(AppVersion::Fix44);
+        let dict = Dictionary::fix44();
         let field_28 = dict.field_by_tag(28).unwrap();
         assert_eq!(field_28.name(), "IOITransType");
         assert_eq!(field_28.enums().unwrap().count(), 3);
@@ -1669,7 +2050,7 @@ mod test {
 
     #[test]
     fn fix44_field_36_has_no_variants() {
-        let dict = Dictionary::from_version(AppVersion::Fix44);
+        let dict = Dictionary::fix44();
         let field_36 = dict.field_by_tag(36).unwrap();
         assert_eq!(field_36.name(), "NewSeqNo");
         assert!(field_36.enums().is_none());
@@ -1677,7 +2058,7 @@ mod test {
 
     #[test]
     fn fix44_field_167_has_eucorp_variant() {
-        let dict = Dictionary::from_version(AppVersion::Fix44);
+        let dict = Dictionary::fix44();
         let field_167 = dict.field_by_tag(167).unwrap();
         assert_eq!(field_167.name(), "SecurityType");
         assert!(field_167.enums().unwrap().any(|e| e.value() == "EUCORP"));

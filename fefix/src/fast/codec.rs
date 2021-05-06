@@ -157,7 +157,10 @@ impl Codec for String {
     }
 }
 
-fn _serialize_bitvec(bits: &BitSlice<Msb0, u8>, output: &mut impl io::Write) -> io::Result<usize> {
+fn _serialize_bitvec(
+    bits: &BitSlice<Msb0, u8>,
+    output: &mut impl io::Write,
+) -> io::Result<usize> {
     let significant_data_bits_per_byte = bits.chunks_exact(7);
     let mut i = 0;
     let remaineder = significant_data_bits_per_byte.remainder().load::<u8>();

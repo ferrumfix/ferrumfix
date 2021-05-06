@@ -1,8 +1,8 @@
 use super::{Config, Configure, DecodeError};
-use crate::datatypes;
 use crate::dict;
 use crate::dict::FieldLocation;
 use crate::dict::IsFieldDefinition;
+use crate::tagvalue::datatypes;
 use crate::tagvalue::Fv;
 use crate::Dictionary;
 use serde::{Deserialize, Serialize};
@@ -61,7 +61,7 @@ impl<'a> MessageGroupEntry<'a> {
     where
         'b: 'a,
         F: dict::IsFieldDefinition,
-        T: datatypes::DataType<'b>,
+        T: datatypes::FixFieldValue<'b>,
     {
         None
     }
@@ -69,11 +69,11 @@ impl<'a> MessageGroupEntry<'a> {
     pub fn field_ref<'b, F, T>(
         &'b self,
         _field_def: &F,
-    ) -> Option<Result<T, <T as datatypes::DataType<'b>>::Error>>
+    ) -> Option<Result<T, <T as datatypes::FixFieldValue<'b>>::Error>>
     where
         'b: 'a,
         F: dict::IsFieldDefinition,
-        T: datatypes::DataType<'b>,
+        T: datatypes::FixFieldValue<'b>,
     {
         unimplemented!()
     }
@@ -98,7 +98,7 @@ impl<'a> Message<'a> {
     where
         'b: 'a,
         F: dict::IsFieldDefinition,
-        T: datatypes::DataType<'b>,
+        T: datatypes::FixFieldValue<'b>,
     {
         None
     }
@@ -106,16 +106,20 @@ impl<'a> Message<'a> {
     pub fn field_ref<'b, F, T>(
         &'b self,
         field_def: &F,
-    ) -> Option<Result<T, <T as datatypes::DataType<'b>>::Error>>
+    ) -> Option<Result<T, <T as datatypes::FixFieldValue<'b>>::Error>>
     where
         'b: 'a,
         F: dict::IsFieldDefinition,
-        T: datatypes::DataType<'b>,
+        T: datatypes::FixFieldValue<'b>,
     {
         self.internal.field_ref(field_def)
     }
 
-    pub fn field_raw<'b>(&'b self, name: &str, location: FieldLocation) -> Option<&'b str> {
+    pub fn field_raw<'b>(
+        &'b self,
+        name: &str,
+        location: FieldLocation,
+    ) -> Option<&'b str> {
         self.internal.field_raw(name, location)
     }
 
@@ -180,9 +184,10 @@ where
     fn message_builder<'a>(&'a mut self) -> &'a mut MessageInternal<'a> {
         self.message_builder.clear();
         unsafe {
-            std::mem::transmute::<&'a mut MessageInternal<'static>, &'a mut MessageInternal<'a>>(
-                &mut self.message_builder,
-            )
+            std::mem::transmute::<
+                &'a mut MessageInternal<'static>,
+                &'a mut MessageInternal<'a>,
+            >(&mut self.message_builder)
         }
     }
 
@@ -236,11 +241,11 @@ impl<'a> MessageInternal<'a> {
     pub fn field_ref<'b, F, T>(
         &'b self,
         field_def: &F,
-    ) -> Option<Result<T, <T as datatypes::DataType<'b>>::Error>>
+    ) -> Option<Result<T, <T as datatypes::FixFieldValue<'b>>::Error>>
     where
         'b: 'a,
         F: IsFieldDefinition,
-        T: datatypes::DataType<'b>,
+        T: datatypes::FixFieldValue<'b>,
     {
         self.field_raw(field_def.name(), field_def.location())
             .map(|s| T::deserialize(s.as_bytes()))
@@ -263,14 +268,14 @@ impl<'a> MessageInternal<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::AppVersion;
 
     const MESSAGE_SIMPLE: &str = include_str!("test_data/message_simple.json");
 
-    const MESSAGE_WITHOUT_HEADER: &str = include_str!("test_data/message_without_header.json");
+    const MESSAGE_WITHOUT_HEADER: &str =
+        include_str!("test_data/message_without_header.json");
 
     fn dict_fix44() -> Dictionary {
-        Dictionary::from_version(AppVersion::Fix44)
+        Dictionary::fix44()
     }
 
     fn encoder_fix44() -> Decoder<impl Configure> {

@@ -1,44 +1,47 @@
-mod src;
+// `fefix_core` is part of the FerrumFIX codebase, so all warnings will get
+// caught anyway during compilation. Enabling compiler diagnostics would thus
+// have the undesirable effect of showing two identical warnings.
+#[allow(warnings)]
+#[path = "src/fefix_core/mod.rs"]
+mod fefix_core;
 
-use src as fefix_barebones;
-
-use fefix_barebones::codegen;
-use fefix_barebones::AppVersion;
-use rayon::prelude::*;
-use std::fs::{create_dir_all, File};
+use fefix_core::{codegen, dict::Dictionary};
+use std::env::var;
+use std::fs::File;
 use std::io;
 use std::io::Write;
 use std::path::PathBuf;
 
-fn main() -> std::io::Result<()> {
-    let generated_path = project_root().join("src").join("definitions");
-    create_dir_all(generated_path.as_path())?;
-    fefix_barebones::AppVersion::ALL
-        .par_iter()
-        .copied()
-        .try_for_each::<_, std::io::Result<()>>(|app_version| {
-            codegen(app_version, generated_path.clone())
-        })?;
+fn main() -> io::Result<()> {
+    #[cfg(feature = "fix40")]
+    codegen(Dictionary::fix40(), "fix40.rs")?;
+    #[cfg(feature = "fix41")]
+    codegen(Dictionary::fix41(), "fix41.rs")?;
+    #[cfg(feature = "fix42")]
+    codegen(Dictionary::fix42(), "fix42.rs")?;
+    #[cfg(feature = "fix43")]
+    codegen(Dictionary::fix43(), "fix43.rs")?;
+    // FIX 4.4 is always available.
+    codegen(Dictionary::fix44(), "fix44.rs")?;
+    #[cfg(feature = "fix50")]
+    codegen(Dictionary::fix50(), "fix50.rs")?;
+    #[cfg(feature = "fix50sp1")]
+    codegen(Dictionary::fix50sp1(), "fix50sp1.rs")?;
+    #[cfg(feature = "fix50sp2")]
+    codegen(Dictionary::fix50sp2(), "fix50sp2.rs")?;
+    #[cfg(feature = "fixt11")]
+    codegen(Dictionary::fixt11(), "fixt11.rs")?;
     Ok(())
 }
 
-fn codegen(app_version: AppVersion, dir: PathBuf) -> io::Result<()> {
-    let fix_dictionary = fefix_barebones::dict::Dictionary::from_version(app_version);
-    let mut filename: String = app_version
-        .name()
-        .chars()
-        .filter(|c| c.is_ascii_alphanumeric())
-        .map(|c| c.to_ascii_lowercase())
-        .collect();
-    filename.push_str(".rs");
-    let code = codegen::fields(fix_dictionary, "crate");
+fn codegen(fix_dictionary: Dictionary, filename: &str) -> io::Result<()> {
+    // All generated code must go in `OUT_DIR`. We avoid writing directly to
+    // `src/` to avoid compilation issues on `crates.io`, which disallows
+    // writing.
+    let dir = PathBuf::from(var("OUT_DIR").unwrap());
+    let code = codegen::module_with_field_definitions(fix_dictionary, "crate");
     let path = dir.join(filename);
-    let mut file = File::create(path)?;
+    let file = &mut File::create(path)?;
     file.write_all(code.as_bytes())?;
-    println!("{}", code);
     Ok(())
-}
-
-fn project_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }

@@ -1,6 +1,6 @@
 use super::error;
-use crate::datatypes::DataType;
 use crate::Buffer;
+use crate::FixFieldValue;
 
 const LEN_IN_BYTES_NO_MILLI: usize = 8;
 const LEN_IN_BYTES_WITH_MILLI: usize = 12;
@@ -16,7 +16,7 @@ const MIN_SECOND: u32 = 0;
 const MIN_MILLISECOND: u32 = 0;
 
 /// Canonical data field (DTF) for
-/// [`DataType::UtcTimeOnly`](crate::DataType::UtcTimeOnly).
+/// [`FixDataType::UtcTimeOnly`](crate::dict::FixDataType::UtcTimeOnly).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Time {
     hour: u32,
@@ -70,9 +70,9 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::Time;
+    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
     ///
-    /// let dtf = Time::parse(b"12:45:00").unwrap();
+    /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.hour(), 12)
     /// ```
     pub const fn hour(&self) -> u32 {
@@ -84,9 +84,9 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::Time;
+    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
     ///
-    /// let dtf = Time::parse(b"12:45:00").unwrap();
+    /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
     /// ```
     pub const fn minute(&self) -> u32 {
@@ -98,18 +98,18 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::Time;
+    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
     ///
-    /// let dtf = Time::parse(b"12:45:00").unwrap();
+    /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
     /// ```
     ///
     /// Leap second:
     ///
     /// ```
-    /// use fefix::datatypes::Time;
+    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
     ///
-    /// let dtf = Time::parse(b"23:59:60").unwrap();
+    /// let dtf = Time::deserialize(b"23:59:60").unwrap();
     /// assert_eq!(dtf.second(), 60)
     /// ```
     pub const fn second(&self) -> u32 {
@@ -121,21 +121,33 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::Time;
+    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
     ///
-    /// let dtf = Time::parse(b"12:45:00.328").unwrap();
+    /// let dtf = Time::deserialize(b"12:45:00.328").unwrap();
     /// assert_eq!(dtf.milli(), 328)
     /// ```
     pub const fn milli(&self) -> u32 {
         self.milli
     }
+
+    #[cfg(feature = "chrono_time")]
+    pub fn to_chrono_naive(&self) -> Option<chrono::NaiveTime> {
+        chrono::NaiveTime::from_hms_milli_opt(
+            self.hour(),
+            self.minute(),
+            self.second(),
+            self.milli(),
+        )
+    }
 }
 
-impl<'a> DataType<'a> for Time {
+impl<'a> FixFieldValue<'a> for Time {
     type Error = error::Time;
     type SerializeSettings = ();
 
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    const IS_ASCII: bool = true;
+
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -185,6 +197,23 @@ const fn ascii_digit_to_u32(digit: u8, multiplier: u32) -> u32 {
 #[cfg(test)]
 mod test {
     use super::*;
+    use quickcheck::{Arbitrary, Gen};
+    use quickcheck_macros::quickcheck;
+
+    impl Arbitrary for Time {
+        fn arbitrary(g: &mut Gen) -> Self {
+            let hour = u32::arbitrary(g) % 24;
+            let minute = u32::arbitrary(g) % 60;
+            let second = u32::arbitrary(g) % 60;
+            let millisecond = if bool::arbitrary(g) {
+                format!(".{:03}", u32::arbitrary(g) % 1000)
+            } else {
+                String::new()
+            };
+            let s = format!("{:02}:{:02}:{:02}{}", hour, minute, second, millisecond);
+            Self::deserialize(s.as_bytes()).unwrap()
+        }
+    }
 
     struct TestCase {
         bytes: &'static [u8],
@@ -228,5 +257,10 @@ mod test {
             assert_eq!(dtf.second(), test_case.second);
             assert_eq!(dtf.milli(), test_case.milli);
         }
+    }
+
+    #[quickcheck]
+    fn verify_serialization_behavior(time: Time) -> bool {
+        super::super::verify_serialization_behavior(time)
     }
 }

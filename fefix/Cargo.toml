@@ -1,6 +1,6 @@
 [package]
 name = "fefix"
-version = "0.4.0"
+version = "0.1.0"
 edition = "2018"
 authors = ["Filippo Costa @neysofu"]
 homepage = "https://github.com/neysofu/ferrum-fix"
@@ -20,35 +20,48 @@ name = "fix_decode"
 harness = false
 
 [features]
-default = ["repo_v2010", "repo_v50sp2ep254", "expose_openssl", "expose_tokio"]
-chrono-time = []
-repo_v50sp2ep254 = []
-repo_v2010 = []
+default = ["expose_openssl", "expose_tokio", "chrono_time"]
+fix40 = []
+fix41 = []
+fix42 = []
+fix43 = []
+fix50 = []
+fix50sp1 = []
+fix50sp2 = []
+fixt11 = []
+fast-encoding = []
+json-encoding = []
+fixs = []
+fixp = []
+sofh = []
+chrono_time = []
 expose_openssl = []
 expose_tokio = []
 
 [dependencies]
 bitvec = "0.18.3"
 bytes = "1"
-boolinator = "2.4.0"
 chrono = "0.4"
-fixed = "1.6"
 fnv = "1"
 futures = "0.3"
-futures-timer = "0.3"
-futures-lite = "1"
+futures-timer = "3"
 heck = "0.3"
 indoc = "1"
+lazy_static = "1"
 openssl = "0.10"
+# For writing XML.
 quick-xml = "0.22"
-phf = { version = "0.8", features = ["macros"] }
+rand = "0.8"
+# For reading XML.
 roxmltree = "0.14"
 rust_decimal = "1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
+slog = "2"
+sqlx = { version = "0.5", features = ["runtime-tokio-rustls", "postgres"] }
 strum = "0.20"
 strum_macros = "0.20"
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["net"] }
 uuid = { version = "0.8.1", features = ["v4"] }
 fefix_derive = { path = "../fefix_derive" }
 
@@ -57,6 +70,7 @@ chrono = "0.4"
 fnv = "1"
 heck = "0.3"
 indoc = "1"
+lazy_static = "1"
 quick-xml = "0.22"
 roxmltree = "0.14"
 rayon = "1"
@@ -70,4 +84,16 @@ enum-as-inner = "0.3"
 quickcheck = "1"
 quickcheck_derive = "0.3"
 quickcheck_macros = "1"
-syn = { version = "1", features = ["full"] }
+syn = { version = "1", features = ["parsing"] }
+
+# Dirty hack to enable all features for tests.
+# https://github.com/rust-lang/cargo/issues/2911#issuecomment-749580481
+[dev-dependencies.fefix]
+path = "."
+features = [
+    "fast-encoding",
+    "json-encoding",
+    "fixp",
+    "fixs",
+    "sofh",
+]

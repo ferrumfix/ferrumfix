@@ -1,3 +1,6 @@
 [submodule "fefix/resources/fix-repository"]
 	path = fefix/resources/fix-repository
 	url = https://github.com/FIXTradingCommunity/fix-repository
+[submodule "lib/quickfix"]
+	path = lib/quickfix
+	url = https://github.com/quickfix/quickfix

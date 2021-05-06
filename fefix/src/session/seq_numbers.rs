@@ -4,8 +4,8 @@ use std::num::NonZeroU64;
 /// A tracker for seq. numbers inside a FIX session.
 #[derive(Debug, Copy, Clone)]
 pub struct SeqNumbers {
-    next_inbound: u64,
-    next_outbound: u64,
+    pub next_inbound: u64,
+    pub next_outbound: u64,
 }
 
 impl SeqNumbers {

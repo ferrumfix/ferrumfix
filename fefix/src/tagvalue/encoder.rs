@@ -1,30 +1,28 @@
 use super::{Config, Configure, FvWrite};
 use crate::buffer::Buffer;
-use crate::datatypes::{CheckSum, DataType, SuperDataType};
-use crate::definitions::fixt11;
+use crate::definitions::fix44;
 use crate::dict;
 use crate::dict::IsFieldDefinition;
 use crate::dict::IsTypedFieldDefinition;
+use crate::tagvalue::datatypes::{CheckSum, FixFieldValue, SuperDataType};
 use crate::TagU16;
 use std::ops::Range;
 
 /// A buffered, content-agnostic FIX encoder.
 ///
-/// [`RawEncoder`] is the fundamental building block for building higher-level
+/// [`Encoder`] is the fundamental building block for building higher-level
 /// FIX encoders. It allows for encoding of arbitrary payloads and takes care of
 /// `BodyLength (9)` and `CheckSum (10)`.
 ///
 /// # Examples
 ///
 /// ```
-/// use fefix::tagvalue::{Config, RawEncoder};
+/// use fefix::tagvalue::{Config, Encoder};
 ///
-/// let encoder = &mut RawEncoder::<_, Config>::from_buffer(Vec::new());
+/// let encoder = &mut Encoder::<_, Config>::from_buffer(Vec::new());
 /// encoder.config_mut().set_separator(b'|');
-/// encoder.set_begin_string(b"FIX.4.4");
-/// encoder.extend_from_slice(b"35=0|49=A|56=B|34=12|52=20100304-07:59:30|");
-/// let data = encoder.finalize();
-/// assert_eq!(data, b"8=FIX.4.4|9=000042|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=216|");
+/// let msg = encoder.start_message(b"FIX.4.4", b"A");
+/// let data = msg.wrap();
 /// ```
 #[derive(Debug, Clone)]
 pub struct Encoder<B = Vec<u8>, C = Config>
@@ -78,7 +76,7 @@ where
             raw_encoder: self,
             body_start_i: 0,
         };
-        state.set(fixt11::BEGIN_STRING, begin_string);
+        state.set(fix44::BEGIN_STRING, begin_string);
         // The second field is supposed to be `BodyLength(9)`, but obviously
         // the length of the message is unknow until later in the
         // serialization phase. This alone would usually require to
@@ -94,9 +92,9 @@ where
         // some bytes but the benefits largely outweight the costs.
         //
         // Six digits (~1MB) ought to be enough for every message.
-        state.set_any(fixt11::BODY_LENGTH.tag(), b"000000" as &[u8]);
+        state.set_any(fix44::BODY_LENGTH.tag(), b"000000" as &[u8]);
         state.body_start_i = state.raw_encoder.buffer.len();
-        state.set_any(fixt11::MSG_TYPE.tag(), msg_type);
+        state.set_any(fix44::MSG_TYPE.tag(), msg_type);
         state
     }
 }
@@ -122,14 +120,14 @@ where
     pub fn set<'b, F, T>(&mut self, field: &F, value: T)
     where
         F: dict::IsFieldDefinition,
-        T: DataType<'b>,
+        T: FixFieldValue<'b>,
     {
         self.set_any(field.tag(), value)
     }
 
     pub fn set_any<'b, T>(&mut self, tag: TagU16, value: T)
     where
-        T: DataType<'b>,
+        T: FixFieldValue<'b>,
     {
         tag.serialize(&mut self.raw_encoder.buffer);
         self.raw_encoder.buffer.extend_from_slice(b"=" as &[u8]);
@@ -173,7 +171,7 @@ where
 
     fn write_checksum(&mut self) {
         let checksum = CheckSum::compute(self.raw_encoder.buffer.as_slice());
-        self.set(fixt11::CHECK_SUM, checksum);
+        self.set(fix44::CHECK_SUM, checksum);
     }
 }
 
@@ -186,14 +184,14 @@ where
 
     fn set_fv_with_key<'b, T>(&'b mut self, key: &Self::Key, value: T)
     where
-        T: DataType<'b>,
+        T: FixFieldValue<'b>,
     {
         self.set_any(*key, value);
     }
 
     fn set_fv<'b, V, T, F>(&'b mut self, field: &F, value: V)
     where
-        V: DataType<'b>,
+        V: FixFieldValue<'b>,
         T: SuperDataType<'b, V>,
         F: IsTypedFieldDefinition<T>,
     {

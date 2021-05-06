@@ -1,6 +1,6 @@
-use super::error;
-use crate::datatypes::DataType;
 use crate::Buffer;
+use crate::FixFieldValue;
+use std::convert::{TryFrom, TryInto};
 
 const LEN_IN_BYTES: usize = 8;
 
@@ -11,6 +11,10 @@ const MAX_DAY: u32 = 31;
 const MIN_YEAR: u32 = 0;
 const MIN_MONTH: u32 = 1;
 const MIN_DAY: u32 = 1;
+
+const ERR_NOT_ASCII_DIGITS: &str = "Invalid characters, expected ASCII digits.";
+const ERR_LENGTH: &str = "Invalid length, expected 8 bytes (YYYYMMDD format).";
+const ERR_BOUNDS: &str = "Values outside legal bounds.";
 
 /// Canonical data field (DTF) for
 /// [`DataType::LocalMktDate`](crate::DataType::LocalMktDate)
@@ -38,21 +42,21 @@ impl Date {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::Date;
+    /// use fefix::tagvalue::datatypes::Date;
     ///
-    /// assert!(Date::new(2021, 4, 16).is_ok());
-    /// assert!(Date::new(2021, 13, 32).is_err());
+    /// assert!(Date::new(2021, 4, 16).is_some());
+    /// assert!(Date::new(2021, 13, 32).is_none());
     ///
     /// // Support from January 1, year zero (which doesn't actually exist) to
     /// // December 31, 9999.
-    /// assert!(Date::new(0, 1, 1).is_ok());
-    /// assert!(Date::new(9999, 12, 31).is_ok());
+    /// assert!(Date::new(0, 1, 1).is_some());
+    /// assert!(Date::new(9999, 12, 31).is_some());
     ///
     /// // We don't check month-aware day boundaries, i.e. go ahead and assume
     /// // every month has 31 days.
-    /// assert!(Date::new(2021, 2, 31).is_ok());
+    /// assert!(Date::new(2021, 2, 31).is_some());
     /// ```
-    pub fn new(year: u32, month: u32, day: u32) -> Result<Self, error::Date> {
+    pub fn new(year: u32, month: u32, day: u32) -> Option<Self> {
         if year >= MIN_YEAR
             && year <= MAX_YEAR
             && month >= MIN_MONTH
@@ -60,9 +64,9 @@ impl Date {
             && day >= MIN_DAY
             && day <= MAX_DAY
         {
-            Ok(Self { year, month, day })
+            Some(Self { year, month, day })
         } else {
-            Err(error::Date::OutsideBounds)
+            None
         }
     }
 
@@ -71,7 +75,7 @@ impl Date {
     /// # Examples
     ///
     /// ```
-    /// use fefix::datatypes::Date;
+    /// use fefix::tagvalue::datatypes::Date;
     ///
     /// assert_eq!(&Date::new(2021, 01, 01).unwrap().to_bytes(), b"20210101");
     /// ```
@@ -106,23 +110,25 @@ impl Date {
         self.day
     }
 
-    #[cfg(feature = "chrono-time")]
-    pub fn to_chrono_utc_date(&self) -> chrono::Date {
-        let naive = self.to_chrono_naivedate();
-        chrono::Date::from_utc(naive, chrono::Utc)
+    #[cfg(feature = "chrono_time")]
+    pub fn to_chrono_utc(&self) -> Option<chrono::Date<chrono::Utc>> {
+        let naive = self.to_chrono_naive()?;
+        Some(chrono::Date::from_utc(naive, chrono::Utc))
     }
 
-    #[cfg(feature = "chrono-time")]
-    pub fn to_chrono_naivedate(&self) -> chrono::NaiveDate {
-        chrono::NaiveDate::from_ymd_opt(self.year(), self.month(), self.day())
+    #[cfg(feature = "chrono_time")]
+    pub fn to_chrono_naive(&self) -> Option<chrono::NaiveDate> {
+        chrono::NaiveDate::from_ymd_opt(self.year() as i32, self.month(), self.day())
     }
 }
 
-impl<'a> DataType<'a> for Date {
-    type Error = error::Date;
+impl<'a> FixFieldValue<'a> for Date {
+    type Error = &'static str;
     type SerializeSettings = ();
 
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    const IS_ASCII: bool = true;
+
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -132,34 +138,35 @@ impl<'a> DataType<'a> for Date {
     }
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        if data.len() != LEN_IN_BYTES {
-            return Err(Self::Error::WrongLength);
-        }
-        for byte in data.iter().copied() {
-            if !is_digit(byte) {
-                return Err(Self::Error::NotAsciiDigits);
+        if let Ok(bytes) = <[u8; LEN_IN_BYTES]>::try_from(data) {
+            for byte in bytes.iter().copied() {
+                if !is_digit(byte) {
+                    return Err(ERR_NOT_ASCII_DIGITS);
+                }
             }
+            deserialize(bytes)
+        } else {
+            Err(ERR_LENGTH)
         }
-        deserialize(data)
     }
 
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
-        if data.len() != LEN_IN_BYTES {
-            return Err(Self::Error::WrongLength);
+        if let Ok(bytes) = data.try_into() {
+            deserialize(bytes)
+        } else {
+            Err(ERR_LENGTH)
         }
-        deserialize(data)
     }
 }
 
-fn deserialize(data: &[u8]) -> Result<Date, error::Date> {
-    debug_assert_eq!(data.len(), LEN_IN_BYTES);
+fn deserialize(data: [u8; LEN_IN_BYTES]) -> Result<Date, &'static str> {
     let year = ascii_digit_to_u32(data[0], 1000)
         + ascii_digit_to_u32(data[1], 100)
         + ascii_digit_to_u32(data[2], 10)
         + ascii_digit_to_u32(data[3], 1);
     let month = ascii_digit_to_u32(data[4], 10) + ascii_digit_to_u32(data[5], 1);
     let day = ascii_digit_to_u32(data[6], 10) + ascii_digit_to_u32(data[7], 1);
-    Date::new(year, month, day)
+    Date::new(year, month, day).ok_or(ERR_BOUNDS)
 }
 
 const fn is_digit(byte: u8) -> bool {
@@ -173,6 +180,22 @@ const fn ascii_digit_to_u32(digit: u8, multiplier: u32) -> u32 {
 #[cfg(test)]
 mod test {
     use super::*;
+    use quickcheck::{Arbitrary, Gen};
+    use quickcheck_macros::quickcheck;
+
+    impl Arbitrary for Date {
+        fn arbitrary(g: &mut Gen) -> Self {
+            let year = u32::arbitrary(g) % 10000;
+            let month = (u32::arbitrary(g) % 12) + 1;
+            let day = (u32::arbitrary(g) % 31) + 1;
+            Date::new(year, month, day).unwrap()
+        }
+    }
+
+    #[quickcheck]
+    fn verify_serialization_behavior(date: Date) -> bool {
+        super::super::verify_serialization_behavior(date)
+    }
 
     const VALID_DATES: &[&[u8]] = &[
         b"00000101",
@@ -201,6 +224,11 @@ mod test {
         b"19800:00",  // Invalid character and invalid day.
     ];
 
+    #[quickcheck]
+    fn serialize_and_to_bytes_are_the_same(date: Date) -> bool {
+        date.to_bytes() == &FixFieldValue::to_bytes(&date)[..]
+    }
+
     #[test]
     fn lossy_and_lossless_are_equivalent() {
         // Lossy and losseless deserialization can only be meaningfully compared
@@ -212,13 +240,10 @@ mod test {
         }
     }
 
-    #[test]
-    fn new_is_consistent_with_deserialize() {
-        for bytes in VALID_DATES {
-            let date = Date::deserialize(*bytes).unwrap();
-            let date_via_new = Date::new(date.year(), date.month(), date.day()).unwrap();
-            assert_eq!(date, date_via_new);
-        }
+    #[quickcheck]
+    fn new_via_getters(date: Date) -> bool {
+        let date_via_new = Date::new(date.year(), date.month(), date.day()).unwrap();
+        date == date_via_new
     }
 
     #[test]

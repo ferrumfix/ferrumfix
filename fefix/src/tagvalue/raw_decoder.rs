@@ -187,6 +187,11 @@ where
         self.decoder.config_mut()
     }
 
+    pub fn clear(&mut self) {
+        self.buffer.clear();
+        self.error = None;
+    }
+
     /// Provides a buffer that must be filled before re-attempting to deserialize
     /// the next [`RawFrame`].
     pub fn supply_buffer(&mut self) -> &mut [u8] {
@@ -201,7 +206,8 @@ where
                 Ok(info) => {
                     let start_of_body = info.start_of_body();
                     let body_len = info.body_range().len();
-                    let total_len = start_of_body + body_len + utils::FIELD_CHECKSUM_LEN_IN_BYTES;
+                    let total_len =
+                        start_of_body + body_len + utils::FIELD_CHECKSUM_LEN_IN_BYTES;
                     let current_len = self.buffer.as_slice().len();
                     self.buffer.resize(total_len, 0);
                     &mut self.buffer.as_mut_slice()[current_len..]

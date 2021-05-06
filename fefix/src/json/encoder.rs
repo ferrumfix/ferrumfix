@@ -1,5 +1,5 @@
-use crate::datatypes::DataType;
 use crate::dict::IsFieldDefinition;
+use crate::FixFieldValue;
 
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]
@@ -54,7 +54,7 @@ pub mod encoder_states {
         /// Adds a `field` with a `value` to the current message.
         fn set<'a, T, F>(mut self, field: &F, value: T) -> Self
         where
-            T: DataType<'a>,
+            T: FixFieldValue<'a>,
             F: IsFieldDefinition,
         {
             debug_assert!(field.name().is_ascii());
@@ -85,7 +85,7 @@ pub mod encoder_states {
 
         pub fn set<T, F>(self, field: &F, value: T) -> Self
         where
-            T: DataType<'a>,
+            T: FixFieldValue<'a>,
             F: IsFieldDefinition,
         {
             EncoderStateAtTopLevel::set(self, field, value)
@@ -117,7 +117,7 @@ pub mod encoder_states {
 
         pub fn set<T, F>(self, field: &F, value: T) -> Self
         where
-            T: DataType<'a>,
+            T: FixFieldValue<'a>,
             F: IsFieldDefinition,
         {
             EncoderStateAtTopLevel::set(self, field, value)
@@ -145,7 +145,7 @@ pub mod encoder_states {
 
         pub fn set<T, F>(self, field: &F, value: T) -> Self
         where
-            T: DataType<'a>,
+            T: FixFieldValue<'a>,
             F: IsFieldDefinition,
         {
             EncoderStateAtTopLevel::set(self, field, value)

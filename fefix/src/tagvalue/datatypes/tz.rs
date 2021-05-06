@@ -1,5 +1,5 @@
 use super::error;
-use super::DataType;
+use super::FixFieldValue;
 use crate::Buffer;
 use std::{
     hash::{Hash, Hasher},
@@ -35,11 +35,13 @@ impl Tz {
     }
 }
 
-impl<'a> DataType<'a> for Tz {
+impl<'a> FixFieldValue<'a> for Tz {
     type Error = error::Timestamp;
     type SerializeSettings = ();
 
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    const IS_ASCII: bool = true;
+
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
     {
@@ -100,7 +102,8 @@ impl<'a> DataType<'a> for Tz {
             1 => Ok(Self::UTC),
             3 => {
                 let sign = if data[0] == b'+' { 1 } else { -1 };
-                let hour = ascii_digit_to_u32(data[1], 10) + ascii_digit_to_u32(data[2], 1);
+                let hour =
+                    ascii_digit_to_u32(data[1], 10) + ascii_digit_to_u32(data[2], 1);
                 Ok(Self {
                     sign,
                     offset: Duration::from_secs((hour * HOUR) as u64),
@@ -110,8 +113,10 @@ impl<'a> DataType<'a> for Tz {
             }
             6 => {
                 let sign = if data[0] == b'+' { 1 } else { -1 };
-                let hour = ascii_digit_to_u32(data[1], 10) + ascii_digit_to_u32(data[2], 1);
-                let minute = ascii_digit_to_u32(data[4], 10) + ascii_digit_to_u32(data[5], 1);
+                let hour =
+                    ascii_digit_to_u32(data[1], 10) + ascii_digit_to_u32(data[2], 1);
+                let minute =
+                    ascii_digit_to_u32(data[4], 10) + ascii_digit_to_u32(data[5], 1);
                 Ok(Self {
                     sign,
                     offset: Duration::from_secs((hour * HOUR + minute * MINUTE) as u64),

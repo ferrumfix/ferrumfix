@@ -1,4 +1,5 @@
-use crate::datatypes::CheckSum;
+use super::datatypes::CheckSum;
+use crate::tagvalue::datatypes::FixFieldValue;
 use crate::tagvalue::DecodeError;
 use std::convert::TryInto;
 
@@ -14,17 +15,6 @@ pub const MIN_FIX_MESSAGE_LEN_IN_BYTES: usize = 20;
 /// Total: 7 characters.
 pub const FIELD_CHECKSUM_LEN_IN_BYTES: usize = 7;
 
-/// Parses an `u8` from `digits` and returns the result.
-///
-/// No error detection is performed. Values less than 100 must be zero-padded.
-pub fn parse_u8_from_decimal(digits: [u8; 3]) -> u8 {
-    digits[0]
-        .wrapping_sub(b'0')
-        .wrapping_mul(100)
-        .wrapping_add(digits[1].wrapping_sub(b'0').wrapping_mul(10))
-        .wrapping_add(digits[2].wrapping_sub(b'0'))
-}
-
 /// Returns a copy of the `CheckSum <10>` digits of `message`.
 pub fn checksum_digits(message: &[u8]) -> [u8; 3] {
     debug_assert!(message.len() >= MIN_FIX_MESSAGE_LEN_IN_BYTES);
@@ -33,14 +23,17 @@ pub fn checksum_digits(message: &[u8]) -> [u8; 3] {
         .unwrap()
 }
 
-pub fn verify_checksum(message: &[u8]) -> Result<(), DecodeError> {
-    let nominal_checksum = parse_u8_from_decimal(checksum_digits(message));
-    let actual_checksum =
-        CheckSum::compute(&message[..message.len() - FIELD_CHECKSUM_LEN_IN_BYTES]).0;
-    if nominal_checksum != actual_checksum {
-        Err(DecodeError::CheckSum)
-    } else {
+pub fn verify_checksum(headerless_msg: &[u8]) -> Result<(), DecodeError> {
+    let msg_contents =
+        &headerless_msg[..headerless_msg.len() - FIELD_CHECKSUM_LEN_IN_BYTES];
+    let nominal_checksum =
+        CheckSum::deserialize_lossy(&checksum_digits(headerless_msg)[..])
+            .map_err(|_| DecodeError::CheckSum)?;
+    let actual_checksum = CheckSum::compute(msg_contents);
+    if nominal_checksum == actual_checksum {
         Ok(())
+    } else {
+        Err(DecodeError::CheckSum)
     }
 }
 
