@@ -225,8 +225,7 @@ mod test {
             let buffer = &mut vec![];
             frame.encode(buffer).unwrap();
             let frame_decoded = Frame::decode(&buffer[..]).unwrap();
-            frame_decoded.encoding_type() == encoding_type
-                && frame_decoded.message() == &data[..]
+            frame_decoded.encoding_type() == encoding_type && frame_decoded.message() == &data[..]
         }
         QuickCheck::new()
             .tests(1000)

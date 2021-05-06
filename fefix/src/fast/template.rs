@@ -117,8 +117,7 @@ impl Template {
                     "sequence" => {
                         for child in node.children() {
                             if child.is_element() {
-                                let instruction =
-                                    FieldInstruction::from_template(child)?;
+                                let instruction = FieldInstruction::from_template(child)?;
                                 instructions.push(instruction);
                             }
                         }

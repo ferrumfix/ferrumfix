@@ -157,9 +157,7 @@ const fn from_u16(value: u16) -> EncodingType {
         ETYPE_TAGVALUE => EncodingType::TagValue,
         ETYPE_FIXML_SCHEMA => EncodingType::FixmlSchema,
         ETYPE_JSON => EncodingType::Json,
-        ETYPE_FAST_START..=ETYPE_FAST_END => {
-            EncodingType::Fast((value - ETYPE_FAST_OFFSET) as u8)
-        }
+        ETYPE_FAST_START..=ETYPE_FAST_END => EncodingType::Fast((value - ETYPE_FAST_OFFSET) as u8),
         ETYPE_BSON => EncodingType::Bson,
         _ => EncodingType::Unknown(value),
     }

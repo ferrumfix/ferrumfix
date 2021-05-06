@@ -104,11 +104,7 @@ where
     }
 
     /// Writes `self` to `buffer` using custom serialization `settings`.
-    fn serialize_with<B>(
-        &self,
-        buffer: &mut B,
-        _settings: Self::SerializeSettings,
-    ) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: Self::SerializeSettings) -> usize
     where
         B: Buffer;
 
@@ -181,11 +177,7 @@ impl<'a> FixFieldValue<'a> for chrono::DateTime<chrono::Utc> {
     }
 
     #[inline(always)]
-    fn serialize_with<B>(
-        &self,
-        buffer: &mut B,
-        settings: Self::SerializeSettings,
-    ) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, settings: Self::SerializeSettings) -> usize
     where
         B: Buffer,
     {
@@ -222,11 +214,7 @@ impl<'a> FixFieldValue<'a> for chrono::NaiveDate {
     const IS_ASCII: bool = true;
 
     #[inline(always)]
-    fn serialize_with<B>(
-        &self,
-        buffer: &mut B,
-        _settings: Self::SerializeSettings,
-    ) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: Self::SerializeSettings) -> usize
     where
         B: Buffer,
     {
@@ -459,11 +447,7 @@ impl<'a> FixFieldValue<'a> for u32 {
     const IS_ASCII: bool = true;
 
     #[inline(always)]
-    fn serialize_with<B>(
-        &self,
-        buffer: &mut B,
-        padding: Self::SerializeSettings,
-    ) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, padding: Self::SerializeSettings) -> usize
     where
         B: Buffer,
     {
@@ -477,8 +461,7 @@ impl<'a> FixFieldValue<'a> for u32 {
         let bytes = buffer.as_mut_slice();
         let mut multiplier = 1;
         for i in (0..padding.len).rev() {
-            bytes[i + initial_len] =
-                ((self / multiplier) % 10).wrapping_add(b'0' as u32) as u8;
+            bytes[i + initial_len] = ((self / multiplier) % 10).wrapping_add(b'0' as u32) as u8;
             multiplier *= 10;
         }
         padding.len
