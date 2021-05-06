@@ -71,27 +71,27 @@ impl Buffer for Vec<u8> {
 
 impl Buffer for bytes::BytesMut {
     fn as_slice(&self) -> &[u8] {
-        self.as_slice()
+        &self[..]
     }
 
     fn as_mut_slice(&mut self) -> &mut [u8] {
-        self.as_mut_slice()
+        &mut self[..]
     }
 
     fn capacity(&self) -> usize {
-        self.capacity()
+        bytes::BytesMut::capacity(self)
     }
 
     fn clear(&mut self) {
-        self.clear()
+        bytes::BytesMut::clear(self)
     }
 
     fn extend_from_slice(&mut self, extend: &[u8]) {
-        self.extend_from_slice(extend)
+        bytes::BytesMut::extend_from_slice(self, extend)
     }
 
     fn resize(&mut self, new_len: usize, filler: u8) {
-        self.resize(new_len, filler)
+        bytes::BytesMut::resize(self, new_len, filler)
     }
 }
 

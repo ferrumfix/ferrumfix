@@ -60,7 +60,9 @@
 #![deny(
     unused,
     missing_debug_implementations,
+    unsafe_op_in_unsafe_fn,
     //missing_docs,
+    unconditional_recursion,
     unstable_name_collisions,
     clippy::useless_conversion,
     clippy::missing_panics_docs,

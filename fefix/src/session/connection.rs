@@ -176,11 +176,7 @@ pub trait Application: Clone {
     fn on_outbound_message(&mut self, message: &[u8]) -> Result<(), Self::Error>;
 
     #[inline(always)]
-    fn on_inbound_message(
-        &mut self,
-        message: Message,
-        is_app: bool,
-    ) -> Result<(), Self::Error> {
+    fn on_inbound_message(&mut self, message: Message, is_app: bool) -> Result<(), Self::Error> {
         println!("received message");
         if is_app {
             self.on_inbound_app_message(message)
@@ -292,13 +288,8 @@ impl FixConnection {
         }
     }
 
-    pub async fn accept<A, I, O>(
-        &mut self,
-        app: A,
-        data: I,
-        output: O,
-        decoder: DecoderBuffered,
-    ) where
+    pub async fn accept<A, I, O>(&mut self, app: A, data: I, output: O, decoder: DecoderBuffered)
+    where
         A: Application,
         I: AsyncRead + std::marker::Unpin,
         O: AsyncWrite + std::marker::Unpin,
@@ -330,11 +321,7 @@ impl FixConnection {
         self.begin_string.as_bytes()
     }
 
-    fn on_inbound_message<'a, A>(
-        &'a mut self,
-        msg: Message<'a>,
-        app: &mut A,
-    ) -> Response<'a>
+    fn on_inbound_message<'a, A>(&'a mut self, msg: Message<'a>, app: &mut A) -> Response<'a>
     where
         A: Application,
     {
@@ -522,10 +509,7 @@ impl FixConnection {
         Response::OutboundBytes(fix_message)
     }
 
-    fn make_reject_for_inaccurate_sending_time(
-        &mut self,
-        offender: Message,
-    ) -> Response {
+    fn make_reject_for_inaccurate_sending_time(&mut self, offender: Message) -> Response {
         let ref_seq_num = offender.fv(fix44::MSG_SEQ_NUM).unwrap();
         let ref_msg_type = offender.fv::<&str, _>(fix44::MSG_TYPE).unwrap();
         self.on_reject(

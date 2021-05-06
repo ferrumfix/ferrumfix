@@ -102,8 +102,7 @@ impl Version {
 
     /// Creates an [`SslAcceptorBuilder`] with fhe FIXS recommended settings.
     pub fn recommended_acceptor_builder(&self) -> SslAcceptorBuilder {
-        let mut context =
-            SslAcceptor::mozilla_intermediate_v5(SslMethod::tls()).unwrap();
+        let mut context = SslAcceptor::mozilla_intermediate_v5(SslMethod::tls()).unwrap();
         match self {
             Version::V1Draft => {
                 context

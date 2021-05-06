@@ -115,22 +115,28 @@ impl<'a> Message<'a> {
         self.internal.field_ref(field_def)
     }
 
-    pub fn field_raw<'b>(
-        &'b self,
-        name: &str,
-        location: FieldLocation,
-    ) -> Option<&'b str> {
+    pub fn field_raw<'b>(&'b self, name: &str, location: FieldLocation) -> Option<&'b str> {
         self.internal.field_raw(name, location)
     }
 
-    //type FieldsIter = FieldsIter<'a>;
-    //type FieldsIterStdHeader = FieldsIter<'a>;
-    //type FieldsIterBody = FieldsIter<'a>;
-
     /// Creates an [`Iterator`] over all FIX fields in `self`.
-    pub fn iter_fields(&self) -> impl Iterator<Item = Cow<'a, str>> {
-        // TODO
-        std::iter::empty()
+    pub fn iter_fields(&self) -> MessageFieldsIter<'a> {
+        MessageFieldsIter {
+            fields: self.internal.std_header.iter(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct MessageFieldsIter<'a> {
+    fields: std::collections::hash_map::Iter<'a, &'a str, FieldOrGroup<'a>>,
+}
+
+impl<'a> Iterator for MessageFieldsIter<'a> {
+    type Item = (&'a str, &'a FieldOrGroup<'a>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.fields.next().map(|x| (*x.0, x.1))
     }
 }
 
@@ -184,10 +190,9 @@ where
     fn message_builder<'a>(&'a mut self) -> &'a mut MessageInternal<'a> {
         self.message_builder.clear();
         unsafe {
-            std::mem::transmute::<
-                &'a mut MessageInternal<'static>,
-                &'a mut MessageInternal<'a>,
-            >(&mut self.message_builder)
+            std::mem::transmute::<&'a mut MessageInternal<'static>, &'a mut MessageInternal<'a>>(
+                &mut self.message_builder,
+            )
         }
     }
 
@@ -209,7 +214,7 @@ type Component<'a> = HashMap<&'a str, FieldOrGroup<'a>>;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(untagged)]
-enum FieldOrGroup<'a> {
+pub enum FieldOrGroup<'a> {
     Field(Cow<'a, str>),
     #[serde(borrow)]
     Group(Vec<Component<'a>>),
@@ -260,7 +265,20 @@ impl<'a> MessageInternal<'a> {
                     None
                 }
             }),
-            _ => panic!(),
+            FieldLocation::StdHeader => self.std_header.get(name).and_then(|field_or_group| {
+                if let FieldOrGroup::Field(value) = field_or_group {
+                    Some(value.borrow())
+                } else {
+                    None
+                }
+            }),
+            FieldLocation::Trailer => self.std_trailer.get(name).and_then(|field_or_group| {
+                if let FieldOrGroup::Field(value) = field_or_group {
+                    Some(value.borrow())
+                } else {
+                    None
+                }
+            }),
         }
     }
 }
@@ -271,8 +289,7 @@ mod test {
 
     const MESSAGE_SIMPLE: &str = include_str!("test_data/message_simple.json");
 
-    const MESSAGE_WITHOUT_HEADER: &str =
-        include_str!("test_data/message_without_header.json");
+    const MESSAGE_WITHOUT_HEADER: &str = include_str!("test_data/message_without_header.json");
 
     fn dict_fix44() -> Dictionary {
         Dictionary::fix44()
