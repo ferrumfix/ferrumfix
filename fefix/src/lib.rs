@@ -100,7 +100,7 @@ pub extern crate openssl;
 #[cfg(all(feature = "fixs", not(expose_openssl)))]
 pub(crate) extern crate openssl;
 
-/// Wrapper type for dealing with `Result<None, ...>` as errors.
+/// Wrapper type for dealing with `Ok<None>` as errors.
 pub type OptResult<T, E> = Result<T, OptError<E>>;
 
 /// The error variant of [`OptResult`].

@@ -12,7 +12,7 @@ const FEFIX_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 /// contents might change. The string is guaranteed not to have any trailing or
 /// leading whitespace.
 ///
-/// ```
+/// ```text
 /// // Generated automatically by FerrumFIX v0.3 on Mon, 25 Dec 1995 13:30:00 GMT.
 /// //
 /// // DO NOT MODIFY MANUALLY.

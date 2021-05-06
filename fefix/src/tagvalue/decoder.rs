@@ -1,6 +1,6 @@
 use super::{
-    Config, Configure, DecodeError, DecodeError as Error, Fv, RawDecoder,
-    RawDecoderBuffered, RawFrame,
+    Config, Configure, DecodeError, DecodeError as Error, Fv, RawDecoder, RawDecoderBuffered,
+    RawFrame,
 };
 use crate::definitions::fix44;
 use crate::dict;
@@ -104,24 +104,21 @@ where
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::{Config, Decoder};
-    /// use fefix::tags::fix42 as tags;
-    /// use fefix::{Dictionary, FixFieldAccess};
+    /// use fefix::tagvalue::{Fv, Config, Decoder};
+    /// use fefix::definitions::fix42;
+    /// use fefix::Dictionary;
     ///
-    /// let dict = Dictionary::fix44();
+    /// let dict = Dictionary::fix42();
     /// let decoder = &mut Decoder::<Config>::new(dict);
     /// let data = b"8=FIX.4.2\x019=42\x0135=0\x0149=A\x0156=B\x0134=12\x0152=20100304-07:59:30\x0110=185\x01";
     /// let message = decoder.decode(data).unwrap();
     /// assert_eq!(
-    ///     message.field_str(tags::SENDER_COMP_ID),
-    ///     Some("A")
+    ///     message.fv(fix42::SENDER_COMP_ID),
+    ///     Ok("A")
     /// );
     /// ```
     #[inline]
-    pub fn decode<'a>(
-        &'a mut self,
-        bytes: &'a [u8],
-    ) -> Result<Message<'a>, DecodeError> {
+    pub fn decode<'a>(&'a mut self, bytes: &'a [u8]) -> Result<Message<'a>, DecodeError> {
         let frame = self.raw_decoder.decode(bytes)?;
         self.from_frame(frame)
     }
@@ -134,10 +131,7 @@ where
         unsafe { std::mem::transmute(&mut self.builder) }
     }
 
-    fn from_frame<'a>(
-        &'a mut self,
-        frame: RawFrame<'a>,
-    ) -> Result<Message<'a>, DecodeError> {
+    fn from_frame<'a>(&'a mut self, frame: RawFrame<'a>) -> Result<Message<'a>, DecodeError> {
         self.builder.clear();
         let bytes = frame.as_bytes();
         let mut tag_num = 0u16;
@@ -150,8 +144,7 @@ where
         builder
             .add_field(
                 Context::top_level(fix44::BEGIN_STRING.tag()),
-                &bytes[BEGIN_STRING_OFFSET
-                    ..BEGIN_STRING_OFFSET + frame.begin_string().len()],
+                &bytes[BEGIN_STRING_OFFSET..BEGIN_STRING_OFFSET + frame.begin_string().len()],
                 should_assoc,
                 should_seq,
             )
@@ -181,14 +174,7 @@ where
         Ok(self.message_builder_mut().build(bytes))
     }
 
-    fn store_field(
-        &mut self,
-        tag: TagU16,
-        content: &[u8],
-        start: usize,
-        len: usize,
-        bytes: &[u8],
-    ) {
+    fn store_field(&mut self, tag: TagU16, content: &[u8], start: usize, len: usize, bytes: &[u8]) {
         let config_assoc = self.config().should_decode_associative();
         let config_seq = self.config().should_decode_sequential();
         let msg = self.message_builder().build(bytes);
@@ -586,7 +572,7 @@ impl Context {
 
 /// A zero-copy, allocation-free builder of [`Message`] instances.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MessageBuilder<'a> {
+struct MessageBuilder<'a> {
     fields: HashMap<Context, (&'a [u8], usize), TagHashBuilder>,
     insertion_order: Vec<Context>,
     owned_data: Vec<u8>,
@@ -598,16 +584,7 @@ pub struct MessageBuilder<'a> {
 }
 
 impl<'a> MessageBuilder<'a> {
-    /// Creates a new [`Message`] without any fields.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use fefix::MessageBuilder;
-    ///
-    /// let msg = MessageBuilder::new();
-    /// ```
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             fields: HashMap::with_capacity_and_hasher(20, TagHashBuilder {}),
             insertion_order: vec![],
@@ -621,7 +598,7 @@ impl<'a> MessageBuilder<'a> {
     }
 
     /// Removes all fields from `self`.
-    pub fn clear(&mut self) {
+    fn clear(&mut self) {
         // TODO: https://github.com/rust-lang/rust/issues/56431
         self.fields.clear();
         self.insertion_order.clear();
@@ -632,7 +609,7 @@ impl<'a> MessageBuilder<'a> {
         self.len_end_trailer = 0;
     }
 
-    pub fn add_field(
+    fn add_field(
         &mut self,
         context: Context,
         bytes: &'a [u8],
@@ -649,7 +626,7 @@ impl<'a> MessageBuilder<'a> {
         Ok(())
     }
 
-    pub fn build(&'a self, bytes: &'a [u8]) -> Message<'a> {
+    fn build(&'a self, bytes: &'a [u8]) -> Message<'a> {
         Message {
             bytes,
             builder: self,

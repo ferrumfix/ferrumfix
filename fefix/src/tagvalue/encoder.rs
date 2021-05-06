@@ -10,21 +10,19 @@ use std::ops::Range;
 
 /// A buffered, content-agnostic FIX encoder.
 ///
-/// [`RawEncoder`] is the fundamental building block for building higher-level
+/// [`Encoder`] is the fundamental building block for building higher-level
 /// FIX encoders. It allows for encoding of arbitrary payloads and takes care of
 /// `BodyLength (9)` and `CheckSum (10)`.
 ///
 /// # Examples
 ///
 /// ```
-/// use fefix::tagvalue::{Config, RawEncoder};
+/// use fefix::tagvalue::{Config, Encoder};
 ///
-/// let encoder = &mut RawEncoder::<_, Config>::from_buffer(Vec::new());
+/// let encoder = &mut Encoder::<_, Config>::from_buffer(Vec::new());
 /// encoder.config_mut().set_separator(b'|');
-/// encoder.set_begin_string(b"FIX.4.4");
-/// encoder.extend_from_slice(b"35=0|49=A|56=B|34=12|52=20100304-07:59:30|");
-/// let data = encoder.finalize();
-/// assert_eq!(data, b"8=FIX.4.4|9=000042|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=216|");
+/// let msg = encoder.start_message(b"FIX.4.4", b"A");
+/// let data = msg.wrap();
 /// ```
 #[derive(Debug, Clone)]
 pub struct Encoder<B = Vec<u8>, C = Config>
