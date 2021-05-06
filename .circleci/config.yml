@@ -4,8 +4,8 @@ jobs:
     docker:
       # specify the version
       - image: rust:latest
-
     working_directory: /usr/src/github.com/neysofu/ferrum-fix
     steps:
       - checkout
+      - run: cargo fmt --all -- --check
       - run: cargo test -j1

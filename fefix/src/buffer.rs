@@ -1,20 +1,14 @@
 //! Zero-copy buffering utilities.
 
-use std::io;
-
-/// Operations on a growable in-memory buffer. Superset of [`std::io::Write`].
+/// Operations on a growable in-memory buffer.
 ///
-/// [`Buffer`] allows common data operations on in-memory data buffers. All
-/// implementors also must infallibly implement [`std::io::Write`]. While
-/// [`std::io::Write`] only allows sequential write operations, [`Bufer`] allows
+/// [`Buffer`] allows common data operations on in-memory data buffers. While
+/// [`std::io::Write`] only allows sequential write operations, [`Buffer`] allows
 /// arbitrary data manipulation over the whole buffer.
 ///
 /// Please note that calls to [`std::io::Write::flush`] on [`Buffer`]
 /// implementors should have **no** effect.
-pub trait Buffer
-where
-    Self: io::Write,
-{
+pub trait Buffer {
     /// Returns an immutable reference to the contents of the buffer.
     fn as_slice(&self) -> &[u8];
 
@@ -50,6 +44,32 @@ where
 }
 
 impl Buffer for Vec<u8> {
+    fn as_slice(&self) -> &[u8] {
+        self.as_slice()
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [u8] {
+        self.as_mut_slice()
+    }
+
+    fn capacity(&self) -> usize {
+        self.capacity()
+    }
+
+    fn clear(&mut self) {
+        self.clear()
+    }
+
+    fn extend_from_slice(&mut self, extend: &[u8]) {
+        self.extend_from_slice(extend)
+    }
+
+    fn resize(&mut self, new_len: usize, filler: u8) {
+        self.resize(new_len, filler)
+    }
+}
+
+impl Buffer for bytes::BytesMut {
     fn as_slice(&self) -> &[u8] {
         self.as_slice()
     }

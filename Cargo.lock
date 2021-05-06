@@ -438,12 +438,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "boolinator"
-version = "2.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfa8873f51c92e232f9bac4065cddef41b714152812bfc5f7672ba16d6ef8cd9"
-
-[[package]]
 name = "bstr"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1011,17 +1005,14 @@ version = "0.1.0"
 dependencies = [
  "arbitrary",
  "bitvec 0.18.4",
- "boolinator",
  "bytes",
  "chrono",
  "criterion",
  "enum-as-inner",
  "fefix",
  "fefix_derive",
- "fixed",
  "fnv",
  "futures",
- "futures-lite",
  "futures-timer",
  "heck",
  "indoc",
@@ -1070,15 +1061,6 @@ dependencies = [
  "serde_json",
  "wasm-bindgen",
  "web-sys",
-]
-
-[[package]]
-name = "fixed"
-version = "1.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ed9c66f2c3a8da3aed1c98c2bd9d345a213fcbeb0f408369a970ffdcdc86a3f"
-dependencies = [
- "typenum",
 ]
 
 [[package]]
@@ -2847,12 +2829,8 @@ dependencies = [
  "memchr",
  "mio",
  "num_cpus",
- "once_cell",
- "parking_lot",
  "pin-project-lite 0.2.0",
- "signal-hook-registry",
  "tokio-macros",
- "winapi",
 ]
 
 [[package]]

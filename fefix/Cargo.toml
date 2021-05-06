@@ -41,19 +41,18 @@ expose_tokio = []
 [dependencies]
 bitvec = "0.18.3"
 bytes = "1"
-boolinator = "2.4.0"
 chrono = "0.4"
-fixed = "1.6"
 fnv = "1"
 futures = "0.3"
 futures-timer = "3"
-futures-lite = "1"
 heck = "0.3"
 indoc = "1"
 lazy_static = "1"
 openssl = "0.10"
+# For writing XML.
 quick-xml = "0.22"
 rand = "0.8"
+# For reading XML.
 roxmltree = "0.14"
 rust_decimal = "1"
 serde = { version = "1.0", features = ["derive"] }
@@ -62,7 +61,7 @@ slog = "2"
 sqlx = { version = "0.5", features = ["runtime-tokio-rustls", "postgres"] }
 strum = "0.20"
 strum_macros = "0.20"
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["net"] }
 uuid = { version = "0.8.1", features = ["v4"] }
 fefix_derive = { path = "../fefix_derive" }
 
