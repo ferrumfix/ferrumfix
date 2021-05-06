@@ -49,6 +49,10 @@ jobs:
           override: true
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v1
+      - name: Run cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
       - name: Run cargo fmt
         uses: actions-rs/cargo@v1
         with:
