@@ -1,4 +1,5 @@
 #[allow(dead_code)]
+#[rustfmt::skip]
 mod gdax;
 
 use fefix::tagvalue::{Config, Decoder, Fv};
