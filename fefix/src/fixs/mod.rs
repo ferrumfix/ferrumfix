@@ -79,6 +79,8 @@ impl Version {
                     .unwrap();
                 context.set_options(SslOptions::NO_COMPRESSION);
                 context.set_options(SslOptions::NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
+                // NO_TLSV1_3 requires openssl version 1.1.1
+                #[cfg(openssl111)]
                 context.set_options(SslOptions::NO_TLSV1_3);
             }
         };
@@ -104,6 +106,7 @@ impl Version {
                 context.set_options(SslOptions::CIPHER_SERVER_PREFERENCE);
                 context.set_options(SslOptions::NO_COMPRESSION);
                 context.set_options(SslOptions::NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
+                #[cfg(openssl111)]
                 context.set_options(SslOptions::NO_TLSV1_3);
             }
         };
