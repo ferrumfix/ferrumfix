@@ -102,7 +102,7 @@ impl Decimal {
     ///
     /// # Arguments
     ///
-    /// * `exp` - An `i8` that represents the *e* portion of the decimal number
+    /// * `exp` - An `i32` that represents the *e* portion of the decimal number
     /// * `mantissa` - An `i64` that represents the *m* portion of the decimal number.
     ///
     /// The value of *e* will be rounded towards 0 to stay within the legal
@@ -231,28 +231,54 @@ impl Decimal {
         }
     }
 
+    pub fn checked_abs(&self) -> Option<Self> {
+        let mantissa = self.mantissa().checked_abs()?;
+        Some(Self {
+            exp: self.exp(),
+            mantissa,
+        })
+    }
+
     /// Checked addition. Computes `self + other`, returning `None` if overflow
     /// occurred.
-    pub fn checked_add(&self, _other: Decimal) -> Option<Self> {
-        unimplemented!()
+    pub fn checked_add(&self, other: Decimal) -> Option<Self> {
+        let exp_diff = self.exp() - other.exp();
+        let mantissa_1 = self.mantissa();
+        let mantissa_2 = other
+            .mantissa()
+            // FIXME
+            .checked_mul(10i64.checked_pow(exp_diff as u32)?)?;
+        Some(Self {
+            exp: self.exp(),
+            mantissa: mantissa_1.checked_add(mantissa_2)?,
+        })
     }
 
     /// Checked subtraction. Computes `self - other`, returning `None` if overflow
     /// occurred.
-    pub fn checked_sub(&self, _other: Decimal) -> Option<Self> {
-        unimplemented!()
+    pub fn checked_sub(&self, other: Decimal) -> Option<Self> {
+        let neg_other = other.checked_neg()?;
+        self.checked_add(neg_other)
     }
 
     /// Checked multiplication. Computes `self * other`, returning `None` if overflow
     /// occurred.
-    pub fn checked_mul(&self, _other: Decimal) -> Option<Self> {
-        unimplemented!()
+    pub fn checked_mul(&self, other: Decimal) -> Option<Self> {
+        let exp = self.exp() + other.exp();
+        let mantissa = self.mantissa().checked_mul(other.mantissa())?;
+        Some(Self { exp, mantissa })
     }
 
     /// Checked division. Computes `self / other`, returning `None` if `other ==
     /// 0.0` or the division results in overflow.
-    pub fn checked_div(self, _other: Decimal) -> Option<Decimal> {
+    pub fn checked_div(self, _other: Decimal) -> Option<Self> {
         unimplemented!()
+    }
+
+    pub fn checked_neg(self) -> Option<Self> {
+        let mantissa = self.mantissa().checked_neg()?;
+        let exp = self.exp();
+        Some(Self { exp, mantissa })
     }
 
     /// Returns `true` if and only if `self` is strictly negative, `false`
@@ -505,6 +531,7 @@ impl cmp::PartialOrd for Decimal {
 
 impl cmp::Ord for Decimal {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
+        // If signs differ, there's no need for any further calculations.
         let cmp_sign = self.mantissa().signum().cmp(&other.mantissa().signum());
         if cmp_sign != Ordering::Equal {
             return cmp_sign;
