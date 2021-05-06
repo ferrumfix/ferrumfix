@@ -14,8 +14,8 @@ members = [
     "examples/05_coinbase_codegen",
     "examples/10_encode_new_order_single",
     "examples/20_fix_initiator",
-    "examples/web_json_to_tagvalue",
     "examples/30_tcp_sofh",
+    "examples/70_json_encoding",
     "examples/tls_fixua_acceptor",
     "tests/codegen_fix44",
 ]

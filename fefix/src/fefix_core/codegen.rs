@@ -1,6 +1,7 @@
 //! Code generation utilities.
 
 use super::{dict, TagU16};
+use fnv::FnvHashSet;
 use heck::{CamelCase, ShoutySnakeCase, SnakeCase};
 use indoc::indoc;
 
@@ -113,9 +114,21 @@ pub fn enum_definition(field: dict::Field) -> Option<String> {
     ))
 }
 
-pub fn field_definition(field: dict::Field, type_param: &str) -> String {
+pub fn field_definition(
+    header: &FnvHashSet<TagU16>,
+    trailer: &FnvHashSet<TagU16>,
+    field: dict::Field,
+    type_param: &str,
+) -> String {
     let name = field.name().to_shouty_snake_case();
     let tag = field.tag().to_string();
+    let field_location = if header.contains(&field.tag()) {
+        "StdHeader"
+    } else if trailer.contains(&field.tag()) {
+        "Trailer"
+    } else {
+        "Body"
+    };
     format!(
         indoc!(
             r#"
@@ -126,7 +139,7 @@ pub fn field_definition(field: dict::Field, type_param: &str) -> String {
                 is_group_leader: {group},
                 data_type: FixDataType::{data_type},
                 phantom: PhantomData,
-                location: FieldLocation::Body,
+                location: FieldLocation::{field_location},
             }};"#
         ),
         major = "4",
@@ -136,6 +149,7 @@ pub fn field_definition(field: dict::Field, type_param: &str) -> String {
         tag = tag,
         type_param = type_param,
         group = field.name().ends_with("Len"),
+        field_location = field_location,
         data_type = <&'static str as From<dict::FixDataType>>::from(field.data_type().basetype()),
     ).trim().to_string()
 }
@@ -159,6 +173,18 @@ pub fn module_with_field_definitions(dict: dict::Dictionary, fefix_path: &str) -
         .filter_map(|field| enum_definition(field))
         .collect::<Vec<String>>()
         .join("\n\n");
+    let mut header = FnvHashSet::default();
+    let mut trailer = FnvHashSet::default();
+    for item in dict.component_by_name("StandardHeader").unwrap().items() {
+        if let dict::LayoutItemKind::Field(f) = item.kind() {
+            header.insert(f.tag());
+        }
+    }
+    for item in dict.component_by_name("StandardTrailer").unwrap().items() {
+        if let dict::LayoutItemKind::Field(f) = item.kind() {
+            trailer.insert(f.tag());
+        }
+    }
     let field_defs = dict
         .iter_fields()
         .map(|field| {
@@ -173,7 +199,7 @@ pub fn module_with_field_definitions(dict: dict::Dictionary, fefix_path: &str) -
                     "static",
                 )
             };
-            field_definition(field, rust_type.as_str())
+            field_definition(&header, &trailer, field, rust_type.as_str())
         })
         .collect::<Vec<String>>()
         .join("\n");

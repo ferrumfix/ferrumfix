@@ -68,8 +68,8 @@ where
 
     pub fn start_message<'a>(
         &'a mut self,
-        begin_string: &'a [u8],
-        msg_type: &'a [u8],
+        begin_string: &[u8],
+        msg_type: &[u8],
     ) -> EncoderHandle<'a, B, C> {
         self.buffer.clear();
         let mut state = EncoderHandle {
