@@ -8,4 +8,4 @@ jobs:
     working_directory: /usr/src/github.com/neysofu/ferrum-fix
     steps:
       - checkout
-      - run: cargo test
+      - run: cargo test -j1
