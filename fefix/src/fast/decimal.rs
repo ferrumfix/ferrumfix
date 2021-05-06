@@ -368,77 +368,6 @@ impl Decimal {
         me
     }
 
-    /// Returns the least integer greater than or equal to `self`.
-    ///
-    /// ```
-    /// use fefix::fast::Decimal;
-    ///
-    /// let num = Decimal::new(100000001, -4);
-    /// assert_eq!(num.ceil(), Decimal::new(2, 0));
-    ///
-    /// let num = Decimal::new(-100000001, -4);
-    /// assert_eq!(num.ceil(), Decimal::new(1, 0));
-    ///
-    /// let num = Decimal::new(0, 0);
-    /// assert_eq!(num.ceil(), Decimal::new(0, 0));
-    /// ```
-    pub fn ceil(&self) -> Self {
-        let mut me = *self;
-        if self.is_negative() {
-            me = me.truncate();
-        } else if self.is_positive() {
-            let pow = 10i64.pow(me.exp() as u32);
-            me.mantissa = me.mantissa() + (pow - me.mantissa() % pow);
-        }
-        me
-    }
-
-    /// Returns the greatest integer less than or equal to `self`.
-    ///
-    /// ```
-    /// use fefix::fast::Decimal;
-    ///
-    /// let num = Decimal::new(100000001, 4);
-    /// assert_eq!(num.floor(), Decimal::new(1, 0));
-    ///
-    /// let num = Decimal::new(-100000001, 4);
-    /// assert_eq!(num.floor(), Decimal::new(-2, 0));
-    ///
-    /// let num = Decimal::new(0, 0);
-    /// assert_eq!(num.floor(), Decimal::new(0, 0));
-    /// ```
-    pub fn floor(&self) -> Self {
-        let mut me = *self;
-        if self.is_positive() {
-            me = me.truncate();
-        } else {
-            let pow = 10i64.pow(me.exp() as u32);
-            me.mantissa = me.mantissa() + (pow - me.mantissa() % pow);
-        }
-        me
-    }
-
-    /// Rounds `self` to the nearest whole integer.
-    /// FIXME
-    ///
-    /// ```
-    /// use fefix::fast::Decimal;
-    ///
-    /// let num = Decimal::new(100000001, -4);
-    /// assert_eq!(num.floor(), Decimal::new(1, 0));
-    ///
-    /// let num = Decimal::new(-100000001, -4);
-    /// assert_eq!(num.floor(), Decimal::new(-1, 0));
-    ///
-    /// let num = Decimal::new(0, 0);
-    /// assert_eq!(num.floor(), Decimal::new(0, 0));
-    /// ```
-    pub fn round(&self, _dp: u32, _strategy: RoundingStrategy) -> Self {
-        let mut me = *self;
-        me = me.truncate();
-        me
-    }
-
     /// Returns the power of 10 of mantissa, i.e. 10<sup>*e*</sup>.
     pub fn pow_of_ten(&self) -> i64 {
         10i64.pow(self.exp().abs() as u32)
@@ -512,15 +441,6 @@ impl fmt::Display for Decimal {
         }
         Ok(())
     }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RoundingStrategy {
-    BankersRounding,
-    RoundHalfUp,
-    RoundHalfDown,
-    RoundDown,
-    RoundUp,
 }
 
 impl cmp::PartialOrd for Decimal {
