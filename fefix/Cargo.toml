@@ -21,6 +21,7 @@ harness = false
 
 [features]
 default = ["expose_openssl", "expose_tokio", "chrono_time"]
+# FIX application versions. FIX 4.4 is always available.
 fix40 = []
 fix41 = []
 fix42 = []
@@ -29,10 +30,13 @@ fix50 = []
 fix50sp1 = []
 fix50sp2 = []
 fixt11 = []
+# FIXS: FIX-over-TLS
+fixs = []
+fixs-util-openssl = ["openssl"]
+# FIXP: FIX Performance Session Layer
+fixp = []
 fast-encoding = []
 json-encoding = []
-fixs = []
-fixp = []
 sofh = []
 chrono_time = []
 expose_openssl = []
@@ -48,7 +52,7 @@ futures-timer = "3"
 heck = "0.3"
 indoc = "1"
 lazy_static = "1"
-openssl = "0.10"
+openssl = { version = "0.10", optional = true }
 # For writing XML.
 quick-xml = "0.22"
 rand = "0.8"
@@ -86,7 +90,7 @@ quickcheck_derive = "0.3"
 quickcheck_macros = "1"
 syn = { version = "1", features = ["parsing"] }
 
-# Dirty hack to enable all features for tests.
+# Dirty hack to enable arbitrary features for tests.
 # https://github.com/rust-lang/cargo/issues/2911#issuecomment-749580481
 [dev-dependencies.fefix]
 path = "."
@@ -95,5 +99,6 @@ features = [
     "json-encoding",
     "fixp",
     "fixs",
+    "fixs-util-openssl",
     "sofh",
 ]
