@@ -1068,7 +1068,6 @@ dependencies = [
  "strum",
  "strum_macros",
  "syn",
- "tokio",
  "uuid",
 ]
 

@@ -160,7 +160,7 @@ impl Default for WithMilliseconds {
     }
 }
 
-#[cfg(feature = "chrono_time")]
+#[cfg(feature = "utils-chrono")]
 impl<'a> FixFieldValue<'a> for chrono::DateTime<chrono::Utc> {
     type Error = &'static str;
     type SerializeSettings = WithMilliseconds;
@@ -206,7 +206,7 @@ impl<'a> FixFieldValue<'a> for chrono::DateTime<chrono::Utc> {
     }
 }
 
-#[cfg(feature = "chrono_time")]
+#[cfg(feature = "utils-chrono")]
 impl<'a> FixFieldValue<'a> for chrono::NaiveDate {
     type Error = &'static str;
     type SerializeSettings = ();

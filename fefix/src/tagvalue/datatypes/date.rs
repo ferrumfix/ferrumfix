@@ -110,13 +110,13 @@ impl Date {
         self.day
     }
 
-    #[cfg(feature = "chrono_time")]
+    #[cfg(feature = "utils-chrono")]
     pub fn to_chrono_utc(&self) -> Option<chrono::Date<chrono::Utc>> {
         let naive = self.to_chrono_naive()?;
         Some(chrono::Date::from_utc(naive, chrono::Utc))
     }
 
-    #[cfg(feature = "chrono_time")]
+    #[cfg(feature = "utils-chrono")]
     pub fn to_chrono_naive(&self) -> Option<chrono::NaiveDate> {
         chrono::NaiveDate::from_ymd_opt(self.year() as i32, self.month(), self.day())
     }

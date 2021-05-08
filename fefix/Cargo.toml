@@ -20,7 +20,7 @@ name = "fix_decode"
 harness = false
 
 [features]
-default = ["expose_openssl", "expose_tokio", "chrono_time"]
+default = ["expose_openssl", "utils-tokio", "utils-chrono"]
 fix40 = []
 fix41 = []
 fix42 = []
@@ -35,9 +35,9 @@ fixs = []
 fixp = []
 sofh = []
 utils-bytes = ["bytes"]
-chrono_time = []
+utils-chrono = []
+utils-tokio = []
 expose_openssl = []
-expose_tokio = []
 
 [dependencies]
 bitvec = "0.18.3"
@@ -62,7 +62,6 @@ slog = "2"
 sqlx = { version = "0.5", features = ["runtime-tokio-rustls", "postgres"] }
 strum = "0.20"
 strum_macros = "0.20"
-tokio = { version = "1", features = ["net"] }
 uuid = { version = "0.8.1", features = ["v4"] }
 fefix_derive = { path = "../fefix_derive" }
 
