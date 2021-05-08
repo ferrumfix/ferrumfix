@@ -78,7 +78,8 @@ use std::marker::PhantomData;
 ///
 /// # Type signature
 ///
-/// `V` is the suggested [`FixFieldValue`] for this FIX field.
+/// `V` is the suggested [`FixFieldValue`] for this FIX field. It's currently
+/// not used, but might one day.
 #[derive(Debug, Clone)]
 pub struct GeneratedFieldDef<'a, V>
 where
@@ -102,7 +103,7 @@ where
 {
     #[inline(always)]
     fn tag(&self) -> TagU16 {
-        TagU16::new(self.tag).unwrap()
+        TagU16::new(self.tag).expect("Invalid tag number 0.")
     }
 
     #[inline(always)]
