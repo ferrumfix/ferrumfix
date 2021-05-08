@@ -32,7 +32,7 @@ fix50sp2 = []
 fixt11 = []
 # FIXS: FIX-over-TLS
 fixs = []
-fixs-util-openssl = ["openssl"]
+fixs-utils-openssl = ["openssl"]
 # FIXP: FIX Performance Session Layer
 fixp = []
 fast-encoding = []
@@ -99,6 +99,6 @@ features = [
     "json-encoding",
     "fixp",
     "fixs",
-    "fixs-util-openssl",
+    "fixs-utils-openssl",
     "sofh",
 ]

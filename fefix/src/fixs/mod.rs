@@ -1,8 +1,14 @@
 //! *FIX-over-TLS* ([FIXS](https://www.fixtrading.org/standards/fixs/))
 //! utilities.
+//!
+//! This module is enabled by the `fixs` feature flag. Most additional FIXS
+//! utilities are only available with the `fixs-utils-openssl` enabled, which
+//! adds a dependency to OpenSSL. The minimal OpenSSL version required is 1.1.1+,
+//! but **this may change in the future** and all users are advised to update
+//! OpenSSL to avoid any issues.
 
 use lazy_static::lazy_static;
-#[cfg(feature = "fixs-util-openssl")]
+#[cfg(feature = "fixs-utils-openssl")]
 use openssl::ssl::*;
 use std::collections::HashMap;
 
@@ -77,7 +83,7 @@ impl Version {
     }
 
     /// Creates an [`SslConnectorBuilder`] with fhe FIXS recommended settings.
-    #[cfg(feature = "fixs-util-openssl")]
+    #[cfg(feature = "fixs-utils-openssl")]
     pub fn recommended_connector_builder(&self) -> SslConnectorBuilder {
         let mut context = SslConnector::builder(SslMethod::tls()).unwrap();
         match self {
@@ -97,7 +103,7 @@ impl Version {
     }
 
     /// Creates an [`SslAcceptorBuilder`] with fhe FIXS recommended settings.
-    #[cfg(feature = "fixs-util-openssl")]
+    #[cfg(feature = "fixs-utils-openssl")]
     pub fn recommended_acceptor_builder(&self) -> SslAcceptorBuilder {
         let mut context = SslAcceptor::mozilla_intermediate_v5(SslMethod::tls()).unwrap();
         match self {
@@ -157,13 +163,13 @@ mod test {
     use super::*;
 
     #[test]
-    #[cfg(feature = "fixs-util-openssl")]
+    #[cfg(feature = "fixs-utils-openssl")]
     fn v1draft_acceptor_is_ok() {
         Version::V1Draft.recommended_acceptor_builder();
     }
 
     #[test]
-    #[cfg(feature = "fixs-util-openssl")]
+    #[cfg(feature = "fixs-utils-openssl")]
     fn v1draft_connector_is_ok() {
         Version::V1Draft.recommended_connector_builder();
     }
