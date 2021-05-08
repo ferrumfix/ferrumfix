@@ -34,13 +34,14 @@ json-encoding = []
 fixs = []
 fixp = []
 sofh = []
+utils-bytes = ["bytes"]
 chrono_time = []
 expose_openssl = []
 expose_tokio = []
 
 [dependencies]
 bitvec = "0.18.3"
-bytes = "1"
+bytes = { version = "1", optional = true }
 chrono = "0.4"
 fnv = "1"
 futures = "0.3"
@@ -96,4 +97,5 @@ features = [
     "fixp",
     "fixs",
     "sofh",
+    "utils-bytes",
 ]

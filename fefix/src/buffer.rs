@@ -69,6 +69,7 @@ impl Buffer for Vec<u8> {
     }
 }
 
+#[cfg(feature = "utils-bytes")]
 impl Buffer for bytes::BytesMut {
     fn as_slice(&self) -> &[u8] {
         &self[..]
