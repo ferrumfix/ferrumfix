@@ -20,7 +20,7 @@ name = "fix_decode"
 harness = false
 
 [features]
-default = ["expose_openssl", "utils-tokio", "utils-chrono"]
+default = ["fixs", "utils-openssl", "utils-tokio", "utils-chrono"]
 fix40 = []
 fix41 = []
 fix42 = []
@@ -29,15 +29,15 @@ fix50 = []
 fix50sp1 = []
 fix50sp2 = []
 fixt11 = []
-fast-encoding = []
-json-encoding = []
 fixs = []
 fixp = []
+fast-encoding = []
+json-encoding = []
 sofh = []
 utils-bytes = ["bytes"]
 utils-chrono = []
+utils-openssl = ["openssl"]
 utils-tokio = []
-expose_openssl = []
 
 [dependencies]
 bitvec = "0.18.3"
@@ -49,7 +49,7 @@ futures-timer = "3"
 heck = "0.3"
 indoc = "1"
 lazy_static = "1"
-openssl = "0.10"
+openssl = { version = "0.10", optional = true }
 # For writing XML.
 quick-xml = "0.22"
 rand = "0.8"
@@ -86,15 +86,16 @@ quickcheck_derive = "0.3"
 quickcheck_macros = "1"
 syn = { version = "1", features = ["parsing"] }
 
-# Dirty hack to enable all features for tests.
+# Dirty hack to enable arbitrary features for tests.
 # https://github.com/rust-lang/cargo/issues/2911#issuecomment-749580481
 [dev-dependencies.fefix]
 path = "."
 features = [
     "fast-encoding",
     "json-encoding",
+    "sofh",
     "fixp",
     "fixs",
-    "sofh",
+    "utils-openssl",
     "utils-bytes",
 ]
