@@ -6,18 +6,25 @@ use std::io::Write;
 use std::path::PathBuf;
 
 fn main() -> io::Result<()> {
-    let generated_path = project_root().join("src").join("gdax.rs");
-    let spec = quickfix_spec()?;
-    let fix_dictionary = Dictionary::from_quickfix_spec(spec).expect("Invalid specs.");
-    let rust_code = codegen::module_with_field_definitions(fix_dictionary, "fefix");
-    let mut file = File::create(generated_path)?;
+    let fix_dictionary = coinbase_fix_dictionary()?;
+    let rust_code = {
+        let settings = codegen::Settings::default();
+        codegen::gen_definitions(fix_dictionary, &settings)
+    };
+    let mut file = {
+        let path = project_root().join("src").join("gdax.rs");
+        File::create(path)?
+    };
     file.write_all(rust_code.as_bytes())?;
     Ok(())
 }
 
-fn quickfix_spec() -> io::Result<String> {
-    let path = project_root().join("src").join("coinbase_quickfix.xml");
-    std::fs::read_to_string(path)
+fn coinbase_fix_dictionary() -> io::Result<Dictionary> {
+    let quickfix_spec = {
+        let path = project_root().join("src").join("coinbase_quickfix.xml");
+        std::fs::read_to_string(path)?
+    };
+    Ok(Dictionary::from_quickfix_spec(quickfix_spec).expect("Invalid specs."))
 }
 
 fn project_root() -> PathBuf {

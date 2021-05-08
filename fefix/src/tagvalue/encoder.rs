@@ -3,8 +3,7 @@ use crate::buffer::Buffer;
 use crate::definitions::fix44;
 use crate::dict;
 use crate::dict::IsFieldDefinition;
-use crate::dict::IsTypedFieldDefinition;
-use crate::tagvalue::datatypes::{CheckSum, FixFieldValue, SuperDataType};
+use crate::tagvalue::datatypes::{CheckSum, FixFieldValue};
 use crate::TagU16;
 use std::ops::Range;
 
@@ -189,11 +188,10 @@ where
         self.set_any(*key, value);
     }
 
-    fn set_fv<'b, V, T, F>(&'b mut self, field: &F, value: V)
+    fn set_fv<'b, V, F>(&'b mut self, field: &F, value: V)
     where
         V: FixFieldValue<'b>,
-        T: SuperDataType<'b, V>,
-        F: IsTypedFieldDefinition<T>,
+        F: IsFieldDefinition,
     {
         self.set_fv_with_key(&field.tag(), value);
     }

@@ -443,7 +443,7 @@ pub struct Message<'a> {
 
 impl<'a> Message<'a> {
     pub fn group_ref(&self, tag: TagU16) -> Option<MessageGroup> {
-        let num_in_group_value: usize = self.fv_with_key(tag).ok()?;
+        let num_in_group_value: usize = self.fvl_with_key(tag).ok()?;
         let context = Context {
             tag,
             ancestry: Ancestry::from_u64(0),

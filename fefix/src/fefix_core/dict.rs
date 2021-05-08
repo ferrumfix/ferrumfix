@@ -1152,7 +1152,7 @@ impl<'a> FieldEnum<'a> {
 /// specific business meaning as described by the FIX specifications. The data
 /// domain of a [`Field`] is either a [`Datatype`] or a "code set", i.e.
 /// enumeration.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Field<'a>(&'a Dictionary, &'a FieldData);
 
 impl<'a> IsFieldDefinition for Field<'a> {
@@ -1258,8 +1258,6 @@ pub trait IsFieldDefinition {
         FieldLocation::Body // FIXME
     }
 }
-
-pub trait IsTypedFieldDefinition<V>: IsFieldDefinition {}
 
 fn layout_item_kind<'a>(item: &'a LayoutItemKindData, dict: &'a Dictionary) -> LayoutItemKind<'a> {
     match item {

@@ -37,28 +37,6 @@ pub trait FieldGetter<'a> {
         }
     }
 
-    fn fvu<'b, V, F>(&'b self, field: &'a F) -> OptResult<V, V::Error>
-    where
-        'b: 'a,
-        V: datatypes::FixFieldValue<'b>,
-        F: dict::IsFieldDefinition,
-    {
-        match self.fvu_opt(field) {
-            Some(Ok(x)) => Ok(x),
-            Some(Err(err)) => Err(OptError::Other(err)),
-            None => Err(OptError::None),
-        }
-    }
-
-    fn fvu_opt<'b, V, F>(&'b self, field: &'a F) -> Option<Result<V, V::Error>>
-    where
-        'b: 'a,
-        V: datatypes::FixFieldValue<'b>,
-        F: dict::IsFieldDefinition,
-    {
-        self.fv_raw(field).map(|raw| V::deserialize(raw))
-    }
-
     fn fvl_opt<'b, V, F>(&'b self, field: &'a F) -> Option<Result<V, V::Error>>
     where
         'b: 'a,
@@ -85,24 +63,14 @@ pub trait FieldGetter<'a> {
         }
     }
 
-    fn fvtl<'b, V, F>(&'b self, field: &'a F) -> OptResult<V, V::Error>
-    where
-        'b: 'a,
-        V: datatypes::FixFieldValue<'b>,
-        F: dict::IsTypedFieldDefinition<V>,
-    {
-        match self.fvl_opt(field) {
-            Some(Ok(x)) => Ok(x),
-            Some(Err(err)) => Err(OptError::Other(err)),
-            None => Err(OptError::None),
-        }
-    }
-
-    fn fv_with_key<'b, V>(&'b self, key: Self::Key) -> OptResult<V, V::Error>
+    fn fvl_with_key<'b, V>(&'b self, key: Self::Key) -> OptResult<V, V::Error>
     where
         V: datatypes::FixFieldValue<'b>,
     {
-        match self.fv_raw_with_key(key).map(|raw| V::deserialize(raw)) {
+        match self
+            .fv_raw_with_key(key)
+            .map(|raw| V::deserialize_lossy(raw))
+        {
             Some(Ok(x)) => Ok(x),
             Some(Err(e)) => Err(OptError::Other(e)),
             None => Err(OptError::None),

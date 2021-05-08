@@ -3,8 +3,7 @@
 //! This is the original encoding used for FIX messages and also the encoding
 //! currently used by the FIX session layer.
 
-use crate::dict::IsTypedFieldDefinition;
-use datatypes::{FixFieldValue, SuperDataType};
+use datatypes::FixFieldValue;
 use std::fmt;
 use std::fmt::Debug;
 use std::io;
@@ -22,6 +21,8 @@ pub use decoder::{Decoder, DecoderBuffered, Message, MessageGroup, MessageGroupE
 pub use encoder::{Encoder, EncoderHandle};
 pub use field_getters::FieldGetter as Fv;
 pub use raw_decoder::{RawDecoder, RawDecoderBuffered, RawFrame};
+
+use crate::dict::IsFieldDefinition;
 
 /// The type returned in the event of an error during message decoding.
 #[derive(Clone, Debug, PartialEq)]
@@ -74,9 +75,8 @@ pub trait FvWrite<'a> {
     where
         T: FixFieldValue<'b>;
 
-    fn set_fv<'b, V, T, F>(&'b mut self, field: &F, value: V)
+    fn set_fv<'b, V, F>(&'b mut self, field: &F, value: V)
     where
         V: FixFieldValue<'b>,
-        T: SuperDataType<'b, V>,
-        F: IsTypedFieldDefinition<T>;
+        F: IsFieldDefinition;
 }

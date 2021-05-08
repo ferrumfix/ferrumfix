@@ -115,5 +115,3 @@ where
         self.location
     }
 }
-
-impl<'a, V> dict::IsTypedFieldDefinition<V> for GeneratedFieldDef<'a, V> where V: FixFieldValue<'a> {}
