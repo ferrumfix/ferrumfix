@@ -1,3 +1,4 @@
+use decimal::d128;
 use fefix::definitions::fix44;
 use fefix::tagvalue::{Config, Encoder, FvWrite};
 use rust_decimal_macros::dec;
@@ -18,6 +19,7 @@ fn main() {
     );
     msg.set_fv(fix44::ORD_TYPE, fix44::OrdType::Limit);
     msg.set_fv(fix44::PRICE, dec!(150.08));
+    msg.set_fv(fix44::PRICE_DELTA, d128!(32.99));
     msg.set_fv(fix44::SIDE, fix44::Side::Buy);
     msg.set_fv(fix44::TIME_IN_FORCE, fix44::TimeInForce::Day);
 }

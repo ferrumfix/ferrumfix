@@ -154,66 +154,7 @@ impl Default for Settings {
     }
 }
 
-fn gen_field_definition_with_hashsets<S>(
-    fix_dictionary: dict::Dictionary,
-    header_tags: &FnvHashSet<TagU16>,
-    trailer_tags: &FnvHashSet<TagU16>,
-    field: dict::Field,
-    type_param: S,
-) -> String
-where
-    S: AsRef<str>,
-{
-    let name = field.name().to_shouty_snake_case();
-    let tag = field.tag().to_string();
-    let field_location = if header_tags.contains(&field.tag()) {
-        "StdHeader"
-    } else if trailer_tags.contains(&field.tag()) {
-        "Trailer"
-    } else {
-        "Body"
-    };
-    let doc_link = onixs_link_to_field(fix_dictionary.get_version(), field);
-    let doc = if let Some(doc_link) = doc_link {
-        format!(
-            "/// Field attributes for [`{} <{}>`]({}).",
-            name, tag, doc_link
-        )
-    } else {
-        format!("/// Field attributes for `{} <{}>`.", name, tag)
-    };
-    format!(
-        indoc!(
-            r#"
-                {doc}
-                pub const {identifier}: &GeneratedFieldDef<'static, {type_param}> = &GeneratedFieldDef{{
-                    name: "{name}",
-                    tag: {tag},
-                    is_group_leader: {group},
-                    data_type: FixDataType::{data_type},
-                    phantom: PhantomData,
-                    location: FieldLocation::{field_location},
-                }};"#
-        ),
-        doc = doc,
-        identifier = name,
-        name = field.name(),
-        tag = tag,
-        type_param = type_param.as_ref(),
-        group = field.name().ends_with("Len"),
-        field_location = field_location,
-        data_type = <&'static str as From<dict::FixDataType>>::from(field.data_type().basetype()),
-    )
-}
-
-pub fn gen_field_definition<S>(
-    fix_dictionary: dict::Dictionary,
-    field: dict::Field,
-    type_param: S,
-) -> String
-where
-    S: AsRef<str>,
-{
+pub fn gen_field_definition(fix_dictionary: dict::Dictionary, field: dict::Field) -> String {
     let mut header = FnvHashSet::default();
     let mut trailer = FnvHashSet::default();
     for item in fix_dictionary
@@ -234,7 +175,7 @@ where
             trailer.insert(f.tag());
         }
     }
-    gen_field_definition_with_hashsets(fix_dictionary, &header, &trailer, field, type_param)
+    gen_field_definition_with_hashsets(fix_dictionary, &header, &trailer, field)
 }
 
 /// Generates `const` implementors of
@@ -258,20 +199,7 @@ pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) ->
         .join("\n\n");
     let field_defs = fix_dictionary
         .iter_fields()
-        .map(|field| {
-            let is_enum = field.enums().is_some();
-            let rust_type = if is_enum {
-                field.name().to_camel_case()
-            } else {
-                fix_to_rust_type(
-                    field.tag(),
-                    field.data_type().basetype(),
-                    settings.fefix_crate_name(),
-                    "static",
-                )
-            };
-            gen_field_definition(fix_dictionary.clone(), field, rust_type)
-        })
+        .map(|field| gen_field_definition(fix_dictionary.clone(), field))
         .collect::<Vec<String>>()
         .join("\n");
     let top_comment =
@@ -285,9 +213,8 @@ pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) ->
 
             use {fefix_path}::dict::FieldLocation;
             use {fefix_path}::{{dict::FixDataType, Buffer}};
-            use {fefix_path}::definitions::GeneratedFieldDef;
+            use {fefix_path}::definitions::HardCodedFixFieldDefinition;
             use {fefix_path}::FixFieldValue;
-            use std::marker::PhantomData;
 
             {enum_definitions}
 
@@ -300,47 +227,6 @@ pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) ->
         fefix_path = settings.fefix_crate_name(),
     );
     code
-}
-
-fn fix_to_rust_type(
-    tag: TagU16,
-    data_type: dict::FixDataType,
-    fefix_path: &str,
-    lifetime: &str,
-) -> String {
-    if tag.get() == 10 {
-        return format!("{}::tagvalue::datatypes::CheckSum", fefix_path);
-    }
-    if data_type.base_type() == dict::FixDataType::Float {
-        return "rust_decimal::Decimal".to_string();
-    }
-    let bytes = format!("&'{} [u8]", lifetime);
-    match data_type {
-        // FIX strings are encoded as Latin-1, which is not compatible with
-        // UTF-8 and thus Rust strings. This is hardly ever a problem as most
-        // strings are ASCII, but we can't do any hazardous assumptions.
-        dict::FixDataType::String | dict::FixDataType::Data => bytes,
-        dict::FixDataType::Char => "u8".to_string(),
-        dict::FixDataType::Boolean => "bool".to_string(),
-        dict::FixDataType::Country | dict::FixDataType::Language => "[u8; 2]".to_string(),
-        dict::FixDataType::Currency => "[u8; 3]".to_string(),
-        dict::FixDataType::Exchange => "[u8; 4]".to_string(),
-        dict::FixDataType::Length => "usize".to_string(),
-        dict::FixDataType::DayOfMonth => "u32".to_string(),
-        dict::FixDataType::Int => "i64".to_string(),
-        dict::FixDataType::SeqNum => "u64".to_string(),
-        dict::FixDataType::NumInGroup => "usize".to_string(),
-        dict::FixDataType::UtcDateOnly => {
-            format!("{}::tagvalue::datatypes::Date", fefix_path)
-        }
-        dict::FixDataType::UtcTimeOnly => {
-            format!("{}::tagvalue::datatypes::Time", fefix_path)
-        }
-        dict::FixDataType::UtcTimestamp => {
-            format!("{}::tagvalue::datatypes::Timestamp", fefix_path)
-        }
-        _ => bytes,
-    }
 }
 
 #[doc(hidden)]
@@ -391,6 +277,52 @@ fn onixs_dictionary_id(fix_version: &str) -> Option<&str> {
         "FIXT.1.1" => "fixt1.1",
         _ => return None,
     })
+}
+
+fn gen_field_definition_with_hashsets(
+    fix_dictionary: dict::Dictionary,
+    header_tags: &FnvHashSet<TagU16>,
+    trailer_tags: &FnvHashSet<TagU16>,
+    field: dict::Field,
+) -> String {
+    let name = field.name().to_shouty_snake_case();
+    let tag = field.tag().to_string();
+    let field_location = if header_tags.contains(&field.tag()) {
+        "StdHeader"
+    } else if trailer_tags.contains(&field.tag()) {
+        "Trailer"
+    } else {
+        "Body"
+    };
+    let doc_link = onixs_link_to_field(fix_dictionary.get_version(), field);
+    let doc = if let Some(doc_link) = doc_link {
+        format!(
+            "/// Field attributes for [`{} <{}>`]({}).",
+            name, tag, doc_link
+        )
+    } else {
+        format!("/// Field attributes for `{} <{}>`.", name, tag)
+    };
+    format!(
+        indoc!(
+            r#"
+                {doc}
+                pub const {identifier}: &HardCodedFixFieldDefinition = &HardCodedFixFieldDefinition {{
+                    name: "{name}",
+                    tag: {tag},
+                    is_group_leader: {group},
+                    data_type: FixDataType::{data_type},
+                    location: FieldLocation::{field_location},
+                }};"#
+        ),
+        doc = doc,
+        identifier = name,
+        name = field.name(),
+        tag = tag,
+        group = field.name().ends_with("Len"),
+        field_location = field_location,
+        data_type = <&'static str as From<dict::FixDataType>>::from(field.data_type().basetype()),
+    )
 }
 
 #[cfg(test)]

@@ -12,10 +12,12 @@ cd ../../..
 # Increase number of iteration for QuickCheck.
 QUICKCHECK_TESTS="2500"
 
-# Test problematic feature combinations.
-cargo test
-cargo test --features ""
-cargo test --features "fix42"
-cargo test --features "fixt11"
-cargo test --features "fixs"
-cargo test --features "fixs, utils-openssl, fix40"
+# Test multiple feature combinations.
+cargo test # Default features
+cargo test --no-default-features --features ""
+cargo test --no-default-features --features "fix42"
+cargo test --no-default-features --features "fixt11"
+cargo test --no-default-features --features "fixs"
+cargo test --no-default-features --features "utils-bytes, utils-rust-decimal"
+cargo test --no-default-features --features "fixs, utils-openssl, fix40"
+cargo test --no-default-features --features "fix40, fix41, fix42, fix43, fix50, fix50sp1, fix50sp1, fixt11, fixp, fixs, fast-encoding, json-encoding, sofh, utils-bytes, utils-chrono, utils-decimal, utils-openssl, utils-rust-decimal"

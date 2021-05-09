@@ -88,8 +88,8 @@ mod test {
 
     impl Arbitrary for Timestamp {
         fn arbitrary(g: &mut Gen) -> Self {
-            let date = Date::arbitrary(g).to_string_opt().unwrap();
-            let time = Time::arbitrary(g).to_string_opt().unwrap();
+            let date = Date::arbitrary(g).to_string();
+            let time = Time::arbitrary(g).to_string();
             let s = format!("{}-{}", date, time);
             Self::deserialize(s.as_bytes()).unwrap()
         }

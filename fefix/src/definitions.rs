@@ -1,5 +1,43 @@
 //! Field and message definitions for all FIX application versions.
 
+use crate::{dict, dict::FixDataType, TagU16};
+
+/// Metadata about a specific FIX tag. Designed for code generation.
+///
+/// # Type signature
+///
+/// `V` is the suggested [`FixFieldValue`] for this FIX field. It's currently
+/// not used, but might one day.
+#[derive(Debug, Clone)]
+pub struct HardCodedFixFieldDefinition {
+    /// Human-readable ASCII name of this FIX field, e.g. `MsgSeqNum`.
+    pub name: &'static str,
+    /// Numeric tag associated with this FIX field.
+    pub tag: u16,
+    pub is_group_leader: bool,
+    pub data_type: FixDataType,
+    /// Expected location of this FIX field within messages - header, body, or
+    /// trailer. Used for JSON-encoded FIX messages.
+    pub location: dict::FieldLocation,
+}
+
+impl dict::IsFieldDefinition for HardCodedFixFieldDefinition {
+    #[inline(always)]
+    fn tag(&self) -> TagU16 {
+        TagU16::new(self.tag).expect("Invalid tag number 0.")
+    }
+
+    #[inline(always)]
+    fn name(&self) -> &str {
+        self.name
+    }
+
+    #[inline(always)]
+    fn location(&self) -> dict::FieldLocation {
+        self.location
+    }
+}
+
 #[cfg(feature = "fix40")]
 #[allow(dead_code)]
 #[rustfmt::skip]
@@ -69,50 +107,4 @@ pub mod fix50sp2 {
 /// Field and message definitions for FIXT.1.1.
 pub mod fixt11 {
     include!(concat!(env!("OUT_DIR"), "/fixt11.rs"));
-}
-
-use crate::{dict, dict::FixDataType, FixFieldValue, TagU16};
-use std::marker::PhantomData;
-
-/// Metadata about a specific FIX tag. Designed for code generation.
-///
-/// # Type signature
-///
-/// `V` is the suggested [`FixFieldValue`] for this FIX field. It's currently
-/// not used, but might one day.
-#[derive(Debug, Clone)]
-pub struct GeneratedFieldDef<'a, V>
-where
-    V: FixFieldValue<'a>,
-{
-    /// Human-readable ASCII name of this FIX field, e.g. `MsgSeqNum`.
-    pub name: &'static str,
-    /// Numeric tag associated with this FIX field.
-    pub tag: u16,
-    pub is_group_leader: bool,
-    pub data_type: FixDataType,
-    /// Expected location of this FIX field within messages - header, body, or
-    /// trailer. Used for JSON-encoded FIX messages.
-    pub location: dict::FieldLocation,
-    pub phantom: PhantomData<&'a V>,
-}
-
-impl<'a, V> dict::IsFieldDefinition for GeneratedFieldDef<'a, V>
-where
-    V: FixFieldValue<'a>,
-{
-    #[inline(always)]
-    fn tag(&self) -> TagU16 {
-        TagU16::new(self.tag).expect("Invalid tag number 0.")
-    }
-
-    #[inline(always)]
-    fn name(&self) -> &str {
-        self.name
-    }
-
-    #[inline(always)]
-    fn location(&self) -> dict::FieldLocation {
-        self.location
-    }
 }

@@ -117,7 +117,7 @@ mod test {
 
     #[quickcheck]
     fn serializes_as_integer(checksum: CheckSum) -> bool {
-        let serialized_str = checksum.to_string_opt().unwrap();
+        let serialized_str = checksum.to_string();
         serialized_str.parse::<u8>().unwrap() == checksum.0
     }
 

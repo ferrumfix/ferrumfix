@@ -12,16 +12,17 @@
 //! - `SeqNum`: [`u64`];
 //! - `TagNum`: [`u32`];
 //! - `DayOfMonth`: [`u32`];
-//! - `float`, `Qty`, `Price`, `PriceOffset`, `Amt`, `Percentage`: [`rust_decimal::Decimal`];
+//! - `float`, `Qty`, `Price`, `PriceOffset`, `Amt`, `Percentage`:
+//! `rust_decimal::Decimal`, `decimal::d128` or other custom types;
 //! - `char`: [`u8`] (FIX mandates the use of a single-byte encoding, so `u8` is
 //! a better fit than `char`);
 //! - `Boolean`: [`bool`];
 //! - `String`, `data`: `&[u8]`;
 //! - `MultipleCharValue`: [`MultipleChars`];
 //! - `MultipleValueString`: [`MultipleStrings`];
-//! - `Country`: `[u8; 2]`;
-//! - `Currency`: `[u8; 3]`;
-//! - `Exchange`: `[u8; 4]`;
+//! - `Country`: [`Country`];
+//! - `Currency`: [`Currency`];
+//! - `Exchange`: [`Exchange`];
 //! - `month-year`: [`MonthYear`];
 //! - `UTCTimestamp`, `LocalMktDate`: [`Timestamp`];
 //! - `UTCTimeOnly`: [`Time`];
@@ -29,18 +30,18 @@
 //! - `TZTimeOnly`: [`TzTime`];
 //! - `TZTimestamp`: [`TzTimestamp`];
 //!
-//! # Quick tour of [`DataType`]
+//! # Quick tour of [`FixFieldValue`]
 //!
 //! ```
 //! use fefix::tagvalue::datatypes::{FixFieldValue, Timestamp};
 //!
 //! let bytes = b"20130422-12:30:00.000";
 //!
-//! // You can use `DataType::deserialize` to parse data fields.
+//! // You can use `FixFieldValue::deserialize` to parse data fields.
 //! let timestamp = Timestamp::deserialize(bytes).unwrap();
 //! assert_eq!(timestamp.date().year(), 2013);
 //!
-//! // `DataType::deserialize_lossy` is like `DataType::deserialize`, but it's
+//! // `FixFieldValue::deserialize_lossy` is like `FixFieldValue::deserialize`, but it's
 //! // allowed to skip some format verification for the sake of speed.
 //! assert!(u32::deserialize(b"invalid integer").is_err());
 //! assert!(u32::deserialize_lossy(b"invalid integer").is_ok());
@@ -63,6 +64,10 @@ mod tz;
 mod tz_time;
 mod tz_timestamp;
 
+use crate::{Buffer, TagU16};
+use std::convert::TryInto;
+use std::string::ToString;
+
 pub use checksum::CheckSum;
 pub use date::Date;
 pub use monthyear::MonthYear;
@@ -74,10 +79,9 @@ pub use tz::Tz;
 pub use tz_time::TzTime;
 pub use tz_timestamp::TzTimestamp;
 
-use crate::{Buffer, TagU16};
-use rust_decimal::Decimal;
-use std::convert::TryInto;
-use std::str::FromStr;
+pub type Country = [u8; 2];
+pub type Currency = [u8; 3];
+pub type Exchange = [u8; 4];
 
 /// A trait for (de)serializing data directly into a [`Buffer`].
 pub trait FixFieldValue<'a>
@@ -90,7 +94,7 @@ where
     /// Flag that is enabled if and only if the byte representation of `Self` is
     /// always valid ASCII.
     ///
-    /// This flag is currently not used, but it will be once Rust supports
+    /// This flag is currently not used, but it might be once Rust supports
     /// fully-fledged `const` generics.
     const IS_ASCII: bool;
 
@@ -125,8 +129,16 @@ where
         buffer
     }
 
-    fn to_string_opt(&self) -> Option<String> {
-        String::from_utf8(self.to_bytes()).ok()
+    /// Allocates a [`String`] representation of `self`.
+    ///
+    /// # Panics
+    /// This function will panic if the underlying byte representation is not
+    /// valid UTF-8. As such, you should only *ever* use this function for
+    /// [`FixFieldValue`] implementors that are guaranteed to be representable
+    /// with valid UTF-8
+    /// (like numbers with ASCII digits).
+    fn to_string(&self) -> String {
+        String::from_utf8(self.to_bytes()).expect("Invalid UTF-8 representation of FIX field.")
     }
 }
 
@@ -238,7 +250,8 @@ impl<'a> FixFieldValue<'a> for chrono::NaiveDate {
     }
 }
 
-impl<'a> FixFieldValue<'a> for Decimal {
+#[cfg(feature = "utils-rust-decimal")]
+impl<'a> FixFieldValue<'a> for rust_decimal::Decimal {
     type Error = error::Decimal;
     type SerializeSettings = ();
 
@@ -250,15 +263,49 @@ impl<'a> FixFieldValue<'a> for Decimal {
         B: Buffer,
     {
         // TODO: Remove allocations.
-        let s = self.to_string();
+        let s = ToString::to_string(self);
         buffer.extend_from_slice(s.as_bytes());
         s.as_bytes().len()
     }
 
     #[inline(always)]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
+        use std::str::FromStr;
         let s = std::str::from_utf8(data).map_err(|_| Self::Error::NotUtf8)?;
-        Decimal::from_str(s).map_err(|err| Self::Error::Other(err.to_string()))
+        rust_decimal::Decimal::from_str(s).map_err(|err| Self::Error::Other(err.to_string()))
+    }
+}
+
+#[cfg(feature = "utils-decimal")]
+impl<'a> FixFieldValue<'a> for decimal::d128 {
+    type Error = decimal::Status;
+    type SerializeSettings = ();
+
+    const IS_ASCII: bool = true;
+
+    #[inline(always)]
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
+    where
+        B: Buffer,
+    {
+        // TODO: Remove allocations.
+        let s = ToString::to_string(self);
+        buffer.extend_from_slice(s.as_bytes());
+        s.as_bytes().len()
+    }
+
+    fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
+        use std::str::FromStr;
+        decimal::d128::set_status(decimal::Status::empty());
+        let s = std::str::from_utf8(data).unwrap_or("invalid UTF-8");
+        let number =
+            decimal::d128::from_str(s).expect("decimal::d128 should always parse without errors");
+        let status = decimal::d128::get_status();
+        if status.is_empty() {
+            Ok(number)
+        } else {
+            Err(status)
+        }
     }
 }
 
@@ -416,7 +463,7 @@ impl<'a> FixFieldValue<'a> for TagU16 {
     where
         B: Buffer,
     {
-        let s = self.to_string();
+        let s = ToString::to_string(self);
         buffer.extend_from_slice(s.as_bytes());
         s.len()
     }
@@ -452,7 +499,7 @@ impl<'a> FixFieldValue<'a> for u32 {
         B: Buffer,
     {
         if padding.len == 0 {
-            let s = self.to_string();
+            let s = ToString::to_string(self);
             buffer.extend_from_slice(s.as_bytes());
             return s.len();
         }
@@ -497,7 +544,7 @@ impl<'a> FixFieldValue<'a> for i32 {
     where
         B: Buffer,
     {
-        let s = self.to_string();
+        let s = ToString::to_string(self);
         buffer.extend_from_slice(s.as_bytes());
         s.len()
     }
@@ -533,7 +580,7 @@ impl<'a> FixFieldValue<'a> for u64 {
     where
         B: Buffer,
     {
-        let s = self.to_string();
+        let s = ToString::to_string(self);
         buffer.extend_from_slice(s.as_bytes());
         s.len()
     }
@@ -568,7 +615,7 @@ impl<'a> FixFieldValue<'a> for i64 {
     where
         B: Buffer,
     {
-        let s = self.to_string();
+        let s = ToString::to_string(self);
         buffer.extend_from_slice(s.as_bytes());
         s.len()
     }
@@ -604,7 +651,7 @@ impl<'a> FixFieldValue<'a> for usize {
     where
         B: Buffer,
     {
-        let s = self.to_string();
+        let s = ToString::to_string(self);
         buffer.extend_from_slice(s.as_bytes());
         s.len()
     }
@@ -627,21 +674,6 @@ impl<'a> FixFieldValue<'a> for usize {
         Ok(n)
     }
 }
-
-pub trait SuperDataType<'a, T>
-where
-    Self: FixFieldValue<'a>,
-    T: FixFieldValue<'a>,
-{
-}
-
-/// A [`DataType`] is always a [`SuperDataType`] of itself.
-impl<'a, T> SuperDataType<'a, T> for T where T: FixFieldValue<'a> {}
-
-impl<'a> SuperDataType<'a, &'a str> for &'a [u8] {}
-impl<'a> SuperDataType<'a, i64> for &'a [u8] {}
-impl<'a> SuperDataType<'a, u32> for u64 {}
-impl<'a> SuperDataType<'a, i32> for i64 {}
 
 #[cfg(test)]
 pub fn verify_serialization_behavior<T>(item: T) -> bool
@@ -680,7 +712,7 @@ mod test {
     #[quickcheck]
     fn u32_serialize(n: u32) -> bool {
         let buffer = &mut Vec::new();
-        let s = n.to_string();
+        let s = FixFieldValue::to_string(&n);
         let bytes = s.as_bytes();
         let len = n.serialize(buffer);
         bytes == buffer.as_slice() && len == bytes.len()
