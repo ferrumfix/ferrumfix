@@ -1,5 +1,5 @@
 [package]
-name = "example_fix_initiator"
+name = "example_tokio_fix_initiator"
 version = "0.1.0"
 edition = "2018"
 

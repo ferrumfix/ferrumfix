@@ -1005,18 +1005,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "example_fix_initiator"
-version = "0.1.0"
-dependencies = [
- "fefix",
- "slog",
- "slog-async",
- "slog-term",
- "tokio",
- "tokio-util",
-]
-
-[[package]]
 name = "example_json_encoding"
 version = "0.1.0"
 dependencies = [
@@ -1038,6 +1026,18 @@ name = "example_tls_fixua_acceptor"
 version = "0.1.0"
 dependencies = [
  "fefix",
+]
+
+[[package]]
+name = "example_tokio_fix_initiator"
+version = "0.1.0"
+dependencies = [
+ "fefix",
+ "slog",
+ "slog-async",
+ "slog-term",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]
