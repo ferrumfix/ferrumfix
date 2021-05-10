@@ -239,6 +239,9 @@ impl FixConnection {
                         _ => {}
                     }
                 }
+                Event::IoError { err: _err } => {
+                    return;
+                }
                 Event::Heartbeat => {
                     let heartbeat = self.on_heartbeat_is_due();
                     output.write_all(heartbeat).await.unwrap();

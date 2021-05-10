@@ -47,8 +47,15 @@ where
         futures::pin_mut!(next_message);
         select! {
             decoder = next_message => {
-                let msg = decoder.unwrap().message();
-                return Event::Message { msg };
+                match decoder {
+                    Ok(decoder) => {
+                        let msg = decoder.message();
+                        return Event::Message { msg };
+                    }
+                    Err(err) => return Event::IoError {
+                        err
+                    }
+                }
             },
             () = timer_heartbeat => {
                 self.last_heartbeat = Instant::now();
@@ -83,6 +90,7 @@ where
 #[derive(Debug)]
 pub enum Event<'a> {
     Message { msg: Message<'a> },
+    IoError { err: io::Error },
     Heartbeat,
     TestRequest,
     Logout,
