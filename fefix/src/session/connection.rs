@@ -9,6 +9,7 @@ use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use std::cmp::Ordering;
 use std::pin::Pin;
 use std::time::Duration;
+use uuid::Uuid;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MsgSeqNumCounter(pub u64);
@@ -118,6 +119,7 @@ impl FixConnectionBuilder {
 
     pub fn build(self) -> FixConnection {
         FixConnection {
+            uuid: Uuid::new_v4(),
             begin_string: self.begin_string,
             environment: self.environment,
             encoder: Encoder::from_buffer(Vec::new()),
@@ -149,6 +151,7 @@ impl Default for FixConnectionBuilder {
 /// A FIX connection message processor.
 #[derive(Debug)]
 pub struct FixConnection {
+    uuid: Uuid,
     begin_string: String,
     environment: Environment,
     encoder: Encoder,
@@ -162,7 +165,7 @@ pub struct FixConnection {
 
 #[allow(dead_code)]
 impl FixConnection {
-    pub async fn initiate<B, I, O>(
+    pub async fn start<B, I, O>(
         &mut self,
         mut app: B,
         mut input: I,

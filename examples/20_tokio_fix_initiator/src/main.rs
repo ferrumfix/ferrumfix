@@ -25,7 +25,7 @@ async fn main() -> io::Result<()> {
     let (reader, writer) = tokio::io::split(tcp_stream);
     builder
         .build()
-        .initiate(app, reader.compat(), writer.compat_write(), fix_decoder)
+        .start(app, reader.compat(), writer.compat_write(), fix_decoder)
         .await;
     Ok(())
 }
