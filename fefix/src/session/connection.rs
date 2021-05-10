@@ -1,13 +1,12 @@
-use super::errs;
-use crate::definitions::fix44;
+use super::{errs, Backend};
 use crate::dict::IsFieldDefinition;
 use crate::session::{Environment, SeqNumbers};
 use crate::tagvalue::Fv;
 use crate::tagvalue::Message;
 use crate::tagvalue::{Decoder, DecoderBuffered, Encoder, EncoderHandle};
+use crate::{definitions::fix44, session::Event, session::EventLoop};
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use std::cmp::Ordering;
-use std::ops::Range;
 use std::pin::Pin;
 use std::time::Duration;
 
@@ -17,11 +16,13 @@ pub struct MsgSeqNumCounter(pub u64);
 impl MsgSeqNumCounter {
     pub const START: Self = Self(0);
 
+    #[inline(always)]
     pub fn next(&mut self) -> u64 {
         self.0 += 1;
         self.0
     }
 
+    #[inline(always)]
     pub fn expected(&self) -> u64 {
         self.0 + 1
     }
@@ -36,14 +37,10 @@ impl Iterator for MsgSeqNumCounter {
 }
 
 #[derive(Debug, Clone)]
-pub enum Event<'a> {
-    Inbound(Message<'a>),
-    Resend(Range<u64>),
-}
-
-#[derive(Debug, Clone)]
 #[cfg_attr(test, derive(enum_as_inner::EnumAsInner))]
 pub enum Response<'a> {
+    None,
+    ResetHeartbeat,
     TerminateTransport,
     Application(Message<'a>),
     Session(&'a [u8]),
@@ -163,47 +160,16 @@ pub struct FixConnection {
     target_comp_id: String,
 }
 
-pub trait Application: Clone {
-    type Error;
-
-    #[inline(always)]
-    fn on_heartbeat_is_due(&mut self) -> Result<(), Self::Error> {
-        Ok(())
-    }
-
-    fn on_inbound_app_message(&mut self, message: Message) -> Result<(), Self::Error>;
-
-    fn on_outbound_message(&mut self, message: &[u8]) -> Result<(), Self::Error>;
-
-    #[inline(always)]
-    fn on_inbound_message(&mut self, message: Message, is_app: bool) -> Result<(), Self::Error> {
-        println!("received message");
-        if is_app {
-            self.on_inbound_app_message(message)
-        } else {
-            Ok(())
-        }
-    }
-
-    fn on_resend_request(&mut self, range: Range<u64>) -> Result<(), Self::Error>;
-
-    fn on_successful_handshake(&mut self) -> Result<(), Self::Error>;
-
-    fn fetch_messages(&mut self) -> Result<&[&[u8]], Self::Error>;
-
-    fn pending_message(&mut self) -> Option<&[u8]>;
-}
-
 #[allow(dead_code)]
 impl FixConnection {
-    pub async fn initiate<A, I, O>(
+    pub async fn initiate<B, I, O>(
         &mut self,
-        mut app: A,
+        mut app: B,
         mut input: I,
         mut output: O,
         decoder: Decoder,
     ) where
-        A: Application,
+        B: Backend,
         I: AsyncRead + std::marker::Unpin,
         O: AsyncWrite + std::marker::Unpin,
     {
@@ -229,13 +195,14 @@ impl FixConnection {
             let mut input = Pin::new(&mut input);
             let buffer = decoder.supply_buffer();
             input.read_exact(buffer).await.unwrap();
-            if let Ok(Some(_)) = decoder.current_message() {
+            if let Ok(Some(())) = decoder.state() {
                 logon = decoder.message();
                 break;
             }
         }
         self.on_logon(logon);
         app.on_inbound_message(logon, true).ok();
+        decoder.clear();
         self.msg_seq_num_inbound.next();
         app.on_successful_handshake().ok();
         self.event_loop(app, input, output, decoder).await;
@@ -244,53 +211,45 @@ impl FixConnection {
     pub async fn event_loop<A, I, O>(
         &mut self,
         mut app: A,
-        mut data: I,
+        input: I,
         mut output: O,
-        mut decoder: DecoderBuffered,
+        decoder: DecoderBuffered,
     ) where
-        A: Application,
+        A: Backend,
         I: AsyncRead + std::marker::Unpin,
         O: AsyncWrite + std::marker::Unpin,
     {
-        use futures::future::{self, Either};
-        let mut heartbeat_timer = futures_timer::Delay::new(Duration::from_secs(3));
+        let event_loop = &mut EventLoop::new(decoder, input, self.heartbeat);
         loop {
-            let mut pinned = Pin::new(&mut data);
-            let buffer = decoder.supply_buffer();
-            let bytes = pinned.read_exact(buffer);
-            match future::select(bytes, heartbeat_timer).await {
-                Either::Left((res, x)) => {
-                    if res.is_err() {
-                        break;
-                    }
-                    if let Ok(Some(_)) = decoder.current_message() {
-                        let msg = decoder.message();
-                        let response = self.on_inbound_message(msg, &mut app);
-                        match response {
-                            Response::OutboundBytes(bytes) => {
-                                output.write_all(bytes).await.unwrap();
-                                app.on_outbound_message(bytes).ok();
-                            }
-                            _ => {}
+            let event = event_loop.next().await;
+            match event {
+                Event::Message { msg } => {
+                    let response = self.on_inbound_message(msg, &mut app);
+                    match response {
+                        Response::OutboundBytes(bytes) => {
+                            output.write_all(bytes).await.unwrap();
+                            app.on_outbound_message(bytes).ok();
                         }
-                        self.msg_seq_num_inbound.next();
-                        decoder.clear();
+                        Response::ResetHeartbeat => {
+                            event_loop.heartbeat();
+                        }
+                        _ => {}
                     }
-                    heartbeat_timer = x;
                 }
-                Either::Right((_y, _)) => {
+                Event::Heartbeat => {
                     let heartbeat = self.on_heartbeat_is_due();
                     output.write_all(heartbeat).await.unwrap();
                     app.on_outbound_message(heartbeat).ok();
-                    heartbeat_timer = futures_timer::Delay::new(Duration::from_secs(3));
                 }
-            };
+                Event::Logout => {}
+                Event::TestRequest => {}
+            }
         }
     }
 
-    pub async fn accept<A, I, O>(&mut self, app: A, data: I, output: O, decoder: DecoderBuffered)
+    pub async fn accept<B, I, O>(&mut self, app: B, data: I, output: O, decoder: DecoderBuffered)
     where
-        A: Application,
+        B: Backend,
         I: AsyncRead + std::marker::Unpin,
         O: AsyncWrite + std::marker::Unpin,
     {
@@ -321,9 +280,9 @@ impl FixConnection {
         self.begin_string.as_bytes()
     }
 
-    fn on_inbound_message<'a, A>(&'a mut self, msg: Message<'a>, app: &mut A) -> Response<'a>
+    fn on_inbound_message<'a, B>(&'a mut self, msg: Message<'a>, app: &mut B) -> Response<'a>
     where
-        A: Application,
+        B: Backend,
     {
         let env = self.environment();
         // Check `TestMessageIndicator <464>`.
@@ -332,10 +291,12 @@ impl FixConnection {
                 return self.on_wrong_environment(msg);
             }
         }
+        let msg_seq_num = msg.fv::<u64, _>(fix44::MSG_SEQ_NUM);
         // Compare seq. numbers.
-        let msg_seq_num_cmp = msg
-            .fv::<u64, _>(fix44::MSG_SEQ_NUM)
-            .map(|seqnum| seqnum.cmp(&self.msg_seq_num_inbound.expected()));
+        let msg_seq_num_cmp =
+            msg_seq_num.map(|seqnum| seqnum.cmp(&self.msg_seq_num_inbound.expected()));
+        // Increment immediately.
+        self.msg_seq_num_inbound.next();
         // Compare the incoming seq. number to the one we expected and act
         // accordingly.
         match msg_seq_num_cmp {
@@ -355,32 +316,62 @@ impl FixConnection {
         if !self.sending_time_is_ok(&msg) {
             return self.make_reject_for_inaccurate_sending_time(msg);
         }
-        match msg.fv::<&[u8], _>(fix44::MSG_TYPE) {
-            Ok(b"A") => {
+        let msg_type = msg.fv::<&[u8], _>(fix44::MSG_TYPE).unwrap();
+        match msg_type {
+            b"A" => {
                 self.on_logon(msg);
                 app.on_inbound_message(msg, false).ok();
-                return Response::OutboundBytes(b"");
+                return Response::None;
             }
-            Ok(b"1") => {
+            b"1" => {
                 app.on_inbound_message(msg, false).ok();
-                self.on_test_request(msg);
+                let msg = self.on_test_request(msg);
+                return Response::OutboundBytes(msg);
             }
-            Ok(b"2") => {
+            b"2" => {
                 app.on_inbound_message(msg, false).ok();
+                self.on_resend_request(&msg, app);
+                return Response::None;
             }
-            Ok(b"5") => {
+            b"5" => {
                 app.on_inbound_message(msg, false).ok();
+                return Response::OutboundBytes(self.on_logout(&msg));
             }
-            Ok(b"0") => {
+            b"0" => {
                 self.on_heartbeat(msg);
                 app.on_inbound_message(msg, false).ok();
+                return Response::ResetHeartbeat;
             }
             _ => {
                 app.on_inbound_app_message(msg).ok();
                 return self.on_application_message(msg);
             }
         }
-        todo!()
+    }
+
+    fn on_resend_request<B>(&self, msg: &Message, app: &mut B)
+    where
+        B: Backend,
+    {
+        let begin_seq_num = msg.fv(fix44::BEGIN_SEQ_NO).unwrap();
+        let end_seq_num = msg.fv(fix44::END_SEQ_NO).unwrap();
+        app.on_resend_request(begin_seq_num..end_seq_num).ok();
+    }
+
+    fn on_logout(&mut self, _msg: &Message) -> &[u8] {
+        let fix_message = {
+            let begin_string = self.begin_string.as_bytes();
+            let sender_comp_id = self.sender_comp_id.as_str();
+            let target_comp_id = self.target_comp_id.as_str();
+            let msg_seq_num = self.msg_seq_num_outbound.next();
+            let mut msg = self.encoder.start_message(begin_string, b"5");
+            msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
+            msg.set(fix44::TARGET_COMP_ID, target_comp_id);
+            msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
+            msg.set(fix44::TEXT, "Logout");
+            msg.wrap()
+        };
+        fix_message
     }
 
     fn sending_time_is_ok(&self, msg: &Message) -> bool {

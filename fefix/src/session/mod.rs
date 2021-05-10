@@ -16,33 +16,49 @@ pub mod backends;
 mod config;
 mod connection;
 mod errs;
+mod event_loop;
 mod heartbeat_rule;
 mod resend_request_range;
 mod seq_numbers;
 
 pub use config::{Config, Configure};
 pub use connection::*;
+pub use event_loop::*;
 pub use heartbeat_rule::HeartbeatRule;
 pub use resend_request_range::ResendRequestRange;
 pub use seq_numbers::{SeqNumberError, SeqNumbers};
 
-use std::future::Future;
+use crate::tagvalue::Message;
 use std::ops::Range;
 
-pub trait Backend<'a> {
+pub trait Backend: Clone {
     type Error;
-    type IStore: Future<Output = Result<(), Self::Error>>;
-    type IMessages: Future<Output = Result<Vec<u8>, Self::Error>>;
-    type ISessionState: Future<Output = Result<Option<State>, Self::Error>>;
-    type ICreateSession: Future<Output = Result<u128, Self::Error>>;
 
-    fn create_session(&mut self) -> Self::ICreateSession;
+    #[inline(always)]
+    fn on_heartbeat_is_due(&mut self) -> Result<(), Self::Error> {
+        Ok(())
+    }
 
-    fn session_state(&self, session_id: u128) -> Self::ISessionState;
+    fn on_inbound_app_message(&mut self, message: Message) -> Result<(), Self::Error>;
 
-    fn messages(&'a self, session_id: u128, range: Range<u64>) -> Self::IMessages;
+    fn on_outbound_message(&mut self, message: &[u8]) -> Result<(), Self::Error>;
 
-    fn store(&mut self, session_id: u128, fix_message: &[u8]) -> Self::IStore;
+    #[inline(always)]
+    fn on_inbound_message(&mut self, message: Message, is_app: bool) -> Result<(), Self::Error> {
+        if is_app {
+            self.on_inbound_app_message(message)
+        } else {
+            Ok(())
+        }
+    }
+
+    fn on_resend_request(&mut self, range: Range<u64>) -> Result<(), Self::Error>;
+
+    fn on_successful_handshake(&mut self) -> Result<(), Self::Error>;
+
+    fn fetch_messages(&mut self) -> Result<&[&[u8]], Self::Error>;
+
+    fn pending_message(&mut self) -> Option<&[u8]>;
 }
 
 #[derive(Debug, Clone)]

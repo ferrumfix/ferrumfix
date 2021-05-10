@@ -271,31 +271,34 @@ where
     /// decoder.config_mut().set_separator(b'|');
     /// assert_eq!(decoder.config().separator(), b'|');
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn config_mut(&mut self) -> &mut C {
         self.decoder.config_mut()
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn supply_buffer(&mut self) -> &mut [u8] {
         self.raw_decoder.supply_buffer()
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn clear(&mut self) {
         self.raw_decoder.clear();
     }
 
-    #[inline]
-    pub fn current_message(&mut self) -> Result<Option<Message>, DecodeError> {
+    #[inline(always)]
+    pub fn state(&mut self) -> Result<Option<()>, DecodeError> {
         match self.raw_decoder.current_frame() {
-            Ok(Some(frame)) => self.decoder.from_frame(frame).map(|msg| Some(msg)),
+            Ok(Some(frame)) => {
+                self.decoder.from_frame(frame)?;
+                Ok(Some(()))
+            }
             Ok(None) => Ok(None),
             Err(e) => Err(e),
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn message(&self) -> Message {
         self.decoder.builder.build(
             self.raw_decoder
@@ -442,6 +445,10 @@ pub struct Message<'a> {
 }
 
 impl<'a> Message<'a> {
+    pub fn len(&self) -> usize {
+        self.builder.insertion_order.len()
+    }
+
     pub fn group_ref(&self, tag: TagU16) -> Option<MessageGroup> {
         let num_in_group_value: usize = self.fvl_with_key(tag).ok()?;
         let context = Context {
@@ -464,8 +471,36 @@ impl<'a> Message<'a> {
             .map(|x| x.0)
     }
 
+    pub fn fields(&self) -> Fields<'a> {
+        Fields {
+            message: &self.builder,
+            i: 0,
+        }
+    }
+
     pub fn as_bytes(&self) -> &[u8] {
         self.bytes
+    }
+}
+
+#[derive(Debug)]
+pub struct Fields<'a> {
+    message: &'a MessageBuilder<'a>,
+    i: usize,
+}
+
+impl<'a> Iterator for Fields<'a> {
+    type Item = &'a [u8];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.i == self.message.insertion_order.len() {
+            None
+        } else {
+            let context = self.message.insertion_order[self.i];
+            let bytes = self.message.fields.get(&context).unwrap().0;
+            self.i += 1;
+            Some(bytes)
+        }
     }
 }
 

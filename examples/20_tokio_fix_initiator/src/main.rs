@@ -45,7 +45,7 @@ impl Application {
     }
 }
 
-impl fefix::session::Application for Application {
+impl fefix::session::Backend for Application {
     type Error = ();
 
     fn on_inbound_app_message(
@@ -63,13 +63,13 @@ impl fefix::session::Application for Application {
         if let Ok(s) = std::str::from_utf8(message.as_bytes()) {
             debug!(
                 self.logger,
-                "<= FIX message.";
+                "Inbound FIX message.";
                 "message" => s,
             );
         } else {
             debug!(
                 self.logger,
-                "<= FIX message.";
+                "Inbound FIX message.";
                 "message" => "(invalid UTF-8)",
             );
         }
@@ -80,7 +80,7 @@ impl fefix::session::Application for Application {
         if let Ok(s) = std::str::from_utf8(message) {
             debug!(
                 self.logger,
-                "=> FIX message.";
+                "Outbound FIX message.";
                 "message" => s,
             );
         }
