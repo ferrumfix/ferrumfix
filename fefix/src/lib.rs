@@ -86,6 +86,7 @@ pub mod fixp;
 pub mod fixs;
 #[cfg(feature = "json-encoding")]
 pub mod json;
+pub mod prelude;
 pub mod session;
 #[cfg(feature = "sofh")]
 pub mod sofh;
