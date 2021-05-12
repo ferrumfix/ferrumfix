@@ -1,9 +1,9 @@
-/// Convenience re-exports of common traits and various items within `fefix`.
+//! Convenience re-exports of common traits and various items within `fefix`.
 
-pub use crate::TagU16;
 pub use crate::dict::Dictionary;
 pub use crate::dict::IsFieldDefinition;
 pub use crate::tagvalue::Fv;
+pub use crate::TagU16;
 
 #[cfg(feature = "fix40")]
 pub use crate::definitions::fix40;
