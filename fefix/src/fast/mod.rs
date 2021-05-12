@@ -13,9 +13,9 @@ mod errors;
 mod field_operators;
 mod template;
 
+pub use self::decimal::Decimal;
 pub use codec::{Codec, PresenceMap};
 pub use codegen::template_struct as codegen_template_struct;
-pub use self::decimal::Decimal;
 pub use errors::{DynamicError, Error, ReportableError, StaticError};
 pub use field_operators::*;
 pub use template::*;
