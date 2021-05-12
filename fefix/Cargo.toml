@@ -38,8 +38,9 @@ utils-bytes = ["bytes"]
 utils-chrono = []
 utils-decimal = ["decimal"]
 utils-openssl = ["openssl"]
-utils-tokio = []
 utils-rust-decimal = ["rust_decimal"]
+utils-slog = ["slog"]
+utils-tokio = []
 
 [dependencies]
 bitvec = "0.18.3"
@@ -61,7 +62,7 @@ roxmltree = "0.14"
 rust_decimal = { version = "1", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
-slog = "2"
+slog = { version = "2", optional = true }
 sqlx = { version = "0.5", features = ["runtime-tokio-rustls", "postgres"] }
 strum = "0.20"
 strum_macros = "0.20"

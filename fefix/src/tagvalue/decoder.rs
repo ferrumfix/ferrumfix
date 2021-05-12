@@ -520,6 +520,7 @@ impl<'a> Fv<'a> for Message<'a> {
     }
 }
 
+#[cfg(feature = "utils-slog")]
 impl<'a> slog::Value for Message<'a> {
     fn serialize(
         &self,
