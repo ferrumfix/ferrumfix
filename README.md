@@ -3,7 +3,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/fefix)](https://crates.io/crates/fefix)
 [![Docs.rs](https://img.shields.io/badge/docs.rs-latest-green)](https://docs.rs/fefix/)
-[![Minimal rustc version](https://img.shields.io/badge/rustc-1.51%2B-lightgrey)](https://img.shields.io/badge/rustc-1.51%2B-lightgrey)
+[![Minimal rustc version](https://img.shields.io/badge/rustc-1.52%2B-lightgrey)](https://img.shields.io/badge/rustc-1.52%2B-lightgrey)
 [![matrix.org](https://img.shields.io/badge/matrix.org-%23ferrum--fix-blue)](https://matrix.to/#/#ferrum-fix:matrix.org)
 [![License](https://img.shields.io/crates/l/fefix)](https://crates.io/crates/fefix)
 [![CI status](https://img.shields.io/github/workflow/status/neysofu/ferrum-fix/CI/develop)](https://github.com/neysofu/ferrum-fix/actions)
