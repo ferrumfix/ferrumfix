@@ -13,6 +13,7 @@ members = [
     "examples/03_decode_fix_stream",
     "examples/05_coinbase_codegen",
     "examples/10_encode_new_order_single",
+    "examples/12_derive_side",
     "examples/20_tokio_fix_initiator",
     "examples/30_tcp_sofh",
     "examples/70_json_encoding",

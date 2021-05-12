@@ -92,6 +92,9 @@ pub mod session;
 pub mod sofh;
 pub mod tagvalue;
 
+#[cfg(feature = "derive")]
+pub use fefix_derive::*;
+
 pub use buffer::Buffer;
 pub use dict::Dictionary;
 pub use fefix_derive::FixFieldValue;

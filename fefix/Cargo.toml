@@ -21,6 +21,7 @@ harness = false
 
 [features]
 default = ["fixs", "utils-openssl", "utils-tokio", "utils-chrono"]
+derive = []
 fix40 = []
 fix41 = []
 fix42 = []

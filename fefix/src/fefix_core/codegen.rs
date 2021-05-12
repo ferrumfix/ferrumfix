@@ -212,7 +212,7 @@ pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) ->
             // {top_comment}
 
             use {fefix_path}::dict::FieldLocation;
-            use {fefix_path}::{{dict::FixDataType, Buffer}};
+            use {fefix_path}::dict::FixDataType;
             use {fefix_path}::definitions::HardCodedFixFieldDefinition;
             use {fefix_path}::FixFieldValue;
 

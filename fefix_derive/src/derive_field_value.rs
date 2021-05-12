@@ -1,6 +1,6 @@
 use darling::{FromDeriveInput, FromVariant};
 use proc_macro::TokenStream;
-use proc_macro2::{Literal, TokenTree};
+use proc_macro2::{Ident, Literal, Span, TokenTree};
 use quote::quote;
 
 pub fn derive_field_value(input: TokenStream) -> TokenStream {
@@ -37,6 +37,11 @@ pub fn derive_field_value(input: TokenStream) -> TokenStream {
         })
         .take_enum()
         .expect("Invalid enum");
+    let fefix_crate_info = proc_macro_crate::crate_name("fefix").expect("Cargo.toml fefix issues");
+    let fefix_crate_name = match fefix_crate_info {
+        proc_macro_crate::FoundCrate::Itself => Ident::new("crate", Span::call_site()),
+        proc_macro_crate::FoundCrate::Name(s) => Ident::new(s.as_str(), Span::call_site()),
+    };
     let gen = quote! {
         impl<'a> FixFieldValue<'a> for #identifier {
             type Error = ();
@@ -46,17 +51,17 @@ pub fn derive_field_value(input: TokenStream) -> TokenStream {
 
             fn serialize_with<B>(&self, buffer: &mut B, _settings: Self::SerializeSettings) -> usize
             where
-                B: Buffer,
+                B: #fefix_crate_name::Buffer,
             {
                 match self {
                     #(#matching_cases)*
                 }
             }
 
-            fn deserialize(data: &'a [u8]) -> Result<Self, <Self as FixFieldValue<'a>>::Error> {
+            fn deserialize(data: &'a [u8]) -> ::std::result::Result<Self, <Self as FixFieldValue<'a>>::Error> {
                 match data {
                     #(#deserialize_matching_cases),*,
-                    _ => Err(())
+                    _ => ::std::result::Result::Err(())
                 }
             }
         }
