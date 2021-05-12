@@ -13,6 +13,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 fn main() -> io::Result<()> {
+    println!("cargo:rerun-if-changed=src/fefix_core");
     #[cfg(feature = "fix40")]
     codegen(Dictionary::fix40(), "fix40.rs")?;
     #[cfg(feature = "fix41")]
