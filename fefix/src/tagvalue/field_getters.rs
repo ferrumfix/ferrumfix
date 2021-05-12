@@ -2,6 +2,15 @@ use crate::{dict, tagvalue::datatypes};
 use crate::{OptError, OptResult};
 
 /// A trait to retrieve field values in a FIX message.
+///
+/// # Field getters naming scheme
+///
+/// All getters start with `fv`, which stands for Field Value.
+/// - `l` stands for *lossy*, i.e. invalid field values might not be detected to
+/// improve performance.
+/// - `_with_key` stands for *with key*, i.e. you won't use a field definition but
+/// direct key (i.e. field name or tag).
+/// - `_opt` stands for *optional*, for better error reporting.
 pub trait FieldGetter<'a> {
     type Key;
 
