@@ -15,7 +15,7 @@ mod template;
 
 pub use codec::{Codec, PresenceMap};
 pub use codegen::template_struct as codegen_template_struct;
-pub use decimal::Decimal;
+pub use self::decimal::Decimal;
 pub use errors::{DynamicError, Error, ReportableError, StaticError};
 pub use field_operators::*;
 pub use template::*;
