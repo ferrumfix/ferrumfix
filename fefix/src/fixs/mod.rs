@@ -15,7 +15,8 @@ use std::collections::HashMap;
 lazy_static! {
     static ref IANA_TO_OPENSSL: HashMap<String, String> = {
         let json_file = include_str!("iana2openssl.json");
-        serde_json::from_str(json_file).unwrap()
+        serde_json::from_str(json_file)
+            .expect("IANA-to-OpenSSL mapping JSON file is invalid. This is a bug.")
     };
 }
 
