@@ -1,12 +1,13 @@
-use super::{errs, Backend};
+use super::{errs, Backend, LlEvent, LlEventLoop};
+use crate::definitions::fix44;
 use crate::dict::IsFieldDefinition;
 use crate::session::{Environment, SeqNumbers};
 use crate::tagvalue::Fv;
 use crate::tagvalue::Message;
 use crate::tagvalue::{Decoder, DecoderBuffered, Encoder, EncoderHandle};
-use crate::{definitions::fix44, session::Event, session::EventLoop};
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use std::cmp::Ordering;
+use std::marker::Unpin;
 use std::pin::Pin;
 use std::time::Duration;
 use uuid::Uuid;
@@ -173,8 +174,25 @@ impl FixConnection {
         decoder: Decoder,
     ) where
         B: Backend,
-        I: AsyncRead + std::marker::Unpin,
-        O: AsyncWrite + std::marker::Unpin,
+        I: AsyncRead + Unpin,
+        O: AsyncWrite + Unpin,
+    {
+        let mut decoder = decoder.buffered();
+        self.establish_connection(&mut app, &mut input, &mut output, &mut decoder)
+            .await;
+        self.event_loop(app, input, output, decoder).await;
+    }
+
+    async fn establish_connection<A, I, O>(
+        &mut self,
+        app: &mut A,
+        mut input: &mut I,
+        output: &mut O,
+        decoder: &mut DecoderBuffered,
+    ) where
+        A: Backend,
+        I: AsyncRead + Unpin,
+        O: AsyncWrite + Unpin,
     {
         let logon = {
             let begin_string = self.begin_string.as_bytes();
@@ -192,7 +210,6 @@ impl FixConnection {
         };
         output.write(logon).await.unwrap();
         app.on_outbound_message(logon).ok();
-        let mut decoder = decoder.buffered();
         let logon;
         loop {
             let mut input = Pin::new(&mut input);
@@ -208,10 +225,9 @@ impl FixConnection {
         decoder.clear();
         self.msg_seq_num_inbound.next();
         app.on_successful_handshake().ok();
-        self.event_loop(app, input, output, decoder).await;
     }
 
-    pub async fn event_loop<A, I, O>(
+    async fn event_loop<A, I, O>(
         &mut self,
         mut app: A,
         input: I,
@@ -219,14 +235,14 @@ impl FixConnection {
         decoder: DecoderBuffered,
     ) where
         A: Backend,
-        I: AsyncRead + std::marker::Unpin,
-        O: AsyncWrite + std::marker::Unpin,
+        I: AsyncRead + Unpin,
+        O: AsyncWrite + Unpin,
     {
-        let event_loop = &mut EventLoop::new(decoder, input, self.heartbeat);
+        let event_loop = &mut LlEventLoop::new(decoder, input, self.heartbeat);
         loop {
             let event = event_loop.next().await;
             match event {
-                Event::Message { msg } => {
+                LlEvent::Message { msg } => {
                     let response = self.on_inbound_message(msg, &mut app);
                     match response {
                         Response::OutboundBytes(bytes) => {
@@ -239,27 +255,18 @@ impl FixConnection {
                         _ => {}
                     }
                 }
-                Event::IoError { err: _err } => {
+                LlEvent::IoError { err: _err } => {
                     return;
                 }
-                Event::Heartbeat => {
+                LlEvent::Heartbeat => {
                     let heartbeat = self.on_heartbeat_is_due();
                     output.write_all(heartbeat).await.unwrap();
                     app.on_outbound_message(heartbeat).ok();
                 }
-                Event::Logout => {}
-                Event::TestRequest => {}
+                LlEvent::Logout => {}
+                LlEvent::TestRequest => {}
             }
         }
-    }
-
-    pub async fn accept<B, I, O>(&mut self, app: B, data: I, output: O, decoder: DecoderBuffered)
-    where
-        B: Backend,
-        I: AsyncRead + std::marker::Unpin,
-        O: AsyncWrite + std::marker::Unpin,
-    {
-        self.event_loop(app, data, output, decoder).await;
     }
 
     fn seq_numbers(&self) -> SeqNumbers {

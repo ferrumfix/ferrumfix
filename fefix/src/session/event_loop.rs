@@ -7,7 +7,7 @@ use std::time::Duration;
 use std::time::Instant;
 
 #[derive(Debug)]
-pub struct EventLoop<I>
+pub struct LlEventLoop<I>
 where
     I: AsyncRead,
 {
@@ -20,7 +20,7 @@ where
     last_heartbeat: Instant,
 }
 
-impl<I> EventLoop<I>
+impl<I> LlEventLoop<I>
 where
     I: AsyncRead + std::marker::Unpin,
 {
@@ -38,7 +38,7 @@ where
         }
     }
 
-    pub async fn next<'a>(&'a mut self) -> Event<'a> {
+    pub async fn next<'a>(&'a mut self) -> LlEvent<'a> {
         self.decoder.clear();
         let mut timer_heartbeat = self.timer_heartbeat().fuse();
         let mut timer_test_request = self.timer_test_request().fuse();
@@ -50,22 +50,22 @@ where
                 match decoder {
                     Ok(decoder) => {
                         let msg = decoder.message();
-                        return Event::Message { msg };
+                        return LlEvent::Message { msg };
                     }
-                    Err(err) => return Event::IoError {
+                    Err(err) => return LlEvent::IoError {
                         err
                     }
                 }
             },
             () = timer_heartbeat => {
                 self.last_heartbeat = Instant::now();
-                return Event::Heartbeat;
+                return LlEvent::Heartbeat;
             },
             () = timer_test_request => {
-                return Event::TestRequest;
+                return LlEvent::TestRequest;
             },
             () = timer_logout => {
-                return Event::Logout;
+                return LlEvent::Logout;
             }
         }
     }
@@ -88,7 +88,7 @@ where
 }
 
 #[derive(Debug)]
-pub enum Event<'a> {
+pub enum LlEvent<'a> {
     Message { msg: Message<'a> },
     IoError { err: io::Error },
     Heartbeat,
