@@ -1,5 +1,4 @@
 use fefix::sofh::Decoder;
-
 use std::io;
 use std::net;
 use std::str;

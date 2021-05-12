@@ -1,6 +1,5 @@
-use fefix::definitions::fix42;
-use fefix::tagvalue::{Config, Decoder, Fv};
-use fefix::Dictionary;
+use fefix::prelude::*;
+use fefix::tagvalue::{Config, Decoder};
 use std::io::{Cursor, Read};
 
 const FIX_MESSAGES: &[&[u8]] = &[

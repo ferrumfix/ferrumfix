@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-
 use deadpool::unmanaged::{Object, Pool};
-use fefix::{json, tagvalue, Dictionary, TagU16};
+use fefix::prelude::*;
+use fefix::{json, tagvalue};
+use std::collections::HashMap;
 
 const POOL_CAPACITY: usize = 16;
 

@@ -2,8 +2,8 @@
 
 mod state;
 
-use fefix::definitions::fix42;
-use fefix::{json, json::FieldOrGroup, tagvalue::Fv};
+use fefix::prelude::*;
+use fefix::{json, json::FieldOrGroup};
 use state::{Encoder, State};
 
 #[tokio::main]

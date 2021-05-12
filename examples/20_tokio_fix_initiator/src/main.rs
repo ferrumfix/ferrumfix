@@ -1,5 +1,6 @@
+use fefix::prelude::*;
 use fefix::session::FixConnectionBuilder;
-use fefix::{tagvalue::Decoder, Dictionary};
+use fefix::tagvalue::Decoder;
 use slog::{debug, info, o, Logger};
 use std::io;
 use std::net::{Ipv4Addr, SocketAddrV4};
