@@ -6,7 +6,7 @@ use crate::{dict, dict::FixDataType, TagU16};
 ///
 /// # Type signature
 ///
-/// `V` is the suggested [`FixFieldValue`] for this FIX field. It's currently
+/// `V` is the suggested [`FixValue`] for this FIX field. It's currently
 /// not used, but might one day.
 #[derive(Debug, Clone)]
 pub struct HardCodedFixFieldDefinition {

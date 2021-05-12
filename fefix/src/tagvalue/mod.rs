@@ -3,7 +3,7 @@
 //! This is the original encoding used for FIX messages and also the encoding
 //! currently used by the FIX session layer.
 
-use datatypes::FixFieldValue;
+use crate::FixValue;
 use std::fmt;
 use std::fmt::Debug;
 use std::io;
@@ -73,10 +73,10 @@ pub trait FvWrite<'a> {
 
     fn set_fv_with_key<'b, T>(&'b mut self, key: &Self::Key, value: T)
     where
-        T: FixFieldValue<'b>;
+        T: FixValue<'b>;
 
     fn set_fv<'b, V, F>(&'b mut self, field: &F, value: V)
     where
-        V: FixFieldValue<'b>,
+        V: FixValue<'b>,
         F: IsFieldDefinition;
 }

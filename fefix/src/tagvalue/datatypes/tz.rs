@@ -1,5 +1,5 @@
 use super::error;
-use super::FixFieldValue;
+use super::FixValue;
 use crate::Buffer;
 use std::{
     hash::{Hash, Hasher},
@@ -35,7 +35,7 @@ impl Tz {
     }
 }
 
-impl<'a> FixFieldValue<'a> for Tz {
+impl<'a> FixValue<'a> for Tz {
     type Error = error::Timestamp;
     type SerializeSettings = ();
 

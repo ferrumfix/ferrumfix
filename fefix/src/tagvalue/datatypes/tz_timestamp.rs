@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use super::error;
-use super::{FixFieldValue, Timestamp};
+use super::{FixValue, Timestamp};
 use crate::Buffer;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -21,7 +21,7 @@ impl TzTimestamp {
     }
 }
 
-impl<'a> FixFieldValue<'a> for TzTimestamp {
+impl<'a> FixValue<'a> for TzTimestamp {
     type Error = error::Timestamp;
     type SerializeSettings = ();
 

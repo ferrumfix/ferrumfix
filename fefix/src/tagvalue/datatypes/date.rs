@@ -1,5 +1,5 @@
 use crate::Buffer;
-use crate::FixFieldValue;
+use crate::FixValue;
 use std::convert::{TryFrom, TryInto};
 
 const LEN_IN_BYTES: usize = 8;
@@ -122,7 +122,7 @@ impl Date {
     }
 }
 
-impl<'a> FixFieldValue<'a> for Date {
+impl<'a> FixValue<'a> for Date {
     type Error = &'static str;
     type SerializeSettings = ();
 
@@ -226,7 +226,7 @@ mod test {
 
     #[quickcheck]
     fn serialize_and_to_bytes_are_the_same(date: Date) -> bool {
-        date.to_bytes() == &FixFieldValue::to_bytes(&date)[..]
+        date.to_bytes() == &FixValue::to_bytes(&date)[..]
     }
 
     #[test]

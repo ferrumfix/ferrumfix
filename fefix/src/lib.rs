@@ -73,6 +73,7 @@
 
 mod buffer;
 mod fefix_core;
+mod fix_value;
 mod utils;
 #[cfg(feature = "codegen")]
 pub use fefix_core::codegen;
@@ -98,8 +99,8 @@ pub use fefix_derive::*;
 
 pub use buffer::Buffer;
 pub use dict::Dictionary;
-pub use fefix_derive::FixFieldValue;
-pub use tagvalue::datatypes::FixFieldValue;
+pub use fefix_derive::FixValue;
+pub use fix_value::FixValue;
 
 /// Wrapper type for dealing with `Ok<None>` as errors.
 pub type OptResult<T, E> = Result<T, OptError<E>>;

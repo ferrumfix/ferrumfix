@@ -145,7 +145,7 @@ impl Default for Settings {
                 "PartialEq".to_string(),
                 "Eq".to_string(),
                 "Hash".to_string(),
-                "FixFieldValue".to_string(),
+                "FixValue".to_string(),
             ],
             attributes_for_allowed_values: vec![],
             fefix_crate_name: "fefix".to_string(),
@@ -214,7 +214,7 @@ pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) ->
             use {fefix_path}::dict::FieldLocation;
             use {fefix_path}::dict::FixDataType;
             use {fefix_path}::definitions::HardCodedFixFieldDefinition;
-            use {fefix_path}::FixFieldValue;
+            use {fefix_path}::FixValue;
 
             {enum_definitions}
 

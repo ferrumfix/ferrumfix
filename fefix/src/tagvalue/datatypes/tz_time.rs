@@ -1,5 +1,5 @@
 use super::error;
-use super::FixFieldValue;
+use super::FixValue;
 use crate::Buffer;
 use std::time::Duration;
 
@@ -21,7 +21,8 @@ impl TzTime {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::datatypes::{FixFieldValue, TzTime};
+    /// use fefix::prelude::*;
+    /// use fefix::tagvalue::datatypes::TzTime;
     ///
     /// let dtf = TzTime::deserialize(b"12:45:00Z").unwrap();
     /// assert_eq!(dtf.minute(), 45);
@@ -43,7 +44,7 @@ impl TzTime {
     }
 }
 
-impl<'a> FixFieldValue<'a> for TzTime {
+impl<'a> FixValue<'a> for TzTime {
     type Error = error::Time;
     type SerializeSettings = ();
 
@@ -128,7 +129,7 @@ const fn ascii_digit_to_u32(digit: u8, multiplier: u32) -> u32 {
 
 #[cfg(test)]
 mod test {
-    use super::FixFieldValue;
+    use super::FixValue;
     use super::*;
 
     struct TestCase {

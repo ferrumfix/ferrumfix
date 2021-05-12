@@ -1,4 +1,5 @@
-use crate::{dict, tagvalue::datatypes};
+use crate::dict::IsFieldDefinition;
+use crate::FixValue;
 use crate::{OptError, OptResult};
 
 /// A trait to retrieve field values in a FIX message.
@@ -19,13 +20,13 @@ pub trait FieldGetter<'a> {
     fn fv_raw<'b, F>(&'b self, field: &'a F) -> Option<&'b [u8]>
     where
         'b: 'a,
-        F: dict::IsFieldDefinition;
+        F: IsFieldDefinition;
 
     fn fv_opt<'b, V, F>(&'b self, field: &'a F) -> Option<Result<V, V::Error>>
     where
         'b: 'a,
-        V: datatypes::FixFieldValue<'b>,
-        F: dict::IsFieldDefinition,
+        V: FixValue<'b>,
+        F: IsFieldDefinition,
     {
         self.fv_raw(field).map(|raw| match V::deserialize(raw) {
             Ok(value) => Ok(value),
@@ -36,8 +37,8 @@ pub trait FieldGetter<'a> {
     fn fv<'b, V, F>(&'b self, field: &'a F) -> OptResult<V, V::Error>
     where
         'b: 'a,
-        V: datatypes::FixFieldValue<'b>,
-        F: dict::IsFieldDefinition,
+        V: FixValue<'b>,
+        F: IsFieldDefinition,
     {
         match self.fv_opt(field) {
             Some(Ok(x)) => Ok(x),
@@ -49,8 +50,8 @@ pub trait FieldGetter<'a> {
     fn fvl_opt<'b, V, F>(&'b self, field: &'a F) -> Option<Result<V, V::Error>>
     where
         'b: 'a,
-        V: datatypes::FixFieldValue<'b>,
-        F: dict::IsFieldDefinition,
+        V: FixValue<'b>,
+        F: IsFieldDefinition,
     {
         self.fv_raw(field)
             .map(|raw| match V::deserialize_lossy(raw) {
@@ -62,8 +63,8 @@ pub trait FieldGetter<'a> {
     fn fvl<'b, V, F>(&'b self, field: &'a F) -> Result<V, OptError<V::Error>>
     where
         'b: 'a,
-        V: datatypes::FixFieldValue<'b>,
-        F: dict::IsFieldDefinition,
+        V: FixValue<'b>,
+        F: IsFieldDefinition,
     {
         match self.fvl_opt(field) {
             Some(Ok(x)) => Ok(x),
@@ -74,7 +75,7 @@ pub trait FieldGetter<'a> {
 
     fn fvl_with_key<'b, V>(&'b self, key: Self::Key) -> OptResult<V, V::Error>
     where
-        V: datatypes::FixFieldValue<'b>,
+        V: FixValue<'b>,
     {
         match self
             .fv_raw_with_key(key)

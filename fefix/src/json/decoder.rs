@@ -2,9 +2,9 @@ use super::{Config, Configure, DecodeError};
 use crate::dict;
 use crate::dict::FieldLocation;
 use crate::dict::IsFieldDefinition;
-use crate::tagvalue::datatypes;
 use crate::tagvalue::Fv;
 use crate::Dictionary;
+use crate::FixValue;
 use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
@@ -60,8 +60,8 @@ impl<'a> MessageGroupEntry<'a> {
     pub fn group<'b, F, T>(&'b self, _field_def: &F) -> Option<MessageGroup<'b>>
     where
         'b: 'a,
-        F: dict::IsFieldDefinition,
-        T: datatypes::FixFieldValue<'b>,
+        F: IsFieldDefinition,
+        T: FixValue<'b>,
     {
         None
     }
@@ -69,11 +69,11 @@ impl<'a> MessageGroupEntry<'a> {
     pub fn field_ref<'b, F, T>(
         &'b self,
         _field_def: &F,
-    ) -> Option<Result<T, <T as datatypes::FixFieldValue<'b>>::Error>>
+    ) -> Option<Result<T, <T as FixValue<'b>>::Error>>
     where
         'b: 'a,
-        F: dict::IsFieldDefinition,
-        T: datatypes::FixFieldValue<'b>,
+        F: IsFieldDefinition,
+        T: FixValue<'b>,
     {
         unimplemented!()
     }
@@ -97,8 +97,8 @@ impl<'a> Message<'a> {
     pub fn group<'b, F, T>(&'b self, _field_def: &F) -> Option<MessageGroup<'b>>
     where
         'b: 'a,
-        F: dict::IsFieldDefinition,
-        T: datatypes::FixFieldValue<'b>,
+        F: IsFieldDefinition,
+        T: FixValue<'b>,
     {
         None
     }
@@ -106,11 +106,11 @@ impl<'a> Message<'a> {
     pub fn field_ref<'b, F, T>(
         &'b self,
         field_def: &F,
-    ) -> Option<Result<T, <T as datatypes::FixFieldValue<'b>>::Error>>
+    ) -> Option<Result<T, <T as FixValue<'b>>::Error>>
     where
         'b: 'a,
-        F: dict::IsFieldDefinition,
-        T: datatypes::FixFieldValue<'b>,
+        F: IsFieldDefinition,
+        T: FixValue<'b>,
     {
         self.internal.field_ref(field_def)
     }
@@ -246,11 +246,11 @@ impl<'a> MessageInternal<'a> {
     pub fn field_ref<'b, F, T>(
         &'b self,
         field_def: &F,
-    ) -> Option<Result<T, <T as datatypes::FixFieldValue<'b>>::Error>>
+    ) -> Option<Result<T, <T as FixValue<'b>>::Error>>
     where
         'b: 'a,
         F: IsFieldDefinition,
-        T: datatypes::FixFieldValue<'b>,
+        T: FixValue<'b>,
     {
         self.field_raw(field_def.name(), field_def.location())
             .map(|s| T::deserialize(s.as_bytes()))

@@ -6,7 +6,7 @@ use crate::definitions::fix44;
 use crate::dict;
 use crate::dict::IsFieldDefinition;
 use crate::TagU16;
-use crate::{dict::FixDataType, tagvalue::datatypes, Dictionary};
+use crate::{dict::FixDataType, Dictionary, FixValue};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::{BuildHasher, Hasher};
@@ -418,11 +418,11 @@ impl<'a> MessageGroupEntry<'a> {
     pub fn field_ref<'b, F, T>(
         &'b self,
         field_def: &'b F,
-    ) -> Option<Result<T, <T as datatypes::FixFieldValue<'b>>::Error>>
+    ) -> Option<Result<T, <T as FixValue<'b>>::Error>>
     where
         'b: 'a,
-        F: dict::IsFieldDefinition,
-        T: datatypes::FixFieldValue<'b>,
+        F: IsFieldDefinition,
+        T: FixValue<'b>,
     {
         let context = Context {
             tag: field_def.tag(),

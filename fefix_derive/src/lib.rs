@@ -7,7 +7,7 @@ mod derive_read_fields;
 
 use proc_macro::{Literal, TokenStream, TokenTree};
 
-#[proc_macro_derive(FixFieldValue, attributes(fefix))]
+#[proc_macro_derive(FixValue, attributes(fefix))]
 pub fn derive_field_value(input: TokenStream) -> TokenStream {
     derive_field_value::derive_field_value(input)
 }

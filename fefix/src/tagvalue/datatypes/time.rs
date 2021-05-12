@@ -1,6 +1,6 @@
 use super::error;
 use crate::Buffer;
-use crate::FixFieldValue;
+use crate::FixValue;
 
 const LEN_IN_BYTES_NO_MILLI: usize = 8;
 const LEN_IN_BYTES_WITH_MILLI: usize = 12;
@@ -70,7 +70,8 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
+    /// use fefix::prelude::*;
+    /// use fefix::tagvalue::datatypes::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.hour(), 12)
@@ -84,7 +85,8 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
+    /// use fefix::prelude::*;
+    /// use fefix::tagvalue::datatypes::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
@@ -98,7 +100,8 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
+    /// use fefix::prelude::*;
+    /// use fefix::tagvalue::datatypes::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
@@ -107,7 +110,8 @@ impl Time {
     /// Leap second:
     ///
     /// ```
-    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
+    /// use fefix::prelude::*;
+    /// use fefix::tagvalue::datatypes::Time;
     ///
     /// let dtf = Time::deserialize(b"23:59:60").unwrap();
     /// assert_eq!(dtf.second(), 60)
@@ -121,7 +125,8 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::datatypes::{FixFieldValue, Time};
+    /// use fefix::prelude::*;
+    /// use fefix::tagvalue::datatypes::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00.328").unwrap();
     /// assert_eq!(dtf.milli(), 328)
@@ -141,7 +146,7 @@ impl Time {
     }
 }
 
-impl<'a> FixFieldValue<'a> for Time {
+impl<'a> FixValue<'a> for Time {
     type Error = error::Time;
     type SerializeSettings = ();
 

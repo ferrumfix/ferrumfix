@@ -114,7 +114,7 @@ impl GeneratorContext {
         let name = &self.message_structure.ident;
         let gen = quote! {
             impl #name {
-                fn field(&self, tag: u32) -> ::std::option::Option<#crate_name::backend::FixFieldValue> {
+                fn field(&self, tag: u32) -> ::std::option::Option<#crate_name::backend::FixValue> {
                     match tag {
                         #(#match_body),*,
                         _ => None,

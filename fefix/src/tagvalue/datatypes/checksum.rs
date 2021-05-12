@@ -1,5 +1,5 @@
 use crate::Buffer;
-use crate::FixFieldValue;
+use crate::FixValue;
 use std::convert::TryInto;
 
 const LEN_IN_BYTES: usize = 3;
@@ -9,7 +9,7 @@ const ERR_ASCII_DIGITS: &str = "Expected ASCII digits, found invalid characters.
 
 /// The result of a FIX checksum calculation.
 ///
-/// [`CheckSum`] implements [`FixFieldValue`] as a zero-padded, unsigned integer
+/// [`CheckSum`] implements [`FixValue`] as a zero-padded, unsigned integer
 /// field of three bytes.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct CheckSum(pub u8);
@@ -26,7 +26,7 @@ impl CheckSum {
     }
 }
 
-impl<'a> FixFieldValue<'a> for CheckSum {
+impl<'a> FixValue<'a> for CheckSum {
     type Error = &'static str;
     type SerializeSettings = ();
 

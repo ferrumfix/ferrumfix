@@ -1,5 +1,5 @@
 use crate::Buffer;
-use crate::FixFieldValue;
+use crate::FixValue;
 
 const LEN_IN_BYTES: usize = 8;
 
@@ -48,7 +48,8 @@ impl MonthYear {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
+    /// use fefix::prelude::*;
+    /// use fefix::tagvalue::datatypes::MonthYear;
     ///
     /// let dtf = MonthYear::deserialize(b"19390901").unwrap();
     /// assert_eq!(dtf.year(), 1939)
@@ -62,7 +63,8 @@ impl MonthYear {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
+    /// use fefix::prelude::*;
+    /// use fefix::tagvalue::datatypes::MonthYear;
     ///
     /// let dtf = MonthYear::deserialize(b"20000101").unwrap();
     /// assert_eq!(dtf.month(), 1)
@@ -78,7 +80,8 @@ impl MonthYear {
     /// Day included in the definition:
     ///
     /// ```
-    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
+    /// use fefix::prelude::*;
+    /// use fefix::tagvalue::datatypes::MonthYear;
     ///
     /// let dtf = MonthYear::deserialize(b"20191225").unwrap();
     /// assert_eq!(dtf.day(), Some(25))
@@ -87,7 +90,8 @@ impl MonthYear {
     /// Day not included:
     ///
     /// ```
-    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
+    /// use fefix::prelude::*;
+    /// use fefix::tagvalue::datatypes::MonthYear;
     ///
     /// let dtf = MonthYear::deserialize(b"201801w3").unwrap();
     /// assert_eq!(dtf.day(), None)
@@ -108,7 +112,8 @@ impl MonthYear {
     /// Present week code:
     ///
     /// ```
-    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
+    /// use fefix::prelude::*;
+    /// use fefix::tagvalue::datatypes::MonthYear;
     ///
     /// let dtf = MonthYear::deserialize(b"201912w1").unwrap();
     /// assert_eq!(dtf.week(), Some(1))
@@ -117,7 +122,8 @@ impl MonthYear {
     /// Absent week code:
     ///
     /// ```
-    /// use fefix::tagvalue::datatypes::{MonthYear, FixFieldValue};
+    /// use fefix::prelude::*;
+    /// use fefix::tagvalue::datatypes::MonthYear;
     ///
     /// let dtf = MonthYear::deserialize(b"20191225").unwrap();
     /// assert_eq!(dtf.week(), None)
@@ -131,7 +137,7 @@ impl MonthYear {
     }
 }
 
-impl<'a> FixFieldValue<'a> for MonthYear {
+impl<'a> FixValue<'a> for MonthYear {
     type Error = &'static str;
     type SerializeSettings = ();
 
