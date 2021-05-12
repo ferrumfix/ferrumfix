@@ -2,7 +2,7 @@
 // caught anyway during compilation. Enabling compiler diagnostics would thus
 // have the undesirable effect of showing two identical warnings.
 #[allow(warnings)]
-#[path = "src/fefix_core/mod.rs"]
+#[path = "src/fefix_core/build_rs_mod.rs"]
 mod fefix_core;
 
 use fefix_core::{codegen, dict::Dictionary};

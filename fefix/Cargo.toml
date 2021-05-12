@@ -35,6 +35,7 @@ fixp = []
 fast-encoding = []
 json-encoding = []
 sofh = []
+codegen = ["heck", "indoc"]
 utils-bytes = ["bytes"]
 utils-chrono = []
 utils-decimal = ["decimal"]
@@ -42,6 +43,31 @@ utils-openssl = ["openssl"]
 utils-rust-decimal = ["rust_decimal"]
 utils-slog = ["slog"]
 utils-tokio = []
+
+full = [
+    "derive",
+    "fix40",
+    "fix41",
+    "fix42",
+    "fix43",
+    "fix50",
+    "fix50sp1",
+    "fix50sp2",    
+    "fixt11",
+    "fixs",
+    "fixp",
+    "fast-encoding",
+    "json-encoding",
+    "sofh",
+    "codegen",
+    "utils-bytes",
+    "utils-chrono",
+    "utils-decimal",
+    "utils-openssl",
+    "utils-rust-decimal",
+    "utils-slog",
+    "utils-tokio",
+]
 
 [dependencies]
 bitvec = "0.18.3"
@@ -51,13 +77,10 @@ decimal = { version = "2", optional = true }
 fnv = "1"
 futures = "0.3"
 futures-timer = "3"
-heck = "0.3"
-indoc = "1"
+heck = { version = "0.3", optional = true }
+indoc = { version = "1", optional = true }
 lazy_static = "1"
 openssl = { version = "0.10", optional = true }
-# For writing XML.
-quick-xml = "0.22"
-rand = "0.8"
 # For reading XML.
 roxmltree = "0.14"
 rust_decimal = { version = "1", optional = true }

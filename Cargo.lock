@@ -1079,7 +1079,6 @@ dependencies = [
  "quickcheck",
  "quickcheck_derive",
  "quickcheck_macros",
- "rand 0.8.3",
  "rayon",
  "roxmltree",
  "rust_decimal",

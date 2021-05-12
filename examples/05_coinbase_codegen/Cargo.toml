@@ -9,4 +9,4 @@ fefix = { path = "../../fefix" }
 rust_decimal = "1"
 
 [build-dependencies]
-fefix = { path = "../../fefix" }
+fefix = { path = "../../fefix", features = ["codegen"] }

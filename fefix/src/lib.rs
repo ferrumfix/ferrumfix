@@ -74,6 +74,7 @@
 mod buffer;
 mod fefix_core;
 mod utils;
+#[cfg(feature = "codegen")]
 pub use fefix_core::codegen;
 pub use fefix_core::dict;
 pub use fefix_core::TagU16;
