@@ -36,6 +36,8 @@ pub fn generated_code_notice() -> String {
     )
 }
 
+/// Generates the Rust code for an `enum` that has variants that map 1:1 the
+/// available values for `field`.
 pub fn gen_enum_of_allowed_values(field: dict::Field, settings: &Settings) -> Option<String> {
     let derives = settings.derives_for_allowed_values.join(", ");
     let attributes = settings.attributes_for_allowed_values.join("\n");
@@ -93,6 +95,7 @@ fn gen_enum_variant_of_allowed_value(
     )
 }
 
+/// Code generation settings.
 #[derive(Debug, Clone)]
 pub struct Settings {
     indentation: String,
@@ -108,18 +111,25 @@ impl Settings {
         self.fefix_crate_name.as_str()
     }
 
+    /// Changes the indentation prefix of all generated Rust code. It's four
+    /// spaces by default.
     pub fn set_indentation(&mut self, indentation: &str) {
         self.indentation = indentation.to_string();
     }
 
+    /// Increments the indentation level of all generated Rust code by one.
     pub fn incr_indentation(&mut self) {
         self.indentation_depth += 1;
     }
 
+    /// Returns a mutable reference to the `Vec` of derive macros used for
+    /// `enum`s.
     pub fn derives_for_allowed_values_mut(&mut self) -> &mut Vec<String> {
         &mut self.derives_for_allowed_values
     }
 
+    /// Returns a mutable reference to the `Vec` of macro attributes for
+    /// `enum`s.
     pub fn attributes_for_allowed_values_mut(&mut self) -> &mut Vec<String> {
         &mut self.attributes_for_allowed_values
     }

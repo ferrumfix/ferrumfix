@@ -23,6 +23,7 @@ lazy_static! {
 /// Which version of FIX-over-TLS (FIXS) to use.
 #[derive(Debug, Copy, Clone)]
 pub enum Version {
+    /// Draft of the FIXS version 1.0 standard.
     V1Draft,
 }
 

@@ -75,6 +75,7 @@ impl Config {
         self.separator = separator;
     }
 
+    /// Changes the value of [`Configure::max_message_size`].
     pub fn set_max_message_size(&mut self, max_message_size: Option<usize>) {
         self.max_message_size = max_message_size;
     }

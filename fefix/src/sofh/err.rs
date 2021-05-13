@@ -8,7 +8,10 @@ pub enum Error {
     /// The provided message length is outside the legal range.
     InvalidMessageLength,
     /// The given message is incomplete.
-    Incomplete { needed: usize },
+    Incomplete {
+        /// The number of missing bytes to complete the SOFH-enclosed message.
+        needed: usize,
+    },
     /// I/O-related error.
     Io(io::Error),
 }

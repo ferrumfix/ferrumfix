@@ -57,10 +57,12 @@
 //!   **A.** Time, mostly. Drop me an email or open an issue and let's see what I
 //!   can do.
 
+#![warn(missing_docs, missing_doc_code_examples)]
 #![deny(
     unused,
     missing_debug_implementations,
     unsafe_op_in_unsafe_fn,
+    rustdoc::broken_intra_doc_links,
     //missing_docs,
     unconditional_recursion,
     unstable_name_collisions,
@@ -108,6 +110,8 @@ pub type OptResult<T, E> = Result<T, OptError<E>>;
 /// The error variant of [`OptResult`].
 #[derive(Clone, Debug, PartialEq)]
 pub enum OptError<E> {
+    /// Missing data.
     None,
+    /// Data is present but there's some other error.
     Other(E),
 }

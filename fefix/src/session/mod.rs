@@ -72,7 +72,11 @@ pub struct State {
 #[non_exhaustive]
 pub enum Environment {
     /// Test messages will be ignored or refused under this environment setting.
-    Production { allow_test: bool },
+    Production {
+        /// Flag that indicates whether or not test messages should be allowed
+        /// in this production environment.
+        allow_test: bool,
+    },
     /// Production messages will be refused under this environment setting.
     Testing,
 }
@@ -83,57 +87,6 @@ impl Environment {
         match self {
             Self::Production { allow_test } => *allow_test,
             Self::Testing => true,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum SessionRejectReason {
-    InvalidTagNumber,
-    RequiredTagMissing,
-    TagNotDefinedForThisMessageType,
-    UndefinedTag,
-    TagSpecifiedWithoutAValue,
-    ValueIsIncorrect,
-    IncorrectDataFormatForValue,
-    DecryptionProblem,
-    SignatureProblem,
-    CompIDProblem,
-    SendingTimeAccuracyProblem,
-    InvalidMsgType,
-    XMLValidationError,
-    TagAppearsMoreThanOnce,
-    TagSpecifiedOutOfRequiredOrder,
-    RepeatingGroupFieldsOutOfOrder,
-    IncorrectNumInGroupCountForRepeatingGroup,
-    FieldDelimiterInFieldValue,
-    InvalidUnsupportedAppVersion,
-    Other,
-}
-
-impl From<u32> for SessionRejectReason {
-    fn from(v: u32) -> Self {
-        match v {
-            0 => Self::InvalidTagNumber,
-            1 => Self::RequiredTagMissing,
-            2 => Self::TagNotDefinedForThisMessageType,
-            3 => Self::UndefinedTag,
-            4 => Self::TagSpecifiedWithoutAValue,
-            5 => Self::ValueIsIncorrect,
-            6 => Self::IncorrectDataFormatForValue,
-            7 => Self::DecryptionProblem,
-            8 => Self::SignatureProblem,
-            9 => Self::CompIDProblem,
-            10 => Self::SendingTimeAccuracyProblem,
-            11 => Self::InvalidMsgType,
-            12 => Self::XMLValidationError,
-            13 => Self::TagAppearsMoreThanOnce,
-            14 => Self::TagSpecifiedOutOfRequiredOrder,
-            15 => Self::RepeatingGroupFieldsOutOfOrder,
-            16 => Self::IncorrectNumInGroupCountForRepeatingGroup,
-            17 => Self::FieldDelimiterInFieldValue,
-            18 => Self::InvalidUnsupportedAppVersion,
-            _ => Self::Other,
         }
     }
 }

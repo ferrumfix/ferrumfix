@@ -6,6 +6,11 @@ use std::io;
 use std::time::Duration;
 use std::time::Instant;
 
+/// Asynchronous, executor-agnostic low-level event loop for FIX connectors.
+///
+/// This event loop allows FIX connectors to delegate event-tracking logic to a
+/// single entity. This event loop keeps track of such events within a FIX
+/// session. See [`LlEvent`] for more information.
 #[derive(Debug)]
 pub struct LlEventLoop<I>
 where
@@ -70,7 +75,8 @@ where
         }
     }
 
-    pub fn heartbeat(&mut self) {
+    /// Resets the FIX counterparty's `Heartbeat <0>` -associated timers.
+    pub fn ping_heartbeat(&mut self) {
         self.last_reset = Instant::now();
     }
 
@@ -87,12 +93,22 @@ where
     }
 }
 
+/// A low level event produced by a [`LlEventLoop`].
 #[derive(Debug)]
 pub enum LlEvent<'a> {
+    /// Incoming  FIX message.
     Message { msg: Message<'a> },
+    /// I/O error at the transport layer.
     IoError { err: io::Error },
+    /// Time to send a new `HeartBeat <0>` message.
     Heartbeat,
+    /// The FIX counterparty has missed the `Heartbeat <0>` deadline by some
+    /// amount of time, and it's time to send a `Test Request <1>`
+    /// message to check what's going on.
     TestRequest,
+    /// The FIX counterparty has missed the `Heartbeat <0>` deadline by some
+    /// amount of time, and it's stopped responding. It's time to
+    /// disconnect via a `Logout <5>` message.
     Logout,
 }
 

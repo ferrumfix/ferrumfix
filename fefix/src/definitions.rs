@@ -14,7 +14,10 @@ pub struct HardCodedFixFieldDefinition {
     pub name: &'static str,
     /// Numeric tag associated with this FIX field.
     pub tag: u16,
+    /// Flag that is set to `true` for fields that are the first within
+    /// instances of repeating groups.
     pub is_group_leader: bool,
+    /// The FIX data type of this field definition.
     pub data_type: FixDataType,
     /// Expected location of this FIX field within messages - header, body, or
     /// trailer. Used for JSON-encoded FIX messages.

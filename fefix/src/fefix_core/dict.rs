@@ -37,8 +37,11 @@ lazy_static! {
 /// trailer).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum FieldLocation {
+    /// The field is located inside the "Standard Header".
     StdHeader,
+    /// This field is located inside the body of the FIX message.
     Body,
+    /// This field is located inside the "Standard Trailer".
     Trailer,
 }
 
@@ -239,45 +242,54 @@ impl Dictionary {
         self.inner.version.as_str()
     }
 
+    /// Creates a new [`Dictionary`] for FIXT 4.0.
     #[cfg(feature = "fix40")]
     pub fn fix40() -> Self {
         DICT_FIX_40.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIXT 4.1.
     #[cfg(feature = "fix41")]
     pub fn fix41() -> Self {
         DICT_FIX_41.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIXT 4.2.
     #[cfg(feature = "fix42")]
     pub fn fix42() -> Self {
         DICT_FIX_42.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIXT 4.3.
     #[cfg(feature = "fix43")]
     pub fn fix43() -> Self {
         DICT_FIX_43.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIX 4.4.
     pub fn fix44() -> Self {
         DICT_FIX_44.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIX 5.0.
     #[cfg(feature = "fix50")]
     pub fn fix50() -> Self {
         DICT_FIX_50.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIX 5.0 SP1.
     #[cfg(feature = "fix50sp1")]
     pub fn fix50sp1() -> Self {
         DICT_FIX_50SP1.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIX 5.0 SP2.
     #[cfg(feature = "fix50sp2")]
     pub fn fix50sp2() -> Self {
         DICT_FIX_50SP2.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIXT 1.1.
     #[cfg(feature = "fixt11")]
     pub fn fixt11() -> Self {
         DICT_FIXT_11.clone()
@@ -631,6 +643,7 @@ impl<'a> Component<'a> {
         Category(self.0, data)
     }
 
+    /// Returns an [`Iterator`] over all items that are part of `self`.
     pub fn items(&self) -> impl Iterator<Item = LayoutItem> {
         self.1
             .layout_items
@@ -691,6 +704,7 @@ impl<'a> Datatype<'a> {
         self.1.datatype.name()
     }
 
+    /// Returns `self` as an `enum`.
     pub fn basetype(&self) -> FixDataType {
         self.1.datatype
     }
@@ -1204,6 +1218,8 @@ impl<'a> Field<'a> {
         TagU16::new(self.1.tag as u16).unwrap()
     }
 
+    /// In case this field allows any value, it returns `None`; otherwise; it
+    /// returns an [`Iterator`] of all allowed values.
     pub fn enums(&self) -> Option<impl Iterator<Item = FieldEnum>> {
         self.1
             .value_restrictions
@@ -1286,8 +1302,11 @@ pub struct LayoutItem<'a>(&'a Dictionary, &'a LayoutItemData);
 /// The kind of element contained in a [`Message`].
 #[derive(Debug)]
 pub enum LayoutItemKind<'a> {
+    /// This component item is another component.
     Component(Component<'a>),
+    /// This component item is a FIX repeating group.
     Group(Field<'a>, Vec<LayoutItem<'a>>),
+    /// This component item is a FIX field.
     Field(Field<'a>),
 }
 
@@ -1298,10 +1317,12 @@ impl<'a> LayoutItem<'a> {
         self.1.required
     }
 
+    /// Returns the [`LayoutItemKind`] of `self`.
     pub fn kind(&self) -> LayoutItemKind {
         layout_item_kind(&self.1.kind, self.0)
     }
 
+    /// Returns the human-readable name of `self`.
     pub fn tag_text(&self) -> &str {
         match &self.1.kind {
             LayoutItemKindData::Component { iid } => self

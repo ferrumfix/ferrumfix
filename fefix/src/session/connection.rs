@@ -250,7 +250,7 @@ impl FixConnection {
                             app.on_outbound_message(bytes).ok();
                         }
                         Response::ResetHeartbeat => {
-                            event_loop.heartbeat();
+                            event_loop.ping_heartbeat();
                         }
                         _ => {}
                     }
