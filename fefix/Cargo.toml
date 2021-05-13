@@ -44,7 +44,7 @@ utils-decimal = ["decimal"]
 utils-openssl = ["openssl"]
 utils-rust-decimal = ["rust_decimal"]
 utils-slog = ["slog"]
-utils-tokio = []
+utils-tokio = ["tokio-util", "utils-bytes"]
 
 full = [
     "derive",
@@ -92,6 +92,7 @@ slog = { version = "2", optional = true }
 sqlx = { version = "0.5", features = ["runtime-tokio-rustls", "postgres"] }
 strum = "0.20"
 strum_macros = "0.20"
+tokio-util = { version = "0.6", optional = true, features = ["codec"] }
 uuid = { version = "0.8.1", features = ["v4"] }
 fefix_derive = { path = "../fefix_derive" }
 
