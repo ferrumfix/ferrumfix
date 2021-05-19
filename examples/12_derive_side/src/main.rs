@@ -8,7 +8,6 @@ fn main() {
     let fix_dictionary = Dictionary::fix42();
     let fix_decoder = &mut Decoder::<Config>::new(fix_dictionary);
     fix_decoder.config_mut().set_separator(b'|');
-    fix_decoder.config_mut().set_verify_checksum(false);
     let msg = fix_decoder
         .decode(FIX_MESSAGE)
         .expect("Invalid FIX message");

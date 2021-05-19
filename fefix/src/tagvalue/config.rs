@@ -60,6 +60,8 @@ pub struct Config {
 
 impl Config {
     /// Changes the field separator character. It is SOH (ASCII 0x1) by default.
+    /// This also disables checksum verification for decode operations to avoid
+    /// checksum issues.
     ///
     /// # Examples
     ///
@@ -73,6 +75,7 @@ impl Config {
     /// ```
     pub fn set_separator(&mut self, separator: u8) {
         self.separator = separator;
+        self.verify_checksum = false;
     }
 
     /// Changes the value of [`Configure::max_message_size`].

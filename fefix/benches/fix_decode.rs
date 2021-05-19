@@ -12,7 +12,6 @@ fn criterion_benchmark(c: &mut Criterion) {
     let fix_dictionary = Dictionary::fix44();
     let fix_decoder = &mut Decoder::<Config>::new(fix_dictionary);
     fix_decoder.config_mut().set_separator(b'|');
-    fix_decoder.config_mut().set_verify_checksum(false);
     fix_decoder.config_mut().set_decode_assoc(true);
     fix_decoder.config_mut().set_decode_seq(false);
     c.bench_function("FIX tag-value decoding", |b| {

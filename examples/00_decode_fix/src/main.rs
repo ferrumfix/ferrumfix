@@ -11,7 +11,6 @@ fn main() {
     // In this case, the FIX message is specified using "|" rather than SOH
     // (ASCII 0x1) bytes. FerrumFIX supports this.
     fix_decoder.config_mut().set_separator(b'|');
-    fix_decoder.config_mut().set_verify_checksum(false);
     let msg = fix_decoder
         .decode(FIX_MESSAGE)
         .expect("Invalid FIX message");
