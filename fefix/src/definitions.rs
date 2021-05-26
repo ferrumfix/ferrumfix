@@ -3,11 +3,6 @@
 use crate::{dict, dict::FixDataType, TagU16};
 
 /// Metadata about a specific FIX tag. Designed for code generation.
-///
-/// # Type signature
-///
-/// `V` is the suggested [`FixValue`] for this FIX field. It's currently
-/// not used, but might one day.
 #[derive(Debug, Clone)]
 pub struct HardCodedFixFieldDefinition {
     /// Human-readable ASCII name of this FIX field, e.g. `MsgSeqNum`.
