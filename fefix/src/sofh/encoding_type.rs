@@ -9,8 +9,8 @@
 ///
 /// # Equality
 ///
-/// It's important to note that the behavior of [`Eq`](Eq) and
-/// [`PartialEq`](PartialEq) for this type always falls back to equality on
+/// It's important to note that the behavior of [`Eq`] and
+/// [`PartialEq`] for this type always falls back to equality on
 /// `u16`. This may cause unusual behavior e.g.:
 ///
 /// ```
