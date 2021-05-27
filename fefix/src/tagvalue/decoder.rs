@@ -40,6 +40,8 @@ where
         Self::with_config(dict, C::default())
     }
 
+    /// Creates a new [`Decoder`] with custom `config`. `dict` is used to parse
+    /// messages.
     pub fn with_config(dict: Dictionary, config: C) -> Self {
         Self {
             dict: dict.clone(),
@@ -723,7 +725,6 @@ mod test {
     fn skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
         let decoder = &mut decoder();
-        decoder.config_mut().set_verify_checksum(false);
         let result = decoder.decode(message.as_bytes());
         assert!(result.is_ok());
     }
@@ -733,7 +734,6 @@ mod test {
         let bytes = b"8=FIX.4.2|9=196|35=X|49=A|56=B|34=12|52=20100318-03:21:11.364|262=A|268=2|279=0|269=0|278=BID|55=EUR/USD|270=1.37215|15=EUR|271=2500000|346=1|279=0|269=1|278=OFFER|55=EUR/USD|270=1.37224|15=EUR|271=2503200|346=1|10=171|";
         let decoder = &mut decoder();
         decoder.config_mut().set_separator(b'|');
-        decoder.config_mut().set_verify_checksum(false);
         let message = decoder.decode(bytes).unwrap();
         let group = message.group_ref(TagU16::new(268).unwrap()).unwrap();
         assert_eq!(group.len(), 2);
@@ -771,7 +771,6 @@ mod test {
     #[test]
     fn heartbeat_message_fields_are_ok() {
         let mut codec = decoder();
-        codec.config_mut().set_verify_checksum(false);
         let message = codec.decode(&mut RANDOM_MESSAGES[0].as_bytes()).unwrap();
         assert_eq!(message.fv(fix44::MSG_TYPE), Ok(fix44::MsgType::Heartbeat));
         assert_eq!(

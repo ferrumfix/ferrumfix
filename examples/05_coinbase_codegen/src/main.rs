@@ -12,7 +12,6 @@ const FIX_MESSAGE_EXEC_REPORT: &[u8] = b"";
 fn main() {
     let decoder = &mut fix_decoder();
     decoder.config_mut().set_separator(b'|');
-    decoder.config_mut().set_verify_checksum(false);
     let msg = decoder
         .decode(FIX_MESSAGE_EXEC_REPORT)
         .expect("Invalid FIX message");
