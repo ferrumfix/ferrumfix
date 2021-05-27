@@ -1,5 +1,4 @@
-use super::Error;
-use std::convert::TryInto;
+use super::{field_encoding_type, field_message_length, Error};
 use std::io;
 
 const HEADER_SIZE_IN_BYTES: usize = 6;
@@ -7,22 +6,25 @@ const MAX_MESSAGE_SIZE_IN_BYTES: usize = u32::MAX as usize - HEADER_SIZE_IN_BYTE
 
 /// An immutable view into a SOFH-enclosed message, complete with its
 /// encoding type tag and message.
-///
-/// This type is returned in a borrowed form during decoding and
-/// there is no owned version of this type.
 #[derive(Debug, Copy, Clone)]
-pub struct Frame<'a> {
+pub struct Frame<T>
+where
+    T: AsRef<[u8]>,
+{
     encoding_type: u16,
-    message: &'a [u8],
+    payload: T,
 }
 
-impl<'a> Frame<'a> {
-    /// Creates a new [`Frame`] with the given `encoding_type` and `message`.
+impl<T> Frame<T>
+where
+    T: AsRef<[u8]>,
+{
+    /// Creates a new [`Frame`] with the given `encoding_type` and `payload`.
     ///
     /// # Panics
     ///
-    /// This function panics if `message.len() > u32::MAX as usize - 6`. Permitting larger
-    /// messages would cause encoding issues.
+    /// This function panics if `message.len() > u32::MAX as usize - 6`, which
+    /// would cause encoding issues.
     ///
     /// # Examples
     ///
@@ -32,11 +34,11 @@ impl<'a> Frame<'a> {
     /// let frame = Frame::new(0xF500, b"{}");
     /// assert_eq!(frame.message().len(), 2);
     /// ```
-    pub fn new(encoding_type: u16, message: &[u8]) -> Frame {
-        assert!(message.len() <= MAX_MESSAGE_SIZE_IN_BYTES);
+    pub fn new(encoding_type: u16, payload: T) -> Self {
+        assert!(payload.as_ref().len() <= MAX_MESSAGE_SIZE_IN_BYTES);
         Frame {
             encoding_type,
-            message,
+            payload,
         }
     }
 
@@ -57,7 +59,7 @@ impl<'a> Frame<'a> {
         self.encoding_type
     }
 
-    /// Returns an immutable reference to the actual contents of `self`, i.e.
+    /// Returns an immutable reference to the payload bytes of `self`, i.e.
     /// without its header.
     ///
     /// # Examples
@@ -66,13 +68,14 @@ impl<'a> Frame<'a> {
     /// use fefix::sofh::Frame;
     ///
     /// let frame = Frame::new(0x0, &[42]);
-    /// assert_eq!(frame.message(), &[42]);
+    /// assert_eq!(frame.payload(), &[42]);
     /// ```
-    pub fn message(&self) -> &[u8] {
-        self.message
+    pub fn payload(&self) -> &[u8] {
+        self.payload.as_ref()
     }
 
-    /// Deserializes a [`Frame`] from `data`. Returns an `Err` if invalid. Zero-copy.
+    /// Deserializes a [`Frame<&[u8]>`] from `data`. Returns an `Err` if
+    /// invalid. Zero-copy.
     ///
     /// This function ignores trailing bytes that are not part of the message.
     ///
@@ -87,7 +90,7 @@ impl<'a> Frame<'a> {
     /// let frame = Frame::decode(&[0, 0, 0, 7, 0x0, 0x0, 42]).unwrap();
     /// assert_eq!(frame.message(), &[42]);
     /// ```
-    pub fn decode(data: &[u8]) -> Result<Frame, Error> {
+    pub fn deserialize(data: &[u8]) -> Result<Frame<&[u8]>, Error> {
         // The buffer doesn't contain enough data to even meaningfully reason
         // about it, let alone decode it.
         if data.len() < HEADER_SIZE_IN_BYTES {
@@ -106,7 +109,7 @@ impl<'a> Frame<'a> {
                 needed: message_len - data.len(),
             })
         } else {
-            Ok(Self::new(
+            Ok(Frame::new(
                 field_encoding_type(data),
                 &data[HEADER_SIZE_IN_BYTES..],
             ))
@@ -131,24 +134,16 @@ impl<'a> Frame<'a> {
     /// frame.encode(buffer).unwrap();
     /// assert_eq!(&buffer[..], bytes);
     /// ```
-    pub fn encode<W>(&self, writer: &mut W) -> io::Result<usize>
+    pub fn serialize<W>(&self, writer: &mut W) -> io::Result<usize>
     where
         W: io::Write,
     {
-        let len = self.message().len();
-        writer.write_all(&((len + HEADER_SIZE_IN_BYTES) as u32).to_be_bytes())?;
+        let len = self.payload().len() + HEADER_SIZE_IN_BYTES;
+        writer.write_all(&(len as u32).to_be_bytes())?;
         writer.write_all(&self.encoding_type().to_be_bytes())?;
-        writer.write_all(self.message())?;
-        Ok(HEADER_SIZE_IN_BYTES + len)
+        writer.write_all(self.payload())?;
+        Ok(len)
     }
-}
-
-fn field_message_length(data: &[u8]) -> u32 {
-    u32::from_be_bytes(data[0..4].try_into().unwrap())
-}
-
-fn field_encoding_type(data: &[u8]) -> u16 {
-    u16::from_be_bytes(data[4..6].try_into().unwrap())
 }
 
 #[cfg(test)]
@@ -160,13 +155,13 @@ mod test {
     fn information_retrieval_is_consistent_with_new() {
         let frame = Frame::new(0x0, &[]);
         assert_eq!(frame.encoding_type(), 0x0);
-        assert_eq!(frame.message(), [] as [u8; 0]);
+        assert_eq!(frame.payload(), [] as [u8; 0]);
         let frame = Frame::new(0x1122, b"foobar");
         assert_eq!(frame.encoding_type(), 0x1122);
-        assert_eq!(frame.message(), b"foobar");
+        assert_eq!(frame.payload(), b"foobar");
         let frame = Frame::new(u16::MAX, &[0]);
         assert_eq!(frame.encoding_type(), u16::MAX);
-        assert_eq!(frame.message(), &[0]);
+        assert_eq!(frame.payload(), &[0]);
     }
 
     #[test]
@@ -198,34 +193,34 @@ mod test {
     #[test]
     fn decode_incomplete_header() {
         assert!(matches!(
-            Frame::decode(&[]),
+            Frame::<&[u8]>::deserialize(&[]),
             Err(Error::Incomplete { needed: 6 })
         ));
         assert!(matches!(
-            Frame::decode(&[0, 0, 0]),
+            Frame::<&[u8]>::deserialize(&[0, 0, 0]),
             Err(Error::Incomplete { needed: 3 })
         ));
         assert!(matches!(
-            Frame::decode(&[0, 0, 0, 0, 0]),
+            Frame::<&[u8]>::deserialize(&[0, 0, 0, 0, 0]),
             Err(Error::Incomplete { needed: 1 })
         ));
     }
 
     #[test]
     fn decode_empty_message() {
-        let frame = Frame::decode(&[0, 0, 0, 6, 0, 0]).unwrap();
+        let frame = Frame::<&[u8]>::deserialize(&[0, 0, 0, 6, 0, 0]).unwrap();
         assert_eq!(frame.encoding_type(), 0);
-        assert_eq!(frame.message(), [] as [u8; 0]);
+        assert_eq!(frame.payload(), [] as [u8; 0]);
     }
 
     #[test]
     fn encode_then_decode_should_have_no_effect() {
         fn prop(encoding_type: u16, data: Vec<u8>) -> bool {
-            let frame = Frame::new(encoding_type, &data[..]);
+            let frame = Frame::<&[u8]>::new(encoding_type, &data[..]);
             let buffer = &mut vec![];
-            frame.encode(buffer).unwrap();
-            let frame_decoded = Frame::decode(&buffer[..]).unwrap();
-            frame_decoded.encoding_type() == encoding_type && frame_decoded.message() == &data[..]
+            frame.serialize(buffer).unwrap();
+            let frame_decoded = Frame::<&[u8]>::deserialize(&buffer[..]).unwrap();
+            frame_decoded.encoding_type() == encoding_type && frame_decoded.payload() == &data[..]
         }
         QuickCheck::new()
             .tests(1000)

@@ -16,6 +16,7 @@ members = [
     "examples/12_derive_side",
     "examples/20_tokio_fix_initiator",
     "examples/30_tcp_sofh",
+    "examples/31_tcp_sofh_tokio_codec",
     "examples/70_json_encoding",
     "examples/tls_fixua_acceptor",
     "tests/codegen_fix44",

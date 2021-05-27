@@ -1,8 +1,6 @@
-use crate::buffer::Buffer;
-use std::io;
-
 use super::err::Error;
 use super::frame::Frame;
+use std::io;
 
 /// A parser for SOFH-enclosed messages.
 ///
@@ -11,51 +9,46 @@ use super::frame::Frame;
 /// High Performance Group to allow message processors and communication gateways
 /// to determine the length and the data format of incoming messages.
 #[derive(Debug)]
-pub struct Decoder<B>
-where
-    B: Buffer,
-{
-    buffer: B,
+pub struct SeqDecoder {
+    buffer: Vec<u8>,
     buffer_actual_len: usize,
 }
 
-impl<B> Decoder<B>
-where
-    B: Buffer,
-{
-    /// Creates a new [`Decoder`] with a buffer large enough to
+impl Default for SeqDecoder {
+    fn default() -> Self {
+        Self::with_capacity(128)
+    }
+}
+
+impl SeqDecoder {
+    /// Creates a new [`SeqDecoder`] with a buffer large enough to
     /// hold `capacity` amounts of bytes without reallocating.
-    pub fn from_buffer(buffer: B) -> Self {
+    pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            buffer,
+            buffer: Vec::with_capacity(capacity),
             buffer_actual_len: 0,
         }
     }
 
-    /// Returns the current buffer capacity of this [`Decoder`]. This value is
+    /// Returns the current buffer capacity of this [`SeqDecoder`]. This value is
     /// subject to change after every incoming message.
     ///
     /// # Examples
     ///
     /// ```
-    /// use fefix::sofh::Decoder;
+    /// use fefix::sofh::SeqDecoder;
     ///
-    /// let parser = Decoder::from_buffer(Vec::<u8>::with_capacity(8192));
+    /// let parser = SeqDecoder::with_capacity(8192);
     /// assert_eq!(parser.capacity(), 8192);
     /// ```
     pub fn capacity(&self) -> usize {
         self.buffer.capacity()
     }
-}
 
-impl<B> Decoder<B>
-where
-    B: Buffer,
-{
-    /// Provides a buffer that must be filled before re-attempting to deserialize
+    /// Provides a buffer that MUST be filled before re-attempting to deserialize
     /// the next [`Frame`].
     pub fn supply_buffer(&mut self) -> &mut [u8] {
-        let decode_result = Frame::decode(self.buffer.as_slice());
+        let decode_result = Frame::<&[u8]>::deserialize(self.buffer.as_slice());
         match decode_result {
             Ok(_) => &mut [],
             Err(Error::Io(_)) => panic!("Impossible IO error"),
@@ -70,18 +63,18 @@ where
     /// Attempts decoding. Returns `Ok(())` if a [`Frame`] is ready, otherwise an `Err`.
     pub fn attempt_decoding(&mut self) -> Result<(), Error> {
         let slice = &self.buffer.as_slice()[..self.buffer_actual_len];
-        let decode_result = Frame::decode(slice);
+        let decode_result = Frame::<&[u8]>::deserialize(slice);
         decode_result.map(|_| ())
     }
 
-    ///
-    pub fn current_frame(&self) -> Frame {
+    /// Returns the current [`Frame`]
+    pub fn current_frame(&self) -> Frame<&[u8]> {
         let slice = &self.buffer.as_slice()[..self.buffer_actual_len];
-        let decode_result = Frame::decode(slice);
+        let decode_result = Frame::<&[u8]>::deserialize(slice);
         decode_result.unwrap()
     }
 
-    pub fn read_frames<R>(self, reader: R) -> Frames<B, R>
+    pub fn read_frames<R>(self, reader: R) -> Frames<R>
     where
         R: io::Read,
     {
@@ -93,20 +86,16 @@ where
 }
 
 #[derive(Debug)]
-pub struct Frames<B, R>
-where
-    B: Buffer,
-{
-    decoder: Decoder<B>,
+pub struct Frames<R> {
+    decoder: SeqDecoder,
     reader: R,
 }
 
-impl<B, R> Frames<B, R>
+impl<R> Frames<R>
 where
-    B: Buffer,
     R: std::io::Read,
 {
-    pub fn next(&mut self) -> Result<Option<Frame>, Error> {
+    pub fn next(&mut self) -> Result<Option<Frame<&[u8]>>, Error> {
         loop {
             let buffer = &mut self.decoder.supply_buffer();
             match self.reader.read(buffer) {

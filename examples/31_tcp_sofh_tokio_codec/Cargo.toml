@@ -1,0 +1,10 @@
+[package]
+name = "example_tcp_sofh_tokio_codec"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+fefix = { path = "../../fefix", features = ["sofh", "utils-tokio"] }
+futures-util = "0.3"
+tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.6", features = ["codec"] }

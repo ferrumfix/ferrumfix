@@ -1029,6 +1029,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "example_tcp_sofh_tokio_codec"
+version = "0.1.0"
+dependencies = [
+ "fefix",
+ "futures-util",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "example_tls_fixua_acceptor"
 version = "0.1.0"
 dependencies = [
@@ -2919,8 +2929,12 @@ dependencies = [
  "memchr",
  "mio",
  "num_cpus",
+ "once_cell",
+ "parking_lot",
  "pin-project-lite 0.2.0",
+ "signal-hook-registry",
  "tokio-macros",
+ "winapi",
 ]
 
 [[package]]
