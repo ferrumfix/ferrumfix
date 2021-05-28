@@ -1,9 +1,10 @@
 /// Configuration interface for the FIX JSON encoding format.
 pub trait Configure: Clone + Default {
-    /// This setting indicates that all encoded messages should be "prettified",
-    /// i.e. the JSON code will not be compressed and instead it will have
-    /// indentation and other whitespace that favors human readability. Some
-    /// performance loss and increased payload size is expected.
+    /// This setting indicates that all encoded messages should be "prettified"
+    /// if possible, i.e. the JSON code will not be compressed and instead it
+    /// will have indentation and other whitespace that favors human
+    /// readability. Some performance loss and increased payload size is
+    /// expected.
     ///
     /// This is turned off be default.
     ///
@@ -13,19 +14,8 @@ pub trait Configure: Clone + Default {
     ///
     /// With "pretty print":
     ///
-    /// ```json
-    /// {
-    ///     "Header": {
-    ///         "...": "..."
-    ///     },
-    ///     "Body": {
-    ///         "...": "..."
-    ///     },
-    ///     "Trailer": {
-    ///         "...": "..."
-    ///     }
-    /// }
-    /// ```
+    /// ```json { "Header": { "...": "..." }, "Body": { "...": "..." },
+    /// "Trailer": { "...": "..." } } ```
     ///
     /// Without "pretty print":
     ///
@@ -38,14 +28,15 @@ pub trait Configure: Clone + Default {
     }
 }
 
-/// The canonical implementor of [`Configure`].
+/// The canonical implementor of [`Configure`]. It simply stores configuration
+/// options as fields.
 #[derive(Debug, Clone)]
 pub struct Config {
     pretty_print: bool,
 }
 
 impl Config {
-    /// Creates a [`Config`] with default settings.
+    /// Creates a new [`Config`] with default settings.
     pub fn new() -> Self {
         Self::default()
     }
