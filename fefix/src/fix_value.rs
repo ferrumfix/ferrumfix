@@ -3,16 +3,19 @@ use crate::{Buffer, TagU16};
 use std::convert::TryInto;
 use std::string::ToString;
 
-/// A trait for (de)serializing data directly into a [`Buffer`].
+/// Allows (de)serialization as a FIX value (e.g. `tag=value|`).
 pub trait FixValue<'a>
 where
     Self: Sized,
 {
+    /// The error type that can arise during deserialization.
     type Error;
+    /// A type with values that customize the serialization algorithm, e.g.
+    /// [`ZeroPadding`].
     type SerializeSettings: Default;
 
     /// Flag that is enabled if and only if the byte representation of `Self` is
-    /// always valid ASCII.
+    /// ALWAYS valid ASCII.
     ///
     /// This flag is currently not used, but it might be once Rust supports
     /// fully-fledged `const` generics.
@@ -54,35 +57,20 @@ where
     /// # Panics
     /// This function will panic if the underlying byte representation is not
     /// valid UTF-8. As such, you should only *ever* use this function for
-    /// [`FixValue`] implementors that are guaranteed to be representable
-    /// with valid UTF-8
-    /// (like numbers with ASCII digits).
+    /// [`FixValue`] implementors that are guaranteed to be representable with
+    /// valid UTF-8 (like numbers with ASCII digits).
     fn to_string(&self) -> String {
         String::from_utf8(self.to_bytes()).expect("Invalid UTF-8 representation of FIX field.")
     }
 }
 
-/// Byte-padding instructions for byte strings.
-#[derive(Debug, Copy, Clone)]
-pub struct Padding {
-    pub len: usize,
-    pub byte: u8,
-}
+/// Zero-padding instructions for integers.
+#[derive(Debug, Copy, Clone, Default)]
+pub struct ZeroPadding(pub usize);
 
-impl Default for Padding {
-    #[inline(always)]
-    fn default() -> Self {
-        Self { len: 0, byte: 0 }
-    }
-}
-
-impl Padding {
-    #[inline(always)]
-    pub fn zeros(len: usize) -> Self {
-        Self { len, byte: b'0' }
-    }
-}
-
+/// Specifies whether a timestamp should have millisecond or second precision.
+///
+/// Enabled by [`Default`].
 #[derive(Debug, Copy, Clone)]
 pub struct WithMilliseconds(pub bool);
 
@@ -114,18 +102,18 @@ impl<'a> FixValue<'a> for chrono::DateTime<chrono::Utc> {
         B: Buffer,
     {
         use chrono::{Datelike, Timelike};
-        (self.year() as u32).serialize_with(buffer, Padding::zeros(4));
-        (self.month() as u32).serialize_with(buffer, Padding::zeros(2));
-        (self.day() as u32).serialize_with(buffer, Padding::zeros(2));
+        (self.year() as u32).serialize_with(buffer, ZeroPadding(4));
+        (self.month() as u32).serialize_with(buffer, ZeroPadding(2));
+        (self.day() as u32).serialize_with(buffer, ZeroPadding(2));
         buffer.extend_from_slice(b"-");
-        (self.hour() as u32).serialize_with(buffer, Padding::zeros(2));
+        (self.hour() as u32).serialize_with(buffer, ZeroPadding(2));
         buffer.extend_from_slice(b":");
-        (self.minute() as u32).serialize_with(buffer, Padding::zeros(2));
+        (self.minute() as u32).serialize_with(buffer, ZeroPadding(2));
         buffer.extend_from_slice(b":");
-        (self.second() as u32).serialize_with(buffer, Padding::zeros(2));
+        (self.second() as u32).serialize_with(buffer, ZeroPadding(2));
         if settings.0 {
             buffer.extend_from_slice(b".");
-            (self.nanosecond() / 10E6 as u32).serialize_with(buffer, Padding::zeros(3));
+            (self.nanosecond() / 10E6 as u32).serialize_with(buffer, ZeroPadding(3));
             21
         } else {
             17
@@ -151,9 +139,9 @@ impl<'a> FixValue<'a> for chrono::NaiveDate {
         B: Buffer,
     {
         use chrono::Datelike;
-        (self.year() as u32).serialize_with(buffer, Padding::zeros(4));
-        (self.month() as u32).serialize_with(buffer, Padding::zeros(2));
-        (self.day() as u32).serialize_with(buffer, Padding::zeros(2));
+        (self.year() as u32).serialize_with(buffer, ZeroPadding(4));
+        (self.month() as u32).serialize_with(buffer, ZeroPadding(2));
+        (self.day() as u32).serialize_with(buffer, ZeroPadding(2));
         8
     }
 
@@ -409,7 +397,7 @@ impl<'a> FixValue<'a> for TagU16 {
 
 impl<'a> FixValue<'a> for u32 {
     type Error = error::Int;
-    type SerializeSettings = Padding;
+    type SerializeSettings = ZeroPadding;
 
     const IS_ASCII: bool = true;
 
@@ -418,20 +406,20 @@ impl<'a> FixValue<'a> for u32 {
     where
         B: Buffer,
     {
-        if padding.len == 0 {
+        if padding.0 == 0 {
             let s = ToString::to_string(self);
             buffer.extend_from_slice(s.as_bytes());
             return s.len();
         }
         let initial_len = buffer.len();
-        buffer.resize(buffer.len() + padding.len, padding.byte);
+        buffer.resize(buffer.len() + padding.0, b'0');
         let bytes = buffer.as_mut_slice();
         let mut multiplier = 1;
-        for i in (0..padding.len).rev() {
+        for i in (0..padding.0).rev() {
             bytes[i + initial_len] = ((self / multiplier) % 10).wrapping_add(b'0' as u32) as u8;
             multiplier *= 10;
         }
-        padding.len
+        padding.0
     }
 
     #[inline(always)]
