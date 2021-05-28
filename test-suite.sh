@@ -14,7 +14,7 @@ QUICKCHECK_TESTS="2500"
 
 # Test multiple feature combinations.
 cargo test # Default features
-cargo test --no-default-features --features ""
+cargo test --no-default-features
 cargo test --no-default-features --features "fix42"
 cargo test --no-default-features --features "fixt11"
 cargo test --no-default-features --features "fixs"
