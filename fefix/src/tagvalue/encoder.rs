@@ -3,7 +3,7 @@ use crate::buffer::Buffer;
 use crate::definitions::fix44;
 use crate::dict;
 use crate::dict::IsFieldDefinition;
-use crate::tagvalue::datatypes::CheckSum;
+use crate::fix_values::CheckSum;
 use crate::FixValue;
 use crate::TagU16;
 use std::ops::Range;

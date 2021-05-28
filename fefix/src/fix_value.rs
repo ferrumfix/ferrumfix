@@ -1,4 +1,4 @@
-use crate::tagvalue::datatypes::*;
+use crate::fix_values::*;
 use crate::{Buffer, TagU16};
 use std::convert::TryInto;
 use std::string::ToString;

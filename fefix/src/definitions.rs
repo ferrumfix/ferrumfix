@@ -1,6 +1,6 @@
 //! Field and message definitions for all FIX application versions.
 
-use crate::{dict, dict::FixDataType, TagU16};
+use crate::{dict, dict::FixDatatype, TagU16};
 
 /// Metadata about a specific FIX tag. Designed for code generation.
 #[derive(Debug, Clone)]
@@ -13,7 +13,7 @@ pub struct HardCodedFixFieldDefinition {
     /// instances of repeating groups.
     pub is_group_leader: bool,
     /// The FIX data type of this field definition.
-    pub data_type: FixDataType,
+    pub data_type: FixDatatype,
     /// Expected location of this FIX field within messages - header, body, or
     /// trailer. Used for JSON-encoded FIX messages.
     pub location: dict::FieldLocation,

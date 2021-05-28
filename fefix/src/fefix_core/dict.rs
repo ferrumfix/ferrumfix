@@ -9,7 +9,7 @@ use std::fmt;
 use std::io;
 use std::sync::Arc;
 
-pub use datatype::FixDataType;
+pub use datatype::FixDatatype;
 
 const SPEC_FIX_40: &str = include_str!("resources/quickfix/FIX-4.0.xml");
 const SPEC_FIX_41: &str = include_str!("resources/quickfix/FIX-4.1.xml");
@@ -87,8 +87,7 @@ type InternalId = u32;
 ///
 /// [`Dictionary`] doesn't provide information regarding
 /// the detailed layouts of messages and components; such intricacies are handled
-/// by the
-/// presentation layer ([`fefix::codec`]).
+/// by the presentation layer.
 ///
 /// All FIX Dictionaries have a version string which MUST be unique and
 /// established out-of-band between involved parties.
@@ -373,7 +372,7 @@ impl Dictionary {
             .map(|data| Component(self, data))
     }
 
-    /// Returns the [`DataType`](DataType) named `name`, if any.
+    /// Returns the [`Datatype`] named `name`, if any.
     ///
     /// ```
     /// use fefix::Dictionary;
@@ -388,7 +387,7 @@ impl Dictionary {
             .map(|data| Datatype(self, data))
     }
 
-    /// Returns the [`Field`](Field) associated with `tag`, if any.
+    /// Returns the [`Field`] associated with `tag`, if any.
     ///
     /// ```
     /// use fefix::Dictionary;
@@ -411,7 +410,7 @@ impl Dictionary {
             .map(|data| Field(self, data))
     }
 
-    /// Returns an [`Iterator`](Iterator) over all [`DataType`](DataType) defined
+    /// Returns an [`Iterator`](Iterator) over all [`Datatype`](Datatype) defined
     /// in `self`. Items are in no particular order.
     ///
     /// ```
@@ -685,7 +684,7 @@ pub enum ComponentType {
 #[derive(Clone, Debug, PartialEq)]
 struct DatatypeData {
     /// **Primary key.** Identifier of the datatype.
-    datatype: FixDataType,
+    datatype: FixDatatype,
     /// Human readable description of this Datatype.
     description: String,
     /// A string that contains examples values for a datatype
@@ -705,7 +704,7 @@ impl<'a> Datatype<'a> {
     }
 
     /// Returns `self` as an `enum`.
-    pub fn basetype(&self) -> FixDataType {
+    pub fn basetype(&self) -> FixDatatype {
         self.1.datatype
     }
 }
@@ -719,7 +718,7 @@ mod datatype {
     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
     #[repr(u8)]
     #[non_exhaustive]
-    pub enum FixDataType {
+    pub enum FixDatatype {
         /// Single character value, can include any alphanumeric character or
         /// punctuation except the delimiter. All char fields are case sensitive
         /// (i.e. m != M). The following fields are based on char.
@@ -856,56 +855,57 @@ mod datatype {
         Country,
     }
 
-    impl FixDataType {
+    impl FixDatatype {
         /// Compares `name` to the set of strings commonly used by QuickFIX's custom
-        /// specification format and returns its associated [`DataType`] if a match
+        /// specification format and returns its associated
+        /// [`Datatype`](super::Datatype) if a match
         /// was found. The query is case-insensitive.
         ///
         /// # Examples
         ///
         /// ```
-        /// use fefix::dict::FixDataType;
+        /// use fefix::dict::FixDatatype;
         ///
-        /// assert_eq!(FixDataType::from_quickfix_name("AMT"), Some(FixDataType::Amt));
-        /// assert_eq!(FixDataType::from_quickfix_name("Amt"), Some(FixDataType::Amt));
-        /// assert_eq!(FixDataType::from_quickfix_name("MONTHYEAR"), Some(FixDataType::MonthYear));
-        /// assert_eq!(FixDataType::from_quickfix_name(""), None);
+        /// assert_eq!(FixDatatype::from_quickfix_name("AMT"), Some(FixDatatype::Amt));
+        /// assert_eq!(FixDatatype::from_quickfix_name("Amt"), Some(FixDatatype::Amt));
+        /// assert_eq!(FixDatatype::from_quickfix_name("MONTHYEAR"), Some(FixDatatype::MonthYear));
+        /// assert_eq!(FixDatatype::from_quickfix_name(""), None);
         /// ```
         pub fn from_quickfix_name(name: &str) -> Option<Self> {
             // https://github.com/quickfix/quickfix/blob/b6760f55ac6a46306b4e081bb13b65e6220ab02d/src/C%2B%2B/DataDictionary.cpp#L646-L680
             Some(match name.to_ascii_uppercase().as_str() {
-                "AMT" => FixDataType::Amt,
-                "BOOLEAN" => FixDataType::Boolean,
-                "CHAR" => FixDataType::Char,
-                "COUNTRY" => FixDataType::Country,
-                "CURRENCY" => FixDataType::Currency,
-                "DATA" => FixDataType::Data,
-                "DATE" => FixDataType::UtcDateOnly, // FIXME?
-                "DAYOFMONTH" => FixDataType::DayOfMonth,
-                "EXCHANGE" => FixDataType::Exchange,
-                "FLOAT" => FixDataType::Float,
-                "INT" => FixDataType::Int,
-                "LANGUAGE" => FixDataType::Language,
-                "LENGTH" => FixDataType::Int,
-                "LOCALMKTDATE" => FixDataType::LocalMktDate,
-                "MONTHYEAR" => FixDataType::MonthYear,
-                "MULTIPLECHARVALUE" | "MULTIPLEVALUESTRING" => FixDataType::MultipleCharValue,
-                "MULTIPLESTRINGVALUE" => FixDataType::MultipleStringValue,
-                "NUMINGROUP" => FixDataType::NumInGroup,
-                "PERCENTAGE" => FixDataType::Percentage,
-                "PRICE" => FixDataType::Price,
-                "PRICEOFFSET" => FixDataType::PriceOffset,
-                "QTY" => FixDataType::Qty,
-                "STRING" => FixDataType::String,
-                "TZTIMEONLY" => FixDataType::UtcTimeOnly, // FIXME
-                "TZTIMESTAMP" => FixDataType::UtcTimestamp, // FIXME
-                "UTCDATE" => FixDataType::UtcDateOnly,
-                "UTCDATEONLY" => FixDataType::UtcDateOnly,
-                "UTCTIMEONLY" => FixDataType::UtcTimeOnly,
-                "UTCTIMESTAMP" => FixDataType::UtcTimestamp,
-                "SEQNUM" => FixDataType::Int,
-                "TIME" => FixDataType::UtcTimestamp,
-                "XMLDATA" => FixDataType::XmlData,
+                "AMT" => FixDatatype::Amt,
+                "BOOLEAN" => FixDatatype::Boolean,
+                "CHAR" => FixDatatype::Char,
+                "COUNTRY" => FixDatatype::Country,
+                "CURRENCY" => FixDatatype::Currency,
+                "DATA" => FixDatatype::Data,
+                "DATE" => FixDatatype::UtcDateOnly, // FIXME?
+                "DAYOFMONTH" => FixDatatype::DayOfMonth,
+                "EXCHANGE" => FixDatatype::Exchange,
+                "FLOAT" => FixDatatype::Float,
+                "INT" => FixDatatype::Int,
+                "LANGUAGE" => FixDatatype::Language,
+                "LENGTH" => FixDatatype::Int,
+                "LOCALMKTDATE" => FixDatatype::LocalMktDate,
+                "MONTHYEAR" => FixDatatype::MonthYear,
+                "MULTIPLECHARVALUE" | "MULTIPLEVALUESTRING" => FixDatatype::MultipleCharValue,
+                "MULTIPLESTRINGVALUE" => FixDatatype::MultipleStringValue,
+                "NUMINGROUP" => FixDatatype::NumInGroup,
+                "PERCENTAGE" => FixDatatype::Percentage,
+                "PRICE" => FixDatatype::Price,
+                "PRICEOFFSET" => FixDatatype::PriceOffset,
+                "QTY" => FixDatatype::Qty,
+                "STRING" => FixDatatype::String,
+                "TZTIMEONLY" => FixDatatype::UtcTimeOnly, // FIXME
+                "TZTIMESTAMP" => FixDatatype::UtcTimestamp, // FIXME
+                "UTCDATE" => FixDatatype::UtcDateOnly,
+                "UTCDATEONLY" => FixDatatype::UtcDateOnly,
+                "UTCTIMEONLY" => FixDatatype::UtcTimeOnly,
+                "UTCTIMESTAMP" => FixDatatype::UtcTimestamp,
+                "SEQNUM" => FixDatatype::Int,
+                "TIME" => FixDatatype::UtcTimestamp,
+                "XMLDATA" => FixDatatype::XmlData,
                 _ => {
                     return None;
                 }
@@ -915,50 +915,50 @@ mod datatype {
         /// Returns the name adopted by QuickFIX for `self`.
         pub fn to_quickfix_name(&self) -> &str {
             match self {
-                FixDataType::Int => "INT",
-                FixDataType::Length => "LENGTH",
-                FixDataType::Char => "CHAR",
-                FixDataType::Boolean => "BOOLEAN",
-                FixDataType::Float => "FLOAT",
-                FixDataType::Amt => "AMT",
-                FixDataType::Price => "PRICE",
-                FixDataType::PriceOffset => "PRICEOFFSET",
-                FixDataType::Qty => "QTY",
-                FixDataType::Percentage => "PERCENTAGE",
-                FixDataType::DayOfMonth => "DAYOFMONTH",
-                FixDataType::NumInGroup => "NUMINGROUP",
-                FixDataType::Language => "LANGUAGE",
-                FixDataType::SeqNum => "SEQNUM",
-                FixDataType::TagNum => "TAGNUM",
-                FixDataType::String => "STRING",
-                FixDataType::Data => "DATA",
-                FixDataType::MonthYear => "MONTHYEAR",
-                FixDataType::Currency => "CURRENCY",
-                FixDataType::Exchange => "EXCHANGE",
-                FixDataType::LocalMktDate => "LOCALMKTDATE",
-                FixDataType::MultipleStringValue => "MULTIPLESTRINGVALUE",
-                FixDataType::UtcTimeOnly => "UTCTIMEONLY",
-                FixDataType::UtcTimestamp => "UTCTIMESTAMP",
-                FixDataType::UtcDateOnly => "UTCDATEONLY",
-                FixDataType::Country => "COUNTRY",
-                FixDataType::MultipleCharValue => "MULTIPLECHARVALUE",
-                FixDataType::XmlData => "XMLDATA",
+                FixDatatype::Int => "INT",
+                FixDatatype::Length => "LENGTH",
+                FixDatatype::Char => "CHAR",
+                FixDatatype::Boolean => "BOOLEAN",
+                FixDatatype::Float => "FLOAT",
+                FixDatatype::Amt => "AMT",
+                FixDatatype::Price => "PRICE",
+                FixDatatype::PriceOffset => "PRICEOFFSET",
+                FixDatatype::Qty => "QTY",
+                FixDatatype::Percentage => "PERCENTAGE",
+                FixDatatype::DayOfMonth => "DAYOFMONTH",
+                FixDatatype::NumInGroup => "NUMINGROUP",
+                FixDatatype::Language => "LANGUAGE",
+                FixDatatype::SeqNum => "SEQNUM",
+                FixDatatype::TagNum => "TAGNUM",
+                FixDatatype::String => "STRING",
+                FixDatatype::Data => "DATA",
+                FixDatatype::MonthYear => "MONTHYEAR",
+                FixDatatype::Currency => "CURRENCY",
+                FixDatatype::Exchange => "EXCHANGE",
+                FixDatatype::LocalMktDate => "LOCALMKTDATE",
+                FixDatatype::MultipleStringValue => "MULTIPLESTRINGVALUE",
+                FixDatatype::UtcTimeOnly => "UTCTIMEONLY",
+                FixDatatype::UtcTimestamp => "UTCTIMESTAMP",
+                FixDatatype::UtcDateOnly => "UTCDATEONLY",
+                FixDatatype::Country => "COUNTRY",
+                FixDatatype::MultipleCharValue => "MULTIPLECHARVALUE",
+                FixDatatype::XmlData => "XMLDATA",
             }
         }
 
         /// Returns the name of `self`, character by character identical to the name
         /// that appears in the official guidelines. **Generally** primitive datatypes
         /// will use `snake_case` and non-primitive ones will have `PascalCase`, but
-        /// that's not true for every [`DataType`].
+        /// that's not true for every [`Datatype`](super::Datatype).
         ///
         /// # Examples
         ///
         /// ```
-        /// use fefix::dict::FixDataType;
+        /// use fefix::dict::FixDatatype;
         ///
-        /// assert_eq!(FixDataType::Qty.name(), "Qty");
-        /// assert_eq!(FixDataType::Float.name(), "float");
-        /// assert_eq!(FixDataType::String.name(), "String");
+        /// assert_eq!(FixDatatype::Qty.name(), "Qty");
+        /// assert_eq!(FixDatatype::Float.name(), "float");
+        /// assert_eq!(FixDatatype::String.name(), "String");
         /// ```
         pub fn name(&self) -> &'static str {
             // 1. Most primitive data types have `snake_case` names.
@@ -967,34 +967,34 @@ mod datatype {
             //    Why, you ask? Oh, you sweet summer child. You'll learn soon enough
             //    that nothing makes sense in FIX land.
             match self {
-                FixDataType::Int => "int",
-                FixDataType::Length => "Length",
-                FixDataType::Char => "char",
-                FixDataType::Boolean => "Boolean",
-                FixDataType::Float => "float",
-                FixDataType::Amt => "Amt",
-                FixDataType::Price => "Price",
-                FixDataType::PriceOffset => "PriceOffset",
-                FixDataType::Qty => "Qty",
-                FixDataType::Percentage => "Percentage",
-                FixDataType::DayOfMonth => "DayOfMonth",
-                FixDataType::NumInGroup => "NumInGroup",
-                FixDataType::Language => "Language",
-                FixDataType::SeqNum => "SeqNum",
-                FixDataType::TagNum => "TagNum",
-                FixDataType::String => "String",
-                FixDataType::Data => "data",
-                FixDataType::MonthYear => "MonthYear",
-                FixDataType::Currency => "Currency",
-                FixDataType::Exchange => "Exchange",
-                FixDataType::LocalMktDate => "LocalMktDate",
-                FixDataType::MultipleStringValue => "MultipleStringValue",
-                FixDataType::UtcTimeOnly => "UTCTimeOnly",
-                FixDataType::UtcTimestamp => "UTCTimestamp",
-                FixDataType::UtcDateOnly => "UTCDateOnly",
-                FixDataType::Country => "Country",
-                FixDataType::MultipleCharValue => "MultipleCharValue",
-                FixDataType::XmlData => "XMLData",
+                FixDatatype::Int => "int",
+                FixDatatype::Length => "Length",
+                FixDatatype::Char => "char",
+                FixDatatype::Boolean => "Boolean",
+                FixDatatype::Float => "float",
+                FixDatatype::Amt => "Amt",
+                FixDatatype::Price => "Price",
+                FixDatatype::PriceOffset => "PriceOffset",
+                FixDatatype::Qty => "Qty",
+                FixDatatype::Percentage => "Percentage",
+                FixDatatype::DayOfMonth => "DayOfMonth",
+                FixDatatype::NumInGroup => "NumInGroup",
+                FixDatatype::Language => "Language",
+                FixDatatype::SeqNum => "SeqNum",
+                FixDatatype::TagNum => "TagNum",
+                FixDatatype::String => "String",
+                FixDatatype::Data => "data",
+                FixDatatype::MonthYear => "MonthYear",
+                FixDatatype::Currency => "Currency",
+                FixDatatype::Exchange => "Exchange",
+                FixDatatype::LocalMktDate => "LocalMktDate",
+                FixDatatype::MultipleStringValue => "MultipleStringValue",
+                FixDatatype::UtcTimeOnly => "UTCTimeOnly",
+                FixDatatype::UtcTimestamp => "UTCTimestamp",
+                FixDatatype::UtcDateOnly => "UTCDateOnly",
+                FixDatatype::Country => "Country",
+                FixDatatype::MultipleCharValue => "MultipleCharValue",
+                FixDatatype::XmlData => "XMLData",
             }
         }
 
@@ -1004,10 +1004,10 @@ mod datatype {
         /// # Examples
         ///
         /// ```
-        /// use fefix::dict::FixDataType;
+        /// use fefix::dict::FixDatatype;
         ///
-        /// assert_eq!(FixDataType::Float.is_base_type(), true);
-        /// assert_eq!(FixDataType::Price.is_base_type(), false);
+        /// assert_eq!(FixDatatype::Float.is_base_type(), true);
+        /// assert_eq!(FixDatatype::Price.is_base_type(), false);
         /// ```
         pub fn is_base_type(&self) -> bool {
             match self {
@@ -1016,16 +1016,16 @@ mod datatype {
             }
         }
 
-        /// Returns the primitive [`DataType`] from which `self` is derived. If
+        /// Returns the primitive [`Datatype`](super::Datatype) from which `self` is derived. If
         /// `self` is primitive already, returns `self` unchanged.
         ///
         /// # Examples
         ///
         /// ```
-        /// use fefix::dict::FixDataType;
+        /// use fefix::dict::FixDatatype;
         ///
-        /// assert_eq!(FixDataType::Float.base_type(), FixDataType::Float);
-        /// assert_eq!(FixDataType::Price.base_type(), FixDataType::Float);
+        /// assert_eq!(FixDatatype::Float.base_type(), FixDatatype::Float);
+        /// assert_eq!(FixDatatype::Price.base_type(), FixDatatype::Float);
         /// ```
         pub fn base_type(&self) -> Self {
             let dt = match self {
@@ -1049,7 +1049,7 @@ mod datatype {
         }
 
         /// Returns an [`Iterator`] over all variants of
-        /// [`DataType`].
+        /// [`Datatype`](super::Datatype).
         pub fn iter_all() -> impl Iterator<Item = Self> {
             <Self as IntoEnumIterator>::iter()
         }
@@ -1062,8 +1062,8 @@ mod datatype {
 
         #[test]
         fn iter_all_unique() {
-            let as_vec = FixDataType::iter_all().collect::<Vec<FixDataType>>();
-            let as_set = FixDataType::iter_all().collect::<HashSet<FixDataType>>();
+            let as_vec = FixDatatype::iter_all().collect::<Vec<FixDatatype>>();
+            let as_set = FixDatatype::iter_all().collect::<HashSet<FixDatatype>>();
             assert_eq!(as_vec.len(), as_set.len());
         }
 
@@ -1072,15 +1072,15 @@ mod datatype {
             // According to the official documentation, FIX has "about 20 data
             // types". Including recent revisions, we should well exceed that
             // number.
-            assert!(FixDataType::iter_all().count() > 20);
+            assert!(FixDatatype::iter_all().count() > 20);
         }
 
         #[test]
         fn names_are_unique() {
-            let as_vec = FixDataType::iter_all()
+            let as_vec = FixDatatype::iter_all()
                 .map(|dt| dt.name())
                 .collect::<Vec<&str>>();
-            let as_set = FixDataType::iter_all()
+            let as_set = FixDatatype::iter_all()
                 .map(|dt| dt.name())
                 .collect::<HashSet<&str>>();
             assert_eq!(as_vec.len(), as_set.len());
@@ -1088,7 +1088,7 @@ mod datatype {
 
         #[test]
         fn base_type_is_itself() {
-            for dt in FixDataType::iter_all() {
+            for dt in FixDatatype::iter_all() {
                 if dt.is_base_type() {
                     assert_eq!(dt.base_type(), dt);
                 } else {
@@ -1099,7 +1099,7 @@ mod datatype {
 
         #[test]
         fn base_type_is_actually_base_type() {
-            for dt in FixDataType::iter_all() {
+            for dt in FixDatatype::iter_all() {
                 assert!(dt.base_type().is_base_type());
             }
         }
@@ -1201,8 +1201,8 @@ impl<'a> Field<'a> {
         url
     }
 
-    /// Returns the [`BaseType`] of `self`.
-    pub fn fix_datatype(&self) -> FixDataType {
+    /// Returns the [`FixDatatype`] of `self`.
+    pub fn fix_datatype(&self) -> FixDatatype {
         self.data_type().basetype()
     }
 
@@ -1435,7 +1435,7 @@ impl<'a> Message<'a> {
     }
 }
 
-/// A [`Section`] is a collection of many [`Components`]-s. It has no practical
+/// A [`Section`] is a collection of many [`Component`]-s. It has no practical
 /// effect on encoding and decoding of FIX data and it's only used for
 /// documentation and human readability.
 #[derive(Clone, Debug, PartialEq)]
@@ -1731,7 +1731,7 @@ mod quickfix {
             // The idenfier that QuickFIX uses for this type.
             let quickfix_name = node.attribute("type").unwrap();
             // Translate that into a real datatype.
-            FixDataType::from_quickfix_name(quickfix_name).unwrap()
+            FixDatatype::from_quickfix_name(quickfix_name).unwrap()
         };
         // Get the official (not QuickFIX's) name of `datatype`.
         let name = datatype.name();

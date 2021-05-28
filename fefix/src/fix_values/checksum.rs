@@ -8,9 +8,6 @@ const ERR_LENGTH: &str = "Expected exactly three bytes for CheckSum.";
 const ERR_ASCII_DIGITS: &str = "Expected ASCII digits, found invalid characters.";
 
 /// The result of a FIX checksum calculation.
-///
-/// [`CheckSum`] implements [`FixValue`] as a zero-padded, unsigned integer
-/// field of three bytes.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct CheckSum(pub u8);
 

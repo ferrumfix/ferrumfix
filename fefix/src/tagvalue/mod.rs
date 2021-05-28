@@ -9,7 +9,6 @@ use std::fmt::Debug;
 use std::io;
 
 mod config;
-pub mod datatypes;
 mod decoder;
 mod encoder;
 mod field_getters;

@@ -52,7 +52,7 @@ where
     /// ```
     /// use fefix::sofh::{EncodingType, Frame};
     ///
-    /// let frame = Frame::new(0xF500, &[]);
+    /// let frame = Frame::new(0xF500, &[] as &[u8]);
     /// let encoding_type = EncodingType::from(frame.encoding_type());
     /// assert_eq!(encoding_type, EncodingType::Json);
     /// ```
@@ -68,7 +68,7 @@ where
     /// ```
     /// use fefix::sofh::Frame;
     ///
-    /// let frame = Frame::new(0x0, &[42]);
+    /// let frame = Frame::new(0x0, &[42u8] as &[u8]);
     /// assert_eq!(frame.payload(), &[42]);
     /// ```
     pub fn payload(&self) -> &[u8] {
@@ -85,9 +85,9 @@ where
     /// ```
     /// use fefix::sofh::Frame;
     ///
-    /// // Message_Length:               ~~~~~~~~~~~
-    /// // Encoding_Type:                            ~~~~~~~~~
-    /// // Message:                                            ~~
+    /// // Message_Length:                        ~~~~~~~~~~~
+    /// // Encoding_Type:                                     ~~~~~~~~~
+    /// // Message:                                                     ~~
     /// let frame = Frame::<&[u8]>::deserialize(&[0, 0, 0, 7, 0x0, 0x0, 42]).unwrap();
     /// assert_eq!(frame.payload(), &[42]);
     /// ```
@@ -126,10 +126,10 @@ where
     /// use fefix::sofh::Frame;
     ///
     /// // Message_Length:
-    /// //            ~~~~~~~~~~~
-    /// // Encoding_Type:         ~~~~~~~~~
-    /// // Message:                         ~~
-    /// let bytes = &[0, 0, 0, 7, 0x0, 0x0, 42];
+    /// //            ~~~~~~~~~~~~~
+    /// // Encoding_Type:           ~~~~~~~~~
+    /// // Message:                           ~~
+    /// let bytes = &[0u8, 0, 0, 7, 0x0, 0x0, 42] as &[u8];
     /// let frame = Frame::<&[u8]>::deserialize(bytes).unwrap();
     /// let buffer = &mut Vec::new();
     /// frame.serialize(buffer).unwrap();

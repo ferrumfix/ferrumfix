@@ -1,7 +1,7 @@
 const SEPARATOR: u8 = b' ';
 
 /// An [`Iterator`] over space-delimited byte sequences in a
-/// [`DataType::MultipleStringValue`](crate::DataType::MultipleStringValue) field.
+/// `MultipleStringValue` field.
 #[derive(Debug, Clone)]
 pub struct MultipleStrings<'a> {
     data: &'a [u8],
@@ -9,7 +9,7 @@ pub struct MultipleStrings<'a> {
 }
 
 impl<'a> MultipleStrings<'a> {
-    /// Creates a new [`DtfMulStrIter`] from `data`.
+    /// Creates a new [`MultipleStrings`] from `data`.
     pub fn new(data: &'a [u8]) -> Self {
         Self { data, i: 0 }
     }

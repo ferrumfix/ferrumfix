@@ -1,10 +1,10 @@
-//! Types for holding [`DataType`](crate::DataType) values.
+//! Types for holding [`FixValue`](crate::FixValue) values.
 //!
 //! This module introduces reusable, allocation-free data structures that can be
-//! used to store [`DataType`](crate::DataType) values. This is done via the
-//! [`DataType`] trait, which allows both serialization and deserialization.
+//! used to store [`FixValue`](crate::FixValue) values. This is done via the
+//! [`FixValue`] trait, which allows both serialization and deserialization.
 //!
-//! FerrumFIX maps FIX date types to the following [`DataType`] implementors:
+//! FerrumFIX maps FIX date types to the following [`FixValue`] implementors:
 //!
 //! - `int`: any Rust primitive integer type;
 //! - `Length`: [`usize`];
@@ -34,7 +34,7 @@
 //!
 //! ```
 //! use fefix::FixValue;
-//! use fefix::tagvalue::datatypes::Timestamp;
+//! use fefix::fix_values::Timestamp;
 //!
 //! let bytes = b"20130422-12:30:00.000";
 //!
@@ -48,7 +48,7 @@
 //! assert!(u32::deserialize_lossy(b"invalid integer").is_ok());
 //!
 //! let buffer: &mut Vec<u8> = &mut vec![];
-//! // Use `DataType::serialize` to write values to buffers.
+//! // Use `FixValue::serialize` to write values to buffers.
 //! 1337u32.serialize(buffer);
 //! assert_eq!(&buffer[..], b"1337" as &[u8]);
 //! ```

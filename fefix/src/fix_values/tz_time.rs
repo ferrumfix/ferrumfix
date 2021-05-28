@@ -22,7 +22,7 @@ impl TzTime {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::tagvalue::datatypes::TzTime;
+    /// use fefix::fix_values::TzTime;
     ///
     /// let dtf = TzTime::deserialize(b"12:45:00Z").unwrap();
     /// assert_eq!(dtf.minute(), 45);

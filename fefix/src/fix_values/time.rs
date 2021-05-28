@@ -16,7 +16,7 @@ const MIN_SECOND: u32 = 0;
 const MIN_MILLISECOND: u32 = 0;
 
 /// Canonical data field (DTF) for
-/// [`FixDataType::UtcTimeOnly`](crate::dict::FixDataType::UtcTimeOnly).
+/// [`FixDatatype::UtcTimeOnly`](crate::dict::FixDatatype::UtcTimeOnly).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Time {
     hour: u32,
@@ -71,7 +71,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::tagvalue::datatypes::Time;
+    /// use fefix::fix_values::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.hour(), 12)
@@ -86,7 +86,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::tagvalue::datatypes::Time;
+    /// use fefix::fix_values::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
@@ -101,7 +101,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::tagvalue::datatypes::Time;
+    /// use fefix::fix_values::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
@@ -111,7 +111,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::tagvalue::datatypes::Time;
+    /// use fefix::fix_values::Time;
     ///
     /// let dtf = Time::deserialize(b"23:59:60").unwrap();
     /// assert_eq!(dtf.second(), 60)
@@ -126,7 +126,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::tagvalue::datatypes::Time;
+    /// use fefix::fix_values::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00.328").unwrap();
     /// assert_eq!(dtf.milli(), 328)

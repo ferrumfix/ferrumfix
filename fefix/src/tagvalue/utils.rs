@@ -1,4 +1,4 @@
-use super::datatypes::CheckSum;
+use crate::fix_values::CheckSum;
 use crate::tagvalue::DecodeError;
 use crate::FixValue;
 use std::convert::TryInto;

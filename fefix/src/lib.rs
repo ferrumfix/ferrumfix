@@ -10,7 +10,7 @@
 //!  (as much as practically feasible). Good defaults are provided but they are
 //!  zero-cost and you can swap them out if necessary.
 //!  - **Comprehensive**. Most standards adopted by the FIX Community are
-//!  available, from and session layers to [encodings] and
+//!  available, from and session layers to encodings and
 //!  dictionary-related logic.
 //!  - **Foundational**. FerrumFIX is foundational in the sense that it exposes a
 //!  large amount of primitives in its public interface, so that users can
@@ -76,6 +76,7 @@
 mod buffer;
 mod fefix_core;
 mod fix_value;
+pub mod fix_values;
 mod utils;
 #[cfg(feature = "codegen")]
 pub use fefix_core::codegen;

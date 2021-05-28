@@ -6,7 +6,7 @@ use crate::definitions::fix44;
 use crate::dict;
 use crate::dict::IsFieldDefinition;
 use crate::TagU16;
-use crate::{dict::FixDataType, Dictionary, FixValue};
+use crate::{dict::FixDatatype, Dictionary, FixValue};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::{BuildHasher, Hasher};
@@ -208,7 +208,7 @@ where
             )
             .unwrap();
         let entry = self.tag_lookup.lookup(tag).unwrap();
-        if entry.data_type() == FixDataType::NumInGroup {
+        if entry.data_type() == FixDatatype::NumInGroup {
             self.is_beginning_group = true;
             let s = std::str::from_utf8(content).unwrap();
             let entries_count = str::parse::<u16>(s).unwrap();
@@ -314,12 +314,12 @@ where
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct TagLookupEntry {
-    data_type: FixDataType,
+    data_type: FixDatatype,
     first_tag_of_group: TagU16,
 }
 
 impl TagLookupEntry {
-    pub fn data_type(&self) -> FixDataType {
+    pub fn data_type(&self) -> FixDatatype {
         self.data_type
     }
 }

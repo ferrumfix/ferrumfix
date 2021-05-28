@@ -1,4 +1,4 @@
-//! Error types for [`DataType`](super::DataType) implementors.
+//! Error types for [`FixValue`](super::FixValue) implementors.
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Decimal {

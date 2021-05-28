@@ -1,5 +1,5 @@
 /// An [`Iterator`] over space-delimited bytes in a
-/// [`DataType::MultipleCharValue`](crate::DataType::MultipleCharValue) field.
+/// `MultipleCharValue` field.
 #[derive(Debug, Clone)]
 pub struct MultipleChars<'a> {
     data: &'a [u8],
@@ -7,7 +7,7 @@ pub struct MultipleChars<'a> {
 }
 
 impl<'a> MultipleChars<'a> {
-    /// Creates a new [`DtfMulCharIter`] from `data`.
+    /// Creates a new [`MultipleChars`] from `data`.
     pub fn new(data: &'a [u8]) -> Self {
         Self { data, i: 0 }
     }

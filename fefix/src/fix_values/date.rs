@@ -16,9 +16,7 @@ const ERR_NOT_ASCII_DIGITS: &str = "Invalid characters, expected ASCII digits.";
 const ERR_LENGTH: &str = "Invalid length, expected 8 bytes (YYYYMMDD format).";
 const ERR_BOUNDS: &str = "Values outside legal bounds.";
 
-/// Canonical data field (DTF) for
-/// [`DataType::LocalMktDate`](crate::DataType::LocalMktDate)
-/// and [`DataType::UTCDateOnly`](crate::DataType::UtcDateOnly).
+/// Representation for `LocalMktDate` and and `UTCDateOnly`.
 ///
 /// Date in format `YYYYMMDD`.
 ///
@@ -42,7 +40,7 @@ impl Date {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::datatypes::Date;
+    /// use fefix::fix_values::Date;
     ///
     /// assert!(Date::new(2021, 4, 16).is_some());
     /// assert!(Date::new(2021, 13, 32).is_none());
@@ -75,7 +73,7 @@ impl Date {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::datatypes::Date;
+    /// use fefix::fix_values::Date;
     ///
     /// assert_eq!(&Date::new(2021, 01, 01).unwrap().to_bytes(), b"20210101");
     /// ```

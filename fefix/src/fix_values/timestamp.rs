@@ -1,7 +1,6 @@
-use crate::{tagvalue::datatypes::Date, tagvalue::datatypes::Time, Buffer, FixValue};
+use crate::{fix_values::Date, fix_values::Time, Buffer, FixValue};
 
-/// Canonical data field (DTF) for
-/// [DataType::UtcTimestamp](super::DataType::UtcTimeStamp).
+/// Representation for `UtcTimestamp`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Timestamp {
     date: Date,

@@ -56,7 +56,7 @@ pub fn gen_enum_of_allowed_values(field: dict::Field, settings: &Settings) -> Op
             {variants}
             }}"#
         ),
-        field_name = field.name(),
+        field_name = field.name().to_camel_case(),
         derives = derives,
         attributes = attributes,
         identifier = field.name().to_camel_case(),
@@ -222,7 +222,7 @@ pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) ->
             // {top_comment}
 
             use {fefix_path}::dict::FieldLocation;
-            use {fefix_path}::dict::FixDataType;
+            use {fefix_path}::dict::FixDatatype;
             use {fefix_path}::definitions::HardCodedFixFieldDefinition;
             use {fefix_path}::FixValue;
 
@@ -321,7 +321,7 @@ fn gen_field_definition_with_hashsets(
                     name: "{name}",
                     tag: {tag},
                     is_group_leader: {group},
-                    data_type: FixDataType::{data_type},
+                    data_type: FixDatatype::{data_type},
                     location: FieldLocation::{field_location},
                 }};"#
         ),
@@ -331,7 +331,7 @@ fn gen_field_definition_with_hashsets(
         tag = tag,
         group = field.name().ends_with("Len"),
         field_location = field_location,
-        data_type = <&'static str as From<dict::FixDataType>>::from(field.data_type().basetype()),
+        data_type = <&'static str as From<dict::FixDatatype>>::from(field.data_type().basetype()),
     )
 }
 
