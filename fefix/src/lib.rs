@@ -80,7 +80,7 @@ mod utils;
 #[cfg(feature = "codegen")]
 pub use fefix_core::codegen;
 pub use fefix_core::dict;
-pub use fefix_core::TagU16;
+pub use fefix_core::{TagU16, TagU16Map, TagU16NoHasher};
 pub mod definitions;
 #[cfg(feature = "fast-encoding")]
 pub mod fast;

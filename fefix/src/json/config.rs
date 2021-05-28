@@ -14,8 +14,19 @@ pub trait Configure: Clone + Default {
     ///
     /// With "pretty print":
     ///
-    /// ```json { "Header": { "...": "..." }, "Body": { "...": "..." },
-    /// "Trailer": { "...": "..." } } ```
+    /// ```json
+    /// {
+    ///     "Header": {
+    ///         "...": "..."
+    ///     },
+    ///     "Body": {
+    ///         "...": "..."
+    ///     },
+    ///     "Trailer": {
+    ///         "...": "..."
+    ///     }
+    /// }
+    /// ```
     ///
     /// Without "pretty print":
     ///
