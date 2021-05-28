@@ -5,6 +5,7 @@ use crate::session::{Environment, SeqNumbers};
 use crate::tagvalue::Fv;
 use crate::tagvalue::Message;
 use crate::tagvalue::{Decoder, DecoderBuffered, Encoder, EncoderHandle};
+use crate::Buffer;
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use std::cmp::Ordering;
 use std::marker::Unpin;
@@ -121,9 +122,10 @@ impl FixConnectionBuilder {
     pub fn build(self) -> FixConnection {
         FixConnection {
             uuid: Uuid::new_v4(),
+            buffer: vec![],
             begin_string: self.begin_string,
             environment: self.environment,
-            encoder: Encoder::from_buffer(Vec::new()),
+            encoder: Encoder::default(),
             heartbeat: self.heartbeat,
             seq_numbers: self.seq_numbers,
             msg_seq_num_inbound: self.msg_seq_num_inbound,
@@ -156,6 +158,7 @@ pub struct FixConnection {
     begin_string: String,
     environment: Environment,
     encoder: Encoder,
+    buffer: Vec<u8>,
     heartbeat: Duration,
     seq_numbers: SeqNumbers,
     msg_seq_num_inbound: MsgSeqNumCounter,
@@ -199,7 +202,9 @@ impl FixConnection {
             let sender_comp_id = self.sender_comp_id.as_str();
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut msg = self.encoder.start_message(begin_string, b"A");
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"A");
             msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
             msg.set(fix44::TARGET_COMP_ID, target_comp_id);
             msg.set(fix44::SENDING_TIME, chrono::Utc::now());
@@ -377,7 +382,9 @@ impl FixConnection {
             let sender_comp_id = self.sender_comp_id.as_str();
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut msg = self.encoder.start_message(begin_string, b"5");
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"5");
             msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
             msg.set(fix44::TARGET_COMP_ID, target_comp_id);
             msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
@@ -397,7 +404,11 @@ impl FixConnection {
         }
     }
 
-    fn add_comp_id(msg: &mut EncoderHandle, sender: &str, target: &str) {
+    fn add_comp_id<B, C>(msg: &mut EncoderHandle<B, C>, sender: &str, target: &str)
+    where
+        B: Buffer,
+        C: crate::tagvalue::Configure,
+    {
         msg.set(fix44::SENDER_COMP_ID, sender);
         msg.set(fix44::TARGET_COMP_ID, target);
     }
@@ -418,7 +429,9 @@ impl FixConnection {
             let sender_comp_id = self.sender_comp_id.as_str();
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut msg = self.encoder.start_message(begin_string, b"0");
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"0");
             msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
             msg.set(fix44::TARGET_COMP_ID, target_comp_id);
             msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
@@ -439,7 +452,9 @@ impl FixConnection {
             let sender_comp_id = self.sender_comp_id.as_str();
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut msg = self.encoder.start_message(begin_string, b"1");
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"1");
             msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
             msg.set(fix44::TARGET_COMP_ID, target_comp_id);
             msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
@@ -461,7 +476,9 @@ impl FixConnection {
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let text = errs::msg_seq_num(self.msg_seq_num_inbound.0 + 1);
-            let mut msg = self.encoder.start_message(begin_string, b"FIXME");
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"FIXME");
             msg.set(fix44::MSG_TYPE, "5");
             msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
             msg.set(fix44::TARGET_COMP_ID, target_comp_id);
@@ -496,7 +513,9 @@ impl FixConnection {
             let sender_comp_id = self.sender_comp_id.as_str();
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut msg = self.encoder.start_message(begin_string, b"3");
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"3");
             msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
             msg.set(fix44::TARGET_COMP_ID, target_comp_id);
             msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
@@ -531,7 +550,9 @@ impl FixConnection {
             let sender_comp_id = self.sender_comp_id.as_str();
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut msg = self.encoder.start_message(begin_string, b"5");
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"5");
             msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
             msg.set(fix44::TARGET_COMP_ID, target_comp_id);
             msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
@@ -543,7 +564,9 @@ impl FixConnection {
 
     fn make_resend_request(&mut self, start: u64, end: u64) -> Response {
         let begin_string = self.begin_string.as_bytes();
-        let mut msg = self.encoder.start_message(begin_string, b"2");
+        let mut msg = self
+            .encoder
+            .start_message(begin_string, &mut self.buffer, b"2");
         //Self::add_comp_id(msg);
         //self.add_sending_time(msg);
         //self.add_seqnum(msg);
@@ -560,7 +583,9 @@ impl FixConnection {
 
     fn on_logon(&mut self, _logon: Message) {
         let begin_string = self.begin_string.as_bytes();
-        let mut _msg = self.encoder.start_message(begin_string, b"A");
+        let mut _msg = self
+            .encoder
+            .start_message(begin_string, &mut self.buffer, b"A");
         //Self::add_comp_id(msg);
         //self.add_sending_time(msg);
         //self.add_sending_time(msg);

@@ -22,10 +22,11 @@ fn server() -> tide::Server<State> {
 fn fix_json_to_tagvalue<'a, 'b>(
     state: &'b State,
     encoder: &'a mut Encoder,
+    buffer: &'a mut Vec<u8>,
     json: json::Message<'b>,
 ) -> Result<&'a [u8], &'static str> {
     let msg_type = json.fv_opt(fix42::MSG_TYPE).unwrap().unwrap();
-    let mut response = encoder.start_message(b"FIX.4.2", msg_type);
+    let mut response = encoder.start_message(b"FIX.4.2", buffer, msg_type);
     for (field_name, field_value) in json.iter_fields() {
         let tag = state.lookup_field_name(field_name).unwrap();
         match field_value {
@@ -41,10 +42,12 @@ fn fix_json_to_tagvalue<'a, 'b>(
 async fn serve_json_relay(mut request: tide::Request<State>) -> tide::Result {
     let request_body = request.body_bytes().await?;
     let state = request.state();
+    let mut fix_buffer = Vec::new();
     let codec = &mut state.codec().await;
     let (ref mut decoder, ref mut encoder) = **codec;
     let inbound_message = decoder.decode(&request_body[..]).unwrap();
-    let outbound_message = fix_json_to_tagvalue(state, encoder, inbound_message).unwrap();
+    let outbound_message =
+        fix_json_to_tagvalue(state, encoder, &mut fix_buffer, inbound_message).unwrap();
     let bytes = outbound_message.to_vec();
     Ok(String::from_utf8(bytes).unwrap().into())
 }

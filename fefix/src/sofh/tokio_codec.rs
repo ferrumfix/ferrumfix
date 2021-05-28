@@ -1,4 +1,6 @@
 use super::{Error, Frame};
+use crate::MemorySlice;
+use bytes::{Bytes, BytesMut};
 use std::io;
 use tokio_util::codec;
 
@@ -12,13 +14,14 @@ use tokio_util::codec;
 /// use fefix::sofh;
 /// use tokio_util::codec::{Decoder, Encoder};
 ///
+/// let payload = Bytes::from_static(b"payload");
 /// let codec = &mut sofh::TokioCodec::default();
 /// let destination = &mut BytesMut::new();
-/// codec.encode((0x1337, b"payload"), destination);
+/// codec.encode(sofh::Frame::new(0x1337, payload.clone()), destination);
 ///
 /// assert_eq!(
 ///     codec.decode(destination).unwrap(),
-///     Some((0x1337, Bytes::from_static(b"payload")))
+///     Some(sofh::Frame::new(0x1337, payload))
 /// );
 /// ```
 #[derive(Debug)]
@@ -31,10 +34,10 @@ impl Default for TokioCodec {
 }
 
 impl codec::Decoder for TokioCodec {
-    type Item = Frame<bytes::Bytes>;
+    type Item = Frame<Bytes>;
     type Error = Error;
 
-    fn decode(&mut self, src: &mut bytes::BytesMut) -> Result<Option<Self::Item>, Self::Error> {
+    fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         use std::convert::TryInto;
         if src.len() >= 6 {
             let bytes_04 = (&src[0..4]).try_into().unwrap();
@@ -57,11 +60,11 @@ impl codec::Decoder for TokioCodec {
 
 impl<T> codec::Encoder<Frame<T>> for TokioCodec
 where
-    T: AsRef<[u8]>,
+    T: MemorySlice,
 {
     type Error = io::Error;
 
-    fn encode(&mut self, frame: Frame<T>, dst: &mut bytes::BytesMut) -> Result<(), Self::Error> {
+    fn encode(&mut self, frame: Frame<T>, dst: &mut BytesMut) -> Result<(), Self::Error> {
         let frame_len = frame.payload().len() + 6;
         dst.reserve(frame_len);
         dst.extend_from_slice(&u32::to_be_bytes(frame_len as u32)[..]);

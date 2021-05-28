@@ -19,39 +19,38 @@ use std::ops::Range;
 /// ```
 /// use fefix::tagvalue::{Config, Encoder};
 ///
-/// let encoder = &mut Encoder::<_, Config>::from_buffer(Vec::new());
+/// let buffer = &mut Vec::new();
+/// let encoder = &mut Encoder::<Config>::default();
 /// encoder.config_mut().set_separator(b'|');
-/// let msg = encoder.start_message(b"FIX.4.4", b"A");
+/// let msg = encoder.start_message(b"FIX.4.4", buffer, b"A");
 /// let data = msg.wrap();
 /// ```
-#[derive(Debug, Clone)]
-pub struct Encoder<B = Vec<u8>, C = Config>
+#[derive(Debug, Clone, Default)]
+pub struct Encoder<C = Config>
 where
-    B: Buffer,
     C: Configure,
 {
-    buffer: B,
     config: C,
 }
 
-impl<B, C> Encoder<B, C>
+impl<C> Encoder<C>
 where
-    B: Buffer,
     C: Configure,
 {
-    pub fn from_buffer(buffer: B) -> Self {
-        Self {
-            buffer,
-            config: C::default(),
-        }
-    }
-
-    pub fn buffer(&self) -> &B {
-        &self.buffer
-    }
-
-    pub fn buffer_mut(&self) -> &B {
-        &self.buffer
+    /// Creates a new [`Encoder`] from the given `config` options.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::tagvalue::{Config, Configure, Encoder};
+    ///
+    /// let mut config = Config::default();
+    /// config.set_separator(b'|');
+    /// let encoder = &mut Encoder::new(config);
+    /// assert_eq!(encoder.config().separator(), b'|');
+    /// ```
+    pub fn new(config: C) -> Self {
+        Self { config }
     }
 
     /// Returns an immutable reference to the [`Configure`] implementor used by
@@ -69,11 +68,12 @@ where
     pub fn start_message<'a>(
         &'a mut self,
         begin_string: &[u8],
+        buffer: &'a mut Vec<u8>,
         msg_type: &[u8],
-    ) -> EncoderHandle<'a, B, C> {
-        self.buffer.clear();
+    ) -> EncoderHandle<'a, Vec<u8>, C> {
         let mut state = EncoderHandle {
             raw_encoder: self,
+            buffer,
             body_start_i: 0,
         };
         state.set(fix44::BEGIN_STRING, begin_string);
@@ -93,7 +93,7 @@ where
         //
         // Six digits (~1MB) ought to be enough for every message.
         state.set_any(fix44::BODY_LENGTH.tag(), b"000000" as &[u8]);
-        state.body_start_i = state.raw_encoder.buffer.len();
+        state.body_start_i = state.buffer.len();
         state.set_any(fix44::MSG_TYPE.tag(), msg_type);
         state
     }
@@ -102,12 +102,13 @@ where
 /// A type returned by [`Encoder::start_message`](Encoder::start_message) to
 /// actually encode data fields.
 #[derive(Debug)]
-pub struct EncoderHandle<'a, B = Vec<u8>, C = Config>
+pub struct EncoderHandle<'a, B, C = Config>
 where
     B: Buffer,
     C: Configure,
 {
-    raw_encoder: &'a mut Encoder<B, C>,
+    raw_encoder: &'a mut Encoder<C>,
+    buffer: &'a mut B,
     body_start_i: usize,
 }
 
@@ -129,16 +130,15 @@ where
     where
         T: FixValue<'b>,
     {
-        tag.serialize(&mut self.raw_encoder.buffer);
-        self.raw_encoder.buffer.extend_from_slice(b"=" as &[u8]);
-        value.serialize(&mut self.raw_encoder.buffer);
-        self.raw_encoder
-            .buffer
+        tag.serialize(self.buffer);
+        self.buffer.extend_from_slice(b"=" as &[u8]);
+        value.serialize(self.buffer);
+        self.buffer
             .extend_from_slice(&[self.raw_encoder.config().separator()]);
     }
 
     pub fn raw(&mut self, raw: &[u8]) {
-        self.raw_encoder.buffer.extend_from_slice(raw);
+        self.buffer.extend_from_slice(raw);
     }
 
     /// Closes the current message writing operation and returns its byte
@@ -146,7 +146,7 @@ where
     pub fn wrap(mut self) -> &'a [u8] {
         self.write_body_length();
         self.write_checksum();
-        self.raw_encoder.buffer.as_slice()
+        self.buffer.as_slice()
     }
 
     fn body_length_writable_range(&self) -> Range<usize> {
@@ -154,13 +154,13 @@ where
     }
 
     fn body_length(&self) -> usize {
-        self.raw_encoder.buffer.as_slice().len() - self.body_start_i
+        self.buffer.as_slice().len() - self.body_start_i
     }
 
     fn write_body_length(&mut self) {
         let body_length = self.body_length();
         let body_length_range = self.body_length_writable_range();
-        let slice = &mut self.raw_encoder.buffer.as_mut_slice()[body_length_range];
+        let slice = &mut self.buffer.as_mut_slice()[body_length_range];
         slice[0] = to_digit((body_length / 100000) as u8 % 10);
         slice[1] = to_digit((body_length / 10000) as u8 % 10);
         slice[2] = to_digit((body_length / 1000) as u8 % 10);
@@ -170,7 +170,7 @@ where
     }
 
     fn write_checksum(&mut self) {
-        let checksum = CheckSum::compute(self.raw_encoder.buffer.as_slice());
+        let checksum = CheckSum::compute(self.buffer.as_slice());
         self.set(fix44::CHECK_SUM, checksum);
     }
 }

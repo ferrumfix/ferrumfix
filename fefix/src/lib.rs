@@ -99,7 +99,7 @@ pub mod tagvalue;
 #[cfg(feature = "derive")]
 pub use fefix_derive::*;
 
-pub use buffer::Buffer;
+pub use buffer::{Buffer, MemorySlice};
 pub use dict::Dictionary;
 pub use fefix_derive::FixValue;
 pub use fix_value::FixValue;

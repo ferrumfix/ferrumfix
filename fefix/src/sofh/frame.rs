@@ -1,4 +1,5 @@
 use super::{field_encoding_type, field_message_length, Error};
+use crate::buffer::MemorySlice;
 use std::io;
 
 const HEADER_SIZE_IN_BYTES: usize = 6;
@@ -6,10 +7,10 @@ const MAX_MESSAGE_SIZE_IN_BYTES: usize = u32::MAX as usize - HEADER_SIZE_IN_BYTE
 
 /// An immutable view into a SOFH-enclosed message, complete with its
 /// encoding type tag and message.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Frame<T>
 where
-    T: AsRef<[u8]>,
+    T: MemorySlice,
 {
     encoding_type: u16,
     payload: T,
@@ -17,7 +18,7 @@ where
 
 impl<T> Frame<T>
 where
-    T: AsRef<[u8]>,
+    T: MemorySlice,
 {
     /// Creates a new [`Frame`] with the given `encoding_type` and `payload`.
     ///
@@ -31,8 +32,8 @@ where
     /// ```
     /// use fefix::sofh::Frame;
     ///
-    /// let frame = Frame::new(0xF500, b"{}");
-    /// assert_eq!(frame.message().len(), 2);
+    /// let frame = Frame::new(0xF500, b"{}" as &[u8]);
+    /// assert_eq!(frame.payload().len(), 2);
     /// ```
     pub fn new(encoding_type: u16, payload: T) -> Self {
         assert!(payload.as_ref().len() <= MAX_MESSAGE_SIZE_IN_BYTES);
@@ -84,11 +85,11 @@ where
     /// ```
     /// use fefix::sofh::Frame;
     ///
-    /// // Message_Length:          ~~~~~~~~~~~
-    /// // Encoding_Type:                       ~~~~~~~~~
-    /// // Message:                                       ~~
-    /// let frame = Frame::decode(&[0, 0, 0, 7, 0x0, 0x0, 42]).unwrap();
-    /// assert_eq!(frame.message(), &[42]);
+    /// // Message_Length:               ~~~~~~~~~~~
+    /// // Encoding_Type:                            ~~~~~~~~~
+    /// // Message:                                            ~~
+    /// let frame = Frame::<&[u8]>::deserialize(&[0, 0, 0, 7, 0x0, 0x0, 42]).unwrap();
+    /// assert_eq!(frame.payload(), &[42]);
     /// ```
     pub fn deserialize(data: &[u8]) -> Result<Frame<&[u8]>, Error> {
         // The buffer doesn't contain enough data to even meaningfully reason
@@ -129,9 +130,9 @@ where
     /// // Encoding_Type:         ~~~~~~~~~
     /// // Message:                         ~~
     /// let bytes = &[0, 0, 0, 7, 0x0, 0x0, 42];
-    /// let frame = Frame::decode(bytes).unwrap();
+    /// let frame = Frame::<&[u8]>::deserialize(bytes).unwrap();
     /// let buffer = &mut Vec::new();
-    /// frame.encode(buffer).unwrap();
+    /// frame.serialize(buffer).unwrap();
     /// assert_eq!(&buffer[..], bytes);
     /// ```
     pub fn serialize<W>(&self, writer: &mut W) -> io::Result<usize>
@@ -153,13 +154,13 @@ mod test {
 
     #[test]
     fn information_retrieval_is_consistent_with_new() {
-        let frame = Frame::new(0x0, &[]);
+        let frame = Frame::new(0x0, b"" as &[u8]);
         assert_eq!(frame.encoding_type(), 0x0);
         assert_eq!(frame.payload(), [] as [u8; 0]);
-        let frame = Frame::new(0x1122, b"foobar");
+        let frame = Frame::new(0x1122, b"foobar" as &[u8]);
         assert_eq!(frame.encoding_type(), 0x1122);
-        assert_eq!(frame.payload(), b"foobar");
-        let frame = Frame::new(u16::MAX, &[0]);
+        assert_eq!(frame.payload(), b"foobar" as &[u8]);
+        let frame = Frame::new(u16::MAX, &[0u8] as &[u8]);
         assert_eq!(frame.encoding_type(), u16::MAX);
         assert_eq!(frame.payload(), &[0]);
     }

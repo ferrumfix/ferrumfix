@@ -6,7 +6,7 @@ use std::collections::HashMap;
 const POOL_CAPACITY: usize = 16;
 
 pub type Decoder = json::Decoder<json::Config>;
-pub type Encoder = tagvalue::Encoder<Vec<u8>, tagvalue::Config>;
+pub type Encoder = tagvalue::Encoder<tagvalue::Config>;
 
 #[derive(Clone)]
 pub struct State {
@@ -20,7 +20,7 @@ impl State {
         let pool = Pool::new(POOL_CAPACITY);
         for _ in 0..POOL_CAPACITY {
             let decoder = Decoder::new(fix_dictionary.clone());
-            let encoder = Encoder::from_buffer(Vec::new());
+            let encoder = Encoder::default();
             pool.try_add((decoder, encoder)).ok();
         }
         let mut field_registry = HashMap::new();
