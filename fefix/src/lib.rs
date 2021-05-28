@@ -72,6 +72,8 @@
     clippy::needless_bool,
     clippy::needless_lifetimes
 )]
+// Only enables the `doc_cfg` feature when its feature is defined.
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
 
 mod buffer;
 mod fefix_core;
@@ -79,25 +81,30 @@ mod fix_value;
 pub mod fix_values;
 mod utils;
 #[cfg(feature = "codegen")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "codegen")))]
 pub use fefix_core::codegen;
 pub use fefix_core::dict;
 pub use fefix_core::{TagU16, TagU16Map, TagU16NoHasher};
 pub mod definitions;
 #[cfg(feature = "fast-encoding")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "fast-encoding")))]
 pub mod fast;
 #[cfg(feature = "fixp")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "fixp")))]
 pub mod fixp;
 #[cfg(feature = "fixs")]
 pub mod fixs;
+#[cfg_attr(doc_cfg, doc(cfg(feature = "json-encoding")))]
 #[cfg(feature = "json-encoding")]
 pub mod json;
 pub mod prelude;
 pub mod session;
 #[cfg(feature = "sofh")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "sofh")))]
 pub mod sofh;
 pub mod tagvalue;
-
 #[cfg(feature = "derive")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "derive")))]
 pub use fefix_derive::*;
 
 pub use buffer::{Buffer, MemorySlice};

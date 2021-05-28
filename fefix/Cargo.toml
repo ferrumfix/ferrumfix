@@ -12,6 +12,12 @@ keywords = ["fix", "fast", "protocol", "finance", "fintech"]
 categories = ["network-programming", "parser-implementations", "encoding"]
 license = "MIT OR Apache-2.0"
 
+# https://stackoverflow.com/q/61417452/
+# Test locally using `RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features`.
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "doc_cfg"]
+
 [lib]
 name = "fefix"
 
