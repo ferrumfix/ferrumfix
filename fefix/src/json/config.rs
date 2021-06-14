@@ -59,17 +59,17 @@ impl Config {
     }
 }
 
+impl Configure for Config {
+    fn pretty_print(&self) -> bool {
+        self.pretty_print
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
             pretty_print: false,
         }
-    }
-}
-
-impl Configure for Config {
-    fn pretty_print(&self) -> bool {
-        self.pretty_print
     }
 }
 
