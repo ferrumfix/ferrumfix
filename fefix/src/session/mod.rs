@@ -27,7 +27,7 @@ use std::ops::Range;
 pub trait Backend: Clone {
     type Error;
 
-    #[inline(always)]
+    #[inline]
     fn on_heartbeat_is_due(&mut self) -> Result<(), Self::Error> {
         Ok(())
     }
@@ -36,7 +36,7 @@ pub trait Backend: Clone {
 
     fn on_outbound_message(&mut self, message: &[u8]) -> Result<(), Self::Error>;
 
-    #[inline(always)]
+    #[inline]
     fn on_inbound_message(&mut self, message: Message, is_app: bool) -> Result<(), Self::Error> {
         if is_app {
             self.on_inbound_app_message(message)
@@ -75,7 +75,7 @@ pub enum Environment {
 }
 
 impl Environment {
-    #[inline(always)]
+    #[inline]
     pub fn allows_testing(&self) -> bool {
         match self {
             Self::Production { allow_test } => *allow_test,

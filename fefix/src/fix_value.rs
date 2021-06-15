@@ -28,7 +28,7 @@ where
     const IS_ASCII: bool;
 
     /// Writes `self` to `buffer` using default settings.
-    #[inline(always)]
+    #[inline]
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
         B: Buffer,
@@ -93,7 +93,7 @@ impl<'a> FixValue<'a> for chrono::DateTime<chrono::Utc> {
 
     const IS_ASCII: bool = true;
 
-    #[inline(always)]
+    #[inline]
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
         B: Buffer,
@@ -102,7 +102,7 @@ impl<'a> FixValue<'a> for chrono::DateTime<chrono::Utc> {
         self.serialize_with(buffer, WithMilliseconds(true))
     }
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, settings: Self::SerializeSettings) -> usize
     where
         B: Buffer,
@@ -126,7 +126,7 @@ impl<'a> FixValue<'a> for chrono::DateTime<chrono::Utc> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(_data: &'a [u8]) -> Result<Self, Self::Error> {
         Err("TODO")
     }
@@ -139,7 +139,7 @@ impl<'a> FixValue<'a> for chrono::NaiveDate {
 
     const IS_ASCII: bool = true;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: Self::SerializeSettings) -> usize
     where
         B: Buffer,
@@ -151,13 +151,13 @@ impl<'a> FixValue<'a> for chrono::NaiveDate {
         8
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         let date = Date::deserialize(data).map_err(|_| "Invalid date format.")?;
         date.to_chrono_naive().ok_or("Invalid date range.")
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
         let date = Date::deserialize_lossy(data).map_err(|_| "Invalid date format.")?;
         date.to_chrono_naive().ok_or("Invalid date range.")
@@ -171,7 +171,7 @@ impl<'a> FixValue<'a> for rust_decimal::Decimal {
 
     const IS_ASCII: bool = true;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -182,7 +182,7 @@ impl<'a> FixValue<'a> for rust_decimal::Decimal {
         s.as_bytes().len()
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         use std::str::FromStr;
         let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
@@ -197,7 +197,7 @@ impl<'a> FixValue<'a> for decimal::d128 {
 
     const IS_ASCII: bool = true;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -229,7 +229,7 @@ impl<'a> FixValue<'a> for bool {
 
     const IS_ASCII: bool = true;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -239,7 +239,7 @@ impl<'a> FixValue<'a> for bool {
         1
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         if data.len() != 1 {
             Err(ERR_BOOL_LENGTH)
@@ -252,7 +252,7 @@ impl<'a> FixValue<'a> for bool {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
         if data.len() != 1 {
             Err(ERR_BOOL_LENGTH)
@@ -268,7 +268,7 @@ impl<'a> FixValue<'a> for &'a str {
 
     const IS_ASCII: bool = true;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -277,7 +277,7 @@ impl<'a> FixValue<'a> for &'a str {
         self.as_bytes().len()
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         std::str::from_utf8(data)
     }
@@ -289,7 +289,7 @@ impl<'a> FixValue<'a> for u8 {
 
     const IS_ASCII: bool = false;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -298,7 +298,7 @@ impl<'a> FixValue<'a> for u8 {
         1
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         Ok(data[0])
     }
@@ -310,7 +310,7 @@ impl<'a> FixValue<'a> for &'a [u8] {
 
     const IS_ASCII: bool = false;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -319,7 +319,7 @@ impl<'a> FixValue<'a> for &'a [u8] {
         self.len()
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         Ok(data)
     }
@@ -331,7 +331,7 @@ impl<'a, const N: usize> FixValue<'a> for [u8; N] {
 
     const IS_ASCII: bool = false;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, settings: ()) -> usize
     where
         B: Buffer,
@@ -339,7 +339,7 @@ impl<'a, const N: usize> FixValue<'a> for [u8; N] {
         (&self).serialize_with(buffer, settings)
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         data.try_into().map_err(|_| ())
     }
@@ -351,7 +351,7 @@ impl<'a, const N: usize> FixValue<'a> for &'a [u8; N] {
 
     const IS_ASCII: bool = false;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -360,7 +360,7 @@ impl<'a, const N: usize> FixValue<'a> for &'a [u8; N] {
         self.len()
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         data.try_into().map_err(|_| ())
     }
@@ -372,7 +372,7 @@ impl<'a> FixValue<'a> for TagU16 {
 
     const IS_ASCII: bool = true;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -382,13 +382,13 @@ impl<'a> FixValue<'a> for TagU16 {
         s.len()
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
         s.parse().map_err(|_| ERR_INT_INVALID)
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
         fn ascii_digit_to_u16(digit: u8) -> u16 {
             (digit as u16).wrapping_sub(b'0' as u16)
@@ -407,7 +407,7 @@ impl<'a> FixValue<'a> for u32 {
 
     const IS_ASCII: bool = true;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, padding: Self::SerializeSettings) -> usize
     where
         B: Buffer,
@@ -428,13 +428,13 @@ impl<'a> FixValue<'a> for u32 {
         padding.0
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
         s.parse().map_err(|_| ERR_INT_INVALID)
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
         fn ascii_digit_to_u32(digit: u8) -> u32 {
             (digit as u32).wrapping_sub(b'0' as u32)
@@ -453,7 +453,7 @@ impl<'a> FixValue<'a> for i32 {
 
     const IS_ASCII: bool = true;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -463,13 +463,13 @@ impl<'a> FixValue<'a> for i32 {
         s.len()
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
         s.parse().map_err(|_| ERR_INT_INVALID)
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
         fn ascii_digit_to_i32(digit: u8) -> i32 {
             digit as i32 - b'0' as i32
@@ -489,7 +489,7 @@ impl<'a> FixValue<'a> for u64 {
 
     const IS_ASCII: bool = true;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -499,13 +499,13 @@ impl<'a> FixValue<'a> for u64 {
         s.len()
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
         s.parse().map_err(|_| ERR_INT_INVALID)
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
         fn ascii_digit_to_u64(digit: u8) -> u64 {
             digit as u64 - b'0' as u64
@@ -524,7 +524,7 @@ impl<'a> FixValue<'a> for i64 {
 
     const IS_ASCII: bool = true;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -534,13 +534,13 @@ impl<'a> FixValue<'a> for i64 {
         s.len()
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
         s.parse().map_err(|_| ERR_INT_INVALID)
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
         fn ascii_digit_to_i64(digit: u8) -> i64 {
             digit as i64 - b'0' as i64
@@ -560,7 +560,7 @@ impl<'a> FixValue<'a> for usize {
 
     const IS_ASCII: bool = true;
 
-    #[inline(always)]
+    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -570,13 +570,13 @@ impl<'a> FixValue<'a> for usize {
         s.len()
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
         s.parse().map_err(|_| ERR_INT_INVALID)
     }
 
-    #[inline(always)]
+    #[inline]
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
         fn ascii_digit_to_usize(digit: u8) -> usize {
             digit as usize - b'0' as usize

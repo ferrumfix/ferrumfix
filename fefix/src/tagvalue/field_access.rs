@@ -28,7 +28,7 @@ pub trait FieldAccess<'a> {
     /// Returns the field value of `field` in `self` wrapped in an [`Option`].
     ///
     /// Lossless deserialization.
-    #[inline(always)]
+    #[inline]
     fn fv_opt<'b, V, F>(&'b self, field: &'a F) -> Option<Result<V, V::Error>>
     where
         'b: 'a,
@@ -45,7 +45,7 @@ pub trait FieldAccess<'a> {
     ///
     ///
     /// Lossless deserialization.
-    #[inline(always)]
+    #[inline]
     fn fv<'b, V, F>(&'b self, field: &'a F) -> OptResult<V, V::Error>
     where
         'b: 'a,
@@ -62,7 +62,7 @@ pub trait FieldAccess<'a> {
     /// Returns the field value of `field` in `self` wrapped in an [`Option`].
     ///
     /// Lossy deserialization.
-    #[inline(always)]
+    #[inline]
     fn fvl_opt<'b, V, F>(&'b self, field: &'a F) -> Option<Result<V, V::Error>>
     where
         'b: 'a,
@@ -79,7 +79,7 @@ pub trait FieldAccess<'a> {
     /// Returns the field value of `field` in `self` wrapped in an [`OptResult`].
     ///
     /// Lossy deserialization.
-    #[inline(always)]
+    #[inline]
     fn fvl<'b, V, F>(&'b self, field: &'a F) -> OptResult<V, V::Error>
     where
         'b: 'a,
@@ -94,7 +94,7 @@ pub trait FieldAccess<'a> {
     }
 
     /// Lossy deserialization.
-    #[inline(always)]
+    #[inline]
     fn fvl_with_key<'b, V>(&'b self, key: Self::Key) -> OptResult<V, V::Error>
     where
         V: FixValue<'b>,

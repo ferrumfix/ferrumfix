@@ -13,14 +13,14 @@ pub trait Configure: Clone + Default {
     /// ASCII 0x1 (SOH) is the default separator character.
     ///
     /// This setting is relevant for both encoding and decoding operations.
-    #[inline(always)]
+    #[inline]
     fn separator(&self) -> u8 {
         SOH
     }
 
     /// The maximum allowed size for any single FIX message. No restrictions are
     /// imposed when it is `None`.
-    #[inline(always)]
+    #[inline]
     fn max_message_size(&self) -> Option<usize> {
         Some(DEFAULT_MAX_MESSAGE_SIZE)
     }
@@ -28,21 +28,21 @@ pub trait Configure: Clone + Default {
     /// Determines wheather or not `CheckSum(10)` should be verified.
     ///
     /// This setting has no effect when encoding FIX messages.
-    #[inline(always)]
+    #[inline]
     fn verify_checksum(&self) -> bool {
         true
     }
 
     /// Determines wheather or not the decoder needs to have access to
     /// associative FIX fields.
-    #[inline(always)]
+    #[inline]
     fn should_decode_associative(&self) -> bool {
         true
     }
 
     /// Determines wheather or not the decoder needs to have access to
     /// sequential FIX fields.
-    #[inline(always)]
+    #[inline]
     fn should_decode_sequential(&self) -> bool {
         true
     }
@@ -118,27 +118,27 @@ impl Config {
 }
 
 impl Configure for Config {
-    #[inline(always)]
+    #[inline]
     fn separator(&self) -> u8 {
         self.separator
     }
 
-    #[inline(always)]
+    #[inline]
     fn verify_checksum(&self) -> bool {
         self.verify_checksum
     }
 
-    #[inline(always)]
+    #[inline]
     fn max_message_size(&self) -> Option<usize> {
         self.max_message_size
     }
 
-    #[inline(always)]
+    #[inline]
     fn should_decode_associative(&self) -> bool {
         self.should_decode_associative
     }
 
-    #[inline(always)]
+    #[inline]
     fn should_decode_sequential(&self) -> bool {
         self.should_decode_sequential
     }

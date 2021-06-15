@@ -273,22 +273,22 @@ where
     /// decoder.config_mut().set_separator(b'|');
     /// assert_eq!(decoder.config().separator(), b'|');
     /// ```
-    #[inline(always)]
+    #[inline]
     pub fn config_mut(&mut self) -> &mut C {
         self.decoder.config_mut()
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn supply_buffer(&mut self) -> &mut [u8] {
         self.raw_decoder.supply_buffer()
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn clear(&mut self) {
         self.raw_decoder.clear();
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn state(&mut self) -> Result<Option<()>, DecodeError> {
         match self.raw_decoder.current_frame() {
             Ok(Some(frame)) => {
@@ -300,7 +300,7 @@ where
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn message(&self) -> Message {
         self.decoder.builder.build(
             self.raw_decoder

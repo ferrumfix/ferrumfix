@@ -33,7 +33,7 @@ pub trait Configure: Clone + Default {
     /// ```json
     /// {"Header":{"...":"..."},"Body":{"...":"..."},"Trailer":{"...":"..."}}
     /// ```
-    #[inline(always)]
+    #[inline]
     fn pretty_print(&self) -> bool {
         false
     }

@@ -19,13 +19,13 @@ pub struct MsgSeqNumCounter(pub u64);
 impl MsgSeqNumCounter {
     pub const START: Self = Self(0);
 
-    #[inline(always)]
+    #[inline]
     pub fn next(&mut self) -> u64 {
         self.0 += 1;
         self.0
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn expected(&self) -> u64 {
         self.0 + 1
     }

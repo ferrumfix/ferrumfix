@@ -1225,7 +1225,7 @@ pub trait IsFieldDefinition {
 
     fn name(&self) -> &str;
 
-    #[inline(always)]
+    #[inline]
     fn location(&self) -> FieldLocation {
         FieldLocation::Body // FIXME
     }

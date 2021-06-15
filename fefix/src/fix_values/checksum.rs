@@ -74,17 +74,17 @@ fn checksum_from_digits(data: [u8; LEN_IN_BYTES]) -> CheckSum {
     )
 }
 
-#[inline(always)]
+#[inline]
 fn is_ascii_digit(byte: u8) -> bool {
     byte >= b'0' && byte <= b'9'
 }
 
-#[inline(always)]
+#[inline]
 fn digit_to_ascii(byte: u8) -> u8 {
     byte + b'0'
 }
 
-#[inline(always)]
+#[inline]
 fn ascii_digit_to_u8(digit: u8, multiplier: u8) -> u8 {
     digit.wrapping_sub(b'0').wrapping_mul(multiplier)
 }
