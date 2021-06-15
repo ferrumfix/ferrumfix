@@ -55,7 +55,6 @@
 
 mod checksum;
 mod date;
-pub mod error;
 mod monthyear;
 mod multiple_chars;
 mod multiple_strings;

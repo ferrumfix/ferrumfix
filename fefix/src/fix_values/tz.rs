@@ -1,10 +1,9 @@
-use super::error;
 use super::FixValue;
 use crate::Buffer;
-use std::{
-    hash::{Hash, Hasher},
-    time::Duration,
-};
+use std::hash::{Hash, Hasher};
+use std::time::Duration;
+
+const ERR_INVALID: &str = "Invalid timezone.";
 
 const HOUR: u32 = 3600;
 const MINUTE: u32 = 60;
@@ -36,7 +35,7 @@ impl Tz {
 }
 
 impl<'a> FixValue<'a> for Tz {
-    type Error = error::Timestamp;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = true;
@@ -72,7 +71,7 @@ impl<'a> FixValue<'a> for Tz {
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         if data.len() == 0 {
-            return Err(Self::Error::Other);
+            return Err(ERR_INVALID);
         }
         let sign: i32;
         match data[0] {
@@ -85,7 +84,7 @@ impl<'a> FixValue<'a> for Tz {
             b'-' => {
                 sign = -1;
             }
-            _ => return Err(Self::Error::Other),
+            _ => return Err(ERR_INVALID),
         }
         let hour = ascii_digit_to_u32(data[1], 10) + ascii_digit_to_u32(data[2], 1);
         let minute = ascii_digit_to_u32(data[4], 10) + ascii_digit_to_u32(data[5], 1);
@@ -121,7 +120,7 @@ impl<'a> FixValue<'a> for Tz {
                     offset_has_minutes: false,
                 })
             }
-            _ => Err(Self::Error::Other),
+            _ => Err(ERR_INVALID),
         }
     }
 }

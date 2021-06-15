@@ -3,6 +3,12 @@ use crate::{Buffer, TagU16};
 use std::convert::TryInto;
 use std::string::ToString;
 
+const ERR_BOOL_LENGTH: &str = "Invalid length; a boolean is Y or N (1 char).";
+const ERR_BOOL_CHAR: &str = "Invalid character for boolean. Only Y and N are valid.";
+const ERR_UTF8: &str = "Invalid byte sequence; expected UTF-8 valid bytes.";
+const ERR_INT_INVALID: &str = "Invalid integer digits.";
+const ERR_DECIMAL_INVALID: &str = "Invalid decimal number.";
+
 /// Allows (de)serialization as a FIX value (e.g. `tag=value|`).
 pub trait FixValue<'a>
 where
@@ -160,7 +166,7 @@ impl<'a> FixValue<'a> for chrono::NaiveDate {
 
 #[cfg(feature = "utils-rust-decimal")]
 impl<'a> FixValue<'a> for rust_decimal::Decimal {
-    type Error = error::Decimal;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = true;
@@ -179,8 +185,8 @@ impl<'a> FixValue<'a> for rust_decimal::Decimal {
     #[inline(always)]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         use std::str::FromStr;
-        let s = std::str::from_utf8(data).map_err(|_| Self::Error::NotUtf8)?;
-        rust_decimal::Decimal::from_str(s).map_err(|err| Self::Error::Other(err.to_string()))
+        let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
+        rust_decimal::Decimal::from_str(s).map_err(|_| ERR_DECIMAL_INVALID)
     }
 }
 
@@ -218,7 +224,7 @@ impl<'a> FixValue<'a> for decimal::d128 {
 }
 
 impl<'a> FixValue<'a> for bool {
-    type Error = error::Bool;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = true;
@@ -236,20 +242,20 @@ impl<'a> FixValue<'a> for bool {
     #[inline(always)]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         if data.len() != 1 {
-            Err(Self::Error::WrongLength)
+            Err(ERR_BOOL_LENGTH)
         } else if data[0] == b'Y' {
             Ok(true)
         } else if data[0] == b'N' {
             Ok(false)
         } else {
-            Err(Self::Error::InvalidCharacter)
+            Err(ERR_BOOL_CHAR)
         }
     }
 
     #[inline(always)]
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
         if data.len() != 1 {
-            Err(Self::Error::WrongLength)
+            Err(ERR_BOOL_LENGTH)
         } else {
             Ok(data[0] == b'Y')
         }
@@ -278,7 +284,7 @@ impl<'a> FixValue<'a> for &'a str {
 }
 
 impl<'a> FixValue<'a> for u8 {
-    type Error = error::Int;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = false;
@@ -361,7 +367,7 @@ impl<'a, const N: usize> FixValue<'a> for &'a [u8; N] {
 }
 
 impl<'a> FixValue<'a> for TagU16 {
-    type Error = error::Int;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = true;
@@ -378,8 +384,8 @@ impl<'a> FixValue<'a> for TagU16 {
 
     #[inline(always)]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        let s = std::str::from_utf8(data).map_err(|_| Self::Error::InvalidUtf8)?;
-        s.parse().map_err(|_| Self::Error::Other)
+        let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
+        s.parse().map_err(|_| ERR_INT_INVALID)
     }
 
     #[inline(always)]
@@ -391,12 +397,12 @@ impl<'a> FixValue<'a> for TagU16 {
         for byte in data.iter().copied() {
             n = n.wrapping_mul(10).wrapping_add(ascii_digit_to_u16(byte));
         }
-        TagU16::new(n).ok_or(Self::Error::Other)
+        TagU16::new(n).ok_or(ERR_INT_INVALID)
     }
 }
 
 impl<'a> FixValue<'a> for u32 {
-    type Error = error::Int;
+    type Error = &'static str;
     type SerializeSettings = ZeroPadding;
 
     const IS_ASCII: bool = true;
@@ -424,8 +430,8 @@ impl<'a> FixValue<'a> for u32 {
 
     #[inline(always)]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        let s = std::str::from_utf8(data).map_err(|_| Self::Error::InvalidUtf8)?;
-        s.parse().map_err(|_| Self::Error::Other)
+        let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
+        s.parse().map_err(|_| ERR_INT_INVALID)
     }
 
     #[inline(always)]
@@ -442,7 +448,7 @@ impl<'a> FixValue<'a> for u32 {
 }
 
 impl<'a> FixValue<'a> for i32 {
-    type Error = error::Int;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = true;
@@ -459,8 +465,8 @@ impl<'a> FixValue<'a> for i32 {
 
     #[inline(always)]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        let s = std::str::from_utf8(data).map_err(|_| Self::Error::InvalidUtf8)?;
-        s.parse().map_err(|_| Self::Error::Other)
+        let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
+        s.parse().map_err(|_| ERR_INT_INVALID)
     }
 
     #[inline(always)]
@@ -478,7 +484,7 @@ impl<'a> FixValue<'a> for i32 {
 }
 
 impl<'a> FixValue<'a> for u64 {
-    type Error = error::Int;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = true;
@@ -495,8 +501,8 @@ impl<'a> FixValue<'a> for u64 {
 
     #[inline(always)]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        let s = std::str::from_utf8(data).map_err(|_| Self::Error::InvalidUtf8)?;
-        s.parse().map_err(|_| Self::Error::Other)
+        let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
+        s.parse().map_err(|_| ERR_INT_INVALID)
     }
 
     #[inline(always)]
@@ -513,7 +519,7 @@ impl<'a> FixValue<'a> for u64 {
 }
 
 impl<'a> FixValue<'a> for i64 {
-    type Error = error::Int;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = true;
@@ -530,8 +536,8 @@ impl<'a> FixValue<'a> for i64 {
 
     #[inline(always)]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        let s = std::str::from_utf8(data).map_err(|_| Self::Error::InvalidUtf8)?;
-        s.parse().map_err(|_| Self::Error::Other)
+        let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
+        s.parse().map_err(|_| ERR_INT_INVALID)
     }
 
     #[inline(always)]
@@ -549,7 +555,7 @@ impl<'a> FixValue<'a> for i64 {
 }
 
 impl<'a> FixValue<'a> for usize {
-    type Error = error::Int;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = true;
@@ -566,8 +572,8 @@ impl<'a> FixValue<'a> for usize {
 
     #[inline(always)]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        let s = std::str::from_utf8(data).map_err(|_| Self::Error::InvalidUtf8)?;
-        s.parse().map_err(|_| Self::Error::Other)
+        let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
+        s.parse().map_err(|_| ERR_INT_INVALID)
     }
 
     #[inline(always)]

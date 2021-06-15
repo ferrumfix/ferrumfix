@@ -1,6 +1,7 @@
-use super::error;
 use crate::Buffer;
 use crate::FixValue;
+
+const ERR_INVALID: &str = "Invalid time.";
 
 const LEN_IN_BYTES_NO_MILLI: usize = 8;
 const LEN_IN_BYTES_WITH_MILLI: usize = 12;
@@ -147,7 +148,7 @@ impl Time {
 }
 
 impl<'a> FixValue<'a> for Time {
-    type Error = error::Time;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = true;
@@ -168,10 +169,10 @@ impl<'a> FixValue<'a> for Time {
                 + ascii_digit_to_u32(data[10], 10)
                 + ascii_digit_to_u32(data[11], 1);
             if data[8] != b'.' {
-                return Err(Self::Error::Other);
+                return Err(ERR_INVALID);
             }
         } else if data.len() != LEN_IN_BYTES_NO_MILLI {
-            return Err(Self::Error::Other);
+            return Err(ERR_INVALID);
         }
         let digits_are_ok = data[2] == b':'
             && data[5] == b':'
@@ -182,12 +183,12 @@ impl<'a> FixValue<'a> for Time {
             && is_ascii_digit(data[6])
             && is_ascii_digit(data[7]);
         if !digits_are_ok {
-            return Err(Self::Error::Other);
+            return Err(ERR_INVALID);
         }
         let hour = ascii_digit_to_u32(data[0], 10) + ascii_digit_to_u32(data[1], 1);
         let minute = ascii_digit_to_u32(data[3], 10) + ascii_digit_to_u32(data[4], 1);
         let second = ascii_digit_to_u32(data[6], 10) + ascii_digit_to_u32(data[7], 1);
-        Self::from_hmsm(hour, minute, second, milli).ok_or(Self::Error::Other)
+        Self::from_hmsm(hour, minute, second, milli).ok_or(ERR_INVALID)
     }
 }
 

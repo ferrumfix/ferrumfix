@@ -1,7 +1,8 @@
-use super::error;
 use super::FixValue;
 use crate::Buffer;
 use std::time::Duration;
+
+const ERR_INVALID: &str = "Invalid time.";
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TzTime {
@@ -45,7 +46,7 @@ impl TzTime {
 }
 
 impl<'a> FixValue<'a> for TzTime {
-    type Error = error::Time;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = true;
@@ -85,7 +86,7 @@ impl<'a> FixValue<'a> for TzTime {
             }
         }
         if data.len() < 6 || data[2] != b':' {
-            return Err(Self::Error::Other);
+            return Err(ERR_INVALID);
         }
         let hour = ascii_digit_to_u32(data[0], 10) + ascii_digit_to_u32(data[1], 1);
         let minute = ascii_digit_to_u32(data[3], 10) + ascii_digit_to_u32(data[4], 1);
@@ -93,7 +94,7 @@ impl<'a> FixValue<'a> for TzTime {
             b':' => {
                 let second = ascii_digit_to_u32(data[6], 10) + ascii_digit_to_u32(data[7], 1);
                 let (is_utc, tz_offset_hour, tz_offset_minute) =
-                    parse_timezone(&data[8..]).ok_or(Self::Error::Other)?;
+                    parse_timezone(&data[8..]).ok_or(ERR_INVALID)?;
                 Ok(TzTime {
                     hour,
                     minute,
@@ -107,7 +108,7 @@ impl<'a> FixValue<'a> for TzTime {
             }
             _ => {
                 let (is_utc, tz_offset_hour, tz_offset_minute) =
-                    parse_timezone(&data[5..]).ok_or(Self::Error::Other)?;
+                    parse_timezone(&data[5..]).ok_or(ERR_INVALID)?;
                 Ok(TzTime {
                     hour,
                     minute,

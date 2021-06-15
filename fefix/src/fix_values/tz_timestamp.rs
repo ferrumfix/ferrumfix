@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use super::error;
 use super::{FixValue, Timestamp};
 use crate::Buffer;
 
@@ -22,7 +21,7 @@ impl TzTimestamp {
 }
 
 impl<'a> FixValue<'a> for TzTimestamp {
-    type Error = error::Timestamp;
+    type Error = &'static str;
     type SerializeSettings = ();
 
     const IS_ASCII: bool = true;
