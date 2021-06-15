@@ -1,19 +1,13 @@
-//! Code generation for FerrumFIX.
+//! Derive macros for FerrumFIX.
 
 #![deny(missing_debug_implementations, clippy::useless_conversion)]
 
-mod derive_field_value;
-mod derive_read_fields;
+mod derive_fix_value;
 
 use proc_macro::TokenStream;
 
 /// A *derive macro* for the `FixValue` trait on `enum`'s.
 #[proc_macro_derive(FixValue, attributes(fefix))]
-pub fn derive_field_value(input: TokenStream) -> TokenStream {
-    derive_field_value::derive_field_value(input)
-}
-
-#[proc_macro_derive(ReadFields, attributes(fefix))]
-pub fn derive_read_fields(input: TokenStream) -> TokenStream {
-    derive_read_fields::derive_tsr_message(input)
+pub fn derive_fix_value(input: TokenStream) -> TokenStream {
+    derive_fix_value::derive_fix_value(input)
 }

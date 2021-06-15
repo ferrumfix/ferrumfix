@@ -3,7 +3,7 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Literal, Span, TokenTree};
 use quote::quote;
 
-pub fn derive_field_value(input: TokenStream) -> TokenStream {
+pub fn derive_fix_value(input: TokenStream) -> TokenStream {
     let ast: syn::DeriveInput = syn::parse(input).unwrap();
     let darling_context = DataFieldWithVariants::from_derive_input(&ast).unwrap();
     let identifier = darling_context.ident;
