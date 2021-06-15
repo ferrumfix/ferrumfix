@@ -51,6 +51,7 @@ utils-slog = ["slog"]
 utils-tokio = ["tokio-util", "utils-bytes"]
 
 full = [
+    "codegen",
     "derive",
     "fix40",
     "fix41",
@@ -65,7 +66,6 @@ full = [
     "fast-encoding",
     "json-encoding",
     "sofh",
-    "codegen",
     "utils-bytes",
     "utils-chrono",
     "utils-decimal",
@@ -77,28 +77,28 @@ full = [
 
 [dependencies]
 bitvec = "0.18.3"
-bytes = { version = "1", optional = true }
+bytes = { version="1", optional=true }
 chrono = "0.4"
-decimal = { version = "2", optional = true }
+decimal = { version="2", optional=true }
+fefix_derive = { path="../fefix_derive" }
 fnv = "1"
 futures = "0.3"
 futures-timer = "3"
-heck = { version = "0.3", optional = true }
-indoc = { version = "1", optional = true }
+heck = { version="0.3", optional=true }
+indoc = { version="1", optional=true }
 lazy_static = "1"
-openssl = { version = "0.10", optional = true }
+openssl = { version="0.10", optional=true }
 # For reading XML.
 roxmltree = "0.14"
-rust_decimal = { version = "1", optional = true }
-serde = { version = "1.0", features = ["derive"] }
+rust_decimal = { version="1", optional=true }
+serde = { version="1.0", features=["derive"] }
 serde_json = "1"
-slog = { version = "2", optional = true }
-sqlx = { version = "0.5", features = ["runtime-tokio-rustls", "postgres"] }
+slog = { version="2", optional=true }
+sqlx = { version="0.5", features=["runtime-tokio-rustls", "postgres"] }
 strum = "0.20"
 strum_macros = "0.20"
-tokio-util = { version = "0.6", optional = true, features = ["codec"] }
-uuid = { version = "0.8.1", features = ["v4"] }
-fefix_derive = { path = "../fefix_derive" }
+tokio-util = { version="0.6", optional=true, features=["codec"] }
+uuid = { version="0.8.1", features=["v4"] }
 
 [build-dependencies]
 chrono = "0.4"
@@ -113,10 +113,10 @@ strum = "0.20"
 strum_macros = "0.20"
 
 [dev-dependencies]
-arbitrary = { version = "1.0", features = ["derive"] }
-criterion = { version = "0.3", features = ["html_reports"] }
+arbitrary = { version="1.0", features=["derive"] }
+criterion = { version="0.3", features=["html_reports"] }
 enum-as-inner = "0.3"
 quickcheck = "1"
 quickcheck_derive = "0.3"
 quickcheck_macros = "1"
-syn = { version = "1", features = ["parsing"] }
+syn = { version="1", features=["parsing"] }
