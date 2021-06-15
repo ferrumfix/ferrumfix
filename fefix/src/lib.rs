@@ -57,6 +57,7 @@
 //!   **A.** Time, mostly. Drop me an email or open an issue and let's see what I
 //!   can do.
 
+#![doc(html_root_url = "https://docs.rs/fefix/")]
 #![warn(missing_docs, missing_doc_code_examples)]
 #![deny(
     unused,
@@ -104,12 +105,12 @@ pub mod session;
 #[cfg_attr(doc_cfg, doc(cfg(feature = "sofh")))]
 pub mod sofh;
 pub mod tagvalue;
-#[cfg(feature = "derive")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "derive")))]
-pub use fefix_derive::*;
 
 pub use buffer::{Buffer, MemorySlice};
 pub use dict::Dictionary;
+//#[cfg(feature = "derive")]
+// We don't derive macros to pollute the docs.
+#[doc(hidden)]
 pub use fefix_derive::FixValue;
 pub use fix_value::FixValue;
 

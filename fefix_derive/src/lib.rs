@@ -7,6 +7,7 @@ mod derive_read_fields;
 
 use proc_macro::TokenStream;
 
+/// A *derive macro* for the `FixValue` trait on `enum`'s.
 #[proc_macro_derive(FixValue, attributes(fefix))]
 pub fn derive_field_value(input: TokenStream) -> TokenStream {
     derive_field_value::derive_field_value(input)

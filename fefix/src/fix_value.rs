@@ -17,7 +17,7 @@ where
     /// The error type that can arise during deserialization.
     type Error;
     /// A type with values that customize the serialization algorithm, e.g.
-    /// [`ZeroPadding`].
+    /// padding information.
     type SerializeSettings: Default;
 
     /// Flag that is enabled if and only if the byte representation of `Self` is
