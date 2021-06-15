@@ -86,6 +86,7 @@ impl Version {
 
     /// Creates an [`SslConnectorBuilder`] with fhe FIXS recommended settings.
     #[cfg(feature = "utils-openssl")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-openssl")))]
     pub fn recommended_connector_builder(&self) -> SslConnectorBuilder {
         let mut context = SslConnector::builder(SslMethod::tls()).unwrap();
         match self {
@@ -106,6 +107,7 @@ impl Version {
 
     /// Creates an [`SslAcceptorBuilder`] with fhe FIXS recommended settings.
     #[cfg(feature = "utils-openssl")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-openssl")))]
     pub fn recommended_acceptor_builder(&self) -> SslAcceptorBuilder {
         let mut context = SslAcceptor::mozilla_intermediate_v5(SslMethod::tls()).unwrap();
         match self {

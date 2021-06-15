@@ -92,6 +92,7 @@ pub mod fast;
 #[cfg(feature = "fixp")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fixp")))]
 pub mod fixp;
+#[cfg_attr(doc_cfg, doc(cfg(feature = "fixs")))]
 #[cfg(feature = "fixs")]
 pub mod fixs;
 #[cfg_attr(doc_cfg, doc(cfg(feature = "json-encoding")))]
