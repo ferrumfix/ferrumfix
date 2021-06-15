@@ -12,8 +12,9 @@ cd ../../..
 # Increase number of iteration for QuickCheck.
 QUICKCHECK_TESTS="2500"
 
+# Default features
+cargo test
 # Test multiple feature combinations.
-cargo test # Default features
 cargo test --no-default-features
 cargo test --no-default-features --features "fix42"
 cargo test --no-default-features --features "fixt11"

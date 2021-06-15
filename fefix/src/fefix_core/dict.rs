@@ -803,7 +803,7 @@ mod datatype {
         /// insertion, but has never utilized these dates. During a leap second
         /// insertion, a UTCTimestamp field may read "19981231-23:59:59",
         /// "19981231-23:59:60", "19990101-00:00:00". (see
-        /// http://tycho.usno.navy.mil/leapsec.html)
+        /// <http://tycho.usno.navy.mil/leapsec.html>)
         UtcTimestamp,
         /// Contains an XML document raw data with no format or content restrictions.
         /// XMLData fields are always immediately preceded by a length field. The

@@ -8,6 +8,9 @@ const ERR_LENGTH: &str = "Expected exactly three bytes for CheckSum.";
 const ERR_ASCII_DIGITS: &str = "Expected ASCII digits, found invalid characters.";
 
 /// The result of a FIX checksum calculation (0-255).
+///
+/// You generally shouldn't need to use [`CheckSum`] directly unless you're
+/// building custom low-level FIX primitives (e.g. a new decoder).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct CheckSum(pub u8);
 

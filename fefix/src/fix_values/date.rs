@@ -32,7 +32,7 @@ pub struct Date {
 }
 
 impl Date {
-    /// Crates a new date from its components. It returns `None` if any of the
+    /// Creates a new date from its components. It returns `None` if any of the
     /// three components is outside the legal range.
     ///
     /// # Examples
@@ -106,13 +106,21 @@ impl Date {
         self.day
     }
 
+    /// Converts `self` to a [`chrono`] UTC date. [`chrono`] might impose
+    /// additional constraints and checks on date components (e.g. leap year,
+    /// day 31 in 30-day months); this function will return `None` for invalid dates.
     #[cfg(feature = "utils-chrono")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
     pub fn to_chrono_utc(&self) -> Option<chrono::Date<chrono::Utc>> {
         let naive = self.to_chrono_naive()?;
         Some(chrono::Date::from_utc(naive, chrono::Utc))
     }
 
+    /// Converts `self` to [`chrono::NaiveDate`]. [`chrono`] might impose
+    /// additional constraints and checks on date components (e.g. leap year,
+    /// day 31 in 30-day months); this function will return `None` for invalid dates.
     #[cfg(feature = "utils-chrono")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
     pub fn to_chrono_naive(&self) -> Option<chrono::NaiveDate> {
         chrono::NaiveDate::from_ymd_opt(self.year() as i32, self.month(), self.day())
     }

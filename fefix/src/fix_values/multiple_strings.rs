@@ -2,6 +2,18 @@ const SEPARATOR: u8 = b' ';
 
 /// An [`Iterator`] over space-delimited byte sequences in a
 /// `MultipleStringValue` field.
+///
+/// # Example
+///
+/// ```
+/// use fefix::fix_values::MultipleStrings;
+///
+/// let words = &mut MultipleStrings::new(b"foo bar qwerty");
+/// assert_eq!(words.next(), Some("foo".as_bytes()));
+/// assert_eq!(words.next(), Some("bar".as_bytes()));
+/// assert_eq!(words.next(), Some("qwerty".as_bytes()));
+/// assert_eq!(words.next(), None);
+/// ```
 #[derive(Debug, Clone)]
 pub struct MultipleStrings<'a> {
     data: &'a [u8],

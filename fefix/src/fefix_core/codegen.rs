@@ -171,6 +171,7 @@ impl Default for Settings {
     }
 }
 
+/// Generates the Rust code for a FIX field definition.
 pub fn gen_field_definition(fix_dictionary: dict::Dictionary, field: dict::Field) -> String {
     let mut header = FnvHashSet::default();
     let mut trailer = FnvHashSet::default();
