@@ -113,6 +113,9 @@ pub use fefix_derive::FixValue;
 pub use fix_value::FixValue;
 
 /// Wrapper type for dealing with `Ok<None>` as errors.
+///
+/// Intuitively, this type only makes sense when the *absence* of data is *in
+/// itself* an error, e.g. undefined FIX fields which are mandatory.
 pub type OptResult<T, E> = Result<T, OptError<E>>;
 
 /// The error variant of [`OptResult`].

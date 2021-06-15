@@ -6,7 +6,6 @@ use fnv::FnvHashMap;
 use lazy_static::lazy_static;
 use quickfix::{ParseDictionaryError, QuickFixReader};
 use std::fmt;
-use std::io;
 use std::sync::Arc;
 
 pub use datatype::FixDatatype;
@@ -43,41 +42,6 @@ pub enum FieldLocation {
     Body,
     /// This field is located inside the "Standard Trailer".
     Trailer,
-}
-
-/// Value for the field `MsgType (35)`.
-#[derive(Copy, Debug, Clone, PartialEq, Eq, Hash)]
-pub struct MsgType(u16);
-
-#[derive(Debug, Clone)]
-pub struct Version {
-    standard: String,
-    v_major: u32,
-    v_minor: u32,
-    service_pack: u32,
-    ep: Option<u32>,
-}
-
-impl MsgType {
-    pub fn write(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        let bytes = self.0.to_be_bytes();
-        for byte in bytes.iter() {
-            writer.write(&[*byte])?;
-        }
-        Ok(())
-    }
-
-    pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
-        if bytes.is_empty() || bytes.len() >= 3 {
-            None
-        } else {
-            let mut value: u16 = 0;
-            for byte in bytes {
-                value = (value << 8) + (*byte as u16);
-            }
-            Some(Self(value))
-        }
-    }
 }
 
 type InternalId = u32;
@@ -358,11 +322,9 @@ impl Dictionary {
     /// assert_eq!(msg1.name(), msg2.name());
     /// ```
     pub fn message_by_msgtype<S: AsRef<str>>(&self, msgtype: S) -> Option<Message> {
-        self.symbol(KeyRef::MessageByMsgType(MsgType::from_bytes(
-            msgtype.as_ref().as_bytes(),
-        )?))
-        .map(|iid| self.inner.messages.get(*iid as usize).unwrap())
-        .map(|data| Message(self, data))
+        self.symbol(KeyRef::MessageByMsgType(msgtype.as_ref()))
+            .map(|iid| self.inner.messages.get(*iid as usize).unwrap())
+            .map(|data| Message(self, data))
     }
 
     /// Returns the [`Component`] named `name`, if any.
@@ -516,10 +478,8 @@ impl DictionaryBuilder {
         let iid = self.messages.len() as InternalId;
         self.symbol_table
             .insert(Key::MessageByName(message.name.clone()), iid);
-        self.symbol_table.insert(
-            Key::MessageByMsgType(MsgType::from_bytes(message.msg_type.as_bytes()).unwrap()),
-            iid,
-        );
+        self.symbol_table
+            .insert(Key::MessageByMsgType(message.msg_type.to_string()), iid);
         self.messages.push(message);
         iid
     }
@@ -1443,7 +1403,6 @@ pub struct Section {}
 
 mod symbol_table {
     use super::InternalId;
-    use super::MsgType;
     use fnv::FnvHashMap;
     use std::borrow::Borrow;
     use std::hash::Hash;
@@ -1460,7 +1419,7 @@ mod symbol_table {
         FieldByTag(u32),
         FieldByName(String),
         MessageByName(String),
-        MessageByMsgType(MsgType),
+        MessageByMsgType(String),
     }
 
     #[derive(Copy, Debug, Clone, PartialEq, Eq, Hash)]
@@ -1472,7 +1431,7 @@ mod symbol_table {
         FieldByTag(u32),
         FieldByName(&'a str),
         MessageByName(&'a str),
-        MessageByMsgType(MsgType),
+        MessageByMsgType(&'a str),
     }
 
     impl Key {
@@ -1485,7 +1444,7 @@ mod symbol_table {
                 Key::FieldByTag(t) => KeyRef::FieldByTag(*t),
                 Key::FieldByName(s) => KeyRef::FieldByName(s.as_str()),
                 Key::MessageByName(s) => KeyRef::MessageByName(s.as_str()),
-                Key::MessageByMsgType(t) => KeyRef::MessageByMsgType(*t),
+                Key::MessageByMsgType(s) => KeyRef::MessageByMsgType(s.as_str()),
             }
         }
     }
@@ -1851,18 +1810,7 @@ mod quickfix {
 #[cfg(test)]
 mod test {
     use super::*;
-    use quickcheck_macros::quickcheck;
     use std::collections::HashSet;
-    use std::convert::TryInto;
-
-    #[quickcheck]
-    fn msg_type_conversion(val: u16) -> bool {
-        let bytes = val.to_le_bytes();
-        let msg_type = MsgType::from_bytes(&bytes[..]).unwrap();
-        let mut buffer = vec![0, 0];
-        msg_type.write(&mut &mut buffer[..]).unwrap();
-        val == u16::from_le_bytes((&buffer[..]).try_into().unwrap())
-    }
 
     #[test]
     fn fix44_quickfix_is_ok() {

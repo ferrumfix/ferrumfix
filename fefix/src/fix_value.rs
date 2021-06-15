@@ -38,7 +38,7 @@ where
     /// Parses and deserializes from `data`.
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error>;
 
-    /// Like [`Self::deserialize`], but it's allowed to skip *some* amount of
+    /// Like [`FixValue::deserialize`], but it's allowed to skip *some* amount of
     /// input checking. Invalid inputs might not trigger errors and instead be
     /// deserialized as random values.
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {

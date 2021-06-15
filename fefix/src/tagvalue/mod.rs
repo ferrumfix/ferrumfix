@@ -11,14 +11,14 @@ use std::io;
 mod config;
 mod decoder;
 mod encoder;
-mod field_getters;
+mod field_access;
 mod raw_decoder;
 mod utils;
 
 pub use config::{Config, Configure};
 pub use decoder::{Decoder, DecoderBuffered, Fields, Message, MessageGroup, MessageGroupEntry};
 pub use encoder::{Encoder, EncoderHandle};
-pub use field_getters::FieldGetter as Fv;
+pub use field_access::FieldAccess as Fv;
 pub use raw_decoder::{RawDecoder, RawDecoderBuffered, RawFrame};
 
 use crate::dict::IsFieldDefinition;

@@ -5,9 +5,11 @@ use fnv::FnvHashSet;
 use heck::{CamelCase, ShoutySnakeCase};
 use indoc::indoc;
 
-const FEFIX_VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const FEFIX_VERSION: &str = env!("CARGO_PKG_VERSION");
+const FOUR_SPACES: &str = "    ";
 
-/// Creates a `String` that contains a multiline Rust comment.
+/// Creates a `String` that contains a multiline Rust "Doc" comment explaining
+/// that the subsequent code was automatically generated.
 ///
 /// The following example is for illustrative purposes only and the actual
 /// contents might change. The string is guaranteed not to have any trailing or
@@ -107,8 +109,9 @@ pub struct Settings {
 }
 
 impl Settings {
-    fn fefix_crate_name(&self) -> &str {
-        self.fefix_crate_name.as_str()
+    /// Creates a new [`Settings`] set to defaults.
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Changes the indentation prefix of all generated Rust code. It's four
@@ -141,12 +144,16 @@ impl Settings {
     {
         self.fefix_crate_name = name.into();
     }
+
+    fn fefix_crate_name(&self) -> &str {
+        self.fefix_crate_name.as_str()
+    }
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            indentation: "    ".to_string(),
+            indentation: FOUR_SPACES.to_string(),
             indentation_depth: 0,
             derives_for_allowed_values: vec![
                 "Debug".to_string(),
@@ -346,5 +353,11 @@ mod test {
             let code = gen_definitions(dict, &codegen_settings);
             syn::parse_file(code.as_str()).unwrap();
         }
+    }
+
+    #[test]
+    fn generated_code_notice_is_trimmed() {
+        let notice = generated_code_notice();
+        assert_eq!(notice, notice.trim());
     }
 }

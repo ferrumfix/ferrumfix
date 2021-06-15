@@ -78,8 +78,12 @@ pub use tz::Tz;
 pub use tz_time::TzTime;
 pub use tz_timestamp::TzTimestamp;
 
+/// Type alias for ISO 3166-1 alpha-2 strings (two-letter country codes).
 pub type Country = [u8; 2];
+/// Type alias for ISO 4217 alpha codes (three-letter currency codes).
 pub type Currency = [u8; 3];
+/// Type alias for four-letter *Market Identifier Codes* (MICs) as defined by
+/// ISO 10383.
 pub type Exchange = [u8; 4];
 
 #[cfg(test)]

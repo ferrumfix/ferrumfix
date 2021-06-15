@@ -12,7 +12,10 @@ use crate::{OptError, OptResult};
 /// - `_with_key` stands for *with key*, i.e. you won't use a field definition but
 /// direct key (i.e. field name or tag).
 /// - `_opt` stands for *optional*, for better error reporting.
-pub trait FieldGetter<'a> {
+pub trait FieldAccess<'a> {
+    /// Field key type. For the "classic", `tag=value` FIX encoding, this is a
+    /// numeric type (more specifically, [`TagU16`](crate::TagU16)). Other
+    /// encodings might use different raw keys, like JSON (strings).
     type Key;
 
     fn fv_raw_with_key<'b>(&'b self, key: Self::Key) -> Option<&'b [u8]>;
@@ -22,6 +25,10 @@ pub trait FieldGetter<'a> {
         'b: 'a,
         F: IsFieldDefinition;
 
+    /// Returns the field value of `field` in `self` wrapped in an [`Option`].
+    ///
+    /// Lossless deserialization.
+    #[inline(always)]
     fn fv_opt<'b, V, F>(&'b self, field: &'a F) -> Option<Result<V, V::Error>>
     where
         'b: 'a,
@@ -34,6 +41,11 @@ pub trait FieldGetter<'a> {
         })
     }
 
+    /// Returns the field value of `field` in `self` wrapped in an [`OptResult`].
+    ///
+    ///
+    /// Lossless deserialization.
+    #[inline(always)]
     fn fv<'b, V, F>(&'b self, field: &'a F) -> OptResult<V, V::Error>
     where
         'b: 'a,
@@ -47,6 +59,10 @@ pub trait FieldGetter<'a> {
         }
     }
 
+    /// Returns the field value of `field` in `self` wrapped in an [`Option`].
+    ///
+    /// Lossy deserialization.
+    #[inline(always)]
     fn fvl_opt<'b, V, F>(&'b self, field: &'a F) -> Option<Result<V, V::Error>>
     where
         'b: 'a,
@@ -60,7 +76,11 @@ pub trait FieldGetter<'a> {
             })
     }
 
-    fn fvl<'b, V, F>(&'b self, field: &'a F) -> Result<V, OptError<V::Error>>
+    /// Returns the field value of `field` in `self` wrapped in an [`OptResult`].
+    ///
+    /// Lossy deserialization.
+    #[inline(always)]
+    fn fvl<'b, V, F>(&'b self, field: &'a F) -> OptResult<V, V::Error>
     where
         'b: 'a,
         V: FixValue<'b>,
@@ -73,6 +93,8 @@ pub trait FieldGetter<'a> {
         }
     }
 
+    /// Lossy deserialization.
+    #[inline(always)]
     fn fvl_with_key<'b, V>(&'b self, key: Self::Key) -> OptResult<V, V::Error>
     where
         V: FixValue<'b>,

@@ -16,9 +16,7 @@ const ERR_NOT_ASCII_DIGITS: &str = "Invalid characters, expected ASCII digits.";
 const ERR_LENGTH: &str = "Invalid length, expected 8 bytes (YYYYMMDD format).";
 const ERR_BOUNDS: &str = "Values outside legal bounds.";
 
-/// Representation for `LocalMktDate` and and `UTCDateOnly`.
-///
-/// Date in format `YYYYMMDD`.
+/// Representation for `LocalMktDate` and and `UTCDateOnly` in `YYYYMMDD` format.
 ///
 /// # Examples
 ///
