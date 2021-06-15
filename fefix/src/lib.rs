@@ -84,7 +84,7 @@ mod utils;
 #[cfg_attr(doc_cfg, doc(cfg(feature = "codegen")))]
 pub use fefix_core::codegen;
 pub use fefix_core::dict;
-pub use fefix_core::{TagU16, TagU16Map, TagU16NoHasher};
+pub use fefix_core::TagU16;
 pub mod definitions;
 #[cfg(feature = "fast-encoding")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fast-encoding")))]
