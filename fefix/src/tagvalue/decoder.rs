@@ -1,19 +1,43 @@
 use super::{
-    Config, Configure, DecodeError, DecodeError as Error, Fv, RawDecoder, RawDecoderBuffered,
-    RawFrame,
+    Config, Configure, DecodeError, FieldAccess, RawDecoder, RawDecoderBuffered, RawFrame,
 };
-use crate::definitions::fix44;
 use crate::dict;
 use crate::dict::IsFieldDefinition;
 use crate::TagU16;
-use crate::{dict::FixDatatype, Dictionary, FixValue};
+use crate::{dict::FixDatatype, Dictionary};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::{BuildHasher, Hasher};
 
+// Number of bytes before the start of the `BeginString` field:
+//
+//   ~~
+//   8=FIX.4.2|...
 const BEGIN_STRING_OFFSET: usize = 2;
 
+/// Univocally locates a tag within a FIX message, even with nested groups.
+///
+/// Typically, every FIX tag is guaranteed to be unique within a single FIX
+/// message. Repeating groups, however, break this promise and allow *multiple*
+/// values with the same tag, each in a different *group entry*. This means that
+/// a FIX message is a tree rather than an associative array. [`FieldLocator`]
+/// generates unique identifiers for tags both outsite and within groups, which
+/// allows for random (i.e. non-sequential) reads on a FIX message.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum FieldLocator {
+    WithinGroup {
+        tag: TagU16,
+        index_of_group_tag: u32,
+        entry_index: u32,
+    },
+    TopLevel {
+        tag: TagU16,
+    },
+}
+
 /// FIX message decoder.
+///
+/// One should create a [`Decoder`] per stream of FIX messages.
 #[derive(Debug)]
 pub struct Decoder<C = Config>
 where
@@ -22,12 +46,7 @@ where
     dict: Dictionary,
     builder: MessageBuilder<'static>,
     raw_decoder: RawDecoder<C>,
-    current_group_entry_tag: TagU16,
-    remaining_group_entries: u16,
-    group_ancestry: AncestryTracker,
-    ancestry_id: u64,
     tag_lookup: TagLookup,
-    is_beginning_group: bool,
 }
 
 impl<C> Decoder<C>
@@ -45,14 +64,23 @@ where
     pub fn with_config(dict: Dictionary, config: C) -> Self {
         Self {
             dict: dict.clone(),
-            builder: MessageBuilder::new(),
+            builder: MessageBuilder {
+                state: DecoderState {
+                    group_information: Vec::new(),
+                    new_group: None,
+                },
+                raw: b"",
+                field_locators: Vec::new(),
+                fields: HashMap::new(),
+                i_first_cell: 0,
+                i_last_cell: 0,
+                len_end_body: 0,
+                len_end_trailer: 0,
+                len_end_header: 0,
+                bytes: b"",
+            },
             raw_decoder: RawDecoder::with_config(config),
-            current_group_entry_tag: TagU16::new(1).unwrap(),
-            remaining_group_entries: 0,
-            group_ancestry: AncestryTracker::top_level(),
-            ancestry_id: 0,
             tag_lookup: TagLookup::from_dict(&dict),
-            is_beginning_group: false,
         }
     }
 
@@ -106,7 +134,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::{Fv, Config, Decoder};
+    /// use fefix::tagvalue::{FieldAccess, Config, Decoder};
     /// use fefix::definitions::fix42;
     /// use fefix::Dictionary;
     ///
@@ -125,97 +153,101 @@ where
         self.from_frame(frame)
     }
 
-    fn message_builder<'a>(&'a self) -> &'a MessageBuilder<'a> {
-        unsafe { std::mem::transmute(&self.builder) }
-    }
-
     fn message_builder_mut<'a>(&'a mut self) -> &'a mut MessageBuilder<'a> {
         unsafe { std::mem::transmute(&mut self.builder) }
     }
 
     fn from_frame<'a>(&'a mut self, frame: RawFrame<'a>) -> Result<Message<'a>, DecodeError> {
         self.builder.clear();
-        let bytes = frame.as_bytes();
-        let mut tag_num = 0u16;
-        let mut state_is_tag = true;
-        let mut i_sep;
-        let mut i_equal_sign = 0usize;
-        let should_assoc = self.config().should_decode_associative();
-        let should_seq = self.config().should_decode_sequential();
-        let builder = self.message_builder_mut();
-        builder
-            .add_field(
-                Context::top_level(fix44::BEGIN_STRING.tag()),
-                &bytes[BEGIN_STRING_OFFSET..BEGIN_STRING_OFFSET + frame.begin_string().len()],
-                should_assoc,
-                should_seq,
-            )
-            .unwrap();
-        for i in 0..frame.payload().len() {
-            let byte = frame.payload()[i];
-            if byte == b'=' {
-                i_equal_sign = i;
-                state_is_tag = false;
-            } else if byte == self.config().separator() {
-                i_sep = i;
-                state_is_tag = true;
-                let start = frame.payload_offset() + i_equal_sign + 1;
-                let len = i_sep - i_equal_sign - 1;
-                self.store_field(
-                    TagU16::new(tag_num).unwrap(),
-                    &bytes[start..start + len],
-                    start,
-                    len,
-                    bytes,
-                );
-                tag_num = 0;
-            } else if state_is_tag {
-                tag_num = (tag_num * 10 + (byte - b'0') as u16) as u16;
-            }
+        let separator = self.config().separator();
+        let payload = frame.payload();
+        self.store_field(
+            TagU16::new(8).unwrap(),
+            frame.as_bytes(),
+            BEGIN_STRING_OFFSET,
+            frame.begin_string().len(),
+        );
+        let mut i = 0;
+        while i < payload.len() {
+            let index_of_next_equal_sign = {
+                let i_eq = (&payload[i..])
+                    .iter()
+                    .copied()
+                    .position(|byte| byte == b'=')
+                    .map(|pos| pos + i);
+                if i_eq.is_none() {
+                    break;
+                }
+                i_eq.unwrap()
+            };
+            let field_value_len = {
+                let len = (&payload[index_of_next_equal_sign + 1..])
+                    .iter()
+                    .copied()
+                    .position(|byte| byte == separator);
+                if len.is_none() {
+                    break;
+                }
+                len.unwrap()
+            };
+            let tag_num = {
+                let mut tag = 0u32;
+                for byte in (&payload[i..index_of_next_equal_sign]).iter().copied() {
+                    tag = tag * 10 + (byte as u32 - b'0' as u32);
+                }
+                if let Some(tag) = TagU16::new(tag as u16) {
+                    tag
+                } else {
+                    break;
+                }
+            };
+            self.store_field(
+                tag_num,
+                frame.payload(),
+                index_of_next_equal_sign + 1,
+                field_value_len,
+            );
+            // Equal sign                ~~~
+            // Separator                                       ~~~
+            i = index_of_next_equal_sign + 1 + field_value_len + 1;
         }
-        Ok(self.message_builder_mut().build(bytes))
+        Ok(Message {
+            builder: self.message_builder_mut(),
+        })
     }
 
-    fn store_field(&mut self, tag: TagU16, content: &[u8], start: usize, len: usize, bytes: &[u8]) {
+    fn store_field<'a>(
+        &mut self,
+        tag: TagU16,
+        raw_message: &'a [u8],
+        field_value_start: usize,
+        field_value_len: usize,
+    ) {
         let config_assoc = self.config().should_decode_associative();
-        let config_seq = self.config().should_decode_sequential();
-        let msg = self.message_builder().build(bytes);
-        let _msg_type = msg.fv_raw(fix44::MSG_TYPE).unwrap_or(b"");
-        if self.is_beginning_group {
-            self.current_group_entry_tag = tag;
-            self.is_beginning_group = false;
-        }
-        if tag == self.current_group_entry_tag {
-            if self.ancestry_id & 0xff <= 1 {
-                self.ancestry_id >>= 16;
-            } else {
-                self.ancestry_id -= 1;
-            }
-            if self.remaining_group_entries <= 1 {
-                self.group_ancestry.leave_group();
+        let field_value = &raw_message[field_value_start..][..field_value_len];
+        if self.builder.state.new_group.is_some() {
+            // We are entering a new group, but we still don't know which tag
+            // will be the first one in each entry.
+            self.builder.state.set_new_group(tag);
+        } else if let Some(group_info) = self.builder.state.group_information.last_mut() {
+            if group_info.current_entry_i >= group_info.num_entries {
+                self.builder.state.group_information.pop();
+            } else if tag == group_info.first_tag_of_every_group_entry {
+                group_info.current_entry_i += 1;
             }
         }
-        let context = Context {
-            tag,
-            ancestry: Ancestry::from_u64(self.ancestry_id),
-        };
         self.message_builder_mut()
             .add_field(
-                context,
-                &bytes[start..start + len],
+                tag,
+                &raw_message[field_value_start..][..field_value_len],
                 config_assoc,
-                config_seq,
             )
             .unwrap();
         let entry = self.tag_lookup.lookup(tag).unwrap();
         if entry.data_type() == FixDatatype::NumInGroup {
-            self.is_beginning_group = true;
-            let s = std::str::from_utf8(content).unwrap();
-            let entries_count = str::parse::<u16>(s).unwrap();
-            self.current_group_entry_tag = entry.first_tag_of_group;
-            self.ancestry_id = (self.ancestry_id << 16) + entries_count as u64;
-            self.group_ancestry.enter_group();
-            self.remaining_group_entries = entries_count;
+            self.builder
+                .state
+                .add_group(tag, self.builder.field_locators.len() - 1, field_value);
         }
     }
 }
@@ -302,13 +334,9 @@ where
 
     #[inline]
     pub fn message(&self) -> Message {
-        self.decoder.builder.build(
-            self.raw_decoder
-                .current_frame()
-                .unwrap()
-                .unwrap()
-                .as_bytes(),
-        )
+        Message {
+            builder: &self.decoder.builder,
+        }
     }
 }
 
@@ -387,22 +415,19 @@ impl TagLookup {
 #[derive(Debug)]
 pub struct MessageGroup<'a> {
     message: &'a Message<'a>,
-    num_in_group_tag_index: usize,
-    num_in_group_value: usize,
-    ancestry_id: u64,
+    index_of_group_tag: u32,
+    len: usize,
 }
 
 impl<'a> MessageGroup<'a> {
     pub fn len(&self) -> usize {
-        self.num_in_group_value
+        self.len
     }
 
     pub fn entry(&self, index: usize) -> MessageGroupEntry {
         MessageGroupEntry {
             group: self,
-            start_index: 0,
-            index,
-            ancestry_id: (self.ancestry_id << 16) + (index as u64 + 1),
+            entry_index: index as u32,
         }
     }
 }
@@ -411,106 +436,209 @@ impl<'a> MessageGroup<'a> {
 #[derive(Debug)]
 pub struct MessageGroupEntry<'a> {
     group: &'a MessageGroup<'a>,
-    start_index: usize,
-    index: usize,
-    ancestry_id: u64,
+    entry_index: u32,
 }
 
-impl<'a> MessageGroupEntry<'a> {
-    pub fn field_ref<'b, F, T>(
-        &'b self,
-        field_def: &'b F,
-    ) -> Option<Result<T, <T as FixValue<'b>>::Error>>
-    where
-        'b: 'a,
-        F: IsFieldDefinition,
-        T: FixValue<'b>,
-    {
-        let context = Context {
-            tag: field_def.tag(),
-            ancestry: Ancestry::from_u64(self.ancestry_id),
+impl<'a> FieldAccess<'a> for MessageGroupEntry<'a> {
+    type Key = TagU16;
+
+    fn fv_raw_with_key<'b>(&'b self, tag: Self::Key) -> Option<&'b [u8]> {
+        let field_locator = FieldLocator::WithinGroup {
+            tag,
+            index_of_group_tag: self.group.index_of_group_tag,
+            entry_index: self.entry_index,
         };
+        println!(
+            "field locators are {:?}",
+            self.group.message.builder.field_locators,
+        );
+        println!("field locator for group tag is {:?}", field_locator);
         self.group
             .message
             .builder
             .fields
-            .get(&context)
-            .map(|x| T::deserialize_lossy(x.0))
+            .get(&field_locator)
+            .map(|field| field.1)
+    }
+
+    fn fv_raw<'b, F>(&'b self, field: &'a F) -> Option<&'b [u8]>
+    where
+        'b: 'a,
+        F: IsFieldDefinition,
+    {
+        self.fv_raw_with_key(field.tag())
     }
 }
 
-/// FIX message data structure with fast associative and sequential access.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone)]
 pub struct Message<'a> {
-    bytes: &'a [u8],
     builder: &'a MessageBuilder<'a>,
 }
 
-impl<'a> Message<'a> {
-    pub fn len(&self) -> usize {
-        self.builder.insertion_order.len()
+impl<'a> PartialEq for Message<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        // Two messages are equal *if and only if* messages are exactly the
+        // same. Fields must also have the same order (things get complicated
+        // when you allow for different order of fields).
+        self.fields().eq(other.fields())
     }
+}
 
-    pub fn group_ref(&self, tag: TagU16) -> Option<MessageGroup> {
-        let num_in_group_value: usize = self.fvl_with_key(tag).ok()?;
-        let context = Context {
-            tag,
-            ancestry: Ancestry::from_u64(0),
-        };
-        let field_i = self.builder.fields.get(&context)?.1;
+impl<'a> Eq for Message<'a> {}
+
+impl<'a> Message<'a> {
+    pub fn group_ref(&'a self, tag: TagU16) -> Option<MessageGroup<'a>> {
+        let field_locator_of_group_tag = FieldLocator::TopLevel { tag };
+        let num_in_group = self.builder.fields.get(&field_locator_of_group_tag)?;
+        let index_of_group_tag = num_in_group.2 as u32;
+        let field_value_str = std::str::from_utf8(num_in_group.1).ok()?;
+        let num_entries = str::parse(field_value_str).unwrap();
         Some(MessageGroup {
             message: self,
-            num_in_group_tag_index: field_i,
-            num_in_group_value,
-            ancestry_id: 0,
+            index_of_group_tag,
+            len: num_entries,
         })
     }
 
-    pub fn field_raw(&self, tag: TagU16) -> Option<&[u8]> {
-        self.builder
-            .fields
-            .get(&Context::top_level(tag))
-            .map(|x| x.0)
-    }
-
-    pub fn fields(&self) -> Fields<'a> {
+    pub fn fields(&'a self) -> Fields<'a> {
         Fields {
-            message: &self.builder,
+            message: &self,
             i: 0,
         }
     }
 
     pub fn as_bytes(&self) -> &[u8] {
-        self.bytes
+        self.builder.bytes
+    }
+
+    pub fn len(&self) -> usize {
+        self.builder.field_locators.len()
     }
 }
 
-#[derive(Debug)]
-pub struct Fields<'a> {
-    message: &'a MessageBuilder<'a>,
-    i: usize,
+#[derive(Debug, Copy, Clone)]
+struct DecoderGroupState {
+    first_tag_of_every_group_entry: TagU16,
+    num_entries: usize,
+    current_entry_i: usize,
+    index_of_group_tag: usize,
 }
 
-impl<'a> Iterator for Fields<'a> {
-    type Item = &'a [u8];
+#[derive(Debug, Copy, Clone)]
+struct DecoderStateNewGroup {
+    tag: TagU16,
+    index_of_group_tag: usize,
+    num_entries: usize,
+}
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.i == self.message.insertion_order.len() {
-            None
-        } else {
-            let context = self.message.insertion_order[self.i];
-            let bytes = self.message.fields.get(&context).unwrap().0;
-            self.i += 1;
-            Some(bytes)
+#[derive(Debug, Clone)]
+struct DecoderState {
+    group_information: Vec<DecoderGroupState>,
+    new_group: Option<DecoderStateNewGroup>,
+}
+
+impl DecoderState {
+    fn current_field_locator(&self, tag: TagU16) -> FieldLocator {
+        match self.group_information.last() {
+            Some(group_info) => FieldLocator::WithinGroup {
+                tag,
+                index_of_group_tag: group_info.index_of_group_tag as u32,
+                entry_index: group_info.current_entry_i as u32,
+            },
+            None => FieldLocator::TopLevel { tag },
+        }
+    }
+
+    fn set_new_group(&mut self, tag: TagU16) {
+        assert!(self.new_group.is_some());
+        let new_group = self.new_group.take().unwrap();
+        self.group_information.push(DecoderGroupState {
+            first_tag_of_every_group_entry: tag,
+            num_entries: new_group.num_entries,
+            current_entry_i: 0,
+            index_of_group_tag: new_group.index_of_group_tag,
+        });
+    }
+
+    fn add_group(&mut self, tag: TagU16, index_of_group_tag: usize, field_value: &[u8]) {
+        let field_value_str = std::str::from_utf8(field_value).unwrap();
+        let num_entries = str::parse(field_value_str).unwrap();
+        if num_entries > 0 {
+            self.new_group = Some(DecoderStateNewGroup {
+                tag,
+                index_of_group_tag,
+                num_entries,
+            });
         }
     }
 }
 
-impl<'a> Fv<'a> for Message<'a> {
+/// FIX message data structure with fast associative and sequential access.
+#[derive(Debug, Clone)]
+pub struct MessageBuilder<'a> {
+    state: DecoderState,
+    raw: &'a [u8],
+    fields: HashMap<FieldLocator, (TagU16, &'a [u8], usize)>,
+    field_locators: Vec<FieldLocator>,
+    i_first_cell: usize,
+    i_last_cell: usize,
+    len_end_header: usize,
+    len_end_body: usize,
+    len_end_trailer: usize,
+    bytes: &'a [u8],
+}
+
+impl<'a> MessageBuilder<'a> {
+    fn clear(&mut self) {
+        self.raw = b"";
+        self.fields.clear();
+        self.field_locators.clear();
+    }
+
+    fn add_field(
+        &mut self,
+        tag: TagU16,
+        field_value: &'a [u8],
+        associative: bool,
+    ) -> Result<(), DecodeError> {
+        let field_locator = self.state.current_field_locator(tag);
+        let i = self.field_locators.len();
+        if associative {
+            self.fields.insert(field_locator, (tag, field_value, i));
+        }
+        self.field_locators.push(field_locator);
+        Ok(())
+    }
+}
+
+/// An [`Iterator`] over fields and groups within a FIX message.
+#[derive(Debug)]
+pub struct Fields<'a> {
+    message: &'a Message<'a>,
+    i: usize,
+}
+
+impl<'a> Iterator for Fields<'a> {
+    type Item = (TagU16, &'a [u8]);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.i == self.message.len() {
+            None
+        } else {
+            let context = self.message.builder.field_locators[self.i];
+            let field = self.message.builder.fields.get(&context).unwrap();
+            self.i += 1;
+            Some((field.0, field.1))
+        }
+    }
+}
+
+impl<'a> FieldAccess<'a> for Message<'a> {
     type Key = TagU16;
 
-    fn fv_raw_with_key<'b>(&'b self, key: Self::Key) -> Option<&'b [u8]> {
-        self.field_raw(key)
+    fn fv_raw_with_key<'b>(&'b self, tag: Self::Key) -> Option<&'b [u8]> {
+        let field_locator = FieldLocator::TopLevel { tag };
+        self.builder.fields.get(&field_locator).map(|field| field.1)
     }
 
     fn fv_raw<'b, F>(&'b self, field: &F) -> Option<&'b [u8]>
@@ -538,137 +666,6 @@ impl<'a> slog::Value for Message<'a> {
             serializer.emit_char(key, '|')?;
         }
         Ok(())
-    }
-}
-
-/// Max of 2**16 entries per group.
-type GroupEntryId = u16;
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct AncestryTracker {
-    id: u64,
-    parents: [GroupEntryId; 4],
-    depth: usize,
-}
-
-impl AncestryTracker {
-    pub fn top_level() -> Self {
-        Self {
-            id: 0,
-            parents: [0; 4],
-            depth: 0,
-        }
-    }
-
-    pub fn enter_group(&mut self) {
-        self.id = (self.id << 16) | 1;
-        self.parents[self.depth] = 1;
-        self.depth += 1;
-    }
-
-    pub fn leave_group(&mut self) {
-        self.id = self.id >> 16;
-        self.parents[self.depth] = 0;
-        self.depth = self.depth.wrapping_sub(1);
-    }
-
-    pub fn ancestry(&self) -> Ancestry {
-        Ancestry {
-            id: ((self.parents[0] as u64) << 48)
-                + ((self.parents[1] as u64) << 32)
-                + ((self.parents[2] as u64) << 16)
-                + self.parents[3] as u64,
-        }
-    }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct Ancestry {
-    pub id: u64,
-}
-
-impl Ancestry {
-    pub fn from_u64(id: u64) -> Self {
-        Self { id }
-    }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct Context {
-    pub tag: TagU16,
-    pub ancestry: Ancestry,
-}
-
-impl Context {
-    pub fn top_level(tag: TagU16) -> Self {
-        Self {
-            tag,
-            ancestry: AncestryTracker::top_level().ancestry(),
-        }
-    }
-}
-
-/// A zero-copy, allocation-free builder of [`Message`] instances.
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct MessageBuilder<'a> {
-    fields: HashMap<Context, (&'a [u8], usize), TagHashBuilder>,
-    insertion_order: Vec<Context>,
-    owned_data: Vec<u8>,
-    i_first_cell: usize,
-    i_last_cell: usize,
-    len_end_header: usize,
-    len_end_body: usize,
-    len_end_trailer: usize,
-}
-
-impl<'a> MessageBuilder<'a> {
-    fn new() -> Self {
-        Self {
-            fields: HashMap::with_capacity_and_hasher(20, TagHashBuilder {}),
-            insertion_order: vec![],
-            owned_data: Vec::new(),
-            i_first_cell: 0,
-            i_last_cell: 0,
-            len_end_header: 0,
-            len_end_body: 0,
-            len_end_trailer: 0,
-        }
-    }
-
-    /// Removes all fields from `self`.
-    fn clear(&mut self) {
-        // TODO: https://github.com/rust-lang/rust/issues/56431
-        self.fields.clear();
-        self.insertion_order.clear();
-        self.i_first_cell = 0;
-        self.i_last_cell = 0;
-        self.len_end_body = 0;
-        self.len_end_header = 0;
-        self.len_end_trailer = 0;
-    }
-
-    fn add_field(
-        &mut self,
-        context: Context,
-        bytes: &'a [u8],
-        assoc: bool,
-        seq: bool,
-    ) -> Result<(), Error> {
-        let field = (bytes, self.insertion_order.len());
-        if assoc {
-            self.fields.insert(context, field);
-        }
-        if seq {
-            self.insertion_order.push(context);
-        }
-        Ok(())
-    }
-
-    fn build(&'a self, bytes: &'a [u8]) -> Message<'a> {
-        Message {
-            bytes,
-            builder: self,
-        }
     }
 }
 
@@ -733,17 +730,25 @@ mod test {
     fn repeating_group_entries() {
         let bytes = b"8=FIX.4.2|9=196|35=X|49=A|56=B|34=12|52=20100318-03:21:11.364|262=A|268=2|279=0|269=0|278=BID|55=EUR/USD|270=1.37215|15=EUR|271=2500000|346=1|279=0|269=1|278=OFFER|55=EUR/USD|270=1.37224|15=EUR|271=2503200|346=1|10=171|";
         let decoder = &mut decoder();
-        decoder.config_mut().set_separator(b'|');
         let message = decoder.decode(bytes).unwrap();
         let group = message.group_ref(TagU16::new(268).unwrap()).unwrap();
         assert_eq!(group.len(), 2);
         assert_eq!(
-            group
-                .entry(0)
-                .field_ref::<_, &[u8]>(fix44::MD_ENTRY_ID)
-                .unwrap()
-                .unwrap(),
-            b"BID"
+            group.entry(0).fv_raw(fix44::MD_ENTRY_ID).unwrap(),
+            b"BID" as &[u8]
+        );
+    }
+
+    #[test]
+    fn top_level_tag_after_empty_group() {
+        let bytes = b"8=FIX.4.4|9=17|35=X|268=0|346=1|10=171|";
+        let decoder = &mut decoder();
+        let message = decoder.decode(bytes).unwrap();
+        let group = message.group_ref(TagU16::new(268).unwrap()).unwrap();
+        assert_eq!(group.len(), 0);
+        assert_eq!(
+            message.fv_raw_with_key(TagU16::new(346).unwrap()),
+            Some("1".as_bytes())
         );
     }
 
@@ -751,7 +756,6 @@ mod test {
     fn no_skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
         let mut codec = Decoder::<Config>::new(Dictionary::fix44());
-        codec.config_mut().set_separator(b'|');
         codec.config_mut().set_verify_checksum(true);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
@@ -774,11 +778,11 @@ mod test {
         let message = codec.decode(&mut RANDOM_MESSAGES[0].as_bytes()).unwrap();
         assert_eq!(message.fv(fix44::MSG_TYPE), Ok(fix44::MsgType::Heartbeat));
         assert_eq!(
-            message.field_raw(TagU16::new(8).unwrap()),
+            message.fv_raw_with_key(TagU16::new(8).unwrap()),
             Some(b"FIX.4.2" as &[u8])
         );
         assert_eq!(
-            message.field_raw(TagU16::new(35).unwrap()),
+            message.fv_raw_with_key(TagU16::new(35).unwrap()),
             Some(b"0" as &[u8]),
         );
     }

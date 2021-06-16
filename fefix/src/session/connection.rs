@@ -2,7 +2,7 @@ use super::{errs, Backend, LlEvent, LlEventLoop};
 use crate::definitions::fix44;
 use crate::dict::IsFieldDefinition;
 use crate::session::{Environment, SeqNumbers};
-use crate::tagvalue::Fv;
+use crate::tagvalue::FieldAccess;
 use crate::tagvalue::Message;
 use crate::tagvalue::{Decoder, DecoderBuffered, Encoder, EncoderHandle};
 use crate::Buffer;

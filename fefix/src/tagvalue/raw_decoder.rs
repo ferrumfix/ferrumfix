@@ -1,7 +1,7 @@
 use crate::tagvalue::{utils, Config, Configure, DecodeError};
 use std::ops::Range;
 
-/// View over the contents of a FIX message according to [`RawDecoder`].
+/// An immutable view over the contents of a FIX message by a [`RawDecoder`].
 #[derive(Debug)]
 pub struct RawFrame<'a> {
     data: &'a [u8],
@@ -9,22 +9,14 @@ pub struct RawFrame<'a> {
     payload: &'a [u8],
     payload_offset: usize,
 }
+//    Self {
+//        data,
+//        begin_string,
+//        payload: &data[payload_offset..payload_offset + payload_len],
+//        payload_offset,
+//    }
 
 impl<'a> RawFrame<'a> {
-    fn new(
-        data: &'a [u8],
-        begin_string: &'a [u8],
-        payload_offset: usize,
-        payload_len: usize,
-    ) -> Self {
-        Self {
-            data,
-            begin_string,
-            payload: &data[payload_offset..payload_offset + payload_len],
-            payload_offset,
-        }
-    }
-
     /// Returns an immutable reference to the raw contents of `self`.
     ///
     /// # Examples
@@ -62,15 +54,16 @@ impl<'a> RawFrame<'a> {
         self.begin_string
     }
 
-    /// Returns an immutable reference to the body contents of `self`. In this
-    /// context, "body" means all fields besides
+    /// Returns an immutable reference to the payload of `self`. In this
+    /// context, "payload" means all fields besides
     ///
     /// - `BeginString <8>`;
     /// - `BodyLength <9>`;
     /// - `CheckSum <10>`.
     ///
-    /// According to this definition, the body may also contain fields that are
-    /// technically part of `StandardHeader` and `StandardTrailer`.
+    /// According to this definition, the payload may also contain fields that are
+    /// technically part of `StandardHeader` and `StandardTrailer`, i.e. payload
+    /// and body and *not* synonyms.
     ///
     /// ```
     /// use fefix::tagvalue::{Config, RawDecoder};
@@ -151,12 +144,12 @@ where
         if self.config().verify_checksum() {
             utils::verify_checksum(data)?;
         }
-        Ok(RawFrame::new(
+        Ok(RawFrame {
             data,
-            &data[info.begin_string_range()],
-            info.body_range().start,
-            info.body_range().len(),
-        ))
+            begin_string: &data[info.begin_string_range()],
+            payload: &data[info.body_range()],
+            payload_offset: info.body_range().start,
+        })
     }
 }
 

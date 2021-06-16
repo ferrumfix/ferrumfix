@@ -18,7 +18,7 @@ mod utils;
 pub use config::{Config, Configure};
 pub use decoder::{Decoder, DecoderBuffered, Fields, Message, MessageGroup, MessageGroupEntry};
 pub use encoder::{Encoder, EncoderHandle};
-pub use field_access::FieldAccess as Fv;
+pub use field_access::FieldAccess;
 pub use raw_decoder::{RawDecoder, RawDecoderBuffered, RawFrame};
 
 use crate::dict::IsFieldDefinition;
@@ -52,7 +52,7 @@ impl From<io::Error> for DecodeError {
 
 pub trait MapFields<'a>
 where
-    Self: Fv<'a>,
+    Self: FieldAccess<'a>,
 {
     type Group: MapGroup<'a>;
 

@@ -2,7 +2,7 @@ use super::{Config, Configure, DecodeError};
 use crate::dict;
 use crate::dict::FieldLocation;
 use crate::dict::IsFieldDefinition;
-use crate::tagvalue::Fv;
+use crate::tagvalue::FieldAccess;
 use crate::Dictionary;
 use crate::FixValue;
 use serde::{Deserialize, Serialize};
@@ -15,11 +15,11 @@ pub struct Message<'a> {
     internal: &'a MessageInternal<'a>,
 }
 
-impl<'a> Fv<'a> for Message<'a> {
+impl<'a> FieldAccess<'a> for Message<'a> {
     type Key = (FieldLocation, &'a str);
 
     fn fv_raw_with_key<'b>(&'b self, key: Self::Key) -> Option<&'b [u8]> {
-        self.field_raw(key.1, key.0).map(|s| s.as_bytes())
+        self.internal.field_raw(key.1, key.0).map(|s| s.as_bytes())
     }
 
     fn fv_raw<'b, F>(&'b self, field: &'a F) -> Option<&'b [u8]>
@@ -101,22 +101,6 @@ impl<'a> Message<'a> {
         T: FixValue<'b>,
     {
         None
-    }
-
-    pub fn field_ref<'b, F, T>(
-        &'b self,
-        field_def: &F,
-    ) -> Option<Result<T, <T as FixValue<'b>>::Error>>
-    where
-        'b: 'a,
-        F: IsFieldDefinition,
-        T: FixValue<'b>,
-    {
-        self.internal.field_ref(field_def)
-    }
-
-    pub fn field_raw<'b>(&'b self, name: &str, location: FieldLocation) -> Option<&'b str> {
-        self.internal.field_raw(name, location)
     }
 
     /// Creates an [`Iterator`] over all FIX fields in `self`.
@@ -241,19 +225,6 @@ impl<'a> MessageInternal<'a> {
         self.std_header.clear();
         self.body.clear();
         self.std_trailer.clear();
-    }
-
-    pub fn field_ref<'b, F, T>(
-        &'b self,
-        field_def: &F,
-    ) -> Option<Result<T, <T as FixValue<'b>>::Error>>
-    where
-        'b: 'a,
-        F: IsFieldDefinition,
-        T: FixValue<'b>,
-    {
-        self.field_raw(field_def.name(), field_def.location())
-            .map(|s| T::deserialize(s.as_bytes()))
     }
 
     fn field_raw(&self, name: &str, location: FieldLocation) -> Option<&str> {

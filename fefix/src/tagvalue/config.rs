@@ -39,13 +39,6 @@ pub trait Configure: Clone + Default {
     fn should_decode_associative(&self) -> bool {
         true
     }
-
-    /// Determines wheather or not the decoder needs to have access to
-    /// sequential FIX fields.
-    #[inline]
-    fn should_decode_sequential(&self) -> bool {
-        true
-    }
 }
 
 /// The canonical implementor of [`Configure`]. Every setting can be changed.
@@ -55,13 +48,12 @@ pub struct Config {
     max_message_size: Option<usize>,
     verify_checksum: bool,
     should_decode_associative: bool,
-    should_decode_sequential: bool,
 }
 
 impl Config {
     /// Changes the field separator character. It is SOH (ASCII 0x1) by default.
     /// This also disables checksum verification for decode operations to avoid
-    /// checksum issues.
+    /// checksum issues if not SOH.
     ///
     /// # Examples
     ///
@@ -75,7 +67,7 @@ impl Config {
     /// ```
     pub fn set_separator(&mut self, separator: u8) {
         self.separator = separator;
-        self.verify_checksum = false;
+        self.verify_checksum = separator == SOH;
     }
 
     /// Changes the value of [`Configure::max_message_size`].
@@ -107,14 +99,6 @@ impl Config {
     pub fn set_decode_assoc(&mut self, should: bool) {
         self.should_decode_associative = should;
     }
-
-    /// Enables or disables iterative access of fields within a
-    /// [`Message`](super::Message).
-    ///
-    /// Enabled by default.
-    pub fn set_decode_seq(&mut self, should: bool) {
-        self.should_decode_sequential = should;
-    }
 }
 
 impl Configure for Config {
@@ -137,11 +121,6 @@ impl Configure for Config {
     fn should_decode_associative(&self) -> bool {
         self.should_decode_associative
     }
-
-    #[inline]
-    fn should_decode_sequential(&self) -> bool {
-        self.should_decode_sequential
-    }
 }
 
 impl Default for Config {
@@ -151,7 +130,6 @@ impl Default for Config {
             separator: SOH,
             verify_checksum: true,
             should_decode_associative: true,
-            should_decode_sequential: true,
         }
     }
 }
