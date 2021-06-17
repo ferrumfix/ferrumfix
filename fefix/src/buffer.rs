@@ -5,7 +5,7 @@ pub trait MemorySlice
 where
     Self: AsRef<[u8]> + Sized + Clone,
 {
-    /// Creates two [`MemorySlice`]s from `self` at `i`.
+    /// Creates two [`MemorySlice`]'s from `self` at `i`.
     fn split(self, i: usize) -> (Self, Self);
 }
 

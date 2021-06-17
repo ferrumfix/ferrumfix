@@ -97,6 +97,7 @@ slog = { version="2", optional=true }
 sqlx = { version="0.5", features=["runtime-tokio-rustls", "postgres"] }
 strum = "0.20"
 strum_macros = "0.20"
+thiserror = "1"
 tokio-util = { version="0.6", optional=true, features=["codec"] }
 uuid = { version="0.8.1", features=["v4"] }
 

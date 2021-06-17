@@ -1,4 +1,4 @@
-use super::{Error, Frame};
+use super::{Error, Frame, Header};
 use crate::MemorySlice;
 use bytes::{Bytes, BytesMut};
 use std::io;
@@ -24,36 +24,30 @@ use tokio_util::codec;
 ///     Some(sofh::Frame::new(0x1337, payload))
 /// );
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Default)]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "utils-tokio")))]
 pub struct TokioCodec {}
-
-impl Default for TokioCodec {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 impl codec::Decoder for TokioCodec {
     type Item = Frame<Bytes>;
     type Error = Error;
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
-        use std::convert::TryInto;
-        if src.len() >= 6 {
-            let bytes_04 = (&src[0..4]).try_into().unwrap();
-            let nominal_len = u32::from_be_bytes(bytes_04) as usize;
-            if src.len() >= nominal_len {
-                let mut frame = src.split_to(nominal_len);
-                let bytes_46 = (&frame[4..6]).try_into().unwrap();
-                let encoding_type = u16::from_be_bytes(bytes_46);
-                let payload = frame.split_off(6).freeze();
-                Ok(Some(Frame::new(encoding_type, payload)))
-            } else {
-                src.reserve(nominal_len - src.len());
-                Ok(None)
+        match Header::from_bytes(&src) {
+            Ok(header) => {
+                let len = header.nominal_message_length_in_bytes;
+                if src.len() >= len {
+                    let mut frame = src.split_to(len);
+                    let payload = frame.split_off(Header::LENGTH_IN_BYTES).freeze();
+                    Ok(Some(Frame::new(header.encoding_type, payload)))
+                } else {
+                    src.reserve(len - src.len());
+                    Ok(None)
+                }
             }
-        } else {
-            Ok(None)
+            Err(Error::InvalidMessageLength) => return Err(Error::InvalidMessageLength),
+            Err(Error::Incomplete { needed: _ }) => Ok(None),
+            Err(Error::Io(_)) => panic!("Unexpected I/O error."),
         }
     }
 }
@@ -65,10 +59,13 @@ where
     type Error = io::Error;
 
     fn encode(&mut self, frame: Frame<T>, dst: &mut BytesMut) -> Result<(), Self::Error> {
-        let frame_len = frame.payload().len() + 6;
-        dst.reserve(frame_len);
-        dst.extend_from_slice(&u32::to_be_bytes(frame_len as u32)[..]);
-        dst.extend_from_slice(&u16::to_be_bytes(frame.encoding_type())[..]);
+        let nominal_message_length_in_bytes = frame.payload().len() + Header::LENGTH_IN_BYTES;
+        let header = Header {
+            nominal_message_length_in_bytes,
+            encoding_type: frame.encoding_type()
+        };
+        dst.reserve(nominal_message_length_in_bytes);
+        dst.extend_from_slice(&header.to_bytes());
         dst.extend_from_slice(frame.payload().as_ref());
         Ok(())
     }

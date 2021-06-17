@@ -1,9 +1,8 @@
-use super::{field_encoding_type, field_message_length, Error};
+use super::{Error, Header};
 use crate::buffer::MemorySlice;
 use std::io;
 
-const HEADER_SIZE_IN_BYTES: usize = 6;
-const MAX_MESSAGE_SIZE_IN_BYTES: usize = u32::MAX as usize - HEADER_SIZE_IN_BYTES;
+const MAX_MESSAGE_SIZE_IN_BYTES: usize = u32::MAX as usize - Header::LENGTH_IN_BYTES;
 
 /// An immutable view into a SOFH-enclosed message, complete with its
 /// encoding type tag and message.
@@ -92,29 +91,11 @@ where
     /// assert_eq!(frame.payload(), &[42]);
     /// ```
     pub fn deserialize(data: &[u8]) -> Result<Frame<&[u8]>, Error> {
-        // The buffer doesn't contain enough data to even meaningfully reason
-        // about it, let alone decode it.
-        if data.len() < HEADER_SIZE_IN_BYTES {
-            return Err(Error::Incomplete {
-                needed: HEADER_SIZE_IN_BYTES - data.len(),
-            });
-        }
-        let message_len = field_message_length(data) as usize;
-        if message_len < HEADER_SIZE_IN_BYTES {
-            // We have enough data to decode the header, but the Message_Length
-            // field is invalid.
-            Err(Error::InvalidMessageLength)
-        } else if data.len() < message_len {
-            // The header is fine, we just need to wait for the whole message.
-            Err(Error::Incomplete {
-                needed: message_len - data.len(),
-            })
-        } else {
-            Ok(Frame::new(
-                field_encoding_type(data),
-                &data[HEADER_SIZE_IN_BYTES..],
-            ))
-        }
+        let header = Header::from_bytes(data)?;
+        Ok(Frame::new(
+            header.encoding_type,
+            &data[Header::LENGTH_IN_BYTES..header.nominal_message_length_in_bytes],
+        ))
     }
 
     /// Serializes `self` to a `Writer`. This requires copying and thus is
@@ -139,11 +120,14 @@ where
     where
         W: io::Write,
     {
-        let len = self.payload().len() + HEADER_SIZE_IN_BYTES;
-        writer.write_all(&(len as u32).to_be_bytes())?;
-        writer.write_all(&self.encoding_type().to_be_bytes())?;
+        let nominal_message_length_in_bytes = self.payload().len() + Header::LENGTH_IN_BYTES;
+        let header = Header {
+            nominal_message_length_in_bytes,
+            encoding_type: self.encoding_type,
+        };
+        writer.write_all(&header.to_bytes())?;
         writer.write_all(self.payload())?;
-        Ok(len)
+        Ok(nominal_message_length_in_bytes)
     }
 }
 
@@ -216,15 +200,14 @@ mod test {
 
     #[test]
     fn encode_then_decode_should_have_no_effect() {
-        fn prop(encoding_type: u16, data: Vec<u8>) -> bool {
-            let frame = Frame::<&[u8]>::new(encoding_type, &data[..]);
-            let buffer = &mut vec![];
-            frame.serialize(buffer).unwrap();
+        fn prop(encoding_type: u16, payload: Vec<u8>) -> bool {
+            let frame = Frame::<&[u8]>::new(encoding_type, &payload[..]);
+            let mut buffer = vec![];
+            frame.serialize(&mut buffer).unwrap();
             let frame_decoded = Frame::<&[u8]>::deserialize(&buffer[..]).unwrap();
-            frame_decoded.encoding_type() == encoding_type && frame_decoded.payload() == &data[..]
+            frame_decoded.encoding_type() == encoding_type && frame_decoded.payload() == &payload[..]
         }
         QuickCheck::new()
-            .tests(1000)
             .quickcheck(prop as fn(u16, Vec<u8>) -> bool)
     }
 }

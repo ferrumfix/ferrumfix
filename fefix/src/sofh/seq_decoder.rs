@@ -1,6 +1,8 @@
-use super::err::Error;
 use super::frame::Frame;
+use super::Error;
 use std::io;
+
+const DEFAULT_CAPACITY: usize = 128;
 
 /// A parser for SOFH-enclosed messages.
 ///
@@ -16,7 +18,7 @@ pub struct SeqDecoder {
 
 impl Default for SeqDecoder {
     fn default() -> Self {
-        Self::with_capacity(128)
+        Self::with_capacity(DEFAULT_CAPACITY)
     }
 }
 
