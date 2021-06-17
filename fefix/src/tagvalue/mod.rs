@@ -18,7 +18,7 @@ mod utils;
 pub use config::{Config, Configure};
 pub use decoder::{Decoder, DecoderBuffered, Fields, Message, MessageGroup, MessageGroupEntry};
 pub use encoder::{Encoder, EncoderHandle};
-pub use field_access::FieldAccess;
+pub use field_access::{FieldAccess, RepeatingGroup};
 pub use raw_decoder::{RawDecoder, RawDecoderBuffered, RawFrame};
 
 use crate::dict::IsFieldDefinition;
@@ -48,23 +48,6 @@ impl From<io::Error> for DecodeError {
     fn from(_err: io::Error) -> Self {
         Self::Invalid // FIXME
     }
-}
-
-pub trait MapFields<'a>
-where
-    Self: FieldAccess<'a>,
-{
-    type Group: MapGroup<'a>;
-
-    fn group(&'a self) -> Self::Group;
-}
-
-pub trait MapGroup<'a> {
-    type Entry: MapFields<'a>;
-
-    fn len(&self) -> usize;
-
-    fn entry(&self) -> Self::Entry;
 }
 
 pub trait FvWrite<'a> {

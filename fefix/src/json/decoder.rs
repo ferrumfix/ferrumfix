@@ -2,7 +2,7 @@ use super::{Config, Configure, DecodeError};
 use crate::dict;
 use crate::dict::FieldLocation;
 use crate::dict::IsFieldDefinition;
-use crate::tagvalue::FieldAccess;
+use crate::tagvalue::{FieldAccess, RepeatingGroup};
 use crate::Dictionary;
 use crate::FixValue;
 use serde::{Deserialize, Serialize};
@@ -17,6 +17,12 @@ pub struct Message<'a> {
 
 impl<'a> FieldAccess<'a> for Message<'a> {
     type Key = (FieldLocation, &'a str);
+    type Group = MessageGroup<'a>;
+
+    fn group(&self, _key: Self::Key) -> Option<Self::Group> {
+        // FIXME
+        None
+    }
 
     fn fv_raw_with_key<'b>(&'b self, key: Self::Key) -> Option<&'b [u8]> {
         self.internal.field_raw(key.1, key.0).map(|s| s.as_bytes())
@@ -38,15 +44,42 @@ pub struct MessageGroup<'a> {
     entries: &'a [Component<'a>],
 }
 
-impl<'a> MessageGroup<'a> {
-    pub fn len(&self) -> usize {
+impl<'a> RepeatingGroup<'a> for MessageGroup<'a> {
+    type Entry = MessageGroupEntry<'a>;
+
+    fn len(&self) -> usize {
         self.entries.len()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = MessageGroupEntry<'a>> {
+    fn entry(&self, i: usize) -> Self::Entry {
         self.entries
-            .iter()
+            .get(i)
             .map(|component| MessageGroupEntry { component })
+            .unwrap()
+    }
+}
+
+impl<'a> FieldAccess<'a> for MessageGroupEntry<'a> {
+    type Key = ();
+    type Group = MessageGroup<'a>;
+
+    fn group(&self, _key: Self::Key) -> Option<Self::Group> {
+        // FIXME
+        None
+    }
+
+    fn fv_raw_with_key<'b>(&'b self, _key: Self::Key) -> Option<&'b [u8]> {
+        // FIXME
+        None
+    }
+
+    fn fv_raw<'b, F>(&'b self, _field: &'a F) -> Option<&'b [u8]>
+    where
+        'b: 'a,
+        F: IsFieldDefinition,
+    {
+        // FIXME
+        None
     }
 }
 

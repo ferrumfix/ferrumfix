@@ -1,5 +1,6 @@
 use super::{
     Config, Configure, DecodeError, FieldAccess, RawDecoder, RawDecoderBuffered, RawFrame,
+    RepeatingGroup,
 };
 use crate::dict;
 use crate::dict::IsFieldDefinition;
@@ -412,9 +413,9 @@ impl TagLookup {
 }
 
 /// A repeating group within a [`Message`].
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct MessageGroup<'a> {
-    message: &'a Message<'a>,
+    message: Message<'a>,
     index_of_group_tag: u32,
     len: usize,
 }
@@ -424,23 +425,35 @@ impl<'a> MessageGroup<'a> {
         self.len
     }
 
-    pub fn entry(&self, index: usize) -> MessageGroupEntry {
+    pub fn entry(&self, index: usize) -> MessageGroupEntry<'a> {
         MessageGroupEntry {
-            group: self,
+            group: *self,
             entry_index: index as u32,
         }
     }
 }
 
-/// A specific [`MessageGroup`] entry.
-#[derive(Debug)]
-pub struct MessageGroupEntry<'a> {
-    group: &'a MessageGroup<'a>,
-    entry_index: u32,
-}
-
 impl<'a> FieldAccess<'a> for MessageGroupEntry<'a> {
     type Key = TagU16;
+    type Group = MessageGroup<'a>;
+
+    fn group(&self, tag: Self::Key) -> Option<Self::Group> {
+        let field_locator_of_group_tag = FieldLocator::TopLevel { tag };
+        let num_in_group = self
+            .group
+            .message
+            .builder
+            .fields
+            .get(&field_locator_of_group_tag)?;
+        let index_of_group_tag = num_in_group.2 as u32;
+        let field_value_str = std::str::from_utf8(num_in_group.1).ok()?;
+        let num_entries = str::parse(field_value_str).unwrap();
+        Some(MessageGroup {
+            message: self.group.message,
+            index_of_group_tag,
+            len: num_entries,
+        })
+    }
 
     fn fv_raw_with_key<'b>(&'b self, tag: Self::Key) -> Option<&'b [u8]> {
         let field_locator = FieldLocator::WithinGroup {
@@ -470,6 +483,25 @@ impl<'a> FieldAccess<'a> for MessageGroupEntry<'a> {
     }
 }
 
+impl<'a> RepeatingGroup<'a> for MessageGroup<'a> {
+    type Entry = MessageGroupEntry<'a>;
+
+    fn len(&self) -> usize {
+        MessageGroup::len(self)
+    }
+
+    fn entry(&self, i: usize) -> Self::Entry {
+        MessageGroup::entry(self, i)
+    }
+}
+
+/// A specific [`MessageGroup`] entry.
+#[derive(Debug)]
+pub struct MessageGroupEntry<'a> {
+    group: MessageGroup<'a>,
+    entry_index: u32,
+}
+
 #[derive(Debug, Copy, Clone)]
 pub struct Message<'a> {
     builder: &'a MessageBuilder<'a>,
@@ -487,14 +519,14 @@ impl<'a> PartialEq for Message<'a> {
 impl<'a> Eq for Message<'a> {}
 
 impl<'a> Message<'a> {
-    pub fn group_ref(&'a self, tag: TagU16) -> Option<MessageGroup<'a>> {
+    pub fn group_ref(&self, tag: TagU16) -> Option<MessageGroup<'a>> {
         let field_locator_of_group_tag = FieldLocator::TopLevel { tag };
         let num_in_group = self.builder.fields.get(&field_locator_of_group_tag)?;
         let index_of_group_tag = num_in_group.2 as u32;
         let field_value_str = std::str::from_utf8(num_in_group.1).ok()?;
         let num_entries = str::parse(field_value_str).unwrap();
         Some(MessageGroup {
-            message: self,
+            message: *self,
             index_of_group_tag,
             len: num_entries,
         })
@@ -635,6 +667,11 @@ impl<'a> Iterator for Fields<'a> {
 
 impl<'a> FieldAccess<'a> for Message<'a> {
     type Key = TagU16;
+    type Group = MessageGroup<'a>;
+
+    fn group(&self, tag: Self::Key) -> Option<Self::Group> {
+        self.group_ref(tag)
+    }
 
     fn fv_raw_with_key<'b>(&'b self, tag: Self::Key) -> Option<&'b [u8]> {
         let field_locator = FieldLocator::TopLevel { tag };

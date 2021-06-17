@@ -2,6 +2,14 @@ use crate::dict::IsFieldDefinition;
 use crate::FixValue;
 use crate::{OptError, OptResult};
 
+pub trait RepeatingGroup<'a> {
+    type Entry: FieldAccess<'a>;
+
+    fn len(&self) -> usize;
+
+    fn entry(&self, i: usize) -> Self::Entry;
+}
+
 /// A trait to retrieve field values in a FIX message.
 ///
 /// # Field getters naming scheme
@@ -17,6 +25,9 @@ pub trait FieldAccess<'a> {
     /// numeric type (more specifically, [`TagU16`](crate::TagU16)). Other
     /// encodings might use different raw keys, like JSON (strings).
     type Key;
+    type Group: RepeatingGroup<'a>;
+
+    fn group(&self, key: Self::Key) -> Option<Self::Group>;
 
     fn fv_raw_with_key<'b>(&'b self, key: Self::Key) -> Option<&'b [u8]>;
 
