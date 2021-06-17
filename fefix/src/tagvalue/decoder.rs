@@ -695,8 +695,8 @@ impl<'a> slog::Value for Message<'a> {
         key: slog::Key,
         serializer: &mut dyn slog::Serializer,
     ) -> slog::Result {
-        for tag_value in self.builder.insertion_order.iter() {
-            serializer.emit_u16(key, tag_value.tag.get())?;
+        for (tag, _value) in self.fields() {
+            serializer.emit_u16(key, tag.get())?;
             serializer.emit_char(key, '=')?;
             // FIXME
             serializer.emit_char(key, '?')?;
