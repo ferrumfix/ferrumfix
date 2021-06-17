@@ -48,12 +48,14 @@ impl Timestamp {
     }
 
     #[cfg(feature = "utils-chrono")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
     pub fn to_chrono_utc(&self) -> Option<chrono::DateTime<chrono::Utc>> {
         let naive = self.to_chrono_naive()?;
         Some(chrono::DateTime::from_utc(naive, chrono::Utc))
     }
 
     #[cfg(feature = "utils-chrono")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
     pub fn to_chrono_naive(&self) -> Option<chrono::NaiveDateTime> {
         let date = self.date().to_chrono_naive()?;
         let time = self.time().to_chrono_naive()?;

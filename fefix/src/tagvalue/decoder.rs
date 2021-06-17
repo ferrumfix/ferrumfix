@@ -688,6 +688,7 @@ impl<'a> FieldAccess<'a> for Message<'a> {
 }
 
 #[cfg(feature = "utils-slog")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "utils-slog")))]
 impl<'a> slog::Value for Message<'a> {
     fn serialize(
         &self,

@@ -87,6 +87,7 @@ impl Default for WithMilliseconds {
 }
 
 #[cfg(feature = "utils-chrono")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
 impl<'a> FixValue<'a> for chrono::DateTime<chrono::Utc> {
     type Error = &'static str;
     type SerializeSettings = WithMilliseconds;
@@ -133,6 +134,7 @@ impl<'a> FixValue<'a> for chrono::DateTime<chrono::Utc> {
 }
 
 #[cfg(feature = "utils-chrono")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
 impl<'a> FixValue<'a> for chrono::NaiveDate {
     type Error = &'static str;
     type SerializeSettings = ();
@@ -165,6 +167,7 @@ impl<'a> FixValue<'a> for chrono::NaiveDate {
 }
 
 #[cfg(feature = "utils-rust-decimal")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "utils-rust-decimal")))]
 impl<'a> FixValue<'a> for rust_decimal::Decimal {
     type Error = &'static str;
     type SerializeSettings = ();
@@ -191,6 +194,7 @@ impl<'a> FixValue<'a> for rust_decimal::Decimal {
 }
 
 #[cfg(feature = "utils-decimal")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "utils-decimal")))]
 impl<'a> FixValue<'a> for decimal::d128 {
     type Error = decimal::Status;
     type SerializeSettings = ();

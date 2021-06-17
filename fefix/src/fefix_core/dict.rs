@@ -207,24 +207,28 @@ impl Dictionary {
 
     /// Creates a new [`Dictionary`] for FIXT 4.0.
     #[cfg(feature = "fix40")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fix40")))]
     pub fn fix40() -> Self {
         DICT_FIX_40.clone()
     }
 
     /// Creates a new [`Dictionary`] for FIXT 4.1.
     #[cfg(feature = "fix41")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fix41")))]
     pub fn fix41() -> Self {
         DICT_FIX_41.clone()
     }
 
     /// Creates a new [`Dictionary`] for FIXT 4.2.
     #[cfg(feature = "fix42")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fix42")))]
     pub fn fix42() -> Self {
         DICT_FIX_42.clone()
     }
 
     /// Creates a new [`Dictionary`] for FIXT 4.3.
     #[cfg(feature = "fix43")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fix43")))]
     pub fn fix43() -> Self {
         DICT_FIX_43.clone()
     }
@@ -236,24 +240,28 @@ impl Dictionary {
 
     /// Creates a new [`Dictionary`] for FIX 5.0.
     #[cfg(feature = "fix50")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fix50")))]
     pub fn fix50() -> Self {
         DICT_FIX_50.clone()
     }
 
     /// Creates a new [`Dictionary`] for FIX 5.0 SP1.
     #[cfg(feature = "fix50sp1")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fix50sp1")))]
     pub fn fix50sp1() -> Self {
         DICT_FIX_50SP1.clone()
     }
 
     /// Creates a new [`Dictionary`] for FIX 5.0 SP2.
     #[cfg(feature = "fix50sp2")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fix50sp1")))]
     pub fn fix50sp2() -> Self {
         DICT_FIX_50SP2.clone()
     }
 
     /// Creates a new [`Dictionary`] for FIXT 1.1.
     #[cfg(feature = "fixt11")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fixt11")))]
     pub fn fixt11() -> Self {
         DICT_FIXT_11.clone()
     }

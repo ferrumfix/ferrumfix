@@ -137,6 +137,7 @@ impl Time {
     }
 
     #[cfg(feature = "utils-chrono")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
     pub fn to_chrono_naive(&self) -> Option<chrono::NaiveTime> {
         chrono::NaiveTime::from_hms_milli_opt(
             self.hour(),

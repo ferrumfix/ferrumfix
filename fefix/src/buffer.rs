@@ -16,6 +16,7 @@ impl MemorySlice for &[u8] {
 }
 
 #[cfg(feature = "utils-bytes")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "utils-bytes")))]
 impl MemorySlice for bytes::Bytes {
     fn split(mut self, i: usize) -> (Self, Self) {
         let second_half = self.split_off(i);
@@ -90,6 +91,7 @@ impl Buffer for Vec<u8> {
 }
 
 #[cfg(feature = "utils-bytes")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "utils-bytes")))]
 impl Buffer for bytes::BytesMut {
     fn as_slice(&self) -> &[u8] {
         &self[..]

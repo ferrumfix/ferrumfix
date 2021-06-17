@@ -93,11 +93,11 @@ pub mod fast;
 #[cfg(feature = "fixp")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fixp")))]
 pub mod fixp;
-#[cfg_attr(doc_cfg, doc(cfg(feature = "fixs")))]
 #[cfg(feature = "fixs")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "fixs")))]
 pub mod fixs;
-#[cfg_attr(doc_cfg, doc(cfg(feature = "json-encoding")))]
 #[cfg(feature = "json-encoding")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "json-encoding")))]
 pub mod json;
 pub mod prelude;
 pub mod session;
@@ -108,7 +108,6 @@ pub mod tagvalue;
 
 pub use buffer::{Buffer, MemorySlice};
 pub use dict::Dictionary;
-//#[cfg(feature = "derive")]
 // We don't derive macros to pollute the docs.
 #[doc(hidden)]
 pub use fefix_derive::FixValue;
