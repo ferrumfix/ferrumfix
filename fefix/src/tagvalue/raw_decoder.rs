@@ -9,12 +9,6 @@ pub struct RawFrame<'a> {
     payload: &'a [u8],
     payload_offset: usize,
 }
-//    Self {
-//        data,
-//        begin_string,
-//        payload: &data[payload_offset..payload_offset + payload_len],
-//        payload_offset,
-//    }
 
 impl<'a> RawFrame<'a> {
     /// Returns an immutable reference to the raw contents of `self`.
