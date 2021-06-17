@@ -49,6 +49,7 @@ impl Time {
         }
     }
 
+    /// Encodes `self` as a FIX field value in byte array.
     pub const fn to_bytes(&self) -> [u8; LEN_IN_BYTES_WITH_MILLI] {
         [
             (self.hour() / 10) as u8 + b'0',
@@ -136,6 +137,9 @@ impl Time {
         self.milli
     }
 
+    /// Converts `self` to a [`chrono::NaiveTime`]. `chrono` might perform
+    /// additional checks, so this function might return `None` in case `self`
+    /// can't be directly converted to a [`chrono::NaiveTime`] instance.
     #[cfg(feature = "utils-chrono")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
     pub fn to_chrono_naive(&self) -> Option<chrono::NaiveTime> {

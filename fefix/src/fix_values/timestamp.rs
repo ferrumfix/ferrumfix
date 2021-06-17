@@ -23,6 +23,7 @@ impl Timestamp {
         Some(Self::new(date, time))
     }
 
+    /// Returns the current UTC system time with millisecond precision.
     pub fn utc_now() -> Self {
         use chrono::{Datelike, Timelike};
         let utc: chrono::DateTime<chrono::Utc> = chrono::Utc::now();
@@ -47,6 +48,9 @@ impl Timestamp {
         self.time
     }
 
+    /// Attempts to convert `self` to a UTC [`chrono::DateTime`]. As `chrono`
+    /// might perform additional checks that make such conversion impossible,
+    /// the return value of this function might be `None`.
     #[cfg(feature = "utils-chrono")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
     pub fn to_chrono_utc(&self) -> Option<chrono::DateTime<chrono::Utc>> {
@@ -54,6 +58,9 @@ impl Timestamp {
         Some(chrono::DateTime::from_utc(naive, chrono::Utc))
     }
 
+    /// Attempts to convert `self` to a [`chrono::NaiveDateTime`]. As `chrono`
+    /// might perform additional checks that make such conversion impossible,
+    /// the return value of this function might be `None`.
     #[cfg(feature = "utils-chrono")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
     pub fn to_chrono_naive(&self) -> Option<chrono::NaiveDateTime> {
