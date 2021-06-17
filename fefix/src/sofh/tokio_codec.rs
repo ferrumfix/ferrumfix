@@ -62,7 +62,7 @@ where
         let nominal_message_length_in_bytes = frame.payload().len() + Header::LENGTH_IN_BYTES;
         let header = Header {
             nominal_message_length_in_bytes,
-            encoding_type: frame.encoding_type()
+            encoding_type: frame.encoding_type(),
         };
         dst.reserve(nominal_message_length_in_bytes);
         dst.extend_from_slice(&header.to_bytes());

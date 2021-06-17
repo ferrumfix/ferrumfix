@@ -205,9 +205,9 @@ mod test {
             let mut buffer = vec![];
             frame.serialize(&mut buffer).unwrap();
             let frame_decoded = Frame::<&[u8]>::deserialize(&buffer[..]).unwrap();
-            frame_decoded.encoding_type() == encoding_type && frame_decoded.payload() == &payload[..]
+            frame_decoded.encoding_type() == encoding_type
+                && frame_decoded.payload() == &payload[..]
         }
-        QuickCheck::new()
-            .quickcheck(prop as fn(u16, Vec<u8>) -> bool)
+        QuickCheck::new().quickcheck(prop as fn(u16, Vec<u8>) -> bool)
     }
 }
