@@ -19,8 +19,10 @@ impl<'a> FieldAccess<'a> for Message<'a> {
     type Key = (FieldLocation, &'a str);
     type Group = MessageGroup<'a>;
 
-    fn group(&self, _key: Self::Key) -> Option<Self::Group> {
-        // FIXME
+    fn group_opt(
+        &self,
+        _tag: Self::Key,
+    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
         None
     }
 
@@ -63,8 +65,10 @@ impl<'a> FieldAccess<'a> for MessageGroupEntry<'a> {
     type Key = ();
     type Group = MessageGroup<'a>;
 
-    fn group(&self, _key: Self::Key) -> Option<Self::Group> {
-        // FIXME
+    fn group_opt(
+        &self,
+        _key: Self::Key,
+    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
         None
     }
 

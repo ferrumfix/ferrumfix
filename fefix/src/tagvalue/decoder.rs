@@ -4,6 +4,7 @@ use super::{
 };
 use crate::dict;
 use crate::dict::IsFieldDefinition;
+use crate::FixValue;
 use crate::TagU16;
 use crate::{dict::FixDatatype, Dictionary};
 use std::collections::HashMap;
@@ -437,7 +438,10 @@ impl<'a> FieldAccess<'a> for MessageGroupEntry<'a> {
     type Key = TagU16;
     type Group = MessageGroup<'a>;
 
-    fn group(&self, tag: Self::Key) -> Option<Self::Group> {
+    fn group_opt(
+        &self,
+        tag: Self::Key,
+    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
         let field_locator_of_group_tag = FieldLocator::TopLevel { tag };
         let num_in_group = self
             .group
@@ -448,11 +452,11 @@ impl<'a> FieldAccess<'a> for MessageGroupEntry<'a> {
         let index_of_group_tag = num_in_group.2 as u32;
         let field_value_str = std::str::from_utf8(num_in_group.1).ok()?;
         let num_entries = str::parse(field_value_str).unwrap();
-        Some(MessageGroup {
+        Some(Ok(MessageGroup {
             message: self.group.message,
             index_of_group_tag,
             len: num_entries,
-        })
+        }))
     }
 
     fn fv_raw_with_key<'b>(&'b self, tag: Self::Key) -> Option<&'b [u8]> {
@@ -669,8 +673,12 @@ impl<'a> FieldAccess<'a> for Message<'a> {
     type Key = TagU16;
     type Group = MessageGroup<'a>;
 
-    fn group(&self, tag: Self::Key) -> Option<Self::Group> {
-        self.group_ref(tag)
+    fn group_opt(
+        &self,
+        tag: Self::Key,
+    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
+        // FIXME
+        self.group_ref(tag).map(|group| Ok(group))
     }
 
     fn fv_raw_with_key<'b>(&'b self, tag: Self::Key) -> Option<&'b [u8]> {

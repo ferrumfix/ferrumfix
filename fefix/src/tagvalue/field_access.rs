@@ -25,9 +25,21 @@ pub trait FieldAccess<'a> {
     /// numeric type (more specifically, [`TagU16`](crate::TagU16)). Other
     /// encodings might use different raw keys, like JSON (strings).
     type Key;
+
     type Group: RepeatingGroup<'a>;
 
-    fn group(&self, key: Self::Key) -> Option<Self::Group>;
+    fn group(&self, key: Self::Key) -> OptResult<Self::Group, <usize as FixValue<'a>>::Error> {
+        match self.group_opt(key) {
+            Some(Ok(group)) => Ok(group),
+            Some(Err(e)) => Err(OptError::Other(e)),
+            None => Err(OptError::None),
+        }
+    }
+
+    fn group_opt(
+        &self,
+        key: Self::Key,
+    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>>;
 
     fn fv_raw_with_key<'b>(&'b self, key: Self::Key) -> Option<&'b [u8]>;
 

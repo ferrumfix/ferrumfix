@@ -3,6 +3,7 @@
 //! This is the original encoding used for FIX messages and also the encoding
 //! currently used by the FIX session layer.
 
+use crate::dict::IsFieldDefinition;
 use crate::FixValue;
 use std::fmt;
 use std::fmt::Debug;
@@ -20,8 +21,6 @@ pub use decoder::{Decoder, DecoderBuffered, Fields, Message, MessageGroup, Messa
 pub use encoder::{Encoder, EncoderHandle};
 pub use field_access::{FieldAccess, RepeatingGroup};
 pub use raw_decoder::{RawDecoder, RawDecoderBuffered, RawFrame};
-
-use crate::dict::IsFieldDefinition;
 
 /// The type returned in the event of an error during message decoding.
 #[derive(Clone, Debug, PartialEq)]

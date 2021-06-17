@@ -108,6 +108,7 @@ where
         Self { config }
     }
 
+    /// Turns `self` into a [`RawDecoderBuffered`] by adding an internal buffer.
     pub fn buffered(self) -> RawDecoderBuffered<C> {
         RawDecoderBuffered {
             buffer: Vec::new(),
