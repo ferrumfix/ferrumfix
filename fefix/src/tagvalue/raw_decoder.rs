@@ -1,16 +1,23 @@
 use crate::tagvalue::{utils, Config, Configure, DecodeError};
+use crate::MemorySlice;
 use std::ops::Range;
 
 /// An immutable view over the contents of a FIX message by a [`RawDecoder`].
 #[derive(Debug)]
-pub struct RawFrame<'a> {
-    data: &'a [u8],
-    begin_string: &'a [u8],
-    payload: &'a [u8],
+pub struct RawFrame<T>
+where
+    T: MemorySlice,
+{
+    data: T,
+    begin_string: Range<usize>,
+    payload: Range<usize>,
     payload_offset: usize,
 }
 
-impl<'a> RawFrame<'a> {
+impl<T> RawFrame<T>
+where
+    T: MemorySlice,
+{
     /// Returns an immutable reference to the raw contents of `self`.
     ///
     /// # Examples
@@ -25,8 +32,8 @@ impl<'a> RawFrame<'a> {
     ///
     /// assert_eq!(message.as_bytes(), data);
     /// ```
-    pub fn as_bytes(&self) -> &'a [u8] {
-        self.data
+    pub fn as_bytes(&self) -> &[u8] {
+        self.data.as_ref()
     }
 
     /// Returns an immutable reference to the `BeginString <8>` field value of
@@ -44,8 +51,8 @@ impl<'a> RawFrame<'a> {
     ///
     /// assert_eq!(message.begin_string(), b"FIX.4.2");
     /// ```
-    pub fn begin_string(&self) -> &'a [u8] {
-        self.begin_string
+    pub fn begin_string(&self) -> &[u8] {
+        &self.as_bytes()[self.begin_string.clone()]
     }
 
     /// Returns an immutable reference to the payload of `self`. In this
@@ -69,8 +76,8 @@ impl<'a> RawFrame<'a> {
     ///
     /// assert_eq!(message.payload().len(), 42);
     /// ```
-    pub fn payload(&self) -> &'a [u8] {
-        self.payload
+    pub fn payload(&self) -> &[u8] {
+        &self.as_bytes()[self.payload.clone()]
     }
 
     /// Returns the offset of [`RawFrame::payload`].
@@ -130,7 +137,7 @@ where
     }
 
     /// Does minimal parsing on `data` and returns a [`RawFrame`] if it's valid.
-    pub fn decode<'a>(&self, data: &'a [u8]) -> Result<RawFrame<'a>, DecodeError> {
+    pub fn decode<'a>(&self, data: &'a [u8]) -> Result<RawFrame<&'a [u8]>, DecodeError> {
         if data.len() < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
             return Err(DecodeError::Invalid);
         }
@@ -141,8 +148,8 @@ where
         }
         Ok(RawFrame {
             data,
-            begin_string: &data[info.begin_string_range()],
-            payload: &data[info.body_range()],
+            begin_string: info.begin_string_range(),
+            payload: info.body_range(),
             payload_offset: info.body_range().start,
         })
     }
@@ -207,7 +214,7 @@ where
         }
     }
 
-    pub fn current_frame(&self) -> Result<Option<RawFrame>, DecodeError> {
+    pub fn current_frame<'a>(&'a self) -> Result<Option<RawFrame<&'a [u8]>>, DecodeError> {
         if let Some(err) = self.error.clone() {
             Err(err)
         } else {

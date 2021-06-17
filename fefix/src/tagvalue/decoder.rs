@@ -142,12 +142,10 @@ where
     ///
     /// let dict = Dictionary::fix42();
     /// let decoder = &mut Decoder::<Config>::new(dict);
-    /// let data = b"8=FIX.4.2\x019=42\x0135=0\x0149=A\x0156=B\x0134=12\x0152=20100304-07:59:30\x0110=185\x01";
+    /// decoder.config_mut().set_separator(b'|');
+    /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
     /// let message = decoder.decode(data).unwrap();
-    /// assert_eq!(
-    ///     message.fv(fix42::SENDER_COMP_ID),
-    ///     Ok("A")
-    /// );
+    /// assert_eq!(message.fv(fix42::SENDER_COMP_ID), Ok("A"));
     /// ```
     #[inline]
     pub fn decode<'a>(&'a mut self, bytes: &'a [u8]) -> Result<Message<'a>, DecodeError> {
@@ -159,7 +157,7 @@ where
         unsafe { std::mem::transmute(&mut self.builder) }
     }
 
-    fn from_frame<'a>(&'a mut self, frame: RawFrame<'a>) -> Result<Message<'a>, DecodeError> {
+    fn from_frame<'a>(&'a mut self, frame: RawFrame<&'a [u8]>) -> Result<Message<'a>, DecodeError> {
         self.builder.clear();
         let separator = self.config().separator();
         let payload = frame.payload();
@@ -536,6 +534,18 @@ impl<'a> Message<'a> {
         })
     }
 
+    /// Returns an [`Iterator`] over all fields in `self`, in sequential order
+    /// starting from the very first field.
+    ///
+    /// ```
+    /// use fefix::prelude::*;
+    /// use fefix::tagvalue::{Config, Configure, Decoder};
+    /// use fefix::Dictionary;
+    ///
+    /// let mut decoder = Decoder::<Config>::new(Dictionary::fix44());
+    /// decoder.config_mut().set_separator(b'|');
+    /// assert_eq!(decoder.config().separator(), b'|');
+    /// ```
     pub fn fields(&'a self) -> Fields<'a> {
         Fields {
             message: &self,
