@@ -45,10 +45,10 @@ pub enum Response<'a> {
     None,
     ResetHeartbeat,
     TerminateTransport,
-    Application(Message<'a>),
+    Application(Message<'a, &'a [u8]>),
     Session(&'a [u8]),
-    Inbound(Message<'a>),
-    Outbound(Message<'a>),
+    Inbound(Message<'a, &'a [u8]>),
+    Outbound(Message<'a, &'a [u8]>),
     OutboundBytes(&'a [u8]),
     Resend {
         range: (),
@@ -298,7 +298,11 @@ impl FixConnection {
         self.begin_string.as_bytes()
     }
 
-    fn on_inbound_message<'a, B>(&'a mut self, msg: Message<'a>, app: &mut B) -> Response<'a>
+    fn on_inbound_message<'a, B>(
+        &'a mut self,
+        msg: Message<'a, &'a [u8]>,
+        app: &mut B,
+    ) -> Response<'a>
     where
         B: Backend,
     {
@@ -367,7 +371,7 @@ impl FixConnection {
         }
     }
 
-    fn on_resend_request<B>(&self, msg: &Message, app: &mut B)
+    fn on_resend_request<B>(&self, msg: &Message<&[u8]>, app: &mut B)
     where
         B: Backend,
     {
@@ -376,7 +380,7 @@ impl FixConnection {
         app.on_resend_request(begin_seq_num..end_seq_num).ok();
     }
 
-    fn on_logout(&mut self, _msg: &Message) -> &[u8] {
+    fn on_logout(&mut self, _msg: &Message<&[u8]>) -> &[u8] {
         let fix_message = {
             let begin_string = self.begin_string.as_bytes();
             let sender_comp_id = self.sender_comp_id.as_str();
@@ -394,7 +398,7 @@ impl FixConnection {
         fix_message
     }
 
-    fn sending_time_is_ok(&self, msg: &Message) -> bool {
+    fn sending_time_is_ok(&self, msg: &Message<&[u8]>) -> bool {
         let sending_time = msg.fv::<&str, _>(fix44::SENDING_TIME);
         if let Ok(_sending_time) = sending_time {
             // TODO
@@ -441,11 +445,11 @@ impl FixConnection {
         fix_message
     }
 
-    pub fn on_heartbeat(&mut self, _msg: Message) {
+    pub fn on_heartbeat(&mut self, _msg: Message<&[u8]>) {
         // TODO: verify stuff.
     }
 
-    fn on_test_request(&mut self, msg: Message) -> &[u8] {
+    fn on_test_request(&mut self, msg: Message<&[u8]>) -> &[u8] {
         let test_req_id = msg.fv::<&[u8], _>(fix44::TEST_REQ_ID).unwrap();
         let fix_message = {
             let begin_string = self.begin_string.as_bytes();
@@ -465,7 +469,7 @@ impl FixConnection {
         fix_message
     }
 
-    fn on_wrong_environment(&mut self, _message: Message) -> Response {
+    fn on_wrong_environment(&mut self, _message: Message<&[u8]>) -> Response {
         self.make_logout(errs::production_env())
     }
 
@@ -489,14 +493,14 @@ impl FixConnection {
         fix_message
     }
 
-    fn on_missing_seqnum(&mut self, _message: Message) -> Response {
+    fn on_missing_seqnum(&mut self, _message: Message<&[u8]>) -> Response {
         self.make_logout(errs::missing_field(
             fix44::MSG_SEQ_NUM.name(),
             fix44::MSG_SEQ_NUM.tag().get().into(),
         ))
     }
 
-    fn on_low_seqnum(&mut self, _message: Message) -> Response {
+    fn on_low_seqnum(&mut self, _message: Message<&[u8]>) -> Response {
         self.make_logout(errs::msg_seq_num(self.msg_seq_num_inbound.0 + 1))
     }
 
@@ -532,7 +536,7 @@ impl FixConnection {
         Response::OutboundBytes(fix_message)
     }
 
-    fn make_reject_for_inaccurate_sending_time(&mut self, offender: Message) -> Response {
+    fn make_reject_for_inaccurate_sending_time(&mut self, offender: Message<&[u8]>) -> Response {
         let ref_seq_num = offender.fv(fix44::MSG_SEQ_NUM).unwrap();
         let ref_msg_type = offender.fv::<&str, _>(fix44::MSG_TYPE).unwrap();
         self.on_reject(
@@ -575,13 +579,13 @@ impl FixConnection {
         Response::OutboundBytes(msg.wrap())
     }
 
-    fn on_high_seqnum(&mut self, msg: Message) -> Response {
+    fn on_high_seqnum(&mut self, msg: Message<&[u8]>) -> Response {
         let msg_seq_num = msg.fv(fix44::MSG_SEQ_NUM).unwrap();
         self.make_resend_request(self.seq_numbers().next_inbound(), msg_seq_num);
         todo!()
     }
 
-    fn on_logon(&mut self, _logon: Message) {
+    fn on_logon(&mut self, _logon: Message<&[u8]>) {
         let begin_string = self.begin_string.as_bytes();
         let mut _msg = self
             .encoder
@@ -591,7 +595,7 @@ impl FixConnection {
         //self.add_sending_time(msg);
     }
 
-    fn on_application_message<'a>(&mut self, msg: Message<'a>) -> Response<'a> {
+    fn on_application_message<'a>(&mut self, msg: Message<'a, &'a [u8]>) -> Response<'a> {
         Response::Application(msg)
     }
 }

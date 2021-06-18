@@ -51,6 +51,8 @@ mod decoder;
 mod encoder;
 mod field_access;
 mod raw_decoder;
+#[cfg(feature = "utils-tokio")]
+mod tokio_decoder;
 mod utils;
 
 pub use config::{Config, Configure};
@@ -58,6 +60,8 @@ pub use decoder::{Decoder, DecoderBuffered, Fields, Message, MessageGroup, Messa
 pub use encoder::{Encoder, EncoderHandle};
 pub use field_access::{FieldAccess, RepeatingGroup};
 pub use raw_decoder::{RawDecoder, RawDecoderBuffered, RawFrame};
+#[cfg(feature = "utils-tokio")]
+pub use tokio_decoder::TokioDecoder;
 
 /// The type returned in the event of an error during message decoding.
 #[derive(Clone, Debug, PartialEq)]

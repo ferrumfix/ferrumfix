@@ -1,7 +1,7 @@
 use super::{Error, Frame, Header};
-use crate::MemorySlice;
 use bytes::{Bytes, BytesMut};
 use std::io;
+use std::ops::Deref;
 use tokio_util::codec;
 
 /// A dummy decoder and encoder for SOFH-enclosed messages that have
@@ -54,7 +54,7 @@ impl codec::Decoder for TokioCodec {
 
 impl<T> codec::Encoder<Frame<T>> for TokioCodec
 where
-    T: MemorySlice,
+    T: Deref<Target = [u8]>,
 {
     type Error = io::Error;
 

@@ -1,29 +1,5 @@
 //! Zero-copy buffering utilities.
 
-/// Immutable, cheaply-clonable view over a contiguous slice of memory.
-pub trait MemorySlice
-where
-    Self: AsRef<[u8]> + Sized + Clone,
-{
-    /// Creates two [`MemorySlice`]'s from `self` at `i`.
-    fn split(self, i: usize) -> (Self, Self);
-}
-
-impl MemorySlice for &[u8] {
-    fn split(self, i: usize) -> (Self, Self) {
-        (&self[..i], &self[i..])
-    }
-}
-
-#[cfg(feature = "utils-bytes")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "utils-bytes")))]
-impl MemorySlice for bytes::Bytes {
-    fn split(mut self, i: usize) -> (Self, Self) {
-        let second_half = self.split_off(i);
-        (self, second_half)
-    }
-}
-
 /// Operations on a growable in-memory buffer.
 ///
 /// [`Buffer`] allows common data operations on in-memory data buffers. While

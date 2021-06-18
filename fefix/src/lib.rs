@@ -106,7 +106,7 @@ pub mod session;
 pub mod sofh;
 pub mod tagvalue;
 
-pub use buffer::{Buffer, MemorySlice};
+pub use buffer::Buffer;
 pub use dict::Dictionary;
 // We don't derive macros to pollute the docs.
 #[doc(hidden)]

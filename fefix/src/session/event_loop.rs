@@ -97,7 +97,7 @@ where
 #[derive(Debug)]
 pub enum LlEvent<'a> {
     /// Incoming  FIX message.
-    Message { msg: Message<'a> },
+    Message { msg: Message<'a, &'a [u8]> },
     /// I/O error at the transport layer.
     IoError { err: io::Error },
     /// Time to send a new `HeartBeat <0>` message.

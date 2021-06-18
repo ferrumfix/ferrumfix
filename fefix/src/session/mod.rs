@@ -32,12 +32,16 @@ pub trait Backend: Clone {
         Ok(())
     }
 
-    fn on_inbound_app_message(&mut self, message: Message) -> Result<(), Self::Error>;
+    fn on_inbound_app_message(&mut self, message: Message<&[u8]>) -> Result<(), Self::Error>;
 
     fn on_outbound_message(&mut self, message: &[u8]) -> Result<(), Self::Error>;
 
     #[inline]
-    fn on_inbound_message(&mut self, message: Message, is_app: bool) -> Result<(), Self::Error> {
+    fn on_inbound_message(
+        &mut self,
+        message: Message<&[u8]>,
+        is_app: bool,
+    ) -> Result<(), Self::Error> {
         if is_app {
             self.on_inbound_app_message(message)
         } else {

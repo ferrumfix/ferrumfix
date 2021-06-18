@@ -51,14 +51,14 @@ impl fefix::session::Backend for Application {
 
     fn on_inbound_app_message(
         &mut self,
-        message: fefix::tagvalue::Message,
+        message: fefix::tagvalue::Message<&[u8]>,
     ) -> Result<(), Self::Error> {
         self.on_inbound_message(message, true)
     }
 
     fn on_inbound_message(
         &mut self,
-        message: fefix::tagvalue::Message,
+        message: fefix::tagvalue::Message<&[u8]>,
         _is_app: bool,
     ) -> Result<(), Self::Error> {
         if let Ok(s) = std::str::from_utf8(message.as_bytes()) {

@@ -10,6 +10,7 @@ use crate::{dict::FixDatatype, Dictionary};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::{BuildHasher, Hasher};
+use std::marker::PhantomData;
 
 // Number of bytes before the start of the `BeginString` field:
 //
@@ -148,7 +149,10 @@ where
     /// assert_eq!(message.fv(fix42::SENDER_COMP_ID), Ok("A"));
     /// ```
     #[inline]
-    pub fn decode<'a>(&'a mut self, bytes: &'a [u8]) -> Result<Message<'a>, DecodeError> {
+    pub fn decode<'a, T>(&'a mut self, bytes: T) -> Result<Message<'a, T>, DecodeError>
+    where
+        T: AsRef<[u8]>,
+    {
         let frame = self.raw_decoder.decode(bytes)?;
         self.from_frame(frame)
     }
@@ -157,7 +161,10 @@ where
         unsafe { std::mem::transmute(&mut self.builder) }
     }
 
-    fn from_frame<'a>(&'a mut self, frame: RawFrame<&'a [u8]>) -> Result<Message<'a>, DecodeError> {
+    fn from_frame<'a, T>(&'a mut self, frame: RawFrame<T>) -> Result<Message<'a, T>, DecodeError>
+    where
+        T: AsRef<[u8]>,
+    {
         self.builder.clear();
         let separator = self.config().separator();
         let payload = frame.payload();
@@ -213,6 +220,7 @@ where
         }
         Ok(Message {
             builder: self.message_builder_mut(),
+            phantom: PhantomData::default(),
         })
     }
 
@@ -333,9 +341,10 @@ where
     }
 
     #[inline]
-    pub fn message(&self) -> Message {
+    pub fn message(&self) -> Message<&[u8]> {
         Message {
             builder: &self.decoder.builder,
+            phantom: PhantomData::default(),
         }
     }
 }
@@ -412,29 +421,38 @@ impl TagLookup {
 }
 
 /// A repeating group within a [`Message`].
-#[derive(Debug, Copy, Clone)]
-pub struct MessageGroup<'a> {
-    message: Message<'a>,
+#[derive(Debug, Clone)]
+pub struct MessageGroup<'a, T>
+where
+    T: AsRef<[u8]>,
+{
+    message: Message<'a, T>,
     index_of_group_tag: u32,
     len: usize,
 }
 
-impl<'a> MessageGroup<'a> {
+impl<'a, T> MessageGroup<'a, T>
+where
+    T: AsRef<[u8]> + Clone,
+{
     pub fn len(&self) -> usize {
         self.len
     }
 
-    pub fn entry(&self, index: usize) -> MessageGroupEntry<'a> {
+    pub fn entry(&self, index: usize) -> MessageGroupEntry<'a, T> {
         MessageGroupEntry {
-            group: *self,
+            group: self.clone(),
             entry_index: index as u32,
         }
     }
 }
 
-impl<'a> FieldAccess<'a> for MessageGroupEntry<'a> {
+impl<'a, T> FieldAccess<'a> for MessageGroupEntry<'a, T>
+where
+    T: AsRef<[u8]> + Clone,
+{
     type Key = TagU16;
-    type Group = MessageGroup<'a>;
+    type Group = MessageGroup<'a, T>;
 
     fn group_opt(
         &self,
@@ -451,7 +469,7 @@ impl<'a> FieldAccess<'a> for MessageGroupEntry<'a> {
         let field_value_str = std::str::from_utf8(num_in_group.1).ok()?;
         let num_entries = str::parse(field_value_str).unwrap();
         Some(Ok(MessageGroup {
-            message: self.group.message,
+            message: self.group.message.clone(),
             index_of_group_tag,
             len: num_entries,
         }))
@@ -485,8 +503,11 @@ impl<'a> FieldAccess<'a> for MessageGroupEntry<'a> {
     }
 }
 
-impl<'a> RepeatingGroup<'a> for MessageGroup<'a> {
-    type Entry = MessageGroupEntry<'a>;
+impl<'a, T> RepeatingGroup<'a> for MessageGroup<'a, T>
+where
+    T: AsRef<[u8]> + Clone,
+{
+    type Entry = MessageGroupEntry<'a, T>;
 
     fn len(&self) -> usize {
         MessageGroup::len(self)
@@ -499,17 +520,27 @@ impl<'a> RepeatingGroup<'a> for MessageGroup<'a> {
 
 /// A specific [`MessageGroup`] entry.
 #[derive(Debug)]
-pub struct MessageGroupEntry<'a> {
-    group: MessageGroup<'a>,
+pub struct MessageGroupEntry<'a, T>
+where
+    T: AsRef<[u8]>,
+{
+    group: MessageGroup<'a, T>,
     entry_index: u32,
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct Message<'a> {
+pub struct Message<'a, T>
+where
+    T: AsRef<[u8]>,
+{
     builder: &'a MessageBuilder<'a>,
+    phantom: PhantomData<T>,
 }
 
-impl<'a> PartialEq for Message<'a> {
+impl<'a, T> PartialEq for Message<'a, T>
+where
+    T: AsRef<[u8]>,
+{
     fn eq(&self, other: &Self) -> bool {
         // Two messages are equal *if and only if* messages are exactly the
         // same. Fields must also have the same order (things get complicated
@@ -518,17 +549,23 @@ impl<'a> PartialEq for Message<'a> {
     }
 }
 
-impl<'a> Eq for Message<'a> {}
+impl<'a, T> Eq for Message<'a, T> where T: AsRef<[u8]> {}
 
-impl<'a> Message<'a> {
-    pub fn group_ref(&self, tag: TagU16) -> Option<MessageGroup<'a>> {
+impl<'a, T> Message<'a, T>
+where
+    T: AsRef<[u8]>,
+{
+    pub fn group_ref(&self, tag: TagU16) -> Option<MessageGroup<'a, T>> {
         let field_locator_of_group_tag = FieldLocator::TopLevel { tag };
         let num_in_group = self.builder.fields.get(&field_locator_of_group_tag)?;
         let index_of_group_tag = num_in_group.2 as u32;
         let field_value_str = std::str::from_utf8(num_in_group.1).ok()?;
         let num_entries = str::parse(field_value_str).unwrap();
         Some(MessageGroup {
-            message: *self,
+            message: Message {
+                builder: self.builder,
+                phantom: PhantomData::default(),
+            },
             index_of_group_tag,
             len: num_entries,
         })
@@ -546,7 +583,7 @@ impl<'a> Message<'a> {
     /// decoder.config_mut().set_separator(b'|');
     /// assert_eq!(decoder.config().separator(), b'|');
     /// ```
-    pub fn fields(&'a self) -> Fields<'a> {
+    pub fn fields(&'a self) -> Fields<'a, T> {
         Fields {
             message: &self,
             i: 0,
@@ -659,12 +696,18 @@ impl<'a> MessageBuilder<'a> {
 
 /// An [`Iterator`] over fields and groups within a FIX message.
 #[derive(Debug)]
-pub struct Fields<'a> {
-    message: &'a Message<'a>,
+pub struct Fields<'a, T>
+where
+    T: AsRef<[u8]>,
+{
+    message: &'a Message<'a, T>,
     i: usize,
 }
 
-impl<'a> Iterator for Fields<'a> {
+impl<'a, T> Iterator for Fields<'a, T>
+where
+    T: AsRef<[u8]>,
+{
     type Item = (TagU16, &'a [u8]);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -679,9 +722,12 @@ impl<'a> Iterator for Fields<'a> {
     }
 }
 
-impl<'a> FieldAccess<'a> for Message<'a> {
+impl<'a, T> FieldAccess<'a> for Message<'a, T>
+where
+    T: AsRef<[u8]> + Clone,
+{
     type Key = TagU16;
-    type Group = MessageGroup<'a>;
+    type Group = MessageGroup<'a, T>;
 
     fn group_opt(
         &self,
@@ -707,7 +753,10 @@ impl<'a> FieldAccess<'a> for Message<'a> {
 
 #[cfg(feature = "utils-slog")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-slog")))]
-impl<'a> slog::Value for Message<'a> {
+impl<'a, T> slog::Value for Message<'a, T>
+where
+    T: AsRef<[u8]>,
+{
     fn serialize(
         &self,
         _rec: &slog::Record,
@@ -726,15 +775,21 @@ impl<'a> slog::Value for Message<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct GroupRef<'a> {
-    message: &'a Message<'a>,
+pub struct GroupRef<'a, T>
+where
+    T: AsRef<[u8]>,
+{
+    message: &'a Message<'a, T>,
     len: usize,
     field_len: u32,
 }
 
 #[derive(Debug, Clone)]
-pub struct GroupRefIter<'a> {
-    group: &'a GroupRef<'a>,
+pub struct GroupRefIter<'a, T>
+where
+    T: AsRef<[u8]>,
+{
+    group: &'a GroupRef<'a, T>,
     i: usize,
 }
 
@@ -831,7 +886,7 @@ mod test {
     #[test]
     fn heartbeat_message_fields_are_ok() {
         let mut codec = decoder();
-        let message = codec.decode(&mut RANDOM_MESSAGES[0].as_bytes()).unwrap();
+        let message = codec.decode(RANDOM_MESSAGES[0].as_bytes()).unwrap();
         assert_eq!(message.fv(fix44::MSG_TYPE), Ok(fix44::MsgType::Heartbeat));
         assert_eq!(
             message.fv_raw_with_key(TagU16::new(8).unwrap()),
@@ -857,7 +912,7 @@ mod test {
     fn message_must_end_with_separator() {
         let msg = "8=FIX.4.2|9=41|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127";
         let mut codec = decoder();
-        let result = codec.decode(&mut msg.as_bytes());
+        let result = codec.decode(msg.as_bytes());
         assert_eq!(result, Err(DecodeError::Invalid));
     }
 
@@ -865,7 +920,7 @@ mod test {
     fn message_without_checksum() {
         let msg = "8=FIX.4.4|9=37|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|";
         let mut codec = decoder();
-        let result = codec.decode(&mut msg.as_bytes());
+        let result = codec.decode(msg.as_bytes());
         assert_eq!(result, Err(DecodeError::Invalid));
     }
 
@@ -873,7 +928,7 @@ mod test {
     fn message_without_standard_header() {
         let msg = "35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=000|";
         let mut codec = decoder();
-        let result = codec.decode(&mut msg.as_bytes());
+        let result = codec.decode(msg.as_bytes());
         assert_eq!(result, Err(DecodeError::Invalid));
     }
 
@@ -881,7 +936,7 @@ mod test {
     fn detect_incorrect_checksum() {
         let msg = "8=FIX.4.2|9=43|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=146|";
         let mut codec = decoder();
-        let result = codec.decode(&mut msg.as_bytes());
+        let result = codec.decode(msg.as_bytes());
         assert_eq!(result, Err(DecodeError::Invalid));
     }
 }

@@ -1,12 +1,11 @@
 use crate::tagvalue::{utils, Config, Configure, DecodeError};
-use crate::MemorySlice;
 use std::ops::Range;
 
 /// An immutable view over the contents of a FIX message by a [`RawDecoder`].
 #[derive(Debug)]
 pub struct RawFrame<T>
 where
-    T: MemorySlice,
+    T: AsRef<[u8]>,
 {
     data: T,
     begin_string: Range<usize>,
@@ -16,8 +15,21 @@ where
 
 impl<T> RawFrame<T>
 where
-    T: MemorySlice,
+    T: AsRef<[u8]>,
 {
+    pub fn map_data<F, M>(self, f: F) -> RawFrame<M>
+    where
+        F: Fn(T) -> M,
+        M: AsRef<[u8]>,
+    {
+        RawFrame {
+            data: f(self.data),
+            begin_string: self.begin_string,
+            payload: self.payload,
+            payload_offset: self.payload_offset,
+        }
+    }
+
     /// Returns an immutable reference to the raw contents of `self`.
     ///
     /// # Examples
@@ -137,7 +149,11 @@ where
     }
 
     /// Does minimal parsing on `data` and returns a [`RawFrame`] if it's valid.
-    pub fn decode<'a>(&self, data: &'a [u8]) -> Result<RawFrame<&'a [u8]>, DecodeError> {
+    pub fn decode<T>(&self, src: T) -> Result<RawFrame<T>, DecodeError>
+    where
+        T: AsRef<[u8]>,
+    {
+        let data = src.as_ref();
         if data.len() < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
             return Err(DecodeError::Invalid);
         }
@@ -147,7 +163,7 @@ where
             utils::verify_checksum(data)?;
         }
         Ok(RawFrame {
-            data,
+            data: src,
             begin_string: info.begin_string_range(),
             payload: info.body_range(),
             payload_offset: info.body_range().start,
@@ -222,7 +238,7 @@ where
             if data.len() == 0 || data.len() == utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
                 Ok(None)
             } else {
-                self.decoder.decode(data).map(|message| Some(message))
+                self.decoder.decode(*data).map(|message| Some(message))
             }
         }
     }
@@ -306,13 +322,16 @@ mod test {
     #[test]
     fn empty_message_is_invalid() {
         let decoder = new_decoder();
-        assert!(matches!(decoder.decode(&[]), Err(DecodeError::Invalid)));
+        assert!(matches!(
+            decoder.decode(&[] as &[u8]),
+            Err(DecodeError::Invalid)
+        ));
     }
 
     #[test]
     fn sample_message_is_valid() {
         let decoder = new_decoder();
-        let msg = b"8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
+        let msg = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|".as_bytes();
         let frame = decoder.decode(msg).unwrap();
         assert_eq!(frame.begin_string(), b"FIX.4.2");
         assert_eq!(frame.payload(), b"35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|");
@@ -321,7 +340,7 @@ mod test {
     #[test]
     fn message_with_only_msg_type_tag_is_valid() {
         let decoder = new_decoder();
-        let msg = b"8=?|9=5|35=?|10=183|";
+        let msg = "8=?|9=5|35=?|10=183|".as_bytes();
         let frame = decoder.decode(msg).unwrap();
         assert_eq!(frame.begin_string(), b"?");
         assert_eq!(frame.payload(), b"35=?|");
@@ -330,7 +349,7 @@ mod test {
     #[test]
     fn message_with_empty_payload_is_invalid() {
         let decoder = new_decoder();
-        let msg = b"8=?|9=5|10=082|";
+        let msg = "8=?|9=5|10=082|".as_bytes();
         assert!(matches!(decoder.decode(msg), Err(DecodeError::Invalid)));
     }
 
@@ -338,23 +357,25 @@ mod test {
     fn message_with_bad_checksum_is_invalid() {
         let decoder = &mut new_decoder();
         decoder.config_mut().set_verify_checksum(true);
-        let msg = b"8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=000|";
+        let msg = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=000|".as_bytes();
         assert!(matches!(decoder.decode(msg), Err(DecodeError::CheckSum)));
     }
 
     #[test]
     fn edge_cases_dont_cause_panic() {
         let decoder = new_decoder();
-        assert!(decoder.decode(b"8=|9=0|10=225|").is_err());
-        assert!(decoder.decode(b"8=|9=0|10=|").is_err());
-        assert!(decoder.decode(b"8====|9=0|10=|").is_err());
-        assert!(decoder.decode(b"|||9=0|10=|").is_err());
-        assert!(decoder.decode(b"9999999999999").is_err());
-        assert!(decoder.decode(b"-9999999999999").is_err());
-        assert!(decoder.decode(b"==============").is_err());
-        assert!(decoder.decode(b"9999999999999|").is_err());
-        assert!(decoder.decode(b"|999999999999=|").is_err());
-        assert!(decoder.decode(b"|999=999999999999999999|=").is_err());
+        assert!(decoder.decode("8=|9=0|10=225|".as_bytes()).is_err());
+        assert!(decoder.decode("8=|9=0|10=|".as_bytes()).is_err());
+        assert!(decoder.decode("8====|9=0|10=|".as_bytes()).is_err());
+        assert!(decoder.decode("|||9=0|10=|".as_bytes()).is_err());
+        assert!(decoder.decode("9999999999999".as_bytes()).is_err());
+        assert!(decoder.decode("-9999999999999".as_bytes()).is_err());
+        assert!(decoder.decode("==============".as_bytes()).is_err());
+        assert!(decoder.decode("9999999999999|".as_bytes()).is_err());
+        assert!(decoder.decode("|999999999999=|".as_bytes()).is_err());
+        assert!(decoder
+            .decode("|999=999999999999999999|=".as_bytes())
+            .is_err());
     }
 
     fn new_decoder_buffered() -> RawDecoderBuffered {

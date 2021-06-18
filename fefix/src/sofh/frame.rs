@@ -1,6 +1,6 @@
 use super::{Error, Header};
-use crate::buffer::MemorySlice;
 use std::io;
+use std::ops::Deref;
 
 const MAX_MESSAGE_SIZE_IN_BYTES: usize = u32::MAX as usize - Header::LENGTH_IN_BYTES;
 
@@ -9,7 +9,7 @@ const MAX_MESSAGE_SIZE_IN_BYTES: usize = u32::MAX as usize - Header::LENGTH_IN_B
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Frame<T>
 where
-    T: MemorySlice,
+    T: Deref<Target = [u8]>,
 {
     encoding_type: u16,
     payload: T,
@@ -17,7 +17,7 @@ where
 
 impl<T> Frame<T>
 where
-    T: MemorySlice,
+    T: Deref<Target = [u8]>,
 {
     /// Creates a new [`Frame`] with the given `encoding_type` and `payload`.
     ///
