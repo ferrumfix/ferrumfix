@@ -1,11 +1,37 @@
 const SOH: u8 = 0x1;
 const DEFAULT_MAX_MESSAGE_SIZE: usize = 0xffff;
 
-/// Collection of configuration options related to FIX encoding and decoding.
+/// A provider of configuration options related to FIX encoding and decoding.
 ///
-/// # Naming conventions
+/// # Implementing this trait
 ///
-/// Implementors of this trait should start with `Config`.
+/// Before implementing this trait, you should look into [`Config`], which is
+/// adequate for most uses. The only benefit of writing your own [`Configure`]
+/// implementor rather than using [`Config`] is the possibility of relying on
+/// constants in code rather than accessing `struct` members, which results in
+/// better inlining by LLVM. E.g.
+///
+/// ```
+/// use fefix::tagvalue::Configure;
+///
+/// #[derive(Default, Copy, Clone)]
+/// struct FixInlineConfig {}
+///
+/// impl Configure for FixInlineConfig {
+///     #[inline]
+///     fn max_message_size(&self) -> None {
+///         None
+///     }
+///
+///     #[inline]
+///     fn verify_checksum(&self) -> bool {
+///         true
+///     }
+/// }
+/// ```
+///
+/// Needless to say, **think twice before polluting your codebase with such
+/// micro-optimizations.
 pub trait Configure: Clone + Default {
     /// The delimiter character, which terminates every tag-value pair including
     /// the last one.
@@ -41,7 +67,12 @@ pub trait Configure: Clone + Default {
     }
 }
 
-/// The canonical implementor of [`Configure`]. Every setting can be changed.
+/// A `struct` that has settable fields and implements [`Configure`].
+///
+/// When using [`Config`], you have full control over all FIX configuration
+/// options offered by `fefix`. The documentation of [`Configure`] goes into
+/// detail about the reasons why you might want to use something other than
+/// [`Config`].
 #[derive(Debug, Copy, Clone)]
 pub struct Config {
     separator: u8,
