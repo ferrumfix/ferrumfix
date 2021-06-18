@@ -1,11 +1,17 @@
-//! *Simple Open Framing Header*
+//! Simple Open Framing Header
 //! ([SOFH](https://www.fixtrading.org/standards/fix-sofh-online)) support.
 //!
-//! SOFH provides encoding-agnostic message framing. By SOFH rules, each payload
-//! is preceded by a header that consists of six (6) bytes, which contain
-//! information regarding both
-//! - payload's encoding type
-//! - payload's total length
+//! SOFH provides encoding- and content-agnostic message framing over wire. SOFH
+//! mandates that each message is preceded by a six (6) byte header, which
+//! contains two pieces of information:
+//!
+//! 1. The total length of the current message, in bytes.
+//! 2. The "encoding type" of such message, i.e. a numeric code used to pass
+//! information to the receiver(s) as to the kind of payload. [`EncodingType`]
+//! comes in handy when dealing with standard encoding types.
+//!
+//! The preferred way to send and receive SOFH-enclosed messages over wire is with
+//! [`TokioCodec`].
 
 mod encoding_type;
 mod frame;

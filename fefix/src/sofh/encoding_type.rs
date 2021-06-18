@@ -1,17 +1,19 @@
 /// Sum type for all SOFH encoding types.
 ///
-/// Each variant has a SingleAppVersion value or range of values, as specified by
-/// the official guidelines. This type is marked with `#[non_exhaustive]` to
-/// support new encoding types without breaking compatibility;
+/// Each variant is associated with a single value or range of values, as
+/// specified by the SOFH specification. This type is marked with
+/// `#[non_exhaustive]` to
+/// support new encoding types without breaking compatibility.
 /// [`EncodingType::Unknown`] can represent all values that are
-/// not included in the official guidelines; this way conversion is infallible
+/// not included in the SOFH specification; this way conversion is infallible
 /// and doesn't lose any information.
 ///
 /// # Equality
 ///
 /// It's important to note that the behavior of [`Eq`] and
 /// [`PartialEq`] for this type always falls back to equality on
-/// `u16`. This may cause unusual behavior e.g.:
+/// `u16`. This may cause unusual behavior when comparing
+/// [`EncodingType::Unknown`] values e.g.:
 ///
 /// ```
 /// use fefix::sofh::EncodingType;

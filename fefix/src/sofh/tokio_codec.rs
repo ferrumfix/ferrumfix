@@ -1,11 +1,11 @@
 use super::{Error, Frame, Header};
-use bytes::{Bytes, BytesMut};
+use bytes::Bytes;
+use bytes::BytesMut;
 use std::io;
-use std::ops::Deref;
 use tokio_util::codec;
 
-/// A dummy decoder and encoder for SOFH-enclosed messages that have
-/// [`bytes::Bytes`] as payload. It supports [`tokio_util::codec`] utilities.
+/// A [`tokio_util`] [`Decoder`](tokio_util::codec::Decoder) and
+/// [`Encoder`](tokio_util::codec::Encoder).
 ///
 /// # Examples
 ///
@@ -27,6 +27,13 @@ use tokio_util::codec;
 #[derive(Debug, Default)]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-tokio")))]
 pub struct TokioCodec {}
+
+impl TokioCodec {
+    /// Creates a new [`TokioCodec`].
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 
 impl codec::Decoder for TokioCodec {
     type Item = Frame<Bytes>;
@@ -54,7 +61,7 @@ impl codec::Decoder for TokioCodec {
 
 impl<T> codec::Encoder<Frame<T>> for TokioCodec
 where
-    T: Deref<Target = [u8]>,
+    T: AsRef<[u8]>,
 {
     type Error = io::Error;
 

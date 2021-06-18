@@ -1,23 +1,25 @@
 use super::{Error, Header};
 use std::io;
-use std::ops::Deref;
 
 const MAX_MESSAGE_SIZE_IN_BYTES: usize = u32::MAX as usize - Header::LENGTH_IN_BYTES;
 
 /// An immutable view into a SOFH-enclosed message, complete with its
 /// encoding type tag and message.
+///
+/// # Type parameters
+///
+/// [`Frame`] is generic over `T`, which must implement `AsRef<[u8]>` and is the
+/// *payload type*. Common choices for `T` are `&'a [u8]` for some lifetime `'a`,
+/// [`bytes::Bytes`], and [`bytes::BytesMut`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct Frame<T>
-where
-    T: Deref<Target = [u8]>,
-{
+pub struct Frame<T> {
     encoding_type: u16,
     payload: T,
 }
 
 impl<T> Frame<T>
 where
-    T: Deref<Target = [u8]>,
+    T: AsRef<[u8]>,
 {
     /// Creates a new [`Frame`] with the given `encoding_type` and `payload`.
     ///
