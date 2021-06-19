@@ -1,16 +1,86 @@
+use std::iter::FusedIterator;
+
 use crate::dict::IsFieldDefinition;
 use crate::FixValue;
 use crate::{OptError, OptResult};
 
-pub trait RepeatingGroup<'a> {
-    type Entry: FieldAccess<'a>;
+/// Provides access to entries within a FIX repeating group.
+pub trait RepeatingGroup: Sized {
+    type Entry: FieldAccess;
 
     fn len(&self) -> usize;
 
     fn entry(&self, i: usize) -> Self::Entry;
+
+    fn entries(&self) -> Entries<Self> {
+        Entries {
+            group: self,
+            i: 0,
+            max_i_plus_one: self.len(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Entries<'a, G> {
+    group: &'a G,
+    i: usize,
+    max_i_plus_one: usize,
+}
+
+impl<'a, G> Iterator for Entries<'a, G>
+where
+    G: RepeatingGroup,
+{
+    type Item = G::Entry;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.i == self.max_i_plus_one {
+            None
+        } else {
+            let entry = self.group.entry(self.i);
+            self.i += 1;
+            Some(entry)
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let n = self.group.len() - self.i;
+        (n, Some(n))
+    }
+}
+
+impl<'a, G> FusedIterator for Entries<'a, G> where G: RepeatingGroup {}
+
+impl<'a, G> DoubleEndedIterator for Entries<'a, G>
+where
+    G: RepeatingGroup,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.i == self.max_i_plus_one {
+            None
+        } else {
+            self.max_i_plus_one -= 1;
+            let entry = self.group.entry(self.max_i_plus_one);
+            Some(entry)
+        }
+    }
+}
+
+impl<'a, G> ExactSizeIterator for Entries<'a, G>
+where
+    G: RepeatingGroup,
+{
+    fn len(&self) -> usize {
+        self.group.len()
+    }
 }
 
 /// A trait to retrieve field values in a FIX message.
+///
+/// # Type parameters
+///
+/// This trait is generic over a lifetime `'a`, which
 ///
 /// # Field getters naming scheme
 ///
@@ -20,59 +90,41 @@ pub trait RepeatingGroup<'a> {
 /// - `_with_key` stands for *with key*, i.e. you won't use a field definition but
 /// direct key (i.e. field name or tag).
 /// - `_opt` stands for *optional*, for better error reporting.
-pub trait FieldAccess<'a> {
-    /// Field key type. For the "classic", `tag=value` FIX encoding, this is a
-    /// numeric type (more specifically, [`TagU16`](crate::TagU16)). Other
-    /// encodings might use different raw keys, like JSON (strings).
-    type Key;
+pub trait FieldAccess {
+    /// The type returned by [`FieldAccess::group()`] and [`FieldAccess::group_opt()`].
+    type Group: RepeatingGroup;
 
-    type Group: RepeatingGroup<'a>;
-
-    fn group(&self, key: Self::Key) -> OptResult<Self::Group, <usize as FixValue<'a>>::Error> {
-        match self.group_opt(key) {
+    /// Queries `self` for a group tagged with `key`. An unsuccessful query
+    /// results in [`OptError::None`].
+    fn group<F>(&self, field: &F) -> OptResult<Self::Group, <usize as FixValue>::Error>
+    where
+        F: IsFieldDefinition,
+    {
+        match self.group_opt(field) {
             Some(Ok(group)) => Ok(group),
             Some(Err(e)) => Err(OptError::Other(e)),
             None => Err(OptError::None),
         }
     }
 
-    fn group_opt(
-        &self,
-        key: Self::Key,
-    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>>;
-
-    fn fv_raw_with_key<'b>(&'b self, key: Self::Key) -> Option<&'b [u8]>;
-
-    fn fv_raw<'b, F>(&'b self, field: &'a F) -> Option<&'b [u8]>
+    /// Queries `self` for a group tagged with `key` which may or may not be
+    /// present in `self`. This differs from
+    /// [`FieldAccess::group()`] as missing groups result in [`None`] rather than
+    /// [`Err`].
+    fn group_opt<F>(&self, field: &F) -> Option<Result<Self::Group, <usize as FixValue>::Error>>
     where
-        'b: 'a,
         F: IsFieldDefinition;
 
-    /// Returns the field value of `field` in `self` wrapped in an [`Option`].
-    ///
-    /// Lossless deserialization.
-    #[inline]
-    fn fv_opt<'b, V, F>(&'b self, field: &'a F) -> Option<Result<V, V::Error>>
+    /// Queries `self` for `field` and returns its raw contents, which can then
+    fn fv_raw<F>(&self, field: &F) -> Option<&[u8]>
     where
-        'b: 'a,
-        V: FixValue<'b>,
-        F: IsFieldDefinition,
-    {
-        self.fv_raw(field).map(|raw| match V::deserialize(raw) {
-            Ok(value) => Ok(value),
-            Err(err) => Err(err.into()),
-        })
-    }
+        F: IsFieldDefinition;
 
-    /// Returns the field value of `field` in `self` wrapped in an [`OptResult`].
-    ///
-    ///
-    /// Lossless deserialization.
+    /// Queries `self` for `field` and deserializes it.
     #[inline]
-    fn fv<'b, V, F>(&'b self, field: &'a F) -> OptResult<V, V::Error>
+    fn fv<'a, V, F>(&'a self, field: &F) -> OptResult<V, V::Error>
     where
-        'b: 'a,
-        V: FixValue<'b>,
+        V: FixValue<'a>,
         F: IsFieldDefinition,
     {
         match self.fv_opt(field) {
@@ -82,31 +134,11 @@ pub trait FieldAccess<'a> {
         }
     }
 
-    /// Returns the field value of `field` in `self` wrapped in an [`Option`].
-    ///
-    /// Lossy deserialization.
+    /// Like [`FieldAccess::fv()`], but with lossy deserialization.
     #[inline]
-    fn fvl_opt<'b, V, F>(&'b self, field: &'a F) -> Option<Result<V, V::Error>>
+    fn fvl<'a, V, F>(&'a self, field: &F) -> OptResult<V, V::Error>
     where
-        'b: 'a,
-        V: FixValue<'b>,
-        F: IsFieldDefinition,
-    {
-        self.fv_raw(field)
-            .map(|raw| match V::deserialize_lossy(raw) {
-                Ok(value) => Ok(value),
-                Err(err) => Err(err.into()),
-            })
-    }
-
-    /// Returns the field value of `field` in `self` wrapped in an [`OptResult`].
-    ///
-    /// Lossy deserialization.
-    #[inline]
-    fn fvl<'b, V, F>(&'b self, field: &'a F) -> OptResult<V, V::Error>
-    where
-        'b: 'a,
-        V: FixValue<'b>,
+        V: FixValue<'a>,
         F: IsFieldDefinition,
     {
         match self.fvl_opt(field) {
@@ -116,19 +148,32 @@ pub trait FieldAccess<'a> {
         }
     }
 
-    /// Lossy deserialization.
+    /// Queries `self` for `field` and deserializes it. This
+    /// differs from [`FieldAccess::fv()`] as missing fields result in [`None`]
+    /// rather than [`Err`].
     #[inline]
-    fn fvl_with_key<'b, V>(&'b self, key: Self::Key) -> OptResult<V, V::Error>
+    fn fv_opt<'a, V, F>(&'a self, field: &F) -> Option<Result<V, V::Error>>
     where
-        V: FixValue<'b>,
+        V: FixValue<'a>,
+        F: IsFieldDefinition,
     {
-        match self
-            .fv_raw_with_key(key)
-            .map(|raw| V::deserialize_lossy(raw))
-        {
-            Some(Ok(x)) => Ok(x),
-            Some(Err(e)) => Err(OptError::Other(e)),
-            None => Err(OptError::None),
-        }
+        self.fv_raw(field).map(|raw| match V::deserialize(raw) {
+            Ok(value) => Ok(value),
+            Err(err) => Err(err.into()),
+        })
+    }
+
+    /// Like [`FieldAccess::fv_opt()`], but with lossy deserialization.
+    #[inline]
+    fn fvl_opt<'a, V, F>(&'a self, field: &F) -> Option<Result<V, V::Error>>
+    where
+        V: FixValue<'a>,
+        F: IsFieldDefinition,
+    {
+        self.fv_raw(field)
+            .map(|raw| match V::deserialize_lossy(raw) {
+                Ok(value) => Ok(value),
+                Err(err) => Err(err.into()),
+            })
     }
 }

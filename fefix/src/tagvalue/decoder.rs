@@ -447,18 +447,17 @@ where
     }
 }
 
-impl<'a, T> FieldAccess<'a> for MessageGroupEntry<'a, T>
+impl<'a, T> FieldAccess for MessageGroupEntry<'a, T>
 where
     T: AsRef<[u8]> + Clone,
 {
-    type Key = TagU16;
     type Group = MessageGroup<'a, T>;
 
-    fn group_opt(
-        &self,
-        tag: Self::Key,
-    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
-        let field_locator_of_group_tag = FieldLocator::TopLevel { tag };
+    fn group_opt<F>(&self, field: &F) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>>
+    where
+        F: IsFieldDefinition,
+    {
+        let field_locator_of_group_tag = FieldLocator::TopLevel { tag: field.tag() };
         let num_in_group = self
             .group
             .message
@@ -475,17 +474,15 @@ where
         }))
     }
 
-    fn fv_raw_with_key<'b>(&'b self, tag: Self::Key) -> Option<&'b [u8]> {
+    fn fv_raw<F>(&self, field: &F) -> Option<&[u8]>
+    where
+        F: IsFieldDefinition,
+    {
         let field_locator = FieldLocator::WithinGroup {
-            tag,
+            tag: field.tag(),
             index_of_group_tag: self.group.index_of_group_tag,
             entry_index: self.entry_index,
         };
-        println!(
-            "field locators are {:?}",
-            self.group.message.builder.field_locators,
-        );
-        println!("field locator for group tag is {:?}", field_locator);
         self.group
             .message
             .builder
@@ -493,17 +490,9 @@ where
             .get(&field_locator)
             .map(|field| field.1)
     }
-
-    fn fv_raw<'b, F>(&'b self, field: &'a F) -> Option<&'b [u8]>
-    where
-        'b: 'a,
-        F: IsFieldDefinition,
-    {
-        self.fv_raw_with_key(field.tag())
-    }
 }
 
-impl<'a, T> RepeatingGroup<'a> for MessageGroup<'a, T>
+impl<'a, T> RepeatingGroup for MessageGroup<'a, T>
 where
     T: AsRef<[u8]> + Clone,
 {
@@ -555,22 +544,6 @@ impl<'a, T> Message<'a, T>
 where
     T: AsRef<[u8]>,
 {
-    pub fn group_ref(&self, tag: TagU16) -> Option<MessageGroup<'a, T>> {
-        let field_locator_of_group_tag = FieldLocator::TopLevel { tag };
-        let num_in_group = self.builder.fields.get(&field_locator_of_group_tag)?;
-        let index_of_group_tag = num_in_group.2 as u32;
-        let field_value_str = std::str::from_utf8(num_in_group.1).ok()?;
-        let num_entries = str::parse(field_value_str).unwrap();
-        Some(MessageGroup {
-            message: Message {
-                builder: self.builder,
-                phantom: PhantomData::default(),
-            },
-            index_of_group_tag,
-            len: num_entries,
-        })
-    }
-
     /// Returns an [`Iterator`] over all fields in `self`, in sequential order
     /// starting from the very first field.
     ///
@@ -722,32 +695,38 @@ where
     }
 }
 
-impl<'a, T> FieldAccess<'a> for Message<'a, T>
+impl<'a, T> FieldAccess for Message<'a, T>
 where
     T: AsRef<[u8]> + Clone,
 {
-    type Key = TagU16;
     type Group = MessageGroup<'a, T>;
 
-    fn group_opt(
-        &self,
-        tag: Self::Key,
-    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
-        // FIXME
-        self.group_ref(tag).map(|group| Ok(group))
-    }
-
-    fn fv_raw_with_key<'b>(&'b self, tag: Self::Key) -> Option<&'b [u8]> {
-        let field_locator = FieldLocator::TopLevel { tag };
-        self.builder.fields.get(&field_locator).map(|field| field.1)
-    }
-
-    fn fv_raw<'b, F>(&'b self, field: &F) -> Option<&'b [u8]>
+    fn group_opt<F>(&self, field: &F) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>>
     where
-        'b: 'a,
+        F: IsFieldDefinition,
+    {
+        // FIXME
+        let field_locator_of_group_tag = FieldLocator::TopLevel { tag: field.tag() };
+        let num_in_group = self.builder.fields.get(&field_locator_of_group_tag)?;
+        let index_of_group_tag = num_in_group.2 as u32;
+        let field_value_str = std::str::from_utf8(num_in_group.1).ok()?;
+        let num_entries = str::parse(field_value_str).unwrap();
+        Some(Ok(MessageGroup {
+            message: Message {
+                builder: self.builder,
+                phantom: PhantomData::default(),
+            },
+            index_of_group_tag,
+            len: num_entries,
+        }))
+    }
+
+    fn fv_raw<F>(&self, field: &F) -> Option<&[u8]>
+    where
         F: dict::IsFieldDefinition,
     {
-        self.fv_raw_with_key(field.tag())
+        let field_locator = FieldLocator::TopLevel { tag: field.tag() };
+        self.builder.fields.get(&field_locator).map(|field| field.1)
     }
 }
 
@@ -796,7 +775,7 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{definitions::fix44, tagvalue::Config};
+    use crate::{definitions::fix42, definitions::fix44, tagvalue::Config};
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
@@ -842,10 +821,10 @@ mod test {
         let bytes = b"8=FIX.4.2|9=196|35=X|49=A|56=B|34=12|52=20100318-03:21:11.364|262=A|268=2|279=0|269=0|278=BID|55=EUR/USD|270=1.37215|15=EUR|271=2500000|346=1|279=0|269=1|278=OFFER|55=EUR/USD|270=1.37224|15=EUR|271=2503200|346=1|10=171|";
         let decoder = &mut decoder();
         let message = decoder.decode(bytes).unwrap();
-        let group = message.group_ref(TagU16::new(268).unwrap()).unwrap();
+        let group = message.group(fix42::NO_MD_ENTRIES).unwrap();
         assert_eq!(group.len(), 2);
         assert_eq!(
-            group.entry(0).fv_raw(fix44::MD_ENTRY_ID).unwrap(),
+            group.entry(0).fv_raw(fix42::MD_ENTRY_ID).unwrap(),
             b"BID" as &[u8]
         );
     }
@@ -855,10 +834,10 @@ mod test {
         let bytes = b"8=FIX.4.4|9=17|35=X|268=0|346=1|10=171|";
         let decoder = &mut decoder();
         let message = decoder.decode(bytes).unwrap();
-        let group = message.group_ref(TagU16::new(268).unwrap()).unwrap();
+        let group = message.group(fix44::NO_MD_ENTRIES).unwrap();
         assert_eq!(group.len(), 0);
         assert_eq!(
-            message.fv_raw_with_key(TagU16::new(346).unwrap()),
+            message.fv_raw(fix44::NUMBER_OF_ORDERS),
             Some("1".as_bytes())
         );
     }
@@ -889,13 +868,10 @@ mod test {
         let message = codec.decode(RANDOM_MESSAGES[0].as_bytes()).unwrap();
         assert_eq!(message.fv(fix44::MSG_TYPE), Ok(fix44::MsgType::Heartbeat));
         assert_eq!(
-            message.fv_raw_with_key(TagU16::new(8).unwrap()),
+            message.fv_raw(fix44::BEGIN_STRING),
             Some(b"FIX.4.2" as &[u8])
         );
-        assert_eq!(
-            message.fv_raw_with_key(TagU16::new(35).unwrap()),
-            Some(b"0" as &[u8]),
-        );
+        assert_eq!(message.fv_raw(fix44::MSG_TYPE), Some(b"0" as &[u8]),);
     }
 
     #[test]

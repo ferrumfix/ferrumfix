@@ -15,27 +15,26 @@ pub struct Message<'a> {
     internal: &'a MessageInternal<'a>,
 }
 
-impl<'a> FieldAccess<'a> for Message<'a> {
-    type Key = (FieldLocation, &'a str);
+impl<'a> FieldAccess for Message<'a> {
     type Group = MessageGroup<'a>;
 
-    fn group_opt(
+    fn group_opt<F>(
         &self,
-        _tag: Self::Key,
-    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
+        _field: &F,
+    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>>
+    where
+        F: IsFieldDefinition,
+    {
         None
     }
 
-    fn fv_raw_with_key<'b>(&'b self, key: Self::Key) -> Option<&'b [u8]> {
-        self.internal.field_raw(key.1, key.0).map(|s| s.as_bytes())
-    }
-
-    fn fv_raw<'b, F>(&'b self, field: &'a F) -> Option<&'b [u8]>
+    fn fv_raw<F>(&self, field: &F) -> Option<&[u8]>
     where
-        'b: 'a,
         F: dict::IsFieldDefinition,
     {
-        self.fv_raw_with_key((field.location(), field.name()))
+        self.internal
+            .field_raw(field.name(), field.location())
+            .map(|s| s.as_bytes())
     }
 }
 
@@ -46,7 +45,7 @@ pub struct MessageGroup<'a> {
     entries: &'a [Component<'a>],
 }
 
-impl<'a> RepeatingGroup<'a> for MessageGroup<'a> {
+impl<'a> RepeatingGroup for MessageGroup<'a> {
     type Entry = MessageGroupEntry<'a>;
 
     fn len(&self) -> usize {
@@ -61,25 +60,21 @@ impl<'a> RepeatingGroup<'a> for MessageGroup<'a> {
     }
 }
 
-impl<'a> FieldAccess<'a> for MessageGroupEntry<'a> {
-    type Key = ();
+impl<'a> FieldAccess for MessageGroupEntry<'a> {
     type Group = MessageGroup<'a>;
 
-    fn group_opt(
+    fn group_opt<F>(
         &self,
-        _key: Self::Key,
-    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
-        None
-    }
-
-    fn fv_raw_with_key<'b>(&'b self, _key: Self::Key) -> Option<&'b [u8]> {
-        // FIXME
-        None
-    }
-
-    fn fv_raw<'b, F>(&'b self, _field: &'a F) -> Option<&'b [u8]>
+        _field: &F,
+    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>>
     where
-        'b: 'a,
+        F: IsFieldDefinition,
+    {
+        None
+    }
+
+    fn fv_raw<F>(&self, _field: &F) -> Option<&[u8]>
+    where
         F: IsFieldDefinition,
     {
         // FIXME
