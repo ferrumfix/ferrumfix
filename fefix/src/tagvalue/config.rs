@@ -19,7 +19,7 @@ const DEFAULT_MAX_MESSAGE_SIZE: usize = 0xffff;
 ///
 /// impl Configure for FixInlineConfig {
 ///     #[inline]
-///     fn max_message_size(&self) -> None {
+///     fn max_message_size(&self) -> Option<usize> {
 ///         None
 ///     }
 ///
