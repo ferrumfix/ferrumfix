@@ -2,20 +2,13 @@
 
 use crate::{dict, dict::FixDatatype, TagU16};
 
-/// Metadata about a specific FIX tag. Designed for code generation.
 #[derive(Debug, Clone)]
+#[doc(hidden)]
 pub struct HardCodedFixFieldDefinition {
-    /// Human-readable ASCII name of this FIX field, e.g. `MsgSeqNum`.
     pub name: &'static str,
-    /// Numeric tag associated with this FIX field.
     pub tag: u16,
-    /// Flag that is set to `true` for fields that are the first within
-    /// instances of repeating groups.
     pub is_group_leader: bool,
-    /// The FIX data type of this field definition.
     pub data_type: FixDatatype,
-    /// Expected location of this FIX field within messages - header, body, or
-    /// trailer. Used for JSON-encoded FIX messages.
     pub location: dict::FieldLocation,
 }
 

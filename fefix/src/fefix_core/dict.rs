@@ -1133,20 +1133,6 @@ impl<'a> FieldEnum<'a> {
 #[derive(Debug, Copy, Clone)]
 pub struct Field<'a>(&'a Dictionary, &'a FieldData);
 
-impl<'a> IsFieldDefinition for Field<'a> {
-    fn name(&self) -> &str {
-        self.1.name.as_str()
-    }
-
-    fn tag(&self) -> TagU16 {
-        TagU16::new(self.1.tag as u16).unwrap()
-    }
-
-    fn location(&self) -> FieldLocation {
-        FieldLocation::Body // FIXME
-    }
-}
-
 impl<'a> Field<'a> {
     pub fn doc_url_onixs(&self, version: &str) -> String {
         let v = match version {
@@ -1161,12 +1147,11 @@ impl<'a> Field<'a> {
             "FIXT.1.1" => "FIXT.1.1",
             s => s,
         };
-        let mut url = "https://www.onixs.biz/fix-dictionary/".to_string();
-        url.push_str(v);
-        url.push_str("/tagNum_");
-        url.push_str(self.1.tag.to_string().as_str());
-        url.push_str(".html");
-        url
+        format!(
+            "https://www.onixs.biz/fix-dictionary/{}/tagNum_{}.html",
+            v,
+            self.1.tag.to_string().as_str()
+        )
     }
 
     /// Returns the [`FixDatatype`] of `self`.
@@ -1207,6 +1192,20 @@ impl<'a> Field<'a> {
     }
 }
 
+impl<'a> IsFieldDefinition for Field<'a> {
+    fn name(&self) -> &str {
+        self.1.name.as_str()
+    }
+
+    fn tag(&self) -> TagU16 {
+        TagU16::new(self.1.tag as u16).expect("Invalid FIX tag (0)")
+    }
+
+    fn location(&self) -> FieldLocation {
+        FieldLocation::Body // FIXME
+    }
+}
+
 #[derive(Clone, Debug)]
 #[allow(dead_code)]
 enum LayoutItemKindData {
@@ -1229,14 +1228,14 @@ struct LayoutItemData {
 }
 
 pub trait IsFieldDefinition {
+    /// Returns the FIX tag associated with `self`.
     fn tag(&self) -> TagU16;
 
+    /// Returns the official, ASCII, human-readable name associated with `self`.
     fn name(&self) -> &str;
 
-    #[inline]
-    fn location(&self) -> FieldLocation {
-        FieldLocation::Body // FIXME
-    }
+    /// Returns the field location of `self`.
+    fn location(&self) -> FieldLocation;
 }
 
 fn layout_item_kind<'a>(item: &'a LayoutItemKindData, dict: &'a Dictionary) -> LayoutItemKind<'a> {
