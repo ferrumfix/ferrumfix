@@ -104,6 +104,7 @@ pub mod session;
 #[cfg(feature = "sofh")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "sofh")))]
 pub mod sofh;
+pub mod tagmap;
 pub mod tagvalue;
 
 pub use buffer::Buffer;
