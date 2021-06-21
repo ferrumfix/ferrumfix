@@ -31,7 +31,7 @@ impl dict::IsFieldDefinition for HardCodedFixFieldDefinition {
 
 #[cfg(feature = "fix40")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fix40")))]
-#[allow(dead_code)]
+#[allow(dead_code, unused, warnings)]
 #[rustfmt::skip]
 /// Field and message definitions for FIX.4.0.
 pub mod fix40 {
@@ -40,7 +40,7 @@ pub mod fix40 {
 
 #[cfg(feature = "fix41")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fix41")))]
-#[allow(dead_code)]
+#[allow(dead_code, unused, warnings)]
 #[rustfmt::skip]
 /// Field and message definitions for FIX.4.1.
 pub mod fix41 {
@@ -49,7 +49,7 @@ pub mod fix41 {
 
 #[cfg(feature = "fix42")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fix42")))]
-#[allow(dead_code)]
+#[allow(dead_code, unused, warnings)]
 #[rustfmt::skip]
 /// Field and message definitions for FIX.4.2.
 pub mod fix42 {
@@ -58,14 +58,14 @@ pub mod fix42 {
 
 #[cfg(feature = "fix43")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fix43")))]
-#[allow(dead_code)]
+#[allow(dead_code, unused, warnings)]
 #[rustfmt::skip]
 /// Field and message definitions for FIX.4.3.
 pub mod fix43 {
     include!(concat!(env!("OUT_DIR"), "/fix43.rs"));
 }
 
-#[allow(dead_code)]
+#[allow(dead_code, unused, warnings)]
 #[rustfmt::skip]
 /// Field and message definitions for FIX.4.4.
 pub mod fix44 {
@@ -74,7 +74,7 @@ pub mod fix44 {
 
 #[cfg(feature = "fix50")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fix50")))]
-#[allow(dead_code)]
+#[allow(dead_code, unused, warnings)]
 #[rustfmt::skip]
 /// Field and message definitions for FIX.5.0.
 pub mod fix50 {
@@ -83,7 +83,7 @@ pub mod fix50 {
 
 #[cfg(feature = "fix50sp1")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fix50sp1")))]
-#[allow(dead_code)]
+#[allow(dead_code, unused, warnings)]
 #[rustfmt::skip]
 /// Field and message definitions for FIX.5.0 SP1.
 pub mod fix50sp1 {
@@ -92,7 +92,7 @@ pub mod fix50sp1 {
 
 #[cfg(feature = "fix50sp2")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fix50sp2")))]
-#[allow(dead_code)]
+#[allow(dead_code, unused, warnings)]
 #[rustfmt::skip]
 /// Field and message definitions for FIX.5.0 SP2.
 pub mod fix50sp2 {
@@ -101,7 +101,7 @@ pub mod fix50sp2 {
 
 #[cfg(feature = "fixt11")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fixt11")))]
-#[allow(dead_code)]
+#[allow(dead_code, unused, warnings)]
 #[rustfmt::skip]
 /// Field and message definitions for FIXT.1.1.
 pub mod fixt11 {
