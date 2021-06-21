@@ -1,8 +1,7 @@
-use std::iter::FusedIterator;
-
 use crate::dict::IsFieldDefinition;
 use crate::FixValue;
 use crate::{OptError, OptResult};
+use std::iter::FusedIterator;
 
 /// Provides access to entries within a FIX repeating group.
 pub trait RepeatingGroup: Sized {
