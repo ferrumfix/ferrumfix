@@ -6,12 +6,24 @@ use crate::{OptError, OptResult};
 
 /// Provides access to entries within a FIX repeating group.
 pub trait RepeatingGroup: Sized {
+    /// The type of entries in this FIX repeating group. Must implement
+    /// [`FieldAccess`].
     type Entry: FieldAccess;
 
+    /// Returns the number of FIX group entries in `self`.
     fn len(&self) -> usize;
 
+    /// Returns the `i` -th entry in `self`.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if and only if `i` is outside the legal range of
+    /// `self`.
     fn entry(&self, i: usize) -> Self::Entry;
 
+    /// Creates and returns an [`Iterator`] over the entries in `self`.
+    /// Iteration MUST be done in sequential order, i.e. in which they appear in
+    /// the original FIX message.
     fn entries(&self) -> Entries<Self> {
         Entries {
             group: self,
@@ -21,6 +33,11 @@ pub trait RepeatingGroup: Sized {
     }
 }
 
+/// An [`Iterator`] that runs over the entries of a FIX [`RepeatingGroup`].
+///
+/// This `struct` is created by the method [`RepeatingGroup::entries()`]. It
+/// also implements [`FusedIterator`], [`DoubleEndedIterator`], and
+/// [`ExactSizeIterator`].
 #[derive(Debug, Clone)]
 pub struct Entries<'a, G> {
     group: &'a G,

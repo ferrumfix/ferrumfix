@@ -306,7 +306,7 @@ fn gen_field_definition_with_hashsets(
     let name = field.name().to_shouty_snake_case();
     let tag = field.tag().to_string();
     let field_location = if header_tags.contains(&field.tag()) {
-        "StdHeader"
+        "Header"
     } else if trailer_tags.contains(&field.tag()) {
         "Trailer"
     } else {

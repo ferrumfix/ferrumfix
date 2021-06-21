@@ -155,7 +155,7 @@ where
     {
         let data = src.as_ref();
         if data.len() < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
-            return Err(DecodeError::Invalid);
+            return Err(DecodeError::Length);
         }
         let info = HeaderInfo::parse(data, self.config().separator())?;
         utils::verify_body_length(data, info.start_of_body(), info.body_range().len())?;
@@ -324,7 +324,7 @@ mod test {
         let decoder = new_decoder();
         assert!(matches!(
             decoder.decode(&[] as &[u8]),
-            Err(DecodeError::Invalid)
+            Err(DecodeError::Length)
         ));
     }
 
@@ -350,7 +350,7 @@ mod test {
     fn message_with_empty_payload_is_invalid() {
         let decoder = new_decoder();
         let msg = "8=?|9=5|10=082|".as_bytes();
-        assert!(matches!(decoder.decode(msg), Err(DecodeError::Invalid)));
+        assert!(matches!(decoder.decode(msg), Err(DecodeError::Length)));
     }
 
     #[test]

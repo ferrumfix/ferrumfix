@@ -268,7 +268,7 @@ impl<'a> MessageInternal<'a> {
                     None
                 }
             }),
-            FieldLocation::StdHeader => self.std_header.get(name).and_then(|field_or_group| {
+            FieldLocation::Header => self.std_header.get(name).and_then(|field_or_group| {
                 if let FieldOrGroup::Field(value) = field_or_group {
                     Some(value.borrow())
                 } else {
@@ -291,7 +291,6 @@ mod test {
     use super::*;
 
     const MESSAGE_SIMPLE: &str = include_str!("test_data/message_simple.json");
-
     const MESSAGE_WITHOUT_HEADER: &str = include_str!("test_data/message_without_header.json");
 
     fn dict_fix44() -> Dictionary {

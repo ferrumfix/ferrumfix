@@ -7,7 +7,6 @@ const ERR_BOOL_LENGTH: &str = "Invalid length; a boolean is Y or N (1 char).";
 const ERR_BOOL_CHAR: &str = "Invalid character for boolean. Only Y and N are valid.";
 const ERR_UTF8: &str = "Invalid byte sequence; expected UTF-8 valid bytes.";
 const ERR_INT_INVALID: &str = "Invalid integer digits.";
-const ERR_DECIMAL_INVALID: &str = "Invalid decimal number.";
 
 /// Allows (de)serialization as a FIX value (e.g. `tag=value|`).
 pub trait FixValue<'a>
@@ -187,6 +186,7 @@ impl<'a> FixValue<'a> for rust_decimal::Decimal {
 
     #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
+        const ERR_DECIMAL_INVALID: &str = "Invalid decimal number.";
         use std::str::FromStr;
         let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
         rust_decimal::Decimal::from_str(s).map_err(|_| ERR_DECIMAL_INVALID)

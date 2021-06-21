@@ -7,9 +7,9 @@ use crate::dict::IsFieldDefinition;
 use crate::FixValue;
 use crate::TagU16;
 use crate::{dict::FixDatatype, Dictionary};
+use nohash_hasher::IntMap;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::hash::{BuildHasher, Hasher};
 use std::marker::PhantomData;
 
 // Number of bytes before the start of the `BeginString` field:
@@ -49,7 +49,7 @@ where
     dict: Dictionary,
     builder: MessageBuilder<'static>,
     raw_decoder: RawDecoder<C>,
-    tag_lookup: TagLookup,
+    tag_lookup: IntMap<u16, FixDatatype>,
 }
 
 impl<C> Decoder<C>
@@ -71,6 +71,7 @@ where
                 state: DecoderState {
                     group_information: Vec::new(),
                     new_group: None,
+                    data_field_length: None,
                 },
                 raw: b"",
                 field_locators: Vec::new(),
@@ -83,7 +84,17 @@ where
                 bytes: b"",
             },
             raw_decoder: RawDecoder::with_config(config),
-            tag_lookup: TagLookup::from_dict(&dict),
+            tag_lookup: dict
+                .iter_fields()
+                .filter_map(|field| {
+                    let fix_type = field.data_type().basetype();
+                    if fix_type == FixDatatype::Length || fix_type == FixDatatype::NumInGroup {
+                        Some((field.tag().get(), fix_type))
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
         }
     }
 
@@ -138,15 +149,15 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{FieldAccess, Config, Decoder};
-    /// use fefix::definitions::fix42;
+    /// use fefix::definitions::fix44;
     /// use fefix::Dictionary;
     ///
-    /// let dict = Dictionary::fix42();
+    /// let dict = Dictionary::fix44();
     /// let decoder = &mut Decoder::<Config>::new(dict);
     /// decoder.config_mut().set_separator(b'|');
-    /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
+    /// let data = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
     /// let message = decoder.decode(data).unwrap();
-    /// assert_eq!(message.fv(fix42::SENDER_COMP_ID), Ok("A"));
+    /// assert_eq!(message.fv(fix44::SENDER_COMP_ID), Ok("A"));
     /// ```
     #[inline]
     pub fn decode<'a, T>(&'a mut self, bytes: T) -> Result<Message<'a, T>, DecodeError>
@@ -187,7 +198,10 @@ where
                 }
                 i_eq.unwrap()
             };
-            let field_value_len = {
+            let field_value_len = if let Some(len) = self.builder.state.data_field_length {
+                self.builder.state.data_field_length = None;
+                len
+            } else {
                 let len = (&payload[index_of_next_equal_sign + 1..])
                     .iter()
                     .copied()
@@ -251,11 +265,19 @@ where
                 config_assoc,
             )
             .unwrap();
-        let entry = self.tag_lookup.lookup(tag).unwrap();
-        if entry.data_type() == FixDatatype::NumInGroup {
+        let fix_type = self.tag_lookup.get(&tag.get());
+        if fix_type == Some(&FixDatatype::NumInGroup) {
             self.builder
                 .state
                 .add_group(tag, self.builder.field_locators.len() - 1, field_value);
+        } else if fix_type == Some(&FixDatatype::Length) {
+            // FIXME
+            let last_field_locator = self.builder.field_locators.last().unwrap();
+            let last_field = self.builder.fields.get(last_field_locator).unwrap();
+            let last_field_value = last_field.1;
+            let s = std::str::from_utf8(last_field_value).unwrap();
+            let data_field_length = str::parse(s).unwrap();
+            self.builder.state.data_field_length = Some(data_field_length);
         }
     }
 }
@@ -346,77 +368,6 @@ where
             builder: &self.decoder.builder,
             phantom: PhantomData::default(),
         }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct TagLookupEntry {
-    data_type: FixDatatype,
-    first_tag_of_group: TagU16,
-}
-
-impl TagLookupEntry {
-    pub fn data_type(&self) -> FixDatatype {
-        self.data_type
-    }
-}
-
-pub struct TagHasher {
-    hash: u64,
-}
-
-impl Hasher for TagHasher {
-    fn finish(&self) -> u64 {
-        self.hash
-    }
-
-    fn write(&mut self, bytes: &[u8]) {
-        for byte in bytes.iter().copied() {
-            self.hash = self
-                .hash
-                .wrapping_mul(10)
-                .wrapping_add(byte.wrapping_sub(b'0') as u64);
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct TagHashBuilder {}
-
-impl BuildHasher for TagHashBuilder {
-    type Hasher = TagHasher;
-
-    fn build_hasher(&self) -> Self::Hasher {
-        TagHasher { hash: 0 }
-    }
-}
-
-#[derive(Debug)]
-pub struct TagLookup {
-    current_dict: Dictionary,
-    entries: HashMap<TagU16, TagLookupEntry, TagHashBuilder>,
-}
-
-impl TagLookup {
-    pub fn from_dict(dict: &Dictionary) -> Self {
-        let mut entries = HashMap::with_hasher(TagHashBuilder {});
-        for field in dict.iter_fields() {
-            entries.insert(
-                field.tag(),
-                TagLookupEntry {
-                    data_type: field.data_type().basetype(),
-                    first_tag_of_group: TagU16::new(1).unwrap(),
-                },
-            );
-        }
-        Self {
-            current_dict: dict.clone(),
-            entries,
-        }
-    }
-
-    pub fn lookup(&self, tag: TagU16) -> Option<&TagLookupEntry> {
-        self.entries.get(&tag)
     }
 }
 
@@ -591,6 +542,7 @@ struct DecoderStateNewGroup {
 struct DecoderState {
     group_information: Vec<DecoderGroupState>,
     new_group: Option<DecoderStateNewGroup>,
+    data_field_length: Option<usize>,
 }
 
 impl DecoderState {
@@ -775,7 +727,7 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{definitions::fix42, definitions::fix44, tagvalue::Config};
+    use crate::{definitions::fix44, tagvalue::Config};
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
@@ -821,10 +773,10 @@ mod test {
         let bytes = b"8=FIX.4.2|9=196|35=X|49=A|56=B|34=12|52=20100318-03:21:11.364|262=A|268=2|279=0|269=0|278=BID|55=EUR/USD|270=1.37215|15=EUR|271=2500000|346=1|279=0|269=1|278=OFFER|55=EUR/USD|270=1.37224|15=EUR|271=2503200|346=1|10=171|";
         let decoder = &mut decoder();
         let message = decoder.decode(bytes).unwrap();
-        let group = message.group(fix42::NO_MD_ENTRIES).unwrap();
+        let group = message.group(fix44::NO_MD_ENTRIES).unwrap();
         assert_eq!(group.len(), 2);
         assert_eq!(
-            group.entry(0).fv_raw(fix42::MD_ENTRY_ID).unwrap(),
+            group.entry(0).fv_raw(fix44::MD_ENTRY_ID).unwrap(),
             b"BID" as &[u8]
         );
     }
@@ -898,6 +850,19 @@ mod test {
         let mut codec = decoder();
         let result = codec.decode(msg.as_bytes());
         assert_eq!(result, Err(DecodeError::Invalid));
+    }
+
+    #[test]
+    fn message_with_data_field() {
+        let msg =
+            "8=FIX.4.4|9=58|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|39=0|93=8|89=foo|\x01bar|10=000|";
+        let mut codec = decoder();
+        let result = codec.decode(msg.as_bytes()).unwrap();
+        assert_eq!(result.fv(fix44::SIGNATURE_LENGTH), Ok(8));
+        assert_eq!(
+            result.fv_raw(fix44::SIGNATURE),
+            Some(b"foo|\x01bar" as &[u8])
+        );
     }
 
     #[test]

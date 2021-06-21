@@ -69,6 +69,7 @@ pub enum DecodeError {
     FieldPresence,
     /// Invalid FIX message syntax.
     Invalid,
+    Length,
     CheckSum,
 }
 

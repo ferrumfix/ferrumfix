@@ -37,7 +37,7 @@ lazy_static! {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum FieldLocation {
     /// The field is located inside the "Standard Header".
-    StdHeader,
+    Header,
     /// This field is located inside the body of the FIX message.
     Body,
     /// This field is located inside the "Standard Trailer".
@@ -380,15 +380,15 @@ impl Dictionary {
             .map(|data| Field(self, data))
     }
 
-    /// Returns an [`Iterator`](Iterator) over all [`Datatype`](Datatype) defined
+    /// Returns an [`Iterator`] over all [`Datatype`] defined
     /// in `self`. Items are in no particular order.
     ///
     /// ```
     /// use fefix::Dictionary;
     ///
-    /// let dict = Dictionary::fix42();
-    /// // FIX 4.2 defines 19 datatypes.
-    /// assert_eq!(dict.iter_datatypes().count(), 19);
+    /// let dict = Dictionary::fix44();
+    /// // FIX 4.4 defines 23 (FIXME) datatypes.
+    /// assert_eq!(dict.iter_datatypes().count(), 23);
     /// ```
     pub fn iter_datatypes(&self) -> impl Iterator<Item = Datatype> {
         self.inner
@@ -397,7 +397,7 @@ impl Dictionary {
             .map(move |data| Datatype(self, data))
     }
 
-    /// Returns an [`Iterator`](Iterator) over this [`Dictionary`]'s messages. Items are in
+    /// Returns an [`Iterator`] over this [`Dictionary`]'s messages. Items are in
     /// no particular order.
     ///
     /// ```
@@ -556,7 +556,7 @@ struct ComponentData {
     /// **Primary key.** The unique integer identifier of this component
     /// type.
     id: usize,
-    component_type: ComponentType,
+    component_type: FixmlComponentAttributes,
     layout_items: Vec<LayoutItemData>,
     category_iid: InternalId,
     /// The human readable name of the component.
@@ -591,10 +591,7 @@ impl<'a> Component<'a> {
     /// otherwise.
     pub fn is_group(&self) -> bool {
         match self.1.component_type {
-            ComponentType::BlockRepeating => true,
-            ComponentType::ImplicitBlockRepeating => true,
-            ComponentType::OptimisedBlockRepeating => true,
-            ComponentType::OptimisedImplicitBlockRepeating => true,
+            FixmlComponentAttributes::Block { is_repeating, .. } => is_repeating,
             _ => false,
         }
     }
@@ -634,18 +631,13 @@ impl<'a> Component<'a> {
 /// Component type (FIXML-specific information).
 #[derive(Clone, Debug, PartialEq)]
 #[allow(dead_code)]
-pub enum ComponentType {
-    /// A repeating block.
-    BlockRepeating,
-    /// A non-repeating block.
-    Block,
-    /// An implicit block.
-    ImplicitBlockRepeating,
-    /// An implicit non-repeating block.
-    ImplicitBlock,
-    OptimisedBlockRepeating,
-    OptimisedImplicitBlockRepeating,
-    XMLDataBlock,
+pub enum FixmlComponentAttributes {
+    Xml,
+    Block {
+        is_repeating: bool,
+        is_implicit: bool,
+        is_optimized: bool,
+    },
     Message,
 }
 
@@ -854,7 +846,7 @@ mod datatype {
                 "FLOAT" => FixDatatype::Float,
                 "INT" => FixDatatype::Int,
                 "LANGUAGE" => FixDatatype::Language,
-                "LENGTH" => FixDatatype::Int,
+                "LENGTH" => FixDatatype::Length,
                 "LOCALMKTDATE" => FixDatatype::LocalMktDate,
                 "MONTHYEAR" => FixDatatype::MonthYear,
                 "MULTIPLECHARVALUE" | "MULTIPLEVALUESTRING" => FixDatatype::MultipleCharValue,
@@ -871,7 +863,7 @@ mod datatype {
                 "UTCDATEONLY" => FixDatatype::UtcDateOnly,
                 "UTCTIMEONLY" => FixDatatype::UtcTimeOnly,
                 "UTCTIMESTAMP" => FixDatatype::UtcTimestamp,
-                "SEQNUM" => FixDatatype::Int,
+                "SEQNUM" => FixDatatype::SeqNum,
                 "TIME" => FixDatatype::UtcTimestamp,
                 "XMLDATA" => FixDatatype::XmlData,
                 _ => {
@@ -1672,7 +1664,12 @@ mod quickfix {
         }
         let component = ComponentData {
             id: 0,
-            component_type: ComponentType::Block,
+            component_type: FixmlComponentAttributes::Block {
+                // FIXME
+                is_implicit: false,
+                is_repeating: false,
+                is_optimized: false,
+            },
             layout_items,
             category_iid: 0, // FIXME
             name: name.as_ref().to_string(),
