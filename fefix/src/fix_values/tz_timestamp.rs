@@ -1,22 +1,22 @@
-use std::time::Duration;
-
-use super::{FixValue, Timestamp};
+use super::{FixValue, Timestamp, Tz};
 use crate::Buffer;
 
+/// A time and date combination representing local time with an offset from UTC.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TzTimestamp {
     timestamp: Timestamp,
-    is_utc: bool,
-    tz_offset: Duration,
+    tz: Tz,
 }
 
 impl TzTimestamp {
+    /// Returns the [`Timestamp`] (without timezone information) of `self`.
     pub fn timestamp(&self) -> Timestamp {
         self.timestamp.clone()
     }
 
-    pub fn is_utc(&self) -> bool {
-        self.is_utc
+    /// Returns the [`Tz`] timezone information of `self`.
+    pub fn timezone(&self) -> Tz {
+        self.tz
     }
 }
 

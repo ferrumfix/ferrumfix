@@ -1,5 +1,7 @@
+use std::iter::FusedIterator;
+
 /// An [`Iterator`] over space-delimited bytes in a
-/// `MultipleCharValue` field.
+/// `MultipleCharValue` FIX field.
 ///
 /// # Example
 ///
@@ -15,13 +17,12 @@
 #[derive(Debug, Clone)]
 pub struct MultipleChars<'a> {
     data: &'a [u8],
-    i: usize,
 }
 
 impl<'a> MultipleChars<'a> {
     /// Creates a new [`MultipleChars`] from raw `data`.
     pub fn new(data: &'a [u8]) -> Self {
-        Self { data, i: 0 }
+        Self { data }
     }
 }
 
@@ -29,15 +30,38 @@ impl<'a> Iterator for MultipleChars<'a> {
     type Item = u8;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.i >= self.data.len() {
-            None
-        } else {
-            let byte = self.data[self.i];
-            self.i += 2;
+        if let Some(byte) = self.data.get(0).copied() {
+            self.data = &self.data[2..];
             Some(byte)
+        } else {
+            None
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let num_elements = (self.data.len() + 1) / 2;
+        (num_elements, Some(num_elements))
+    }
+}
+
+impl<'a> ExactSizeIterator for MultipleChars<'a> {
+    fn len(&self) -> usize {
+        (self.data.len() + 1) / 2
+    }
+}
+
+impl<'a> DoubleEndedIterator for MultipleChars<'a> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if let Some(byte) = self.data.last().copied() {
+            self.data = &self.data[..self.data.len() - 2];
+            Some(byte)
+        } else {
+            None
         }
     }
 }
+
+impl<'a> FusedIterator for MultipleChars<'a> {}
 
 #[cfg(test)]
 mod test {

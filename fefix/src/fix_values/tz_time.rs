@@ -1,19 +1,29 @@
-use super::FixValue;
+use super::{FixValue, Tz};
 use crate::Buffer;
-use std::time::Duration;
 
 const ERR_INVALID: &str = "Invalid time.";
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+/// Timezone-aware intra-day timestamp.
+///
+/// # Examples
+///
+/// ```
+/// use fefix::FixValue;
+/// use fefix::fix_values::{Tz, TzTime};
+///
+/// let tztime = TzTime::deserialize(b"07:39:20Z").unwrap();
+/// assert_eq!(tztime.hour(), 7);
+/// assert_eq!(tztime.minute(), 39);
+/// assert_eq!(tztime.second(), 20);
+/// assert_eq!(tztime.timezone(), Tz::UTC);
+/// ```
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TzTime {
     hour: u32,
     minute: u32,
     second: u32,
     second_is_explicit: bool,
-    tz_is_explicit: bool,
-    tz_offset_hour: i32,
-    tz_offset_minute: i32,
-    tz_offset_minute_is_explicit: bool,
+    tz: Tz,
 }
 
 impl TzTime {
@@ -32,16 +42,21 @@ impl TzTime {
         self.hour
     }
 
+    /// Returns the minutes' portion of `self`. This goes from 0 to 59
+    /// (including), but can go up to 60 for leap seconds.
     pub fn minute(&self) -> u32 {
         self.minute
     }
 
+    /// Returns the seconds' portion of `self`. This goes from 0 to 59
+    /// (including), but can go up to 60 for leap seconds.
     pub fn second(&self) -> u32 {
         self.second
     }
 
-    pub fn tz_offset(&self) -> Duration {
-        Duration::from_secs((self.tz_offset_hour * 3600 + self.tz_offset_minute * 60) as u64)
+    /// Returns the timezone ([`Tz`]) of `self`.
+    pub fn timezone(&self) -> Tz {
+        self.tz
     }
 }
 
@@ -64,27 +79,12 @@ impl<'a> FixValue<'a> for TzTime {
             b':',
             self.second() as u8 / 10,
             self.second() as u8 % 10,
-            b'+',
-            self.tz_offset_hour as u8 / 10,
-            self.tz_offset_hour as u8 % 10,
-            b':',
-            self.tz_offset_minute as u8 / 10,
-            self.tz_offset_minute as u8 % 10,
         ];
         buffer.extend_from_slice(bytes);
-        bytes.len()
+        bytes.len() + self.timezone().serialize(buffer)
     }
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        fn parse_timezone(data: &[u8]) -> Option<(bool, i32, i32)> {
-            match data[0] {
-                // FIXME
-                b'Z' => Some((true, 0, 0)),
-                b'+' => Some((false, 0, 0)),
-                b'-' => Some((false, 0, 0)),
-                _ => None,
-            }
-        }
         if data.len() < 6 || data[2] != b':' {
             return Err(ERR_INVALID);
         }
@@ -93,33 +93,21 @@ impl<'a> FixValue<'a> for TzTime {
         match data[5] {
             b':' => {
                 let second = ascii_digit_to_u32(data[6], 10) + ascii_digit_to_u32(data[7], 1);
-                let (is_utc, tz_offset_hour, tz_offset_minute) =
-                    parse_timezone(&data[8..]).ok_or(ERR_INVALID)?;
                 Ok(TzTime {
                     hour,
                     minute,
                     second,
                     second_is_explicit: true,
-                    tz_is_explicit: !is_utc,
-                    tz_offset_hour,
-                    tz_offset_minute,
-                    tz_offset_minute_is_explicit: false,
+                    tz: Tz::deserialize(&data[8..]).map_err(|_| ERR_INVALID)?,
                 })
             }
-            _ => {
-                let (is_utc, tz_offset_hour, tz_offset_minute) =
-                    parse_timezone(&data[5..]).ok_or(ERR_INVALID)?;
-                Ok(TzTime {
-                    hour,
-                    minute,
-                    second: 0,
-                    second_is_explicit: false,
-                    tz_is_explicit: !is_utc,
-                    tz_offset_hour,
-                    tz_offset_minute,
-                    tz_offset_minute_is_explicit: false,
-                })
-            }
+            _ => Ok(TzTime {
+                hour,
+                minute,
+                second: 0,
+                second_is_explicit: false,
+                tz: Tz::deserialize(&data[5..]).map_err(|_| ERR_INVALID)?,
+            }),
         }
     }
 }

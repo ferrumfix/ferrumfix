@@ -1,7 +1,9 @@
+use std::iter::FusedIterator;
+
 const SEPARATOR: u8 = b' ';
 
 /// An [`Iterator`] over space-delimited byte sequences in a
-/// `MultipleStringValue` field.
+/// `MultipleStringValue` FIX field.
 ///
 /// # Example
 ///
@@ -47,6 +49,8 @@ impl<'a> Iterator for MultipleStrings<'a> {
         Some(&self.data[i_start..i_end])
     }
 }
+
+impl<'a> FusedIterator for MultipleStrings<'a> {}
 
 #[cfg(test)]
 mod test {

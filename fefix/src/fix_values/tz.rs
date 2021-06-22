@@ -1,6 +1,6 @@
 use super::FixValue;
 use crate::Buffer;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 use std::time::Duration;
 
 const ERR_INVALID: &str = "Invalid timezone.";
@@ -30,40 +30,44 @@ const MINUTE: u32 = 60;
 /// let timezone = Tz::deserialize(b"+04:30").unwrap();
 /// assert_eq!(timezone.offset(), (1, Duration::from_secs(4 * 3600 + 30 * 60)));
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Tz {
-    sign: i32,
-    offset: Duration,
-    offset_has_minutes: bool,
-    is_utc: bool,
+    offset_from_utc_in_seconds: i32,
 }
 
 impl Tz {
     /// The UTC timezone.
     pub const UTC: Self = Self {
-        sign: 0,
-        offset: Duration::from_secs(0),
-        offset_has_minutes: false,
-        is_utc: true,
+        offset_from_utc_in_seconds: 0,
     };
 
     /// Calculates the offset information of `self` as compared to UTC. The
     /// return value is in the form of a sign (-1, 0, or +1) and a [`Duration`].
     pub fn offset(&self) -> (i32, Duration) {
-        (self.sign, self.offset)
+        (
+            self.offset_from_utc_in_seconds.signum(),
+            Duration::from_secs(self.offset_from_utc_in_seconds.abs() as u64),
+        )
     }
 
+    /// Returns the raw offset from UTC of `self` measured in seconds.
+    pub fn offset_as_secs(&self) -> i32 {
+        self.offset_from_utc_in_seconds
+    }
+
+    /// Converts `self` into a [`chrono::FixedOffset`].
+    #[cfg(feature = "utils-chrono")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
     pub fn to_chrono_offset(&self) -> chrono::FixedOffset {
         chrono::FixedOffset::east(self.offset().1.as_secs() as i32)
     }
 
+    /// Creates a [`Tz`] from a [`chrono::FixedOffset`].
+    #[cfg(feature = "utils-chrono")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
     pub fn from_chrono_offset(offset: chrono::FixedOffset) -> Self {
-        let local_minus_utc = offset.local_minus_utc();
         Self {
-            sign: local_minus_utc.signum(),
-            offset: Duration::from_secs(local_minus_utc.abs() as u64),
-            offset_has_minutes: true,
-            is_utc: local_minus_utc == 0,
+            offset_from_utc_in_seconds: offset.local_minus_utc(),
         }
     }
 }
@@ -78,23 +82,27 @@ impl<'a> FixValue<'a> for Tz {
     where
         B: Buffer,
     {
-        if self.is_utc {
+        if self.offset_from_utc_in_seconds == 0 {
             buffer.extend_from_slice(b"Z");
             1
         } else {
-            let sign = if self.offset().0 > 0 { b'+' } else { b'-' };
+            let sign = if self.offset_from_utc_in_seconds > 0 {
+                b'+'
+            } else {
+                b'-'
+            };
             let hour = self.offset().1.as_secs() as u32 / HOUR;
             buffer.extend_from_slice(&[
                 sign,
                 u32_digit_to_ascii(hour / 10),
                 u32_digit_to_ascii(hour % 10),
             ]);
-            if self.offset_has_minutes {
-                let minute = self.offset().1.as_secs() as u32 / MINUTE;
+            let minutes = (self.offset().1.as_secs() as u32 % 3600) / 60;
+            if minutes != 0 {
                 buffer.extend_from_slice(&[
                     b':',
-                    u32_digit_to_ascii(minute / 10),
-                    u32_digit_to_ascii(minute % 10),
+                    u32_digit_to_ascii(minutes / 10),
+                    u32_digit_to_ascii(minutes % 10),
                 ]);
                 6
             } else {
@@ -124,20 +132,14 @@ impl<'a> FixValue<'a> for Tz {
             3 => {
                 let hour = ascii_digit_to_u32(data[1], 10) + ascii_digit_to_u32(data[2], 1);
                 Ok(Self {
-                    sign,
-                    offset: Duration::from_secs((hour * HOUR) as u64),
-                    is_utc: false,
-                    offset_has_minutes: false,
+                    offset_from_utc_in_seconds: sign * (hour * HOUR) as i32,
                 })
             }
             6 => {
                 let hour = ascii_digit_to_u32(data[1], 10) + ascii_digit_to_u32(data[2], 1);
                 let minute = ascii_digit_to_u32(data[4], 10) + ascii_digit_to_u32(data[5], 1);
                 Ok(Self {
-                    sign,
-                    offset: Duration::from_secs((hour * HOUR + minute * MINUTE) as u64),
-                    is_utc: false,
-                    offset_has_minutes: false,
+                    offset_from_utc_in_seconds: sign * (hour * HOUR + minute * MINUTE) as i32,
                 })
             }
             _ => Err(ERR_INVALID),
@@ -151,10 +153,7 @@ impl<'a> FixValue<'a> for Tz {
                 let sign = if data[0] == b'+' { 1 } else { -1 };
                 let hour = ascii_digit_to_u32(data[1], 10) + ascii_digit_to_u32(data[2], 1);
                 Ok(Self {
-                    sign,
-                    offset: Duration::from_secs((hour * HOUR) as u64),
-                    is_utc: false,
-                    offset_has_minutes: false,
+                    offset_from_utc_in_seconds: sign * (hour * HOUR) as i32,
                 })
             }
             6 => {
@@ -162,28 +161,11 @@ impl<'a> FixValue<'a> for Tz {
                 let hour = ascii_digit_to_u32(data[1], 10) + ascii_digit_to_u32(data[2], 1);
                 let minute = ascii_digit_to_u32(data[4], 10) + ascii_digit_to_u32(data[5], 1);
                 Ok(Self {
-                    sign,
-                    offset: Duration::from_secs((hour * HOUR + minute * MINUTE) as u64),
-                    is_utc: false,
-                    offset_has_minutes: false,
+                    offset_from_utc_in_seconds: sign * (hour * HOUR + minute * MINUTE) as i32,
                 })
             }
             _ => Err(ERR_INVALID),
         }
-    }
-}
-
-impl PartialEq for Tz {
-    fn eq(&self, other: &Self) -> bool {
-        self.offset == other.offset
-    }
-}
-
-impl Eq for Tz {}
-
-impl Hash for Tz {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.offset.hash(state);
     }
 }
 
@@ -206,14 +188,22 @@ mod test {
     }
 
     #[test]
-    fn utc_deserialize() {
+    fn utc() {
         assert_eq!(Tz::deserialize(b"Z").unwrap(), Tz::UTC);
+        assert_eq!(&Tz::UTC.to_bytes()[..], "Z".as_bytes());
+        assert_eq!(Tz::UTC.offset_as_secs(), 0);
     }
 
     #[test]
-    fn serialize_utc() {
-        let buffer = &mut Vec::new();
-        assert_eq!(Tz::UTC.serialize(buffer), 1);
-        assert_eq!(&buffer[..], b"Z");
+    fn negative_with_minutes() {
+        let tz = Tz::deserialize(b"-03:30").unwrap();
+        assert_eq!(&tz.to_bytes()[..], "-03:30".as_bytes());
+    }
+
+    #[test]
+    fn negative_without_minutes() {
+        let tz = Tz::deserialize(b"-01").unwrap();
+        assert_eq!(&tz.to_bytes()[..], "-01".as_bytes());
+        assert_eq!(tz.offset_as_secs(), -3600);
     }
 }
