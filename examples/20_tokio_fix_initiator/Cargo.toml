@@ -1,0 +1,12 @@
+[package]
+name = "example_tokio_fix_initiator"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+fefix = { path = "../../fefix", features = ["fix42"] }
+slog = "2"
+slog-term = "2"
+slog-async = "2"
+tokio = { version = "1", features = ["net", "io-util", "macros"] }
+tokio-util = { version = "0.6", features = ["compat"] }

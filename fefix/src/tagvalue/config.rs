@@ -1,11 +1,37 @@
 const SOH: u8 = 0x1;
 const DEFAULT_MAX_MESSAGE_SIZE: usize = 0xffff;
 
-/// Collection of configuration options related to FIX encoding and decoding.
+/// A provider of configuration options related to FIX encoding and decoding.
 ///
-/// # Naming conventions
+/// # Implementing this trait
 ///
-/// Implementors of this trait should start with `Config`.
+/// Before implementing this trait, you should look into [`Config`], which is
+/// adequate for most uses. The only benefit of writing your own [`Configure`]
+/// implementor rather than using [`Config`] is the possibility of relying on
+/// constants in code rather than accessing `struct` members, which results in
+/// better inlining by LLVM. E.g.
+///
+/// ```
+/// use fefix::tagvalue::Configure;
+///
+/// #[derive(Default, Copy, Clone)]
+/// struct FixInlineConfig {}
+///
+/// impl Configure for FixInlineConfig {
+///     #[inline]
+///     fn max_message_size(&self) -> Option<usize> {
+///         None
+///     }
+///
+///     #[inline]
+///     fn verify_checksum(&self) -> bool {
+///         true
+///     }
+/// }
+/// ```
+///
+/// Needless to say, **think twice before polluting your codebase with such
+/// micro-optimizations.
 pub trait Configure: Clone + Default {
     /// The delimiter character, which terminates every tag-value pair including
     /// the last one.
@@ -13,14 +39,14 @@ pub trait Configure: Clone + Default {
     /// ASCII 0x1 (SOH) is the default separator character.
     ///
     /// This setting is relevant for both encoding and decoding operations.
-    #[inline(always)]
+    #[inline]
     fn separator(&self) -> u8 {
         SOH
     }
 
     /// The maximum allowed size for any single FIX message. No restrictions are
     /// imposed when it is `None`.
-    #[inline(always)]
+    #[inline]
     fn max_message_size(&self) -> Option<usize> {
         Some(DEFAULT_MAX_MESSAGE_SIZE)
     }
@@ -28,38 +54,37 @@ pub trait Configure: Clone + Default {
     /// Determines wheather or not `CheckSum(10)` should be verified.
     ///
     /// This setting has no effect when encoding FIX messages.
-    #[inline(always)]
+    #[inline]
     fn verify_checksum(&self) -> bool {
         true
     }
 
     /// Determines wheather or not the decoder needs to have access to
     /// associative FIX fields.
-    #[inline(always)]
+    #[inline]
     fn should_decode_associative(&self) -> bool {
-        true
-    }
-
-    /// Determines wheather or not the decoder needs to have access to
-    /// sequential FIX fields.
-    #[inline(always)]
-    fn should_decode_sequential(&self) -> bool {
         true
     }
 }
 
-/// The canonical implementor of [`Configure`]. Every setting can be changed.
+/// A `struct` that has settable fields and implements [`Configure`].
+///
+/// When using [`Config`], you have full control over all FIX configuration
+/// options offered by `fefix`. The documentation of [`Configure`] goes into
+/// detail about the reasons why you might want to use something other than
+/// [`Config`].
 #[derive(Debug, Copy, Clone)]
 pub struct Config {
     separator: u8,
     max_message_size: Option<usize>,
     verify_checksum: bool,
     should_decode_associative: bool,
-    should_decode_sequential: bool,
 }
 
 impl Config {
     /// Changes the field separator character. It is SOH (ASCII 0x1) by default.
+    /// This also disables checksum verification for decode operations to avoid
+    /// checksum issues if not SOH.
     ///
     /// # Examples
     ///
@@ -73,8 +98,10 @@ impl Config {
     /// ```
     pub fn set_separator(&mut self, separator: u8) {
         self.separator = separator;
+        self.verify_checksum = separator == SOH;
     }
 
+    /// Changes the value of [`Configure::max_message_size`].
     pub fn set_max_message_size(&mut self, max_message_size: Option<usize>) {
         self.max_message_size = max_message_size;
     }
@@ -103,40 +130,27 @@ impl Config {
     pub fn set_decode_assoc(&mut self, should: bool) {
         self.should_decode_associative = should;
     }
-
-    /// Enables or disables iterative access of fields within a
-    /// [`Message`](super::Message).
-    ///
-    /// Enabled by default.
-    pub fn set_decode_seq(&mut self, should: bool) {
-        self.should_decode_sequential = should;
-    }
 }
 
 impl Configure for Config {
-    #[inline(always)]
+    #[inline]
     fn separator(&self) -> u8 {
         self.separator
     }
 
-    #[inline(always)]
+    #[inline]
     fn verify_checksum(&self) -> bool {
         self.verify_checksum
     }
 
-    #[inline(always)]
+    #[inline]
     fn max_message_size(&self) -> Option<usize> {
         self.max_message_size
     }
 
-    #[inline(always)]
+    #[inline]
     fn should_decode_associative(&self) -> bool {
         self.should_decode_associative
-    }
-
-    #[inline(always)]
-    fn should_decode_sequential(&self) -> bool {
-        self.should_decode_sequential
     }
 }
 
@@ -147,7 +161,6 @@ impl Default for Config {
             separator: SOH,
             verify_checksum: true,
             should_decode_associative: true,
-            should_decode_sequential: true,
         }
     }
 }

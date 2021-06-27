@@ -1,20 +1,11 @@
 //! Zero-copy buffering utilities.
 
-use std::io;
-
-/// Operations on a growable in-memory buffer. Superset of [`std::io::Write`].
+/// Operations on a growable in-memory buffer.
 ///
-/// [`Buffer`] allows common data operations on in-memory data buffers. All
-/// implementors also must infallibly implement [`std::io::Write`]. While
-/// [`std::io::Write`] only allows sequential write operations, [`Bufer`] allows
+/// [`Buffer`] allows common data operations on in-memory data buffers. While
+/// [`std::io::Write`] only allows sequential write operations, [`Buffer`] allows
 /// arbitrary data manipulation over the whole buffer.
-///
-/// Please note that calls to [`std::io::Write::flush`] on [`Buffer`]
-/// implementors should have **no** effect.
-pub trait Buffer
-where
-    Self: io::Write,
-{
+pub trait Buffer {
     /// Returns an immutable reference to the contents of the buffer.
     fn as_slice(&self) -> &[u8];
 
@@ -75,32 +66,50 @@ impl Buffer for Vec<u8> {
     }
 }
 
+#[cfg(feature = "utils-bytes")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "utils-bytes")))]
+impl Buffer for bytes::BytesMut {
+    fn as_slice(&self) -> &[u8] {
+        &self[..]
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [u8] {
+        &mut self[..]
+    }
+
+    fn capacity(&self) -> usize {
+        bytes::BytesMut::capacity(self)
+    }
+
+    fn clear(&mut self) {
+        bytes::BytesMut::clear(self)
+    }
+
+    fn extend_from_slice(&mut self, extend: &[u8]) {
+        bytes::BytesMut::extend_from_slice(self, extend)
+    }
+
+    fn resize(&mut self, new_len: usize, filler: u8) {
+        bytes::BytesMut::resize(self, new_len, filler)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
-    use quickcheck::QuickCheck;
+    use quickcheck_macros::quickcheck;
 
-    #[test]
-    fn vec_slicing_is_consistent() {
-        fn prop(mut vec: Vec<u8>) -> bool {
-            let buf_as_slice = Vec::from(Buffer::as_mut_slice(&mut vec));
-            let buf_as_mut_slice = Vec::from(Buffer::as_slice(&vec));
-            let buf_len = Buffer::len(&vec);
-            buf_as_slice == buf_as_mut_slice && buf_as_slice.len() == buf_len
-        }
-        QuickCheck::new()
-            .tests(1000)
-            .quickcheck(prop as fn(Vec<u8>) -> bool)
+    #[quickcheck]
+    fn vec_slicing_is_consistent(mut vec: Vec<u8>) -> bool {
+        let buf_as_slice = Vec::from(Buffer::as_mut_slice(&mut vec));
+        let buf_as_mut_slice = Vec::from(Buffer::as_slice(&vec));
+        let buf_len = Buffer::len(&vec);
+        buf_as_slice == buf_as_mut_slice && buf_as_slice.len() == buf_len
     }
 
-    #[test]
-    fn vec_clear_always_removes_content() {
-        fn prop(mut vec: Vec<u8>) -> bool {
-            Buffer::clear(&mut vec);
-            vec.len() == 0
-        }
-        QuickCheck::new()
-            .tests(1000)
-            .quickcheck(prop as fn(Vec<u8>) -> bool)
+    #[quickcheck]
+    fn vec_clear_always_removes_content(mut vec: Vec<u8>) -> bool {
+        Buffer::clear(&mut vec);
+        vec.len() == 0
     }
 }

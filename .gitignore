@@ -1,3 +1,4 @@
+.vscode/
 generated_*.rs
 target/
 **/*.rs.bk

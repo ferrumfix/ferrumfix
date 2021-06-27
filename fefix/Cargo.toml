@@ -1,6 +1,6 @@
 [package]
 name = "fefix"
-version = "0.5.1"
+version = "0.6.0"
 edition = "2018"
 authors = ["Filippo Costa @neysofu"]
 homepage = "https://github.com/neysofu/ferrum-fix"
@@ -12,6 +12,12 @@ keywords = ["fix", "fast", "protocol", "finance", "fintech"]
 categories = ["network-programming", "parser-implementations", "encoding"]
 license = "MIT OR Apache-2.0"
 
+# https://stackoverflow.com/q/61417452/
+# Test locally using `RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features`.
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "doc_cfg"]
+
 [lib]
 name = "fefix"
 
@@ -20,7 +26,8 @@ name = "fix_decode"
 harness = false
 
 [features]
-default = ["expose_openssl", "expose_tokio", "chrono_time"]
+default = ["fixs", "utils-openssl", "utils-tokio", "utils-chrono"]
+derive = []
 fix40 = []
 fix41 = []
 fix42 = []
@@ -29,42 +36,71 @@ fix50 = []
 fix50sp1 = []
 fix50sp2 = []
 fixt11 = []
-fast-encoding = []
-json-encoding = []
 fixs = []
 fixp = []
+fast-encoding = []
+json-encoding = []
 sofh = []
-chrono_time = []
-expose_openssl = []
-expose_tokio = []
+codegen = ["heck", "indoc"]
+utils-bytes = ["bytes"]
+utils-chrono = []
+utils-decimal = ["decimal"]
+utils-openssl = ["openssl"]
+utils-rust-decimal = ["rust_decimal"]
+utils-slog = ["slog"]
+utils-tokio = ["tokio-util", "utils-bytes"]
+
+full = [
+    "codegen",
+    "derive",
+    "fix40",
+    "fix41",
+    "fix42",
+    "fix43",
+    "fix50",
+    "fix50sp1",
+    "fix50sp2",
+    "fixt11",
+    "fixs",
+    "fixp",
+    "fast-encoding",
+    "json-encoding",
+    "sofh",
+    "utils-bytes",
+    "utils-chrono",
+    "utils-decimal",
+    "utils-openssl",
+    "utils-rust-decimal",
+    "utils-slog",
+    "utils-tokio",
+]
 
 [dependencies]
 bitvec = "0.18.3"
-bytes = "1"
-boolinator = "2.4.0"
+bytes = { version="1", optional=true }
 chrono = "0.4"
-fixed = "1.6"
+decimal = { version="2", optional=true }
+fefix_derive = { path="../fefix_derive", version="0.6" }
 fnv = "1"
 futures = "0.3"
 futures-timer = "3"
-futures-lite = "1"
-heck = "0.3"
-indoc = "1"
+heck = { version="0.3", optional=true }
+indoc = { version="1", optional=true }
+nohash-hasher = "0.2"
 lazy_static = "1"
-openssl = "0.10"
-quick-xml = "0.22"
-rand = "0.8"
+openssl = { version="0.10", optional=true }
+# For reading XML.
 roxmltree = "0.14"
-rust_decimal = "1"
-serde = { version = "1.0", features = ["derive"] }
+rust_decimal = { version="1", optional=true }
+serde = { version="1.0", features=["derive"] }
 serde_json = "1"
-slog = "2"
-sqlx = { version = "0.5", features = ["runtime-tokio-rustls", "postgres"] }
+slog = { version="2", optional=true }
+sqlx = { version="0.5", features=["runtime-tokio-rustls", "postgres"] }
 strum = "0.20"
 strum_macros = "0.20"
-tokio = { version = "1", features = ["full"] }
-uuid = { version = "0.8.1", features = ["v4"] }
-fefix_derive = "0.5.0"
+thiserror = "1"
+tokio-util = { version="0.6", optional=true, features=["codec"] }
+uuid = { version="0.8.1", features=["v4"] }
 
 [build-dependencies]
 chrono = "0.4"
@@ -79,22 +115,10 @@ strum = "0.20"
 strum_macros = "0.20"
 
 [dev-dependencies]
-arbitrary = { version = "1.0", features = ["derive"] }
-criterion = { version = "0.3", features = ["html_reports"] }
+arbitrary = { version="1.0", features=["derive"] }
+criterion = { version="0.3", features=["html_reports"] }
 enum-as-inner = "0.3"
 quickcheck = "1"
 quickcheck_derive = "0.3"
 quickcheck_macros = "1"
-syn = { version = "1", features = ["parsing"] }
-
-# Dirty hack to enable all features for tests.
-# https://github.com/rust-lang/cargo/issues/2911#issuecomment-749580481
-[dev-dependencies.fefix]
-path = "."
-features = [
-    "fast-encoding",
-    "json-encoding",
-    "fixp",
-    "fixs",
-    "sofh",
-]
+syn = { version="1", features=["parsing"] }

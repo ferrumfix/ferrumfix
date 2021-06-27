@@ -1,6 +1,5 @@
-use fefix::definitions::fix42;
-use fefix::tagvalue::{Config, Decoder, Fv};
-use fefix::Dictionary;
+use fefix::prelude::*;
+use fefix::tagvalue::{Config, Decoder};
 use std::io::{Cursor, Read};
 
 const FIX_MESSAGES: &[&[u8]] = &[
@@ -19,13 +18,13 @@ fn main() {
     // In this case, the FIX message is specified using "|" rather than SOH
     // (ASCII 0x1) bytes. FerrumFIX supports this.
     fix_decoder.config_mut().set_separator(b'|');
-    fix_decoder.config_mut().set_verify_checksum(false);
     let stream = &mut Cursor::new(fix_stream());
     loop {
         let buffer = &mut fix_decoder.supply_buffer();
         // You *must* use `std::io::Read::read_exact`.
         stream.read_exact(buffer).unwrap();
-        if let Ok(Some(msg)) = fix_decoder.current_message() {
+        if let Ok(Some(())) = fix_decoder.state() {
+            let msg = fix_decoder.message();
             assert_eq!(msg.fv(fix42::BEGIN_STRING), Ok("FIX.4.2"));
         }
     }

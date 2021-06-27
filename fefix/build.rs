@@ -2,7 +2,7 @@
 // caught anyway during compilation. Enabling compiler diagnostics would thus
 // have the undesirable effect of showing two identical warnings.
 #[allow(warnings)]
-#[path = "src/fefix_core/mod.rs"]
+#[path = "src/fefix_core/build_rs_mod.rs"]
 mod fefix_core;
 
 use fefix_core::{codegen, dict::Dictionary};
@@ -13,6 +13,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 fn main() -> io::Result<()> {
+    println!("cargo:rerun-if-changed=src/fefix_core");
     #[cfg(feature = "fix40")]
     codegen(Dictionary::fix40(), "fix40.rs")?;
     #[cfg(feature = "fix41")]
@@ -21,6 +22,7 @@ fn main() -> io::Result<()> {
     codegen(Dictionary::fix42(), "fix42.rs")?;
     #[cfg(feature = "fix43")]
     codegen(Dictionary::fix43(), "fix43.rs")?;
+    // FIX 4.4 is always available.
     codegen(Dictionary::fix44(), "fix44.rs")?;
     #[cfg(feature = "fix50")]
     codegen(Dictionary::fix50(), "fix50.rs")?;
@@ -34,8 +36,13 @@ fn main() -> io::Result<()> {
 }
 
 fn codegen(fix_dictionary: Dictionary, filename: &str) -> io::Result<()> {
+    // All generated code must go in `OUT_DIR`. We avoid writing directly to
+    // `src/` to avoid compilation issues on `crates.io`, which disallows
+    // writing.
     let dir = PathBuf::from(var("OUT_DIR").unwrap());
-    let code = codegen::module_with_field_definitions(fix_dictionary, "crate");
+    let codegen_settings = &mut codegen::Settings::default();
+    codegen_settings.set_fefix_crate_name("crate");
+    let code = codegen::gen_definitions(fix_dictionary, &codegen_settings);
     let path = dir.join(filename);
     let file = &mut File::create(path)?;
     file.write_all(code.as_bytes())?;

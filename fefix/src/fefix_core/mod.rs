@@ -1,5 +1,7 @@
-/// FerrumFIX code generation utilities.
+//! FerrumFIX code generation utilities.
 
+#[cfg(feature = "codegen")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "codegen")))]
 pub mod codegen;
 pub mod dict;
 

@@ -1,5 +1,4 @@
 use super::errs;
-use boolinator::Boolinator;
 use std::ops::RangeInclusive;
 use std::time::Duration;
 
@@ -60,13 +59,30 @@ impl HeartbeatRule {
     /// ```
     pub fn validate(&self, proposal: &Duration) -> std::result::Result<(), String> {
         match self {
-            HeartbeatRule::Exact(expected) => (proposal == expected)
-                .ok_or_else(|| errs::heartbeat_exact(expected.as_secs())),
-            HeartbeatRule::Range(range) => range.contains(proposal).ok_or_else(|| {
-                errs::heartbeat_range(range.start().as_secs(), range.end().as_secs())
-            }),
-            HeartbeatRule::Any => (*proposal != Duration::from_secs(0))
-                .ok_or_else(|| errs::heartbeat_gt_0()),
+            HeartbeatRule::Exact(expected) => {
+                if proposal == expected {
+                    Ok(())
+                } else {
+                    Err(errs::heartbeat_exact(expected.as_secs()))
+                }
+            }
+            HeartbeatRule::Range(range) => {
+                if range.contains(proposal) {
+                    Ok(())
+                } else {
+                    Err(errs::heartbeat_range(
+                        range.start().as_secs(),
+                        range.end().as_secs(),
+                    ))
+                }
+            }
+            HeartbeatRule::Any => {
+                if *proposal != Duration::from_secs(0) {
+                    Ok(())
+                } else {
+                    Err(errs::heartbeat_gt_0())
+                }
+            }
         }
     }
 }

@@ -1,15 +1,17 @@
-use super::errs;
+use super::{errs, Backend, LlEvent, LlEventLoop};
 use crate::definitions::fix44;
 use crate::dict::IsFieldDefinition;
 use crate::session::{Environment, SeqNumbers};
-use crate::tagvalue::Fv;
+use crate::tagvalue::FieldAccess;
 use crate::tagvalue::Message;
 use crate::tagvalue::{Decoder, DecoderBuffered, Encoder, EncoderHandle};
+use crate::Buffer;
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use std::cmp::Ordering;
-use std::ops::Range;
+use std::marker::Unpin;
 use std::pin::Pin;
 use std::time::Duration;
+use uuid::Uuid;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MsgSeqNumCounter(pub u64);
@@ -17,11 +19,13 @@ pub struct MsgSeqNumCounter(pub u64);
 impl MsgSeqNumCounter {
     pub const START: Self = Self(0);
 
+    #[inline]
     pub fn next(&mut self) -> u64 {
         self.0 += 1;
         self.0
     }
 
+    #[inline]
     pub fn expected(&self) -> u64 {
         self.0 + 1
     }
@@ -36,19 +40,15 @@ impl Iterator for MsgSeqNumCounter {
 }
 
 #[derive(Debug, Clone)]
-pub enum Event<'a> {
-    Inbound(Message<'a>),
-    Resend(Range<u64>),
-}
-
-#[derive(Debug, Clone)]
 #[cfg_attr(test, derive(enum_as_inner::EnumAsInner))]
 pub enum Response<'a> {
+    None,
+    ResetHeartbeat,
     TerminateTransport,
-    Application(Message<'a>),
+    Application(Message<'a, &'a [u8]>),
     Session(&'a [u8]),
-    Inbound(Message<'a>),
-    Outbound(Message<'a>),
+    Inbound(Message<'a, &'a [u8]>),
+    Outbound(Message<'a, &'a [u8]>),
     OutboundBytes(&'a [u8]),
     Resend {
         range: (),
@@ -121,9 +121,11 @@ impl FixConnectionBuilder {
 
     pub fn build(self) -> FixConnection {
         FixConnection {
+            uuid: Uuid::new_v4(),
+            buffer: vec![],
             begin_string: self.begin_string,
             environment: self.environment,
-            encoder: Encoder::from_buffer(Vec::new()),
+            encoder: Encoder::default(),
             heartbeat: self.heartbeat,
             seq_numbers: self.seq_numbers,
             msg_seq_num_inbound: self.msg_seq_num_inbound,
@@ -152,9 +154,11 @@ impl Default for FixConnectionBuilder {
 /// A FIX connection message processor.
 #[derive(Debug)]
 pub struct FixConnection {
+    uuid: Uuid,
     begin_string: String,
     environment: Environment,
     encoder: Encoder,
+    buffer: Vec<u8>,
     heartbeat: Duration,
     seq_numbers: SeqNumbers,
     msg_seq_num_inbound: MsgSeqNumCounter,
@@ -163,60 +167,44 @@ pub struct FixConnection {
     target_comp_id: String,
 }
 
-pub trait Application: Clone {
-    type Error;
-
-    #[inline(always)]
-    fn on_heartbeat_is_due(&mut self) -> Result<(), Self::Error> {
-        Ok(())
-    }
-
-    fn on_inbound_app_message(&mut self, message: Message) -> Result<(), Self::Error>;
-
-    fn on_outbound_message(&mut self, message: &[u8]) -> Result<(), Self::Error>;
-
-    #[inline(always)]
-    fn on_inbound_message(
-        &mut self,
-        message: Message,
-        is_app: bool,
-    ) -> Result<(), Self::Error> {
-        println!("received message");
-        if is_app {
-            self.on_inbound_app_message(message)
-        } else {
-            Ok(())
-        }
-    }
-
-    fn on_resend_request(&mut self, range: Range<u64>) -> Result<(), Self::Error>;
-
-    fn on_successful_handshake(&mut self) -> Result<(), Self::Error>;
-
-    fn fetch_messages(&mut self) -> Result<&[&[u8]], Self::Error>;
-
-    fn pending_message(&mut self) -> Option<&[u8]>;
-}
-
 #[allow(dead_code)]
 impl FixConnection {
-    pub async fn initiate<A, I, O>(
+    pub async fn start<B, I, O>(
         &mut self,
-        mut app: A,
+        mut app: B,
         mut input: I,
         mut output: O,
         decoder: Decoder,
     ) where
-        A: Application,
-        I: AsyncRead + std::marker::Unpin,
-        O: AsyncWrite + std::marker::Unpin,
+        B: Backend,
+        I: AsyncRead + Unpin,
+        O: AsyncWrite + Unpin,
+    {
+        let mut decoder = decoder.buffered();
+        self.establish_connection(&mut app, &mut input, &mut output, &mut decoder)
+            .await;
+        self.event_loop(app, input, output, decoder).await;
+    }
+
+    async fn establish_connection<A, I, O>(
+        &mut self,
+        app: &mut A,
+        mut input: &mut I,
+        output: &mut O,
+        decoder: &mut DecoderBuffered,
+    ) where
+        A: Backend,
+        I: AsyncRead + Unpin,
+        O: AsyncWrite + Unpin,
     {
         let logon = {
             let begin_string = self.begin_string.as_bytes();
             let sender_comp_id = self.sender_comp_id.as_str();
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut msg = self.encoder.start_message(begin_string, b"A");
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"A");
             msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
             msg.set(fix44::TARGET_COMP_ID, target_comp_id);
             msg.set(fix44::SENDING_TIME, chrono::Utc::now());
@@ -227,83 +215,63 @@ impl FixConnection {
         };
         output.write(logon).await.unwrap();
         app.on_outbound_message(logon).ok();
-        let mut decoder = decoder.buffered();
         let logon;
         loop {
             let mut input = Pin::new(&mut input);
             let buffer = decoder.supply_buffer();
             input.read_exact(buffer).await.unwrap();
-            if let Ok(Some(_)) = decoder.current_message() {
+            if let Ok(Some(())) = decoder.state() {
                 logon = decoder.message();
                 break;
             }
         }
         self.on_logon(logon);
         app.on_inbound_message(logon, true).ok();
+        decoder.clear();
         self.msg_seq_num_inbound.next();
         app.on_successful_handshake().ok();
-        self.event_loop(app, input, output, decoder).await;
     }
 
-    pub async fn event_loop<A, I, O>(
+    async fn event_loop<A, I, O>(
         &mut self,
         mut app: A,
-        mut data: I,
+        input: I,
         mut output: O,
-        mut decoder: DecoderBuffered,
+        decoder: DecoderBuffered,
     ) where
-        A: Application,
-        I: AsyncRead + std::marker::Unpin,
-        O: AsyncWrite + std::marker::Unpin,
+        A: Backend,
+        I: AsyncRead + Unpin,
+        O: AsyncWrite + Unpin,
     {
-        use futures::future::{self, Either};
-        let mut heartbeat_timer = futures_timer::Delay::new(Duration::from_secs(3));
+        let event_loop = &mut LlEventLoop::new(decoder, input, self.heartbeat);
         loop {
-            let mut pinned = Pin::new(&mut data);
-            let buffer = decoder.supply_buffer();
-            let bytes = pinned.read_exact(buffer);
-            match future::select(bytes, heartbeat_timer).await {
-                Either::Left((res, x)) => {
-                    if res.is_err() {
-                        break;
-                    }
-                    if let Ok(Some(_)) = decoder.current_message() {
-                        let msg = decoder.message();
-                        let response = self.on_inbound_message(msg, &mut app);
-                        match response {
-                            Response::OutboundBytes(bytes) => {
-                                output.write_all(bytes).await.unwrap();
-                                app.on_outbound_message(bytes).ok();
-                            }
-                            _ => {}
+            let event = event_loop.next().await;
+            match event {
+                LlEvent::Message { msg } => {
+                    let response = self.on_inbound_message(msg, &mut app);
+                    match response {
+                        Response::OutboundBytes(bytes) => {
+                            output.write_all(bytes).await.unwrap();
+                            app.on_outbound_message(bytes).ok();
                         }
-                        self.msg_seq_num_inbound.next();
-                        decoder.clear();
+                        Response::ResetHeartbeat => {
+                            event_loop.ping_heartbeat();
+                        }
+                        _ => {}
                     }
-                    heartbeat_timer = x;
                 }
-                Either::Right((_y, _)) => {
+                LlEvent::IoError { err: _err } => {
+                    return;
+                }
+                LlEvent::Heartbeat => {
                     let heartbeat = self.on_heartbeat_is_due();
                     output.write_all(heartbeat).await.unwrap();
                     app.on_outbound_message(heartbeat).ok();
-                    heartbeat_timer = futures_timer::Delay::new(Duration::from_secs(3));
                 }
-            };
+                LlEvent::Logout => {}
+                LlEvent::TestRequest => {}
+            }
         }
-    }
-
-    pub async fn accept<A, I, O>(
-        &mut self,
-        app: A,
-        data: I,
-        output: O,
-        decoder: DecoderBuffered,
-    ) where
-        A: Application,
-        I: AsyncRead + std::marker::Unpin,
-        O: AsyncWrite + std::marker::Unpin,
-    {
-        self.event_loop(app, data, output, decoder).await;
     }
 
     fn seq_numbers(&self) -> SeqNumbers {
@@ -330,13 +298,13 @@ impl FixConnection {
         self.begin_string.as_bytes()
     }
 
-    fn on_inbound_message<'a, A>(
+    fn on_inbound_message<'a, B>(
         &'a mut self,
-        msg: Message<'a>,
-        app: &mut A,
+        msg: Message<'a, &'a [u8]>,
+        app: &mut B,
     ) -> Response<'a>
     where
-        A: Application,
+        B: Backend,
     {
         let env = self.environment();
         // Check `TestMessageIndicator <464>`.
@@ -345,10 +313,12 @@ impl FixConnection {
                 return self.on_wrong_environment(msg);
             }
         }
+        let msg_seq_num = msg.fv::<u64, _>(fix44::MSG_SEQ_NUM);
         // Compare seq. numbers.
-        let msg_seq_num_cmp = msg
-            .fv::<u64, _>(fix44::MSG_SEQ_NUM)
-            .map(|seqnum| seqnum.cmp(&self.msg_seq_num_inbound.expected()));
+        let msg_seq_num_cmp =
+            msg_seq_num.map(|seqnum| seqnum.cmp(&self.msg_seq_num_inbound.expected()));
+        // Increment immediately.
+        self.msg_seq_num_inbound.next();
         // Compare the incoming seq. number to the one we expected and act
         // accordingly.
         match msg_seq_num_cmp {
@@ -368,35 +338,67 @@ impl FixConnection {
         if !self.sending_time_is_ok(&msg) {
             return self.make_reject_for_inaccurate_sending_time(msg);
         }
-        match msg.fv::<&[u8], _>(fix44::MSG_TYPE) {
-            Ok(b"A") => {
+        let msg_type = msg.fv::<&[u8], _>(fix44::MSG_TYPE).unwrap();
+        match msg_type {
+            b"A" => {
                 self.on_logon(msg);
                 app.on_inbound_message(msg, false).ok();
-                return Response::OutboundBytes(b"");
+                return Response::None;
             }
-            Ok(b"1") => {
+            b"1" => {
                 app.on_inbound_message(msg, false).ok();
-                self.on_test_request(msg);
+                let msg = self.on_test_request(msg);
+                return Response::OutboundBytes(msg);
             }
-            Ok(b"2") => {
+            b"2" => {
                 app.on_inbound_message(msg, false).ok();
+                self.on_resend_request(&msg, app);
+                return Response::None;
             }
-            Ok(b"5") => {
+            b"5" => {
                 app.on_inbound_message(msg, false).ok();
+                return Response::OutboundBytes(self.on_logout(&msg));
             }
-            Ok(b"0") => {
+            b"0" => {
                 self.on_heartbeat(msg);
                 app.on_inbound_message(msg, false).ok();
+                return Response::ResetHeartbeat;
             }
             _ => {
                 app.on_inbound_app_message(msg).ok();
                 return self.on_application_message(msg);
             }
         }
-        todo!()
     }
 
-    fn sending_time_is_ok(&self, msg: &Message) -> bool {
+    fn on_resend_request<B>(&self, msg: &Message<&[u8]>, app: &mut B)
+    where
+        B: Backend,
+    {
+        let begin_seq_num = msg.fv(fix44::BEGIN_SEQ_NO).unwrap();
+        let end_seq_num = msg.fv(fix44::END_SEQ_NO).unwrap();
+        app.on_resend_request(begin_seq_num..end_seq_num).ok();
+    }
+
+    fn on_logout(&mut self, _msg: &Message<&[u8]>) -> &[u8] {
+        let fix_message = {
+            let begin_string = self.begin_string.as_bytes();
+            let sender_comp_id = self.sender_comp_id.as_str();
+            let target_comp_id = self.target_comp_id.as_str();
+            let msg_seq_num = self.msg_seq_num_outbound.next();
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"5");
+            msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
+            msg.set(fix44::TARGET_COMP_ID, target_comp_id);
+            msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
+            msg.set(fix44::TEXT, "Logout");
+            msg.wrap()
+        };
+        fix_message
+    }
+
+    fn sending_time_is_ok(&self, msg: &Message<&[u8]>) -> bool {
         let sending_time = msg.fv::<&str, _>(fix44::SENDING_TIME);
         if let Ok(_sending_time) = sending_time {
             // TODO
@@ -406,7 +408,11 @@ impl FixConnection {
         }
     }
 
-    fn add_comp_id(msg: &mut EncoderHandle, sender: &str, target: &str) {
+    fn add_comp_id<B, C>(msg: &mut EncoderHandle<B, C>, sender: &str, target: &str)
+    where
+        B: Buffer,
+        C: crate::tagvalue::Configure,
+    {
         msg.set(fix44::SENDER_COMP_ID, sender);
         msg.set(fix44::TARGET_COMP_ID, target);
     }
@@ -427,7 +433,9 @@ impl FixConnection {
             let sender_comp_id = self.sender_comp_id.as_str();
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut msg = self.encoder.start_message(begin_string, b"0");
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"0");
             msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
             msg.set(fix44::TARGET_COMP_ID, target_comp_id);
             msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
@@ -437,18 +445,20 @@ impl FixConnection {
         fix_message
     }
 
-    pub fn on_heartbeat(&mut self, _msg: Message) {
+    pub fn on_heartbeat(&mut self, _msg: Message<&[u8]>) {
         // TODO: verify stuff.
     }
 
-    fn on_test_request(&mut self, msg: Message) -> &[u8] {
+    fn on_test_request(&mut self, msg: Message<&[u8]>) -> &[u8] {
         let test_req_id = msg.fv::<&[u8], _>(fix44::TEST_REQ_ID).unwrap();
         let fix_message = {
             let begin_string = self.begin_string.as_bytes();
             let sender_comp_id = self.sender_comp_id.as_str();
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut msg = self.encoder.start_message(begin_string, b"1");
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"1");
             msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
             msg.set(fix44::TARGET_COMP_ID, target_comp_id);
             msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
@@ -459,7 +469,7 @@ impl FixConnection {
         fix_message
     }
 
-    fn on_wrong_environment(&mut self, _message: Message) -> Response {
+    fn on_wrong_environment(&mut self, _message: Message<&[u8]>) -> Response {
         self.make_logout(errs::production_env())
     }
 
@@ -470,7 +480,9 @@ impl FixConnection {
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let text = errs::msg_seq_num(self.msg_seq_num_inbound.0 + 1);
-            let mut msg = self.encoder.start_message(begin_string, b"FIXME");
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"FIXME");
             msg.set(fix44::MSG_TYPE, "5");
             msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
             msg.set(fix44::TARGET_COMP_ID, target_comp_id);
@@ -481,14 +493,14 @@ impl FixConnection {
         fix_message
     }
 
-    fn on_missing_seqnum(&mut self, _message: Message) -> Response {
+    fn on_missing_seqnum(&mut self, _message: Message<&[u8]>) -> Response {
         self.make_logout(errs::missing_field(
             fix44::MSG_SEQ_NUM.name(),
             fix44::MSG_SEQ_NUM.tag().get().into(),
         ))
     }
 
-    fn on_low_seqnum(&mut self, _message: Message) -> Response {
+    fn on_low_seqnum(&mut self, _message: Message<&[u8]>) -> Response {
         self.make_logout(errs::msg_seq_num(self.msg_seq_num_inbound.0 + 1))
     }
 
@@ -505,7 +517,9 @@ impl FixConnection {
             let sender_comp_id = self.sender_comp_id.as_str();
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut msg = self.encoder.start_message(begin_string, b"3");
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"3");
             msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
             msg.set(fix44::TARGET_COMP_ID, target_comp_id);
             msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
@@ -522,10 +536,7 @@ impl FixConnection {
         Response::OutboundBytes(fix_message)
     }
 
-    fn make_reject_for_inaccurate_sending_time(
-        &mut self,
-        offender: Message,
-    ) -> Response {
+    fn make_reject_for_inaccurate_sending_time(&mut self, offender: Message<&[u8]>) -> Response {
         let ref_seq_num = offender.fv(fix44::MSG_SEQ_NUM).unwrap();
         let ref_msg_type = offender.fv::<&str, _>(fix44::MSG_TYPE).unwrap();
         self.on_reject(
@@ -543,7 +554,9 @@ impl FixConnection {
             let sender_comp_id = self.sender_comp_id.as_str();
             let target_comp_id = self.target_comp_id.as_str();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut msg = self.encoder.start_message(begin_string, b"5");
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"5");
             msg.set(fix44::SENDER_COMP_ID, sender_comp_id);
             msg.set(fix44::TARGET_COMP_ID, target_comp_id);
             msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
@@ -555,7 +568,9 @@ impl FixConnection {
 
     fn make_resend_request(&mut self, start: u64, end: u64) -> Response {
         let begin_string = self.begin_string.as_bytes();
-        let mut msg = self.encoder.start_message(begin_string, b"2");
+        let mut msg = self
+            .encoder
+            .start_message(begin_string, &mut self.buffer, b"2");
         //Self::add_comp_id(msg);
         //self.add_sending_time(msg);
         //self.add_seqnum(msg);
@@ -564,21 +579,23 @@ impl FixConnection {
         Response::OutboundBytes(msg.wrap())
     }
 
-    fn on_high_seqnum(&mut self, msg: Message) -> Response {
+    fn on_high_seqnum(&mut self, msg: Message<&[u8]>) -> Response {
         let msg_seq_num = msg.fv(fix44::MSG_SEQ_NUM).unwrap();
         self.make_resend_request(self.seq_numbers().next_inbound(), msg_seq_num);
         todo!()
     }
 
-    fn on_logon(&mut self, _logon: Message) {
+    fn on_logon(&mut self, _logon: Message<&[u8]>) {
         let begin_string = self.begin_string.as_bytes();
-        let mut _msg = self.encoder.start_message(begin_string, b"A");
+        let mut _msg = self
+            .encoder
+            .start_message(begin_string, &mut self.buffer, b"A");
         //Self::add_comp_id(msg);
         //self.add_sending_time(msg);
         //self.add_sending_time(msg);
     }
 
-    fn on_application_message<'a>(&mut self, msg: Message<'a>) -> Response<'a> {
+    fn on_application_message<'a>(&mut self, msg: Message<'a, &'a [u8]>) -> Response<'a> {
         Response::Application(msg)
     }
 }

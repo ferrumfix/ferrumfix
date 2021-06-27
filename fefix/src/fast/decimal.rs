@@ -102,7 +102,7 @@ impl Decimal {
     ///
     /// # Arguments
     ///
-    /// * `exp` - An `i8` that represents the *e* portion of the decimal number
+    /// * `exp` - An `i32` that represents the *e* portion of the decimal number
     /// * `mantissa` - An `i64` that represents the *m* portion of the decimal number.
     ///
     /// The value of *e* will be rounded towards 0 to stay within the legal
@@ -231,28 +231,54 @@ impl Decimal {
         }
     }
 
+    pub fn checked_abs(&self) -> Option<Self> {
+        let mantissa = self.mantissa().checked_abs()?;
+        Some(Self {
+            exp: self.exp(),
+            mantissa,
+        })
+    }
+
     /// Checked addition. Computes `self + other`, returning `None` if overflow
     /// occurred.
-    pub fn checked_add(&self, _other: Decimal) -> Option<Self> {
-        unimplemented!()
+    pub fn checked_add(&self, other: Decimal) -> Option<Self> {
+        let exp_diff = self.exp() - other.exp();
+        let mantissa_1 = self.mantissa();
+        let mantissa_2 = other
+            .mantissa()
+            // FIXME
+            .checked_mul(10i64.checked_pow(exp_diff as u32)?)?;
+        Some(Self {
+            exp: self.exp(),
+            mantissa: mantissa_1.checked_add(mantissa_2)?,
+        })
     }
 
     /// Checked subtraction. Computes `self - other`, returning `None` if overflow
     /// occurred.
-    pub fn checked_sub(&self, _other: Decimal) -> Option<Self> {
-        unimplemented!()
+    pub fn checked_sub(&self, other: Decimal) -> Option<Self> {
+        let neg_other = other.checked_neg()?;
+        self.checked_add(neg_other)
     }
 
     /// Checked multiplication. Computes `self * other`, returning `None` if overflow
     /// occurred.
-    pub fn checked_mul(&self, _other: Decimal) -> Option<Self> {
-        unimplemented!()
+    pub fn checked_mul(&self, other: Decimal) -> Option<Self> {
+        let exp = self.exp() + other.exp();
+        let mantissa = self.mantissa().checked_mul(other.mantissa())?;
+        Some(Self { exp, mantissa })
     }
 
     /// Checked division. Computes `self / other`, returning `None` if `other ==
     /// 0.0` or the division results in overflow.
-    pub fn checked_div(self, _other: Decimal) -> Option<Decimal> {
+    pub fn checked_div(self, _other: Decimal) -> Option<Self> {
         unimplemented!()
+    }
+
+    pub fn checked_neg(self) -> Option<Self> {
+        let mantissa = self.mantissa().checked_neg()?;
+        let exp = self.exp();
+        Some(Self { exp, mantissa })
     }
 
     /// Returns `true` if and only if `self` is strictly negative, `false`
@@ -261,7 +287,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(-130, -4);
     /// assert!(num.is_negative());
@@ -279,7 +305,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(1, -8);
     /// assert!(num.is_positive());
@@ -296,7 +322,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::decimal::Decimal;
+    /// use fefix::fast::Decimal;
     ///
     /// let num = Decimal::new(11, -1);
     /// assert_eq!(num.pow(2), Decimal::new(121, -2));
@@ -339,77 +365,6 @@ impl Decimal {
     pub fn fract(&self) -> Self {
         let mut me = *self;
         me.mantissa %= 10i64.pow(me.exp().abs() as u32);
-        me
-    }
-
-    /// Returns the least integer greater than or equal to `self`.
-    ///
-    /// ```
-    /// use fefix::fast::Decimal;
-    ///
-    /// let num = Decimal::new(100000001, -4);
-    /// assert_eq!(num.ceil(), Decimal::new(2, 0));
-    ///
-    /// let num = Decimal::new(-100000001, -4);
-    /// assert_eq!(num.ceil(), Decimal::new(1, 0));
-    ///
-    /// let num = Decimal::new(0, 0);
-    /// assert_eq!(num.ceil(), Decimal::new(0, 0));
-    /// ```
-    pub fn ceil(&self) -> Self {
-        let mut me = *self;
-        if self.is_negative() {
-            me = me.truncate();
-        } else if self.is_positive() {
-            let pow = 10i64.pow(me.exp() as u32);
-            me.mantissa = me.mantissa() + (pow - me.mantissa() % pow);
-        }
-        me
-    }
-
-    /// Returns the greatest integer less than or equal to `self`.
-    ///
-    /// ```
-    /// use fefix::fast::Decimal;
-    ///
-    /// let num = Decimal::new(100000001, 4);
-    /// assert_eq!(num.floor(), Decimal::new(1, 0));
-    ///
-    /// let num = Decimal::new(-100000001, 4);
-    /// assert_eq!(num.floor(), Decimal::new(-2, 0));
-    ///
-    /// let num = Decimal::new(0, 0);
-    /// assert_eq!(num.floor(), Decimal::new(0, 0));
-    /// ```
-    pub fn floor(&self) -> Self {
-        let mut me = *self;
-        if self.is_positive() {
-            me = me.truncate();
-        } else {
-            let pow = 10i64.pow(me.exp() as u32);
-            me.mantissa = me.mantissa() + (pow - me.mantissa() % pow);
-        }
-        me
-    }
-
-    /// Rounds `self` to the nearest whole integer.
-    /// FIXME
-    ///
-    /// ```
-    /// use fefix::fast::Decimal;
-    ///
-    /// let num = Decimal::new(100000001, -4);
-    /// assert_eq!(num.floor(), Decimal::new(1, 0));
-    ///
-    /// let num = Decimal::new(-100000001, -4);
-    /// assert_eq!(num.floor(), Decimal::new(-1, 0));
-    ///
-    /// let num = Decimal::new(0, 0);
-    /// assert_eq!(num.floor(), Decimal::new(0, 0));
-    /// ```
-    pub fn round(&self, _dp: u32, _strategy: RoundingStrategy) -> Self {
-        let mut me = *self;
-        me = me.truncate();
         me
     }
 
@@ -488,15 +443,6 @@ impl fmt::Display for Decimal {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RoundingStrategy {
-    BankersRounding,
-    RoundHalfUp,
-    RoundHalfDown,
-    RoundDown,
-    RoundUp,
-}
-
 impl cmp::PartialOrd for Decimal {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         Some(self.cmp(other))
@@ -505,6 +451,7 @@ impl cmp::PartialOrd for Decimal {
 
 impl cmp::Ord for Decimal {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
+        // If signs differ, there's no need for any further calculations.
         let cmp_sign = self.mantissa().signum().cmp(&other.mantissa().signum());
         if cmp_sign != Ordering::Equal {
             return cmp_sign;

@@ -5,6 +5,7 @@ edition = "2018"
 
 [dependencies]
 chrono = "0.4"
-fefix = { path = "../../fefix" }
+decimal = "2"
+fefix = { path = "../../fefix", features = ["utils-decimal", "utils-rust-decimal"] }
 rust_decimal = "1"
 rust_decimal_macros = "1"

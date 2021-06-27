@@ -1,27 +1,32 @@
 use crate::tagvalue::{utils, Config, Configure, DecodeError};
 use std::ops::Range;
 
-/// View over the contents of a FIX message according to [`RawDecoder`].
+/// An immutable view over the contents of a FIX message by a [`RawDecoder`].
 #[derive(Debug)]
-pub struct RawFrame<'a> {
-    data: &'a [u8],
-    begin_string: &'a [u8],
-    payload: &'a [u8],
+pub struct RawFrame<T>
+where
+    T: AsRef<[u8]>,
+{
+    data: T,
+    begin_string: Range<usize>,
+    payload: Range<usize>,
     payload_offset: usize,
 }
 
-impl<'a> RawFrame<'a> {
-    fn new(
-        data: &'a [u8],
-        begin_string: &'a [u8],
-        payload_offset: usize,
-        payload_len: usize,
-    ) -> Self {
-        Self {
-            data,
-            begin_string,
-            payload: &data[payload_offset..payload_offset + payload_len],
-            payload_offset,
+impl<T> RawFrame<T>
+where
+    T: AsRef<[u8]>,
+{
+    pub fn map_data<F, M>(self, f: F) -> RawFrame<M>
+    where
+        F: Fn(T) -> M,
+        M: AsRef<[u8]>,
+    {
+        RawFrame {
+            data: f(self.data),
+            begin_string: self.begin_string,
+            payload: self.payload,
+            payload_offset: self.payload_offset,
         }
     }
 
@@ -39,8 +44,8 @@ impl<'a> RawFrame<'a> {
     ///
     /// assert_eq!(message.as_bytes(), data);
     /// ```
-    pub fn as_bytes(&self) -> &'a [u8] {
-        self.data
+    pub fn as_bytes(&self) -> &[u8] {
+        self.data.as_ref()
     }
 
     /// Returns an immutable reference to the `BeginString <8>` field value of
@@ -58,19 +63,20 @@ impl<'a> RawFrame<'a> {
     ///
     /// assert_eq!(message.begin_string(), b"FIX.4.2");
     /// ```
-    pub fn begin_string(&self) -> &'a [u8] {
-        self.begin_string
+    pub fn begin_string(&self) -> &[u8] {
+        &self.as_bytes()[self.begin_string.clone()]
     }
 
-    /// Returns an immutable reference to the body contents of `self`. In this
-    /// context, "body" means all fields besides
+    /// Returns an immutable reference to the payload of `self`. In this
+    /// context, "payload" means all fields besides
     ///
     /// - `BeginString <8>`;
     /// - `BodyLength <9>`;
     /// - `CheckSum <10>`.
     ///
-    /// According to this definition, the body may also contain fields that are
-    /// technically part of `StandardHeader` and `StandardTrailer`.
+    /// According to this definition, the payload may also contain fields that are
+    /// technically part of `StandardHeader` and `StandardTrailer`, i.e. payload
+    /// and body and *not* synonyms.
     ///
     /// ```
     /// use fefix::tagvalue::{Config, RawDecoder};
@@ -82,8 +88,8 @@ impl<'a> RawFrame<'a> {
     ///
     /// assert_eq!(message.payload().len(), 42);
     /// ```
-    pub fn payload(&self) -> &'a [u8] {
-        self.payload
+    pub fn payload(&self) -> &[u8] {
+        &self.as_bytes()[self.payload.clone()]
     }
 
     /// Returns the offset of [`RawFrame::payload`].
@@ -121,6 +127,7 @@ where
         Self { config }
     }
 
+    /// Turns `self` into a [`RawDecoderBuffered`] by adding an internal buffer.
     pub fn buffered(self) -> RawDecoderBuffered<C> {
         RawDecoderBuffered {
             buffer: Vec::new(),
@@ -142,21 +149,25 @@ where
     }
 
     /// Does minimal parsing on `data` and returns a [`RawFrame`] if it's valid.
-    pub fn decode<'a>(&self, data: &'a [u8]) -> Result<RawFrame<'a>, DecodeError> {
+    pub fn decode<T>(&self, src: T) -> Result<RawFrame<T>, DecodeError>
+    where
+        T: AsRef<[u8]>,
+    {
+        let data = src.as_ref();
         if data.len() < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
-            return Err(DecodeError::Invalid);
+            return Err(DecodeError::Length);
         }
         let info = HeaderInfo::parse(data, self.config().separator())?;
         utils::verify_body_length(data, info.start_of_body(), info.body_range().len())?;
         if self.config().verify_checksum() {
             utils::verify_checksum(data)?;
         }
-        Ok(RawFrame::new(
-            data,
-            &data[info.begin_string_range()],
-            info.body_range().start,
-            info.body_range().len(),
-        ))
+        Ok(RawFrame {
+            data: src,
+            begin_string: info.begin_string_range(),
+            payload: info.body_range(),
+            payload_offset: info.body_range().start,
+        })
     }
 }
 
@@ -206,8 +217,7 @@ where
                 Ok(info) => {
                     let start_of_body = info.start_of_body();
                     let body_len = info.body_range().len();
-                    let total_len =
-                        start_of_body + body_len + utils::FIELD_CHECKSUM_LEN_IN_BYTES;
+                    let total_len = start_of_body + body_len + utils::FIELD_CHECKSUM_LEN_IN_BYTES;
                     let current_len = self.buffer.as_slice().len();
                     self.buffer.resize(total_len, 0);
                     &mut self.buffer.as_mut_slice()[current_len..]
@@ -220,7 +230,7 @@ where
         }
     }
 
-    pub fn current_frame(&self) -> Result<Option<RawFrame>, DecodeError> {
+    pub fn current_frame<'a>(&'a self) -> Result<Option<RawFrame<&'a [u8]>>, DecodeError> {
         if let Some(err) = self.error.clone() {
             Err(err)
         } else {
@@ -228,7 +238,7 @@ where
             if data.len() == 0 || data.len() == utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
                 Ok(None)
             } else {
-                self.decoder.decode(data).map(|message| Some(message))
+                self.decoder.decode(*data).map(|message| Some(message))
             }
         }
     }
@@ -312,13 +322,16 @@ mod test {
     #[test]
     fn empty_message_is_invalid() {
         let decoder = new_decoder();
-        assert!(matches!(decoder.decode(&[]), Err(DecodeError::Invalid)));
+        assert!(matches!(
+            decoder.decode(&[] as &[u8]),
+            Err(DecodeError::Length)
+        ));
     }
 
     #[test]
     fn sample_message_is_valid() {
         let decoder = new_decoder();
-        let msg = b"8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
+        let msg = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|".as_bytes();
         let frame = decoder.decode(msg).unwrap();
         assert_eq!(frame.begin_string(), b"FIX.4.2");
         assert_eq!(frame.payload(), b"35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|");
@@ -327,7 +340,7 @@ mod test {
     #[test]
     fn message_with_only_msg_type_tag_is_valid() {
         let decoder = new_decoder();
-        let msg = b"8=?|9=5|35=?|10=183|";
+        let msg = "8=?|9=5|35=?|10=183|".as_bytes();
         let frame = decoder.decode(msg).unwrap();
         assert_eq!(frame.begin_string(), b"?");
         assert_eq!(frame.payload(), b"35=?|");
@@ -336,30 +349,33 @@ mod test {
     #[test]
     fn message_with_empty_payload_is_invalid() {
         let decoder = new_decoder();
-        let msg = b"8=?|9=5|10=082|";
-        assert!(matches!(decoder.decode(msg), Err(DecodeError::Invalid)));
+        let msg = "8=?|9=5|10=082|".as_bytes();
+        assert!(matches!(decoder.decode(msg), Err(DecodeError::Length)));
     }
 
     #[test]
     fn message_with_bad_checksum_is_invalid() {
-        let decoder = new_decoder();
-        let msg = b"8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=000|";
+        let decoder = &mut new_decoder();
+        decoder.config_mut().set_verify_checksum(true);
+        let msg = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=000|".as_bytes();
         assert!(matches!(decoder.decode(msg), Err(DecodeError::CheckSum)));
     }
 
     #[test]
     fn edge_cases_dont_cause_panic() {
         let decoder = new_decoder();
-        assert!(decoder.decode(b"8=|9=0|10=225|").is_err());
-        assert!(decoder.decode(b"8=|9=0|10=|").is_err());
-        assert!(decoder.decode(b"8====|9=0|10=|").is_err());
-        assert!(decoder.decode(b"|||9=0|10=|").is_err());
-        assert!(decoder.decode(b"9999999999999").is_err());
-        assert!(decoder.decode(b"-9999999999999").is_err());
-        assert!(decoder.decode(b"==============").is_err());
-        assert!(decoder.decode(b"9999999999999|").is_err());
-        assert!(decoder.decode(b"|999999999999=|").is_err());
-        assert!(decoder.decode(b"|999=999999999999999999|=").is_err());
+        assert!(decoder.decode("8=|9=0|10=225|".as_bytes()).is_err());
+        assert!(decoder.decode("8=|9=0|10=|".as_bytes()).is_err());
+        assert!(decoder.decode("8====|9=0|10=|".as_bytes()).is_err());
+        assert!(decoder.decode("|||9=0|10=|".as_bytes()).is_err());
+        assert!(decoder.decode("9999999999999".as_bytes()).is_err());
+        assert!(decoder.decode("-9999999999999".as_bytes()).is_err());
+        assert!(decoder.decode("==============".as_bytes()).is_err());
+        assert!(decoder.decode("9999999999999|".as_bytes()).is_err());
+        assert!(decoder.decode("|999999999999=|".as_bytes()).is_err());
+        assert!(decoder
+            .decode("|999=999999999999999999|=".as_bytes())
+            .is_err());
     }
 
     fn new_decoder_buffered() -> RawDecoderBuffered {

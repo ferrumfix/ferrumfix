@@ -6,10 +6,9 @@ use fnv::FnvHashMap;
 use lazy_static::lazy_static;
 use quickfix::{ParseDictionaryError, QuickFixReader};
 use std::fmt;
-use std::io;
 use std::sync::Arc;
 
-pub use datatype::FixDataType;
+pub use datatype::FixDatatype;
 
 const SPEC_FIX_40: &str = include_str!("resources/quickfix/FIX-4.0.xml");
 const SPEC_FIX_41: &str = include_str!("resources/quickfix/FIX-4.1.xml");
@@ -37,44 +36,12 @@ lazy_static! {
 /// trailer).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum FieldLocation {
-    StdHeader,
+    /// The field is located inside the "Standard Header".
+    Header,
+    /// This field is located inside the body of the FIX message.
     Body,
+    /// This field is located inside the "Standard Trailer".
     Trailer,
-}
-
-/// Value for the field `MsgType (35)`.
-#[derive(Copy, Debug, Clone, PartialEq, Eq, Hash)]
-pub struct MsgType(u16);
-
-#[derive(Debug, Clone)]
-pub struct Version {
-    standard: String,
-    v_major: u32,
-    v_minor: u32,
-    service_pack: u32,
-    ep: Option<u32>,
-}
-
-impl MsgType {
-    pub fn write(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        let bytes = self.0.to_be_bytes();
-        for byte in bytes.iter() {
-            writer.write(&[*byte])?;
-        }
-        Ok(())
-    }
-
-    pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
-        if bytes.is_empty() || bytes.len() >= 3 {
-            None
-        } else {
-            let mut value: u16 = 0;
-            for byte in bytes {
-                value = (value << 8) + (*byte as u16);
-            }
-            Some(Self(value))
-        }
-    }
 }
 
 type InternalId = u32;
@@ -84,8 +51,7 @@ type InternalId = u32;
 ///
 /// [`Dictionary`] doesn't provide information regarding
 /// the detailed layouts of messages and components; such intricacies are handled
-/// by the
-/// presentation layer ([`fefix::codec`]).
+/// by the presentation layer.
 ///
 /// All FIX Dictionaries have a version string which MUST be unique and
 /// established out-of-band between involved parties.
@@ -213,13 +179,6 @@ impl Dictionary {
         }
     }
 
-    /// Creates a new [`Dictionary`](Dictionary) according to the specification of
-    /// `version`.
-    //pub fn from_version(version: AppVersion) -> Self {
-    //    let spec = quickfix_spec(version);
-    //    Dictionary::from_quickfix_spec(spec).unwrap()
-    //}
-
     /// Attempts to read a QuickFIX-style specification file and convert it into
     /// a [`Dictionary`].
     pub fn from_quickfix_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
@@ -238,55 +197,71 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// assert_eq!(dict.get_version(), "FIX.4.4");
     /// ```
     pub fn get_version(&self) -> &str {
         self.inner.version.as_str()
     }
 
+    /// Creates a new [`Dictionary`] for FIXT 4.0.
     #[cfg(feature = "fix40")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fix40")))]
     pub fn fix40() -> Self {
         DICT_FIX_40.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIXT 4.1.
     #[cfg(feature = "fix41")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fix41")))]
     pub fn fix41() -> Self {
         DICT_FIX_41.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIXT 4.2.
     #[cfg(feature = "fix42")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fix42")))]
     pub fn fix42() -> Self {
         DICT_FIX_42.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIXT 4.3.
     #[cfg(feature = "fix43")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fix43")))]
     pub fn fix43() -> Self {
         DICT_FIX_43.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIX 4.4.
     pub fn fix44() -> Self {
         DICT_FIX_44.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIX 5.0.
     #[cfg(feature = "fix50")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fix50")))]
     pub fn fix50() -> Self {
         DICT_FIX_50.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIX 5.0 SP1.
     #[cfg(feature = "fix50sp1")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fix50sp1")))]
     pub fn fix50sp1() -> Self {
         DICT_FIX_50SP1.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIX 5.0 SP2.
     #[cfg(feature = "fix50sp2")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fix50sp1")))]
     pub fn fix50sp2() -> Self {
         DICT_FIX_50SP2.clone()
     }
 
+    /// Creates a new [`Dictionary`] for FIXT 1.1.
     #[cfg(feature = "fixt11")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fixt11")))]
     pub fn fixt11() -> Self {
         DICT_FIXT_11.clone()
     }
@@ -330,9 +305,8 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     ///
     /// let msg1 = dict.message_by_name("Heartbeat").unwrap();
     /// let msg2 = dict.message_by_msgtype("0").unwrap();
@@ -348,20 +322,17 @@ impl Dictionary {
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     ///
     /// let msg1 = dict.message_by_msgtype("0").unwrap();
     /// let msg2 = dict.message_by_name("Heartbeat").unwrap();
     /// assert_eq!(msg1.name(), msg2.name());
     /// ```
     pub fn message_by_msgtype<S: AsRef<str>>(&self, msgtype: S) -> Option<Message> {
-        self.symbol(KeyRef::MessageByMsgType(MsgType::from_bytes(
-            msgtype.as_ref().as_bytes(),
-        )?))
-        .map(|iid| self.inner.messages.get(*iid as usize).unwrap())
-        .map(|data| Message(self, data))
+        self.symbol(KeyRef::MessageByMsgType(msgtype.as_ref()))
+            .map(|iid| self.inner.messages.get(*iid as usize).unwrap())
+            .map(|data| Message(self, data))
     }
 
     /// Returns the [`Component`] named `name`, if any.
@@ -371,14 +342,12 @@ impl Dictionary {
             .map(|data| Component(self, data))
     }
 
-    /// Returns the [`DataType`](DataType) named `name`, if any.
+    /// Returns the [`Datatype`] named `name`, if any.
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
-    ///
+    /// let dict = Dictionary::fix44();
     /// let dt = dict.datatype_by_name("String").unwrap();
     /// assert_eq!(dt.name(), "String");
     /// ```
@@ -388,14 +357,12 @@ impl Dictionary {
             .map(|data| Datatype(self, data))
     }
 
-    /// Returns the [`Field`](Field) associated with `tag`, if any.
+    /// Returns the [`Field`] associated with `tag`, if any.
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
-    ///
+    /// let dict = Dictionary::fix44();
     /// let field1 = dict.field_by_tag(112).unwrap();
     /// let field2 = dict.field_by_name("TestReqID").unwrap();
     /// assert_eq!(field1.name(), field2.name());
@@ -413,16 +380,15 @@ impl Dictionary {
             .map(|data| Field(self, data))
     }
 
-    /// Returns an [`Iterator`](Iterator) over all [`DataType`](DataType) defined
+    /// Returns an [`Iterator`] over all [`Datatype`] defined
     /// in `self`. Items are in no particular order.
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix42);
-    /// // FIX 4.2 defines 19 datatypes.
-    /// assert_eq!(dict.iter_datatypes().count(), 19);
+    /// let dict = Dictionary::fix44();
+    /// // FIX 4.4 defines 23 (FIXME) datatypes.
+    /// assert_eq!(dict.iter_datatypes().count(), 23);
     /// ```
     pub fn iter_datatypes(&self) -> impl Iterator<Item = Datatype> {
         self.inner
@@ -431,14 +397,13 @@ impl Dictionary {
             .map(move |data| Datatype(self, data))
     }
 
-    /// Returns an [`Iterator`](Iterator) over this [`Dictionary`]'s messages. Items are in
+    /// Returns an [`Iterator`] over this [`Dictionary`]'s messages. Items are in
     /// no particular order.
     ///
     /// ```
     /// use fefix::Dictionary;
-    /// use fefix::AppVersion;
     ///
-    /// let dict = Dictionary::from_version(AppVersion::Fix44);
+    /// let dict = Dictionary::fix44();
     /// let msg = dict.iter_messages().find(|m| m.name() == "MarketDataRequest");
     /// assert_eq!(msg.unwrap().msg_type(), "V");
     /// ```
@@ -471,10 +436,6 @@ impl Dictionary {
             .components
             .iter()
             .map(move |data| Component(&self, data))
-    }
-
-    pub fn to_quickfix_xml(&self) -> String {
-        quickfix::to_quickfix_xml(self)
     }
 }
 
@@ -525,10 +486,8 @@ impl DictionaryBuilder {
         let iid = self.messages.len() as InternalId;
         self.symbol_table
             .insert(Key::MessageByName(message.name.clone()), iid);
-        self.symbol_table.insert(
-            Key::MessageByMsgType(MsgType::from_bytes(message.msg_type.as_bytes()).unwrap()),
-            iid,
-        );
+        self.symbol_table
+            .insert(Key::MessageByMsgType(message.msg_type.to_string()), iid);
         self.messages.push(message);
         iid
     }
@@ -597,7 +556,7 @@ struct ComponentData {
     /// **Primary key.** The unique integer identifier of this component
     /// type.
     id: usize,
-    component_type: ComponentType,
+    component_type: FixmlComponentAttributes,
     layout_items: Vec<LayoutItemData>,
     category_iid: InternalId,
     /// The human readable name of the component.
@@ -632,10 +591,7 @@ impl<'a> Component<'a> {
     /// otherwise.
     pub fn is_group(&self) -> bool {
         match self.1.component_type {
-            ComponentType::BlockRepeating => true,
-            ComponentType::ImplicitBlockRepeating => true,
-            ComponentType::OptimisedBlockRepeating => true,
-            ComponentType::OptimisedImplicitBlockRepeating => true,
+            FixmlComponentAttributes::Block { is_repeating, .. } => is_repeating,
             _ => false,
         }
     }
@@ -651,6 +607,7 @@ impl<'a> Component<'a> {
         Category(self.0, data)
     }
 
+    /// Returns an [`Iterator`] over all items that are part of `self`.
     pub fn items(&self) -> impl Iterator<Item = LayoutItem> {
         self.1
             .layout_items
@@ -674,25 +631,20 @@ impl<'a> Component<'a> {
 /// Component type (FIXML-specific information).
 #[derive(Clone, Debug, PartialEq)]
 #[allow(dead_code)]
-pub enum ComponentType {
-    /// A repeating block.
-    BlockRepeating,
-    /// A non-repeating block.
-    Block,
-    /// An implicit block.
-    ImplicitBlockRepeating,
-    /// An implicit non-repeating block.
-    ImplicitBlock,
-    OptimisedBlockRepeating,
-    OptimisedImplicitBlockRepeating,
-    XMLDataBlock,
+pub enum FixmlComponentAttributes {
+    Xml,
+    Block {
+        is_repeating: bool,
+        is_implicit: bool,
+        is_optimized: bool,
+    },
     Message,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 struct DatatypeData {
     /// **Primary key.** Identifier of the datatype.
-    datatype: FixDataType,
+    datatype: FixDatatype,
     /// Human readable description of this Datatype.
     description: String,
     /// A string that contains examples values for a datatype
@@ -711,7 +663,8 @@ impl<'a> Datatype<'a> {
         self.1.datatype.name()
     }
 
-    pub fn basetype(&self) -> FixDataType {
+    /// Returns `self` as an `enum`.
+    pub fn basetype(&self) -> FixDatatype {
         self.1.datatype
     }
 }
@@ -725,7 +678,7 @@ mod datatype {
     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, EnumIter, IntoStaticStr)]
     #[repr(u8)]
     #[non_exhaustive]
-    pub enum FixDataType {
+    pub enum FixDatatype {
         /// Single character value, can include any alphanumeric character or
         /// punctuation except the delimiter. All char fields are case sensitive
         /// (i.e. m != M). The following fields are based on char.
@@ -850,7 +803,7 @@ mod datatype {
         /// insertion, but has never utilized these dates. During a leap second
         /// insertion, a UTCTimestamp field may read "19981231-23:59:59",
         /// "19981231-23:59:60", "19990101-00:00:00". (see
-        /// http://tycho.usno.navy.mil/leapsec.html)
+        /// <http://tycho.usno.navy.mil/leapsec.html>)
         UtcTimestamp,
         /// Contains an XML document raw data with no format or content restrictions.
         /// XMLData fields are always immediately preceded by a length field. The
@@ -862,56 +815,57 @@ mod datatype {
         Country,
     }
 
-    impl FixDataType {
+    impl FixDatatype {
         /// Compares `name` to the set of strings commonly used by QuickFIX's custom
-        /// specification format and returns its associated [`DataType`] if a match
+        /// specification format and returns its associated
+        /// [`Datatype`](super::Datatype) if a match
         /// was found. The query is case-insensitive.
         ///
         /// # Examples
         ///
         /// ```
-        /// use fefix::DataType;
+        /// use fefix::dict::FixDatatype;
         ///
-        /// assert_eq!(DataType::from_quickfix_name("AMT"), Some(DataType::Amt));
-        /// assert_eq!(DataType::from_quickfix_name("Amt"), Some(DataType::Amt));
-        /// assert_eq!(DataType::from_quickfix_name("MONTHYEAR"), Some(DataType::MonthYear));
-        /// assert_eq!(DataType::from_quickfix_name(""), None);
+        /// assert_eq!(FixDatatype::from_quickfix_name("AMT"), Some(FixDatatype::Amt));
+        /// assert_eq!(FixDatatype::from_quickfix_name("Amt"), Some(FixDatatype::Amt));
+        /// assert_eq!(FixDatatype::from_quickfix_name("MONTHYEAR"), Some(FixDatatype::MonthYear));
+        /// assert_eq!(FixDatatype::from_quickfix_name(""), None);
         /// ```
         pub fn from_quickfix_name(name: &str) -> Option<Self> {
             // https://github.com/quickfix/quickfix/blob/b6760f55ac6a46306b4e081bb13b65e6220ab02d/src/C%2B%2B/DataDictionary.cpp#L646-L680
             Some(match name.to_ascii_uppercase().as_str() {
-                "AMT" => FixDataType::Amt,
-                "BOOLEAN" => FixDataType::Boolean,
-                "CHAR" => FixDataType::Char,
-                "COUNTRY" => FixDataType::Country,
-                "CURRENCY" => FixDataType::Currency,
-                "DATA" => FixDataType::Data,
-                "DATE" => FixDataType::UtcDateOnly, // FIXME?
-                "DAYOFMONTH" => FixDataType::DayOfMonth,
-                "EXCHANGE" => FixDataType::Exchange,
-                "FLOAT" => FixDataType::Float,
-                "INT" => FixDataType::Int,
-                "LANGUAGE" => FixDataType::Language,
-                "LENGTH" => FixDataType::Int,
-                "LOCALMKTDATE" => FixDataType::LocalMktDate,
-                "MONTHYEAR" => FixDataType::MonthYear,
-                "MULTIPLECHARVALUE" | "MULTIPLEVALUESTRING" => FixDataType::MultipleCharValue,
-                "MULTIPLESTRINGVALUE" => FixDataType::MultipleStringValue,
-                "NUMINGROUP" => FixDataType::NumInGroup,
-                "PERCENTAGE" => FixDataType::Percentage,
-                "PRICE" => FixDataType::Price,
-                "PRICEOFFSET" => FixDataType::PriceOffset,
-                "QTY" => FixDataType::Qty,
-                "STRING" => FixDataType::String,
-                "TZTIMEONLY" => FixDataType::UtcTimeOnly, // FIXME
-                "TZTIMESTAMP" => FixDataType::UtcTimestamp, // FIXME
-                "UTCDATE" => FixDataType::UtcDateOnly,
-                "UTCDATEONLY" => FixDataType::UtcDateOnly,
-                "UTCTIMEONLY" => FixDataType::UtcTimeOnly,
-                "UTCTIMESTAMP" => FixDataType::UtcTimestamp,
-                "SEQNUM" => FixDataType::Int,
-                "TIME" => FixDataType::UtcTimestamp,
-                "XMLDATA" => FixDataType::XmlData,
+                "AMT" => FixDatatype::Amt,
+                "BOOLEAN" => FixDatatype::Boolean,
+                "CHAR" => FixDatatype::Char,
+                "COUNTRY" => FixDatatype::Country,
+                "CURRENCY" => FixDatatype::Currency,
+                "DATA" => FixDatatype::Data,
+                "DATE" => FixDatatype::UtcDateOnly, // FIXME?
+                "DAYOFMONTH" => FixDatatype::DayOfMonth,
+                "EXCHANGE" => FixDatatype::Exchange,
+                "FLOAT" => FixDatatype::Float,
+                "INT" => FixDatatype::Int,
+                "LANGUAGE" => FixDatatype::Language,
+                "LENGTH" => FixDatatype::Length,
+                "LOCALMKTDATE" => FixDatatype::LocalMktDate,
+                "MONTHYEAR" => FixDatatype::MonthYear,
+                "MULTIPLECHARVALUE" | "MULTIPLEVALUESTRING" => FixDatatype::MultipleCharValue,
+                "MULTIPLESTRINGVALUE" => FixDatatype::MultipleStringValue,
+                "NUMINGROUP" => FixDatatype::NumInGroup,
+                "PERCENTAGE" => FixDatatype::Percentage,
+                "PRICE" => FixDatatype::Price,
+                "PRICEOFFSET" => FixDatatype::PriceOffset,
+                "QTY" => FixDatatype::Qty,
+                "STRING" => FixDatatype::String,
+                "TZTIMEONLY" => FixDatatype::UtcTimeOnly, // FIXME
+                "TZTIMESTAMP" => FixDatatype::UtcTimestamp, // FIXME
+                "UTCDATE" => FixDatatype::UtcDateOnly,
+                "UTCDATEONLY" => FixDatatype::UtcDateOnly,
+                "UTCTIMEONLY" => FixDatatype::UtcTimeOnly,
+                "UTCTIMESTAMP" => FixDatatype::UtcTimestamp,
+                "SEQNUM" => FixDatatype::SeqNum,
+                "TIME" => FixDatatype::UtcTimestamp,
+                "XMLDATA" => FixDatatype::XmlData,
                 _ => {
                     return None;
                 }
@@ -921,50 +875,50 @@ mod datatype {
         /// Returns the name adopted by QuickFIX for `self`.
         pub fn to_quickfix_name(&self) -> &str {
             match self {
-                FixDataType::Int => "INT",
-                FixDataType::Length => "LENGTH",
-                FixDataType::Char => "CHAR",
-                FixDataType::Boolean => "BOOLEAN",
-                FixDataType::Float => "FLOAT",
-                FixDataType::Amt => "AMT",
-                FixDataType::Price => "PRICE",
-                FixDataType::PriceOffset => "PRICEOFFSET",
-                FixDataType::Qty => "QTY",
-                FixDataType::Percentage => "PERCENTAGE",
-                FixDataType::DayOfMonth => "DAYOFMONTH",
-                FixDataType::NumInGroup => "NUMINGROUP",
-                FixDataType::Language => "LANGUAGE",
-                FixDataType::SeqNum => "SEQNUM",
-                FixDataType::TagNum => "TAGNUM",
-                FixDataType::String => "STRING",
-                FixDataType::Data => "DATA",
-                FixDataType::MonthYear => "MONTHYEAR",
-                FixDataType::Currency => "CURRENCY",
-                FixDataType::Exchange => "EXCHANGE",
-                FixDataType::LocalMktDate => "LOCALMKTDATE",
-                FixDataType::MultipleStringValue => "MULTIPLESTRINGVALUE",
-                FixDataType::UtcTimeOnly => "UTCTIMEONLY",
-                FixDataType::UtcTimestamp => "UTCTIMESTAMP",
-                FixDataType::UtcDateOnly => "UTCDATEONLY",
-                FixDataType::Country => "COUNTRY",
-                FixDataType::MultipleCharValue => "MULTIPLECHARVALUE",
-                FixDataType::XmlData => "XMLDATA",
+                FixDatatype::Int => "INT",
+                FixDatatype::Length => "LENGTH",
+                FixDatatype::Char => "CHAR",
+                FixDatatype::Boolean => "BOOLEAN",
+                FixDatatype::Float => "FLOAT",
+                FixDatatype::Amt => "AMT",
+                FixDatatype::Price => "PRICE",
+                FixDatatype::PriceOffset => "PRICEOFFSET",
+                FixDatatype::Qty => "QTY",
+                FixDatatype::Percentage => "PERCENTAGE",
+                FixDatatype::DayOfMonth => "DAYOFMONTH",
+                FixDatatype::NumInGroup => "NUMINGROUP",
+                FixDatatype::Language => "LANGUAGE",
+                FixDatatype::SeqNum => "SEQNUM",
+                FixDatatype::TagNum => "TAGNUM",
+                FixDatatype::String => "STRING",
+                FixDatatype::Data => "DATA",
+                FixDatatype::MonthYear => "MONTHYEAR",
+                FixDatatype::Currency => "CURRENCY",
+                FixDatatype::Exchange => "EXCHANGE",
+                FixDatatype::LocalMktDate => "LOCALMKTDATE",
+                FixDatatype::MultipleStringValue => "MULTIPLESTRINGVALUE",
+                FixDatatype::UtcTimeOnly => "UTCTIMEONLY",
+                FixDatatype::UtcTimestamp => "UTCTIMESTAMP",
+                FixDatatype::UtcDateOnly => "UTCDATEONLY",
+                FixDatatype::Country => "COUNTRY",
+                FixDatatype::MultipleCharValue => "MULTIPLECHARVALUE",
+                FixDatatype::XmlData => "XMLDATA",
             }
         }
 
         /// Returns the name of `self`, character by character identical to the name
         /// that appears in the official guidelines. **Generally** primitive datatypes
         /// will use `snake_case` and non-primitive ones will have `PascalCase`, but
-        /// that's not true for every [`DataType`].
+        /// that's not true for every [`Datatype`](super::Datatype).
         ///
         /// # Examples
         ///
         /// ```
-        /// use fefix::DataType;
+        /// use fefix::dict::FixDatatype;
         ///
-        /// assert_eq!(DataType::Qty.name(), "Qty");
-        /// assert_eq!(DataType::Float.name(), "float");
-        /// assert_eq!(DataType::String.name(), "String");
+        /// assert_eq!(FixDatatype::Qty.name(), "Qty");
+        /// assert_eq!(FixDatatype::Float.name(), "float");
+        /// assert_eq!(FixDatatype::String.name(), "String");
         /// ```
         pub fn name(&self) -> &'static str {
             // 1. Most primitive data types have `snake_case` names.
@@ -973,34 +927,34 @@ mod datatype {
             //    Why, you ask? Oh, you sweet summer child. You'll learn soon enough
             //    that nothing makes sense in FIX land.
             match self {
-                FixDataType::Int => "int",
-                FixDataType::Length => "Length",
-                FixDataType::Char => "char",
-                FixDataType::Boolean => "Boolean",
-                FixDataType::Float => "float",
-                FixDataType::Amt => "Amt",
-                FixDataType::Price => "Price",
-                FixDataType::PriceOffset => "PriceOffset",
-                FixDataType::Qty => "Qty",
-                FixDataType::Percentage => "Percentage",
-                FixDataType::DayOfMonth => "DayOfMonth",
-                FixDataType::NumInGroup => "NumInGroup",
-                FixDataType::Language => "Language",
-                FixDataType::SeqNum => "SeqNum",
-                FixDataType::TagNum => "TagNum",
-                FixDataType::String => "String",
-                FixDataType::Data => "data",
-                FixDataType::MonthYear => "MonthYear",
-                FixDataType::Currency => "Currency",
-                FixDataType::Exchange => "Exchange",
-                FixDataType::LocalMktDate => "LocalMktDate",
-                FixDataType::MultipleStringValue => "MultipleStringValue",
-                FixDataType::UtcTimeOnly => "UTCTimeOnly",
-                FixDataType::UtcTimestamp => "UTCTimestamp",
-                FixDataType::UtcDateOnly => "UTCDateOnly",
-                FixDataType::Country => "Country",
-                FixDataType::MultipleCharValue => "MultipleCharValue",
-                FixDataType::XmlData => "XMLData",
+                FixDatatype::Int => "int",
+                FixDatatype::Length => "Length",
+                FixDatatype::Char => "char",
+                FixDatatype::Boolean => "Boolean",
+                FixDatatype::Float => "float",
+                FixDatatype::Amt => "Amt",
+                FixDatatype::Price => "Price",
+                FixDatatype::PriceOffset => "PriceOffset",
+                FixDatatype::Qty => "Qty",
+                FixDatatype::Percentage => "Percentage",
+                FixDatatype::DayOfMonth => "DayOfMonth",
+                FixDatatype::NumInGroup => "NumInGroup",
+                FixDatatype::Language => "Language",
+                FixDatatype::SeqNum => "SeqNum",
+                FixDatatype::TagNum => "TagNum",
+                FixDatatype::String => "String",
+                FixDatatype::Data => "data",
+                FixDatatype::MonthYear => "MonthYear",
+                FixDatatype::Currency => "Currency",
+                FixDatatype::Exchange => "Exchange",
+                FixDatatype::LocalMktDate => "LocalMktDate",
+                FixDatatype::MultipleStringValue => "MultipleStringValue",
+                FixDatatype::UtcTimeOnly => "UTCTimeOnly",
+                FixDatatype::UtcTimestamp => "UTCTimestamp",
+                FixDatatype::UtcDateOnly => "UTCDateOnly",
+                FixDatatype::Country => "Country",
+                FixDatatype::MultipleCharValue => "MultipleCharValue",
+                FixDatatype::XmlData => "XMLData",
             }
         }
 
@@ -1010,10 +964,10 @@ mod datatype {
         /// # Examples
         ///
         /// ```
-        /// use fefix::DataType;
+        /// use fefix::dict::FixDatatype;
         ///
-        /// assert_eq!(DataType::Float.is_base_type(), true);
-        /// assert_eq!(DataType::Price.is_base_type(), false);
+        /// assert_eq!(FixDatatype::Float.is_base_type(), true);
+        /// assert_eq!(FixDatatype::Price.is_base_type(), false);
         /// ```
         pub fn is_base_type(&self) -> bool {
             match self {
@@ -1022,16 +976,16 @@ mod datatype {
             }
         }
 
-        /// Returns the primitive [`DataType`] from which `self` is derived. If
+        /// Returns the primitive [`Datatype`](super::Datatype) from which `self` is derived. If
         /// `self` is primitive already, returns `self` unchanged.
         ///
         /// # Examples
         ///
         /// ```
-        /// use fefix::DataType;
+        /// use fefix::dict::FixDatatype;
         ///
-        /// assert_eq!(DataType::Float.base_type(), DataType::Float);
-        /// assert_eq!(DataType::Price.base_type(), DataType::Float);
+        /// assert_eq!(FixDatatype::Float.base_type(), FixDatatype::Float);
+        /// assert_eq!(FixDatatype::Price.base_type(), FixDatatype::Float);
         /// ```
         pub fn base_type(&self) -> Self {
             let dt = match self {
@@ -1055,7 +1009,7 @@ mod datatype {
         }
 
         /// Returns an [`Iterator`] over all variants of
-        /// [`DataType`].
+        /// [`Datatype`](super::Datatype).
         pub fn iter_all() -> impl Iterator<Item = Self> {
             <Self as IntoEnumIterator>::iter()
         }
@@ -1068,8 +1022,8 @@ mod datatype {
 
         #[test]
         fn iter_all_unique() {
-            let as_vec = FixDataType::iter_all().collect::<Vec<FixDataType>>();
-            let as_set = FixDataType::iter_all().collect::<HashSet<FixDataType>>();
+            let as_vec = FixDatatype::iter_all().collect::<Vec<FixDatatype>>();
+            let as_set = FixDatatype::iter_all().collect::<HashSet<FixDatatype>>();
             assert_eq!(as_vec.len(), as_set.len());
         }
 
@@ -1078,15 +1032,15 @@ mod datatype {
             // According to the official documentation, FIX has "about 20 data
             // types". Including recent revisions, we should well exceed that
             // number.
-            assert!(FixDataType::iter_all().count() > 20);
+            assert!(FixDatatype::iter_all().count() > 20);
         }
 
         #[test]
         fn names_are_unique() {
-            let as_vec = FixDataType::iter_all()
+            let as_vec = FixDatatype::iter_all()
                 .map(|dt| dt.name())
                 .collect::<Vec<&str>>();
-            let as_set = FixDataType::iter_all()
+            let as_set = FixDatatype::iter_all()
                 .map(|dt| dt.name())
                 .collect::<HashSet<&str>>();
             assert_eq!(as_vec.len(), as_set.len());
@@ -1094,7 +1048,7 @@ mod datatype {
 
         #[test]
         fn base_type_is_itself() {
-            for dt in FixDataType::iter_all() {
+            for dt in FixDatatype::iter_all() {
                 if dt.is_base_type() {
                     assert_eq!(dt.base_type(), dt);
                 } else {
@@ -1105,7 +1059,7 @@ mod datatype {
 
         #[test]
         fn base_type_is_actually_base_type() {
-            for dt in FixDataType::iter_all() {
+            for dt in FixDatatype::iter_all() {
                 assert!(dt.base_type().is_base_type());
             }
         }
@@ -1168,22 +1122,8 @@ impl<'a> FieldEnum<'a> {
 /// specific business meaning as described by the FIX specifications. The data
 /// domain of a [`Field`] is either a [`Datatype`] or a "code set", i.e.
 /// enumeration.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Field<'a>(&'a Dictionary, &'a FieldData);
-
-impl<'a> IsFieldDefinition for Field<'a> {
-    fn name(&self) -> &str {
-        self.1.name.as_str()
-    }
-
-    fn tag(&self) -> TagU16 {
-        TagU16::new(self.1.tag as u16).unwrap()
-    }
-
-    fn location(&self) -> FieldLocation {
-        FieldLocation::Body // FIXME
-    }
-}
 
 impl<'a> Field<'a> {
     pub fn doc_url_onixs(&self, version: &str) -> String {
@@ -1199,16 +1139,15 @@ impl<'a> Field<'a> {
             "FIXT.1.1" => "FIXT.1.1",
             s => s,
         };
-        let mut url = "https://www.onixs.biz/fix-dictionary/".to_string();
-        url.push_str(v);
-        url.push_str("/tagNum_");
-        url.push_str(self.1.tag.to_string().as_str());
-        url.push_str(".html");
-        url
+        format!(
+            "https://www.onixs.biz/fix-dictionary/{}/tagNum_{}.html",
+            v,
+            self.1.tag.to_string().as_str()
+        )
     }
 
-    /// Returns the [`BaseType`] of `self`.
-    pub fn fix_datatype(&self) -> FixDataType {
+    /// Returns the [`FixDatatype`] of `self`.
+    pub fn fix_datatype(&self) -> FixDatatype {
         self.data_type().basetype()
     }
 
@@ -1224,6 +1163,8 @@ impl<'a> Field<'a> {
         TagU16::new(self.1.tag as u16).unwrap()
     }
 
+    /// In case this field allows any value, it returns `None`; otherwise; it
+    /// returns an [`Iterator`] of all allowed values.
     pub fn enums(&self) -> Option<impl Iterator<Item = FieldEnum>> {
         self.1
             .value_restrictions
@@ -1240,6 +1181,20 @@ impl<'a> Field<'a> {
             .get(self.1.data_type_iid as usize)
             .unwrap();
         Datatype(self.0, data)
+    }
+}
+
+impl<'a> IsFieldDefinition for Field<'a> {
+    fn name(&self) -> &str {
+        self.1.name.as_str()
+    }
+
+    fn tag(&self) -> TagU16 {
+        TagU16::new(self.1.tag as u16).expect("Invalid FIX tag (0)")
+    }
+
+    fn location(&self) -> FieldLocation {
+        FieldLocation::Body // FIXME
     }
 }
 
@@ -1265,17 +1220,15 @@ struct LayoutItemData {
 }
 
 pub trait IsFieldDefinition {
+    /// Returns the FIX tag associated with `self`.
     fn tag(&self) -> TagU16;
 
+    /// Returns the official, ASCII, human-readable name associated with `self`.
     fn name(&self) -> &str;
 
-    #[inline(always)]
-    fn location(&self) -> FieldLocation {
-        FieldLocation::Body // FIXME
-    }
+    /// Returns the field location of `self`.
+    fn location(&self) -> FieldLocation;
 }
-
-pub trait IsTypedFieldDefinition<V>: IsFieldDefinition {}
 
 fn layout_item_kind<'a>(item: &'a LayoutItemKindData, dict: &'a Dictionary) -> LayoutItemKind<'a> {
     match item {
@@ -1308,8 +1261,11 @@ pub struct LayoutItem<'a>(&'a Dictionary, &'a LayoutItemData);
 /// The kind of element contained in a [`Message`].
 #[derive(Debug)]
 pub enum LayoutItemKind<'a> {
+    /// This component item is another component.
     Component(Component<'a>),
+    /// This component item is a FIX repeating group.
     Group(Field<'a>, Vec<LayoutItem<'a>>),
+    /// This component item is a FIX field.
     Field(Field<'a>),
 }
 
@@ -1320,10 +1276,12 @@ impl<'a> LayoutItem<'a> {
         self.1.required
     }
 
+    /// Returns the [`LayoutItemKind`] of `self`.
     pub fn kind(&self) -> LayoutItemKind {
         layout_item_kind(&self.1.kind, self.0)
     }
 
+    /// Returns the human-readable name of `self`.
     pub fn tag_text(&self) -> &str {
         match &self.1.kind {
             LayoutItemKindData::Component { iid } => self
@@ -1436,7 +1394,7 @@ impl<'a> Message<'a> {
     }
 }
 
-/// A [`Section`] is a collection of many [`Components`]-s. It has no practical
+/// A [`Section`] is a collection of many [`Component`]-s. It has no practical
 /// effect on encoding and decoding of FIX data and it's only used for
 /// documentation and human readability.
 #[derive(Clone, Debug, PartialEq)]
@@ -1444,7 +1402,6 @@ pub struct Section {}
 
 mod symbol_table {
     use super::InternalId;
-    use super::MsgType;
     use fnv::FnvHashMap;
     use std::borrow::Borrow;
     use std::hash::Hash;
@@ -1461,7 +1418,7 @@ mod symbol_table {
         FieldByTag(u32),
         FieldByName(String),
         MessageByName(String),
-        MessageByMsgType(MsgType),
+        MessageByMsgType(String),
     }
 
     #[derive(Copy, Debug, Clone, PartialEq, Eq, Hash)]
@@ -1473,7 +1430,7 @@ mod symbol_table {
         FieldByTag(u32),
         FieldByName(&'a str),
         MessageByName(&'a str),
-        MessageByMsgType(MsgType),
+        MessageByMsgType(&'a str),
     }
 
     impl Key {
@@ -1486,7 +1443,7 @@ mod symbol_table {
                 Key::FieldByTag(t) => KeyRef::FieldByTag(*t),
                 Key::FieldByName(s) => KeyRef::FieldByName(s.as_str()),
                 Key::MessageByName(s) => KeyRef::MessageByName(s.as_str()),
-                Key::MessageByMsgType(t) => KeyRef::MessageByMsgType(*t),
+                Key::MessageByMsgType(s) => KeyRef::MessageByMsgType(s.as_str()),
             }
         }
     }
@@ -1530,154 +1487,6 @@ mod symbol_table {
 
 mod quickfix {
     use super::*;
-
-    fn write_layout_item<T>(writer: &mut quick_xml::Writer<T>, item: LayoutItem)
-    where
-        T: io::Write,
-    {
-        use quick_xml::events::*;
-        let required = if item.required() { 'Y' } else { 'N' };
-        match item.kind() {
-            LayoutItemKind::Field(_) => {
-                writer
-                    .write_event(Event::Empty(BytesStart::borrowed(
-                        format!("field name='{}' required='{}' ", item.tag_text(), required)
-                            .as_bytes(),
-                        b"field".len(),
-                    )))
-                    .unwrap();
-            }
-            LayoutItemKind::Group(_, fields) => {
-                writer
-                    .write_event(Event::Start(BytesStart::borrowed(
-                        format!("group name='{}' required='{}' ", item.tag_text(), required)
-                            .as_bytes(),
-                        b"group".len(),
-                    )))
-                    .unwrap();
-                for item in fields {
-                    write_layout_item(writer, item);
-                }
-                writer
-                    .write_event(Event::End(BytesEnd::borrowed(b"group")))
-                    .unwrap();
-            }
-            LayoutItemKind::Component(_) => {
-                writer
-                    .write_event(Event::Empty(BytesStart::borrowed(
-                        format!(
-                            "component name='{}' required='{}' ",
-                            item.tag_text(),
-                            required
-                        )
-                        .as_bytes(),
-                        b"component".len(),
-                    )))
-                    .unwrap();
-            }
-        }
-    }
-
-    pub fn to_quickfix_xml(dict: &Dictionary) -> String {
-        use quick_xml::events::*;
-        use quick_xml::Writer;
-        use std::io::Cursor;
-        let mut writer = Writer::new_with_indent(Cursor::new(Vec::new()), b' ', 2);
-        writer
-            .write_event(Event::Start(BytesStart::borrowed_name(b"header")))
-            .unwrap();
-        for item in dict.component_by_name("StandardHeader").unwrap().items() {
-            write_layout_item(&mut writer, item);
-        }
-        writer
-            .write_event(Event::End(BytesEnd::borrowed(b"header")))
-            .unwrap();
-        writer
-            .write_event(Event::Start(BytesStart::borrowed_name(b"fix")))
-            .unwrap();
-        writer
-            .write_event(Event::Start(BytesStart::borrowed_name(b"messages")))
-            .unwrap();
-        for message in dict.iter_messages() {
-            writer
-                .write_event(Event::Start(BytesStart::borrowed(
-                    format!(
-                        "message name='{}' msgtype='{}' msgcat='{}' ",
-                        message.name(),
-                        message.msg_type(),
-                        "TODO_CATEGORY",
-                    )
-                    .as_bytes(),
-                    b"message".len(),
-                )))
-                .unwrap();
-            for item in message.layout() {
-                write_layout_item(&mut writer, item);
-            }
-            writer
-                .write_event(Event::End(BytesEnd::borrowed(b"message")))
-                .unwrap();
-        }
-        writer
-            .write_event(Event::End(BytesEnd::borrowed(b"messages")))
-            .unwrap();
-        writer
-            .write_event(Event::Start(BytesStart::borrowed_name(b"trailer")))
-            .unwrap();
-        for item in dict.component_by_name("StandardTrailer").unwrap().items() {
-            write_layout_item(&mut writer, item);
-        }
-        writer
-            .write_event(Event::End(BytesEnd::borrowed(b"trailer")))
-            .unwrap();
-        writer
-            .write_event(Event::Start(BytesStart::borrowed_name(b"components")))
-            .unwrap();
-        for component in dict
-            .iter_components()
-            .filter(|c| c.name() != "StandardHeader" && c.name() != "StandardTrailer")
-        {
-            writer
-                .write_event(Event::Start(BytesStart::borrowed(
-                    format!("component name='{}' ", component.name()).as_bytes(),
-                    "component".len(),
-                )))
-                .unwrap();
-            for item in component.items() {
-                write_layout_item(&mut writer, item);
-            }
-            writer
-                .write_event(Event::End(BytesEnd::borrowed(b"component")))
-                .unwrap();
-        }
-        writer
-            .write_event(Event::End(BytesEnd::borrowed(b"components")))
-            .unwrap();
-        writer
-            .write_event(Event::Start(BytesStart::borrowed_name(b"fields")))
-            .unwrap();
-        for field in dict.iter_fields() {
-            writer
-                .write_event(Event::Empty(BytesStart::borrowed(
-                    format!(
-                        "field name='{}' number='{}' type='{}' ",
-                        field.name(),
-                        field.tag(),
-                        field.data_type().basetype().to_quickfix_name()
-                    )
-                    .as_bytes(),
-                    b"field".len(),
-                )))
-                .unwrap();
-        }
-        writer
-            .write_event(Event::End(BytesEnd::borrowed(b"fields")))
-            .unwrap();
-        writer
-            .write_event(Event::End(BytesEnd::borrowed(b"fix")))
-            .unwrap();
-        String::from_utf8(writer.into_inner().into_inner()).unwrap()
-    }
 
     pub struct QuickFixReader<'a> {
         node_with_header: roxmltree::Node<'a, 'a>,
@@ -1855,7 +1664,12 @@ mod quickfix {
         }
         let component = ComponentData {
             id: 0,
-            component_type: ComponentType::Block,
+            component_type: FixmlComponentAttributes::Block {
+                // FIXME
+                is_implicit: false,
+                is_repeating: false,
+                is_optimized: false,
+            },
             layout_items,
             category_iid: 0, // FIXME
             name: name.as_ref().to_string(),
@@ -1880,7 +1694,7 @@ mod quickfix {
             // The idenfier that QuickFIX uses for this type.
             let quickfix_name = node.attribute("type").unwrap();
             // Translate that into a real datatype.
-            FixDataType::from_quickfix_name(quickfix_name).unwrap()
+            FixDatatype::from_quickfix_name(quickfix_name).unwrap()
         };
         // Get the official (not QuickFIX's) name of `datatype`.
         let name = datatype.name();
@@ -2000,18 +1814,7 @@ mod quickfix {
 #[cfg(test)]
 mod test {
     use super::*;
-    use quickcheck_macros::quickcheck;
     use std::collections::HashSet;
-    use std::convert::TryInto;
-
-    #[quickcheck]
-    fn msg_type_conversion(val: u16) -> bool {
-        let bytes = val.to_le_bytes();
-        let msg_type = MsgType::from_bytes(&bytes[..]).unwrap();
-        let mut buffer = vec![0, 0];
-        msg_type.write(&mut &mut buffer[..]).unwrap();
-        val == u16::from_le_bytes((&buffer[..]).try_into().unwrap())
-    }
 
     #[test]
     fn fix44_quickfix_is_ok() {

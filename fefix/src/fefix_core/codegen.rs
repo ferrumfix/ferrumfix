@@ -1,12 +1,28 @@
 //! Code generation utilities.
 
 use super::{dict, TagU16};
-use heck::{CamelCase, ShoutySnakeCase, SnakeCase};
+use fnv::FnvHashSet;
+use heck::{CamelCase, ShoutySnakeCase};
 use indoc::indoc;
 
-const FEFIX_VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const FEFIX_VERSION: &str = env!("CARGO_PKG_VERSION");
+const FOUR_SPACES: &str = "    ";
 
-fn generated_code_notice() -> String {
+/// Creates a `String` that contains a multiline Rust "Doc" comment explaining
+/// that the subsequent code was automatically generated.
+///
+/// The following example is for illustrative purposes only and the actual
+/// contents might change. The string is guaranteed not to have any trailing or
+/// leading whitespace.
+///
+/// ```text
+/// // Generated automatically by FerrumFIX v0.3 on Mon, 25 Dec 1995 13:30:00 GMT.
+/// //
+/// // DO NOT MODIFY MANUALLY.
+/// // DO NOT COMMIT TO VERSION CONTROL.
+/// // ALL CHANGES WILL BE OVERWRITTEN.
+/// ```
+pub fn generated_code_notice() -> String {
     use chrono::prelude::*;
     format!(
         indoc!(
@@ -22,283 +38,309 @@ fn generated_code_notice() -> String {
     )
 }
 
-pub fn message(dict: dict::Dictionary, message: dict::Message, custom_derive_line: &str) -> String {
-    let identifier = message.name().to_camel_case();
-    let fields = message
-        .layout()
-        .map(|layout_item| {
-            dict.translate_layout_item_to_struct_field(&layout_item, layout_item.required())
-        })
-        .filter(|opt| opt.is_some())
-        .map(|opt| opt.unwrap())
+/// Generates the Rust code for an `enum` that has variants that map 1:1 the
+/// available values for `field`.
+pub fn gen_enum_of_allowed_values(field: dict::Field, settings: &Settings) -> Option<String> {
+    let derives = settings.derives_for_allowed_values.join(", ");
+    let attributes = settings.attributes_for_allowed_values.join("\n");
+    let variants = field
+        .enums()?
+        .map(|v| gen_enum_variant_of_allowed_value(v, settings))
         .collect::<Vec<String>>()
         .join("\n");
-    format!(
-        indoc!(
-            r#"
-            #[derive(Debug)]
-            {custom_derive_line}
-            pub struct {identifier}<'a> {{
-                lifetime: PhantomData<&'a ()>,
-                {fields}
-            }}
-
-            impl<'a> {identifier}<'a> {{
-                pub const MSG_TYPE: &'static [u8] = b"{msg_type}";
-            }}"#
-        ),
-        custom_derive_line = custom_derive_line,
-        identifier = identifier,
-        msg_type = message.msg_type(),
-        fields = fields,
-    )
-}
-
-pub fn enum_variant(field_enum: dict::FieldEnum) -> String {
-    let name_is_valid_rust_identifier = field_enum
-        .description()
-        .chars()
-        .next()
-        .unwrap()
-        .is_ascii_alphabetic();
-    let rust_identifier = if name_is_valid_rust_identifier {
-        field_enum.description().to_camel_case()
-    } else {
-        format!("_{}", field_enum.description().to_camel_case())
-    };
-    format!(
-        indoc!(
-            r#"
-            {indentation}/// {doc}
-            {indentation}#[fefix(variant = "{variant}")]
-            {indentation}{},"#
-        ),
-        rust_identifier,
-        doc = format!("Field variant '{}'.", field_enum.value()),
-        variant = field_enum.value(),
-        indentation = "    ",
-    )
-}
-
-pub fn enum_definition(field: dict::Field) -> Option<String> {
-    let variants = field.enums()?;
     Some(format!(
         indoc!(
             r#"
-            /// Field type variants for [`{struct_name}`].
-            #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, FixFieldValue)]
+            /// Field type variants for [`{field_name}`].
+            #[derive({derives})]
+            {attributes}
             pub enum {identifier} {{
             {variants}
             }}"#
         ),
-        struct_name = field.name().to_shouty_snake_case(),
+        field_name = field.name().to_camel_case(),
+        derives = derives,
+        attributes = attributes,
         identifier = field.name().to_camel_case(),
-        variants = variants
-            .map(|v| enum_variant(v))
-            .collect::<Vec<String>>()
-            .join("\n")
+        variants = variants,
     ))
 }
 
-pub fn field_definition(field: dict::Field, type_param: &str) -> String {
-    let name = field.name().to_shouty_snake_case();
-    let tag = field.tag().to_string();
-    format!(
-        indoc!(
-            r#"
-            /// Field attributes for [`{name} <{tag}>`](https://www.onixs.biz/fix-dictionary/{major}.{minor}/tagnum_{tag}.html).
-            pub const {identifier}: &GeneratedFieldDef<'static, {type_param}> = &GeneratedFieldDef{{
-                name: "{name}",
-                tag: {tag},
-                is_group_leader: {group},
-                data_type: FixDataType::{data_type},
-                phantom: PhantomData,
-                location: FieldLocation::Body,
-            }};"#
+fn gen_enum_variant_of_allowed_value(
+    allowed_value: dict::FieldEnum,
+    settings: &Settings,
+) -> String {
+    let mut identifier = allowed_value.description().to_camel_case();
+    let identifier_needs_prefix = !allowed_value
+        .description()
+        .chars()
+        .next()
+        .unwrap_or('_')
+        .is_ascii_alphabetic();
+    if identifier_needs_prefix {
+        identifier = format!("_{}", identifier);
+    }
+    let value_literal = allowed_value.value();
+    indent_string(
+        format!(
+            indoc!(
+                r#"
+                /// {doc}
+                #[fefix(variant = "{value_literal}")]
+                {identifier},"#
+            ),
+            doc = format!("Field variant '{}'.", value_literal),
+            value_literal = value_literal,
+            identifier = identifier,
         ),
-        major = "4",
-        minor = "4",
-        identifier = name,
-        name = field.name(),
-        tag = tag,
-        type_param = type_param,
-        group = field.name().ends_with("Len"),
-        data_type = <&'static str as From<dict::FixDataType>>::from(field.data_type().basetype()),
-    ).trim().to_string()
+        settings.indentation.as_str(),
+    )
+}
+
+/// Code generation settings.
+#[derive(Debug, Clone)]
+pub struct Settings {
+    indentation: String,
+    indentation_depth: u32,
+    fefix_crate_name: String,
+    derives_for_allowed_values: Vec<String>,
+    attributes_for_allowed_values: Vec<String>,
+    custom_derive_lines: Vec<String>,
+}
+
+impl Settings {
+    /// Creates a new [`Settings`] set to defaults.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Changes the indentation prefix of all generated Rust code. It's four
+    /// spaces by default.
+    pub fn set_indentation(&mut self, indentation: &str) {
+        self.indentation = indentation.to_string();
+    }
+
+    /// Increments the indentation level of all generated Rust code by one.
+    pub fn incr_indentation(&mut self) {
+        self.indentation_depth += 1;
+    }
+
+    /// Returns a mutable reference to the `Vec` of derive macros used for
+    /// `enum`s.
+    pub fn derives_for_allowed_values_mut(&mut self) -> &mut Vec<String> {
+        &mut self.derives_for_allowed_values
+    }
+
+    /// Returns a mutable reference to the `Vec` of macro attributes for
+    /// `enum`s.
+    pub fn attributes_for_allowed_values_mut(&mut self) -> &mut Vec<String> {
+        &mut self.attributes_for_allowed_values
+    }
+
+    /// Sets the name of the `fefix` crate. `fefix` by default.
+    pub fn set_fefix_crate_name<S>(&mut self, name: S)
+    where
+        S: Into<String>,
+    {
+        self.fefix_crate_name = name.into();
+    }
+
+    fn fefix_crate_name(&self) -> &str {
+        self.fefix_crate_name.as_str()
+    }
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            indentation: FOUR_SPACES.to_string(),
+            indentation_depth: 0,
+            derives_for_allowed_values: vec![
+                "Debug".to_string(),
+                "Copy".to_string(),
+                "Clone".to_string(),
+                "PartialEq".to_string(),
+                "Eq".to_string(),
+                "Hash".to_string(),
+                "FixValue".to_string(),
+            ],
+            attributes_for_allowed_values: vec![],
+            fefix_crate_name: "fefix".to_string(),
+            custom_derive_lines: vec![],
+        }
+    }
+}
+
+/// Generates the Rust code for a FIX field definition.
+pub fn gen_field_definition(fix_dictionary: dict::Dictionary, field: dict::Field) -> String {
+    let mut header = FnvHashSet::default();
+    let mut trailer = FnvHashSet::default();
+    for item in fix_dictionary
+        .component_by_name("StandardHeader")
+        .unwrap()
+        .items()
+    {
+        if let dict::LayoutItemKind::Field(f) = item.kind() {
+            header.insert(f.tag());
+        }
+    }
+    for item in fix_dictionary
+        .component_by_name("StandardTrailer")
+        .unwrap()
+        .items()
+    {
+        if let dict::LayoutItemKind::Field(f) = item.kind() {
+            trailer.insert(f.tag());
+        }
+    }
+    gen_field_definition_with_hashsets(fix_dictionary, &header, &trailer, field)
 }
 
 /// Generates `const` implementors of
 /// [`IsFieldDefinition`](super::dict::IsFieldDefinition).
-pub fn module_with_field_definitions(dict: dict::Dictionary, fefix_path: &str) -> String {
-    let enums = dict
+///
+/// The generated module will contain:
+///
+/// - A generated code notice ([generated_code_notice]).
+/// - `enum` definitions for FIX fields.
+/// - A constant implementor of
+/// [`IsFieldDefinition`](super::dict::IsFieldDefinition) for each FIX field.
+///
+/// The Rust code will be free of any leading and trailing whitespace.
+/// An effort is made to provide good formatting, but users shouldn't rely on it
+/// and assume that formatting might be bad.
+pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) -> String {
+    let enums = fix_dictionary
         .iter_fields()
-        .filter_map(|field| enum_definition(field))
+        .filter_map(|field| gen_enum_of_allowed_values(field, settings))
         .collect::<Vec<String>>()
         .join("\n\n");
-    let field_defs = dict
+    let field_defs = fix_dictionary
         .iter_fields()
-        .map(|field| {
-            let is_enum = field.enums().is_some();
-            let rust_type = if is_enum {
-                field.name().to_camel_case()
-            } else {
-                fix_to_rust_type(
-                    field.tag(),
-                    field.data_type().basetype(),
-                    fefix_path,
-                    "static",
-                )
-            };
-            field_definition(field, rust_type.as_str())
-        })
+        .map(|field| gen_field_definition(fix_dictionary.clone(), field))
         .collect::<Vec<String>>()
         .join("\n");
+    let top_comment =
+        onixs_link_to_dictionary(fix_dictionary.get_version()).unwrap_or(String::new());
     let code = format!(
         indoc!(
             r#"
             {notice}
 
-            use {fefix_path}::dict::FieldLocation;
-            use {fefix_path}::{{dict::FixDataType, Buffer}};
-            use {fefix_path}::definitions::GeneratedFieldDef;
-            {import_data_field}
-            use std::marker::PhantomData;
+            // {top_comment}
 
-            {enums}
+            use {fefix_path}::dict::FieldLocation;
+            use {fefix_path}::dict::FixDatatype;
+            use {fefix_path}::definitions::HardCodedFixFieldDefinition;
+            use {fefix_path}::FixValue;
+
+            {enum_definitions}
 
             {field_defs}"#
         ),
         notice = generated_code_notice(),
-        import_data_field = if fefix_path == "fefix" {
-            "use fefix::FixFieldValue;"
-        } else {
-            "use crate::FixFieldValue;"
-        },
-        enums = enums,
+        top_comment = top_comment,
+        enum_definitions = enums,
         field_defs = field_defs,
-        fefix_path = fefix_path,
+        fefix_path = settings.fefix_crate_name(),
     );
     code
 }
 
-fn fix_to_rust_type(
-    tag: TagU16,
-    data_type: dict::FixDataType,
-    fefix_path: &str,
-    lifetime: &str,
+#[doc(hidden)]
+pub fn indent_lines<'a>(lines: impl Iterator<Item = &'a str>, prefix: &str) -> String {
+    lines.fold(String::new(), |mut s, line| {
+        if line.contains(char::is_whitespace) {
+            s.push_str(prefix);
+        }
+        s.push_str(line);
+        s.push_str("\n");
+        s
+    })
+}
+
+#[doc(hidden)]
+pub fn indent_string<S>(s: S, prefix: &str) -> String
+where
+    S: AsRef<str>,
+{
+    indent_lines(s.as_ref().lines(), prefix)
+}
+
+fn onixs_link_to_field(fix_version: &str, field: dict::Field) -> Option<String> {
+    Some(format!(
+        "https://www.onixs.biz/fix-dictionary/{}/tagnum_{}.html",
+        onixs_dictionary_id(fix_version)?,
+        field.tag().get()
+    ))
+}
+
+fn onixs_link_to_dictionary(fix_version: &str) -> Option<String> {
+    Some(format!(
+        "https://www.onixs.biz/fix-dictionary/{}/index.html",
+        onixs_dictionary_id(fix_version)?
+    ))
+}
+
+fn onixs_dictionary_id(fix_version: &str) -> Option<&str> {
+    Some(match fix_version {
+        "FIX.4.0" => "4.0",
+        "FIX.4.1" => "4.1",
+        "FIX.4.2" => "4.2",
+        "FIX.4.3" => "4.3",
+        "FIX.4.4" => "4.4",
+        "FIX.5.0" => "5.0",
+        "FIX.5.0-SP1" => "5.0.sp1",
+        "FIX.5.0-SP2" => "5.0.sp2",
+        "FIXT.1.1" => "fixt1.1",
+        _ => return None,
+    })
+}
+
+fn gen_field_definition_with_hashsets(
+    fix_dictionary: dict::Dictionary,
+    header_tags: &FnvHashSet<TagU16>,
+    trailer_tags: &FnvHashSet<TagU16>,
+    field: dict::Field,
 ) -> String {
-    if tag.get() == 10 {
-        return format!("{}::tagvalue::datatypes::CheckSum", fefix_path);
-    }
-    if data_type.base_type() == dict::FixDataType::Float {
-        return "rust_decimal::Decimal".to_string();
-    }
-    let bytes = format!("&'{} [u8]", lifetime);
-    match data_type {
-        // FIX strings are encoded as Latin-1, which is not compatible with
-        // UTF-8 and thus Rust strings. This is hardly ever a problem as most
-        // strings are ASCII, but we can't do any hazardous assumptions.
-        dict::FixDataType::String | dict::FixDataType::Data => bytes,
-        dict::FixDataType::Char => "u8".to_string(),
-        dict::FixDataType::Boolean => "bool".to_string(),
-        dict::FixDataType::Country | dict::FixDataType::Language => "[u8; 2]".to_string(),
-        dict::FixDataType::Currency => "[u8; 3]".to_string(),
-        dict::FixDataType::Exchange => "[u8; 4]".to_string(),
-        dict::FixDataType::Length => "usize".to_string(),
-        dict::FixDataType::DayOfMonth => "u32".to_string(),
-        dict::FixDataType::Int => "i64".to_string(),
-        dict::FixDataType::SeqNum => "u64".to_string(),
-        dict::FixDataType::NumInGroup => "usize".to_string(),
-        dict::FixDataType::UtcDateOnly => {
-            format!("{}::tagvalue::datatypes::Date", fefix_path)
-        }
-        dict::FixDataType::UtcTimeOnly => {
-            format!("{}::tagvalue::datatypes::Time", fefix_path)
-        }
-        dict::FixDataType::UtcTimestamp => {
-            format!("{}::tagvalue::datatypes::Timestamp", fefix_path)
-        }
-        _ => bytes,
-    }
-}
-
-struct RustTypeName {
-    s: String,
-}
-
-impl RustTypeName {
-    fn new<S>(name: S) -> Self
-    where
-        S: Into<String>,
-    {
-        Self { s: name.into() }
-    }
-
-    fn optional(self, opt: bool) -> Self {
-        if opt {
-            Self {
-                s: format!("::std::option::Option<{}>", self.s),
-            }
-        } else {
-            self
-        }
-    }
-}
-
-impl dict::Dictionary {
-    fn translate_layout_item_to_struct_field(
-        &self,
-        item: &dict::LayoutItem,
-        required: bool,
-    ) -> Option<String> {
-        let field_name = match item.kind() {
-            dict::LayoutItemKind::Component(c) => c.name().to_snake_case(),
-            dict::LayoutItemKind::Group(_, _) => return None,
-            dict::LayoutItemKind::Field(f) => f.name().to_snake_case(),
-        };
-        let field_type = match item.kind() {
-            dict::LayoutItemKind::Component(_c) => "()".to_string(),
-            dict::LayoutItemKind::Group(_, _) => "()".to_string(),
-            dict::LayoutItemKind::Field(f) => {
-                fix_to_rust_type(f.tag(), f.data_type().basetype(), "crate", "static").to_string()
-            }
-        };
-        //let field_tag = match item.kind() {
-        //    LayoutItemKind::Component(_c) => 1337,
-        //    LayoutItemKind::Group(_, _) => 42,
-        //    LayoutItemKind::Field(f) => f.tag(),
-        //};
-        let _field_doc = match item.kind() {
-            dict::LayoutItemKind::Component(_c) => "///".to_string(),
-            dict::LayoutItemKind::Group(_, _) => "///".to_string(),
-            dict::LayoutItemKind::Field(f) => docs::gen_field(self.get_version().to_string(), &f),
-        };
-        Some(format!(
-            r#"
-            pub {identifier}: {field_type},
-            "#,
-            identifier = field_name,
-            field_type = RustTypeName::new(field_type).optional(!required).s
-        ))
-    }
-}
-
-mod docs {
-    use super::*;
-
-    pub fn gen_field(version: String, field: &dict::Field) -> String {
-        let onixs_link = field.doc_url_onixs(version.as_str());
+    let name = field.name().to_shouty_snake_case();
+    let tag = field.tag().to_string();
+    let field_location = if header_tags.contains(&field.tag()) {
+        "Header"
+    } else if trailer_tags.contains(&field.tag()) {
+        "Trailer"
+    } else {
+        "Body"
+    };
+    let doc_link = onixs_link_to_field(fix_dictionary.get_version(), field);
+    let doc = if let Some(doc_link) = doc_link {
         format!(
-            "/// {}\n///\n/// # Field information\n///\n/// Tag Number: {}\n/// OnixS [reference]({}).",
-            field.name(),
-            field.tag(),
-            onixs_link.as_str()
+            "/// Field attributes for [`{} <{}>`]({}).",
+            name, tag, doc_link
         )
-    }
-
-    pub fn _gen_message() -> String {
-        "# Message information\n\n".to_string()
-    }
+    } else {
+        format!("/// Field attributes for `{} <{}>`.", name, tag)
+    };
+    format!(
+        indoc!(
+            r#"
+                {doc}
+                pub const {identifier}: &HardCodedFixFieldDefinition = &HardCodedFixFieldDefinition {{
+                    name: "{name}",
+                    tag: {tag},
+                    is_group_leader: {group},
+                    data_type: FixDatatype::{data_type},
+                    location: FieldLocation::{field_location},
+                }};"#
+        ),
+        doc = doc,
+        identifier = name,
+        name = field.name(),
+        tag = tag,
+        group = field.name().ends_with("Len"),
+        field_location = field_location,
+        data_type = <&'static str as From<dict::FixDatatype>>::from(field.data_type().basetype()),
+    )
 }
 
 #[cfg(test)]
@@ -307,9 +349,16 @@ mod test {
 
     #[test]
     fn syntax_of_field_definitions_is_ok() {
+        let codegen_settings = Settings::default();
         for dict in dict::Dictionary::all().into_iter() {
-            let code = module_with_field_definitions(dict, "crate");
+            let code = gen_definitions(dict, &codegen_settings);
             syn::parse_file(code.as_str()).unwrap();
         }
+    }
+
+    #[test]
+    fn generated_code_notice_is_trimmed() {
+        let notice = generated_code_notice();
+        assert_eq!(notice, notice.trim());
     }
 }

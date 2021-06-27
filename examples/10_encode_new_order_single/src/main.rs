@@ -1,4 +1,5 @@
-use fefix::definitions::fix44;
+use decimal::d128;
+use fefix::prelude::*;
 use fefix::tagvalue::{Config, Encoder, FvWrite};
 use rust_decimal_macros::dec;
 
@@ -6,7 +7,8 @@ use rust_decimal_macros::dec;
 
 fn main() {
     let encoder = &mut fix_encoder();
-    let msg = &mut encoder.start_message(b"FIX.4.4", b"ExecutionReport");
+    let buffer = &mut Vec::new();
+    let msg = &mut encoder.start_message(b"FIX.4.4", buffer, b"ExecutionReport");
     msg.set_fv(fix44::MSG_SEQ_NUM, 215);
     msg.set_fv(fix44::SENDER_COMP_ID, "CLIENT12");
     msg.set_fv(fix44::TARGET_COMP_ID, "B");
@@ -18,10 +20,11 @@ fn main() {
     );
     msg.set_fv(fix44::ORD_TYPE, fix44::OrdType::Limit);
     msg.set_fv(fix44::PRICE, dec!(150.08));
+    msg.set_fv(fix44::PRICE_DELTA, d128!(32.99));
     msg.set_fv(fix44::SIDE, fix44::Side::Buy);
     msg.set_fv(fix44::TIME_IN_FORCE, fix44::TimeInForce::Day);
 }
 
-fn fix_encoder() -> Encoder<Vec<u8>, Config> {
-    Encoder::from_buffer(Vec::new())
+fn fix_encoder() -> Encoder<Config> {
+    Encoder::default()
 }

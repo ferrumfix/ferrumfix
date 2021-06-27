@@ -2,9 +2,9 @@ use super::{Config, Configure, DecodeError};
 use crate::dict;
 use crate::dict::FieldLocation;
 use crate::dict::IsFieldDefinition;
-use crate::tagvalue::datatypes;
-use crate::tagvalue::Fv;
+use crate::tagvalue::{FieldAccess, RepeatingGroup};
 use crate::Dictionary;
+use crate::FixValue;
 use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
@@ -15,19 +15,26 @@ pub struct Message<'a> {
     internal: &'a MessageInternal<'a>,
 }
 
-impl<'a> Fv<'a> for Message<'a> {
-    type Key = (FieldLocation, &'a str);
+impl<'a> FieldAccess for Message<'a> {
+    type Group = MessageGroup<'a>;
 
-    fn fv_raw_with_key<'b>(&'b self, key: Self::Key) -> Option<&'b [u8]> {
-        self.field_raw(key.1, key.0).map(|s| s.as_bytes())
+    fn group_opt<F>(
+        &self,
+        _field: &F,
+    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>>
+    where
+        F: IsFieldDefinition,
+    {
+        None
     }
 
-    fn fv_raw<'b, F>(&'b self, field: &'a F) -> Option<&'b [u8]>
+    fn fv_raw<F>(&self, field: &F) -> Option<&[u8]>
     where
-        'b: 'a,
         F: dict::IsFieldDefinition,
     {
-        self.fv_raw_with_key((field.location(), field.name()))
+        self.internal
+            .field_raw(field.name(), field.location())
+            .map(|s| s.as_bytes())
     }
 }
 
@@ -38,15 +45,40 @@ pub struct MessageGroup<'a> {
     entries: &'a [Component<'a>],
 }
 
-impl<'a> MessageGroup<'a> {
-    pub fn len(&self) -> usize {
+impl<'a> RepeatingGroup for MessageGroup<'a> {
+    type Entry = MessageGroupEntry<'a>;
+
+    fn len(&self) -> usize {
         self.entries.len()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = MessageGroupEntry<'a>> {
+    fn entry(&self, i: usize) -> Self::Entry {
         self.entries
-            .iter()
+            .get(i)
             .map(|component| MessageGroupEntry { component })
+            .unwrap()
+    }
+}
+
+impl<'a> FieldAccess for MessageGroupEntry<'a> {
+    type Group = MessageGroup<'a>;
+
+    fn group_opt<F>(
+        &self,
+        _field: &F,
+    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>>
+    where
+        F: IsFieldDefinition,
+    {
+        None
+    }
+
+    fn fv_raw<F>(&self, _field: &F) -> Option<&[u8]>
+    where
+        F: IsFieldDefinition,
+    {
+        // FIXME
+        None
     }
 }
 
@@ -60,8 +92,8 @@ impl<'a> MessageGroupEntry<'a> {
     pub fn group<'b, F, T>(&'b self, _field_def: &F) -> Option<MessageGroup<'b>>
     where
         'b: 'a,
-        F: dict::IsFieldDefinition,
-        T: datatypes::FixFieldValue<'b>,
+        F: IsFieldDefinition,
+        T: FixValue<'b>,
     {
         None
     }
@@ -69,11 +101,11 @@ impl<'a> MessageGroupEntry<'a> {
     pub fn field_ref<'b, F, T>(
         &'b self,
         _field_def: &F,
-    ) -> Option<Result<T, <T as datatypes::FixFieldValue<'b>>::Error>>
+    ) -> Option<Result<T, <T as FixValue<'b>>::Error>>
     where
         'b: 'a,
-        F: dict::IsFieldDefinition,
-        T: datatypes::FixFieldValue<'b>,
+        F: IsFieldDefinition,
+        T: FixValue<'b>,
     {
         unimplemented!()
     }
@@ -97,40 +129,30 @@ impl<'a> Message<'a> {
     pub fn group<'b, F, T>(&'b self, _field_def: &F) -> Option<MessageGroup<'b>>
     where
         'b: 'a,
-        F: dict::IsFieldDefinition,
-        T: datatypes::FixFieldValue<'b>,
+        F: IsFieldDefinition,
+        T: FixValue<'b>,
     {
         None
     }
 
-    pub fn field_ref<'b, F, T>(
-        &'b self,
-        field_def: &F,
-    ) -> Option<Result<T, <T as datatypes::FixFieldValue<'b>>::Error>>
-    where
-        'b: 'a,
-        F: dict::IsFieldDefinition,
-        T: datatypes::FixFieldValue<'b>,
-    {
-        self.internal.field_ref(field_def)
-    }
-
-    pub fn field_raw<'b>(
-        &'b self,
-        name: &str,
-        location: FieldLocation,
-    ) -> Option<&'b str> {
-        self.internal.field_raw(name, location)
-    }
-
-    //type FieldsIter = FieldsIter<'a>;
-    //type FieldsIterStdHeader = FieldsIter<'a>;
-    //type FieldsIterBody = FieldsIter<'a>;
-
     /// Creates an [`Iterator`] over all FIX fields in `self`.
-    pub fn iter_fields(&self) -> impl Iterator<Item = Cow<'a, str>> {
-        // TODO
-        std::iter::empty()
+    pub fn iter_fields(&self) -> MessageFieldsIter<'a> {
+        MessageFieldsIter {
+            fields: self.internal.std_header.iter(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct MessageFieldsIter<'a> {
+    fields: std::collections::hash_map::Iter<'a, &'a str, FieldOrGroup<'a>>,
+}
+
+impl<'a> Iterator for MessageFieldsIter<'a> {
+    type Item = (&'a str, &'a FieldOrGroup<'a>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.fields.next().map(|x| (*x.0, x.1))
     }
 }
 
@@ -184,10 +206,9 @@ where
     fn message_builder<'a>(&'a mut self) -> &'a mut MessageInternal<'a> {
         self.message_builder.clear();
         unsafe {
-            std::mem::transmute::<
-                &'a mut MessageInternal<'static>,
-                &'a mut MessageInternal<'a>,
-            >(&mut self.message_builder)
+            std::mem::transmute::<&'a mut MessageInternal<'static>, &'a mut MessageInternal<'a>>(
+                &mut self.message_builder,
+            )
         }
     }
 
@@ -209,7 +230,7 @@ type Component<'a> = HashMap<&'a str, FieldOrGroup<'a>>;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(untagged)]
-enum FieldOrGroup<'a> {
+pub enum FieldOrGroup<'a> {
     Field(Cow<'a, str>),
     #[serde(borrow)]
     Group(Vec<Component<'a>>),
@@ -238,19 +259,6 @@ impl<'a> MessageInternal<'a> {
         self.std_trailer.clear();
     }
 
-    pub fn field_ref<'b, F, T>(
-        &'b self,
-        field_def: &F,
-    ) -> Option<Result<T, <T as datatypes::FixFieldValue<'b>>::Error>>
-    where
-        'b: 'a,
-        F: IsFieldDefinition,
-        T: datatypes::FixFieldValue<'b>,
-    {
-        self.field_raw(field_def.name(), field_def.location())
-            .map(|s| T::deserialize(s.as_bytes()))
-    }
-
     fn field_raw(&self, name: &str, location: FieldLocation) -> Option<&str> {
         match location {
             FieldLocation::Body => self.body.get(name).and_then(|field_or_group| {
@@ -260,7 +268,20 @@ impl<'a> MessageInternal<'a> {
                     None
                 }
             }),
-            _ => panic!(),
+            FieldLocation::Header => self.std_header.get(name).and_then(|field_or_group| {
+                if let FieldOrGroup::Field(value) = field_or_group {
+                    Some(value.borrow())
+                } else {
+                    None
+                }
+            }),
+            FieldLocation::Trailer => self.std_trailer.get(name).and_then(|field_or_group| {
+                if let FieldOrGroup::Field(value) = field_or_group {
+                    Some(value.borrow())
+                } else {
+                    None
+                }
+            }),
         }
     }
 }
@@ -270,9 +291,7 @@ mod test {
     use super::*;
 
     const MESSAGE_SIMPLE: &str = include_str!("test_data/message_simple.json");
-
-    const MESSAGE_WITHOUT_HEADER: &str =
-        include_str!("test_data/message_without_header.json");
+    const MESSAGE_WITHOUT_HEADER: &str = include_str!("test_data/message_without_header.json");
 
     fn dict_fix44() -> Dictionary {
         Dictionary::fix44()

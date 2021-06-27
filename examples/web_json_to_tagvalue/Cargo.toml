@@ -1,9 +1,0 @@
-[package]
-name = "web_json_to_tagvalue"
-version = "0.1.0"
-edition = "2018"
-
-[dependencies]
-fefix = { path = "../../fefix" }
-tide = "0.16"
-tokio = { version = "1", features = ["rt"] }

@@ -1,6 +1,6 @@
 [package]
 name = "fefix_derive"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2018"
 authors = ["Filippo Costa @neysofu"]
 homepage = "https://github.com/neysofu/ferrum-fix"
@@ -17,6 +17,7 @@ proc-macro = true
 
 [dependencies]
 darling = "0.12"
+proc-macro-crate = "1"
 proc-macro2 = "1"
 quote = "1"
 syn = { version = "1", features = ["derive", "parsing"] }

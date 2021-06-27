@@ -8,7 +8,9 @@ mod decoder;
 mod encoder;
 
 pub use config::{Config, Configure};
-pub use decoder::{Decoder, Message, MessageGroup, MessageGroupEntry};
+pub use decoder::{
+    Decoder, FieldOrGroup, Message, MessageFieldsIter, MessageGroup, MessageGroupEntry,
+};
 pub use encoder::Encoder;
 
 #[doc(inline)]
@@ -54,9 +56,7 @@ impl fmt::Display for DecodeError {
             Self::Schema => "The message is valid JSON, but not a valid FIX message.",
             Self::Syntax => "Bad JSON syntax.",
             Self::InvalidMsgType => "Unrecognized message type.",
-            Self::InvalidData => {
-                "The data does not conform to the specified message type."
-            }
+            Self::InvalidData => "The data does not conform to the specified message type.",
         };
         write!(f, "{}", err)
     }
