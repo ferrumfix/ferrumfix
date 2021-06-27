@@ -30,8 +30,6 @@ impl<'a> FixValue<'a> for CheckSum {
     type Error = &'static str;
     type SerializeSettings = ();
 
-    const IS_ASCII: bool = true;
-
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,

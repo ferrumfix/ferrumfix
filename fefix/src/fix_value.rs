@@ -8,7 +8,7 @@ const ERR_BOOL_CHAR: &str = "Invalid character for boolean. Only Y and N are val
 const ERR_UTF8: &str = "Invalid byte sequence; expected UTF-8 valid bytes.";
 const ERR_INT_INVALID: &str = "Invalid integer digits.";
 
-/// Allows (de)serialization as a FIX value (e.g. `tag=value|`).
+/// Provides (de)serialization logic for a Rust type as FIX field values.
 pub trait FixValue<'a>
 where
     Self: Sized,
@@ -18,13 +18,6 @@ where
     /// A type with values that customize the serialization algorithm, e.g.
     /// padding information.
     type SerializeSettings: Default;
-
-    /// Flag that is enabled if and only if the byte representation of `Self` is
-    /// ALWAYS valid ASCII.
-    ///
-    /// This flag is currently not used, but it might be once Rust supports
-    /// fully-fledged `const` generics.
-    const IS_ASCII: bool;
 
     /// Writes `self` to `buffer` using default settings.
     #[inline]
@@ -91,8 +84,6 @@ impl<'a> FixValue<'a> for chrono::DateTime<chrono::Utc> {
     type Error = &'static str;
     type SerializeSettings = WithMilliseconds;
 
-    const IS_ASCII: bool = true;
-
     #[inline]
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
@@ -138,8 +129,6 @@ impl<'a> FixValue<'a> for chrono::NaiveDate {
     type Error = &'static str;
     type SerializeSettings = ();
 
-    const IS_ASCII: bool = true;
-
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: Self::SerializeSettings) -> usize
     where
@@ -171,8 +160,6 @@ impl<'a> FixValue<'a> for rust_decimal::Decimal {
     type Error = &'static str;
     type SerializeSettings = ();
 
-    const IS_ASCII: bool = true;
-
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
@@ -198,8 +185,6 @@ impl<'a> FixValue<'a> for rust_decimal::Decimal {
 impl<'a> FixValue<'a> for decimal::d128 {
     type Error = decimal::Status;
     type SerializeSettings = ();
-
-    const IS_ASCII: bool = true;
 
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
@@ -230,8 +215,6 @@ impl<'a> FixValue<'a> for decimal::d128 {
 impl<'a> FixValue<'a> for bool {
     type Error = &'static str;
     type SerializeSettings = ();
-
-    const IS_ASCII: bool = true;
 
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
@@ -270,8 +253,6 @@ impl<'a> FixValue<'a> for &'a str {
     type Error = std::str::Utf8Error;
     type SerializeSettings = ();
 
-    const IS_ASCII: bool = true;
-
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
@@ -290,8 +271,6 @@ impl<'a> FixValue<'a> for &'a str {
 impl<'a> FixValue<'a> for u8 {
     type Error = &'static str;
     type SerializeSettings = ();
-
-    const IS_ASCII: bool = false;
 
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
@@ -312,8 +291,6 @@ impl<'a> FixValue<'a> for &'a [u8] {
     type Error = ();
     type SerializeSettings = ();
 
-    const IS_ASCII: bool = false;
-
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
@@ -333,8 +310,6 @@ impl<'a, const N: usize> FixValue<'a> for [u8; N] {
     type Error = ();
     type SerializeSettings = ();
 
-    const IS_ASCII: bool = false;
-
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, settings: ()) -> usize
     where
@@ -352,8 +327,6 @@ impl<'a, const N: usize> FixValue<'a> for [u8; N] {
 impl<'a, const N: usize> FixValue<'a> for &'a [u8; N] {
     type Error = ();
     type SerializeSettings = ();
-
-    const IS_ASCII: bool = false;
 
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
@@ -373,8 +346,6 @@ impl<'a, const N: usize> FixValue<'a> for &'a [u8; N] {
 impl<'a> FixValue<'a> for TagU16 {
     type Error = &'static str;
     type SerializeSettings = ();
-
-    const IS_ASCII: bool = true;
 
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
@@ -408,8 +379,6 @@ impl<'a> FixValue<'a> for TagU16 {
 impl<'a> FixValue<'a> for u32 {
     type Error = &'static str;
     type SerializeSettings = ZeroPadding;
-
-    const IS_ASCII: bool = true;
 
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, padding: Self::SerializeSettings) -> usize
@@ -455,8 +424,6 @@ impl<'a> FixValue<'a> for i32 {
     type Error = &'static str;
     type SerializeSettings = ();
 
-    const IS_ASCII: bool = true;
-
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
@@ -491,8 +458,6 @@ impl<'a> FixValue<'a> for u64 {
     type Error = &'static str;
     type SerializeSettings = ();
 
-    const IS_ASCII: bool = true;
-
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
@@ -525,8 +490,6 @@ impl<'a> FixValue<'a> for u64 {
 impl<'a> FixValue<'a> for i64 {
     type Error = &'static str;
     type SerializeSettings = ();
-
-    const IS_ASCII: bool = true;
 
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
@@ -561,8 +524,6 @@ impl<'a> FixValue<'a> for i64 {
 impl<'a> FixValue<'a> for usize {
     type Error = &'static str;
     type SerializeSettings = ();
-
-    const IS_ASCII: bool = true;
 
     #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize

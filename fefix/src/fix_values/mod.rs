@@ -1,34 +1,30 @@
-//! Types for holding [`FixValue`](crate::FixValue) values.
+//! Implementors of [`FixValue`](crate::FixValue).
 //!
-//! This module introduces reusable, allocation-free data structures that can be
-//! used to store [`FixValue`](crate::FixValue) values. This is done via the
-//! [`FixValue`] trait, which allows both serialization and deserialization.
-//!
-//! FerrumFIX maps FIX date types to the following [`FixValue`] implementors:
-//!
-//! - `int`: any Rust primitive integer type;
-//! - `Length`: [`usize`];
-//! - `NumInGroup`: [`u16`];
-//! - `SeqNum`: [`u64`];
-//! - `TagNum`: [`u32`];
-//! - `DayOfMonth`: [`u32`];
-//! - `float`, `Qty`, `Price`, `PriceOffset`, `Amt`, `Percentage`:
-//! `rust_decimal::Decimal`, `decimal::d128` or other custom types;
-//! - `char`: [`u8`] (FIX mandates the use of a single-byte encoding, so `u8` is
-//! a better fit than `char`);
-//! - `Boolean`: [`bool`];
-//! - `String`, `data`: `&[u8]`;
-//! - `MultipleCharValue`: [`MultipleChars`];
-//! - `MultipleValueString`: [`MultipleStrings`];
-//! - `Country`: [`Country`];
-//! - `Currency`: [`Currency`];
-//! - `Exchange`: [`Exchange`];
-//! - `month-year`: [`MonthYear`];
-//! - `UTCTimestamp`, `LocalMktDate`: [`Timestamp`];
-//! - `UTCTimeOnly`: [`Time`];
-//! - `UTCDateOnly`: [`Date`];
-//! - `TZTimeOnly`: [`TzTime`];
-//! - `TZTimestamp`: [`TzTimestamp`];
+//! | FIX datatype               | Relevant [`FixValue`] implementors                                                 |
+//! |----------------------------|------------------------------------------------------------------------------------|
+//! | `int`                      | Any Rust primitive integer type.                                                   |
+//! | `Length`                   | [`usize`]                                                                          |
+//! | `NumInGroup`               | [`usize`]                                                                          |
+//! | `SeqNum`                   | [`u64`]                                                                            |
+//! | `TagNum`                   | [`TagU16`](crate::TagU16)                                                          |
+//! | `DayOfMonth`               | [`u32`]                                                                            |
+//! | `float` and `float` -like  | [`f32`], [`f64`], `rust_decimal::Decimal`, `decimal::d128`, or other custom types. |
+//! | `Boolean`                  | [`bool`]                                                                           |
+//! | `char`                     | [`u8`] [^1]                                                                        |
+//! | `String`                   | `Vec<u8>`, `&[u8]`.[^1]                                                            |
+//! | `data`                     | `Vec<u8>`, `&[u8]` (also [`String`], [`str`] for UTF-8 content).                   |
+//! | `MultipleCharValue`        | [`MultipleChars`] [^1]                                                             |
+//! | `MultipleValueString`      | [`MultipleStrings`] [^1]                                                           |
+//! | `Country`                  | [`Country`]                                                                        |
+//! | `Currency`                 | [`Currency`]                                                                       |
+//! | `Exchange`                 | [`Exchange`]                                                                       |
+//! | `month-year`               | [`MonthYear`]                                                                      |
+//! | `UTCTimestamp`             | [`Timestamp`]                                                                      |
+//! | `LocalMktDate`             | [`Timestamp`]                                                                      |
+//! | `UTCTimeOnly`              | [`Time`]                                                                           |
+//! | `TZTimestamp`              | [`TzTimestamp`]                                                                    |
+//! | `TZTimeOnly`               | [`TzTime`]                                                                         |
+//! | `UTCDateOnly`              | [`Date`]                                                                           |
 //!
 //! # Quick tour of [`FixValue`]
 //!
@@ -52,6 +48,10 @@
 //! 1337u32.serialize(buffer);
 //! assert_eq!(&buffer[..], b"1337" as &[u8]);
 //! ```
+//!
+//! [^1]: With the exception of datatype `data`, FIX mandates a single-byte
+//! encoding (Latin alphabet No. 1 by default), while Rust strings are UTF-8,
+//! which is a multibyte. Don't use Rust strings for anything other than `data`!
 
 mod checksum;
 mod date;

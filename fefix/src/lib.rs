@@ -56,6 +56,30 @@
 //! - **Q.** Why isn't X supported?  
 //!   **A.** Time, mostly. Drop me an email or open an issue and let's see what I
 //!   can do.
+//!
+//! # About code generation
+//!
+//! FerrumFIX internals rely on [`Dictionary`] for accessing details about
+//! fields, messages, and other abstract entities as defined in the FIX
+//! specifications. Examples of such information include:
+//!
+//! - The mapping of FIX field names to numeric tags (e.g. `BeginString` is 8).
+//! - Which FIX fields are mandatory and which are optional.
+//! - The data type of each and every FIX field.
+//! - What fields to expect in FIX headers.
+//!
+//! Sometimes, things become easier by querying [`Dictionary`] at compile time
+//! and generating Rust code with optimal performance and better ergonomics and
+//! type safety. This is where the [`codegen`] module comes in: Rust code
+//! generation utilities that you call in your `build.rs`. The [`definitions`]
+//! module includes the code generation artifacts for common FIX versions.
+//!
+//! # External resources
+//!
+//! - https://fixtrading.org/standards.
+//! - https://fiximate.fixtrading.org/.
+//! - https://github.com/FIXTradingCommunity.
+//! - https://forum.fixtrading.org/.
 
 #![doc(html_root_url = "https://docs.rs/fefix/")]
 #![warn(missing_docs, missing_doc_code_examples)]

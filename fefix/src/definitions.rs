@@ -1,4 +1,13 @@
 //! Field and message definitions for all FIX application versions.
+//!
+//!
+//! # What is this and why is this necessary?
+//!
+//! FerrumFIX internals rely on [`Dictionary`](crate::Dictionary) for accessing
+//! details about fields, messages and other abstract entities defined in the
+//! FIX Dictionary specifications. Although this approach works quite well, it
+//! can become daunting to query a [`Dictionary`](crate::Dictionary) for
+//! everything.
 
 use crate::{dict, dict::FixDatatype, TagU16};
 
