@@ -53,10 +53,14 @@ impl Tz {
         (self.sign, self.offset)
     }
 
+    #[cfg(feature = "utils-chrono")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
     pub fn to_chrono_offset(&self) -> chrono::FixedOffset {
         chrono::FixedOffset::east(self.offset().1.as_secs() as i32)
     }
 
+    #[cfg(feature = "utils-chrono")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
     pub fn from_chrono_offset(offset: chrono::FixedOffset) -> Self {
         let local_minus_utc = offset.local_minus_utc();
         Self {
