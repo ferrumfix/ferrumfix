@@ -80,7 +80,7 @@ bitvec = "0.18.3"
 bytes = { version="1", optional=true }
 chrono = "0.4"
 decimal = { version="2", optional=true }
-fefix_derive = { path="../fefix_derive" }
+fefix_derive = { path="../fefix_derive", version="0.6" }
 fnv = "1"
 futures = "0.3"
 futures-timer = "3"
