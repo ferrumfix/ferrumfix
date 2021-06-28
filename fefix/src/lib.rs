@@ -76,10 +76,10 @@
 //!
 //! # External resources
 //!
-//! - https://fixtrading.org/standards.
-//! - https://fiximate.fixtrading.org/.
-//! - https://github.com/FIXTradingCommunity.
-//! - https://forum.fixtrading.org/.
+//! - [`https://fixtrading.org/standards`](https://fixtrading.org/standards).
+//! - [`https://fiximate.fixtrading.org`](https://fiximate.fixtrading.org).
+//! - [`https://github.com/FIXTradingCommunity`](https://github.com/FIXTradingCommunity).
+//! - [`https://forum.fixtrading.org`](https://forum.fixtrading.org).
 
 #![doc(html_root_url = "https://docs.rs/fefix/")]
 #![warn(missing_docs, missing_doc_code_examples)]
