@@ -2791,6 +2791,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "test_compile_full_features"
+version = "0.1.0"
+dependencies = [
+ "fefix",
+]
+
+[[package]]
 name = "textwrap"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

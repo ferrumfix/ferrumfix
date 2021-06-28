@@ -19,5 +19,6 @@ members = [
     "examples/31_tcp_sofh_tokio_codec",
     "examples/70_json_encoding",
     "examples/tls_fixua_acceptor",
+    "tests/compile_full_features",
     "tests/codegen_fix44",
 ]
