@@ -4,7 +4,7 @@
 type SessionId = u128;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-enum FlowType {
+pub enum FlowType {
     Recoverable,
     Idempotent,
     Unsequenced,
