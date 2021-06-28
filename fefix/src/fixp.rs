@@ -11,6 +11,7 @@ enum FlowType {
     None,
 }
 
+#[derive(Debug, Clone)]
 #[non_exhaustive]
 pub enum MessageType {
     Sequence,
