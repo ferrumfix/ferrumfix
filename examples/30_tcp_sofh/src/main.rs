@@ -1,4 +1,4 @@
-use fefix::sofh::SeqDecoder;
+use fesofh::SeqDecoder;
 use std::io;
 use std::net;
 

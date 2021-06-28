@@ -16,7 +16,7 @@
 /// [`EncodingType::Unknown`] values e.g.:
 ///
 /// ```
-/// use fefix::sofh::EncodingType;
+/// use fesofh::EncodingType;
 ///
 /// assert_eq!(EncodingType::Unknown(0xF500), EncodingType::Json);
 /// ```
@@ -78,7 +78,7 @@ impl EncodingType {
     /// assumed, as mandated by the SOFH specification.
     ///
     /// ```
-    /// use fefix::sofh::EncodingType;
+    /// use fesofh::EncodingType;
     ///
     /// assert_eq!(EncodingType::from_bytes([0xF0, 0x00]), EncodingType::TagValue);
     /// assert_eq!(EncodingType::from_bytes([0xFA, 0x42]), EncodingType::Fast(0x42));
@@ -91,7 +91,7 @@ impl EncodingType {
     /// assumed, as mandated by the SOFH specification.
     ///
     /// ```
-    /// use fefix::sofh::EncodingType;
+    /// use fesofh::EncodingType;
     ///
     /// assert_eq!(EncodingType::TagValue.to_bytes(), [0xF0, 0x00]);
     /// assert_eq!(EncodingType::Fast(0x42).to_bytes(), [0xFA, 0x42]);

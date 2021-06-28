@@ -1,14 +1,13 @@
 [package]
-name = "fefix"
+name = "fesofh"
 version = "0.1.0"
-edition = "2018"
 authors = ["Filippo Costa @neysofu"]
+edition = "2018"
 homepage = "https://github.com/neysofu/ferrum-fix"
 repository = "https://github.com/neysofu/ferrum-fix"
-description = "FIX & FAST (FIX Adapted for STreaming) in pure Rust."
+description = "SOFH support for Rust."
 publish = true
-readme = "../README.md"
-keywords = ["fix", "fast", "protocol", "finance", "fintech"]
+keywords = ["fix", "protocol", "finance", "fintech"]
 categories = ["network-programming", "parser-implementations", "encoding"]
 license = "MIT OR Apache-2.0"
 
@@ -19,57 +18,13 @@ all-features = true
 rustdoc-args = ["--cfg", "doc_cfg"]
 
 [lib]
-name = "fefix"
-
-[[bench]]
-name = "fix_decode"
-harness = false
-
+name = "fesofh"
 [features]
-default = ["fixs", "utils-openssl", "utils-tokio", "utils-chrono"]
-derive = []
-fix40 = []
-fix41 = []
-fix42 = []
-fix43 = []
-fix50 = []
-fix50sp1 = []
-fix50sp2 = []
-fixt11 = []
-fixs = []
-fixp = []
-fast-encoding = []
-json-encoding = []
-codegen = ["heck", "indoc"]
 utils-bytes = ["bytes"]
-utils-chrono = []
-utils-decimal = ["decimal"]
-utils-openssl = ["openssl"]
-utils-rust-decimal = ["rust_decimal"]
-utils-slog = ["slog"]
 utils-tokio = ["tokio-util", "utils-bytes"]
 
 full = [
-    "codegen",
-    "derive",
-    "fix40",
-    "fix41",
-    "fix42",
-    "fix43",
-    "fix50",
-    "fix50sp1",
-    "fix50sp2",
-    "fixt11",
-    "fixs",
-    "fixp",
-    "fast-encoding",
-    "json-encoding",
     "utils-bytes",
-    "utils-chrono",
-    "utils-decimal",
-    "utils-openssl",
-    "utils-rust-decimal",
-    "utils-slog",
     "utils-tokio",
 ]
 

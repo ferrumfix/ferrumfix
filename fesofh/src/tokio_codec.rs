@@ -11,17 +11,16 @@ use tokio_util::codec;
 ///
 /// ```
 /// use bytes::{Bytes, BytesMut};
-/// use fefix::sofh;
 /// use tokio_util::codec::{Decoder, Encoder};
 ///
 /// let payload = Bytes::from_static(b"payload");
-/// let codec = &mut sofh::TokioCodec::default();
+/// let codec = &mut fesofh::TokioCodec::default();
 /// let destination = &mut BytesMut::new();
-/// codec.encode(sofh::Frame::new(0x1337, payload.clone()), destination);
+/// codec.encode(fesofh::Frame::new(0x1337, payload.clone()), destination);
 ///
 /// assert_eq!(
 ///     codec.decode(destination).unwrap(),
-///     Some(sofh::Frame::new(0x1337, payload))
+///     Some(fesofh::Frame::new(0x1337, payload))
 /// );
 /// ```
 #[derive(Debug, Default)]

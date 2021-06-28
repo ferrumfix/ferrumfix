@@ -1025,14 +1025,14 @@ dependencies = [
 name = "example_tcp_sofh"
 version = "0.1.0"
 dependencies = [
- "fefix",
+ "fesofh",
 ]
 
 [[package]]
 name = "example_tcp_sofh_tokio_codec"
 version = "0.1.0"
 dependencies = [
- "fefix",
+ "fesofh",
  "futures-util",
  "tokio",
  "tokio-util",
@@ -1130,6 +1130,45 @@ dependencies = [
  "serde_json",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "fesofh"
+version = "0.1.0"
+dependencies = [
+ "arbitrary",
+ "bitvec 0.18.4",
+ "bytes",
+ "chrono",
+ "criterion",
+ "decimal",
+ "enum-as-inner",
+ "fefix_derive",
+ "fnv",
+ "futures",
+ "futures-timer",
+ "heck",
+ "indoc",
+ "lazy_static",
+ "nohash-hasher",
+ "openssl",
+ "quick-xml",
+ "quickcheck",
+ "quickcheck_derive",
+ "quickcheck_macros",
+ "rayon",
+ "roxmltree",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "slog",
+ "sqlx",
+ "strum",
+ "strum_macros",
+ "syn",
+ "thiserror",
+ "tokio-util",
+ "uuid",
 ]
 
 [[package]]

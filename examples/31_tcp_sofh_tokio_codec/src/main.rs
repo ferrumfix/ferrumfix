@@ -1,4 +1,3 @@
-use fefix::sofh;
 use futures_util::stream::StreamExt;
 use std::io;
 use tokio::net::TcpListener;
@@ -8,7 +7,7 @@ use tokio_util::codec::Decoder;
 async fn main() -> io::Result<()> {
     let listener = TcpListener::bind("127.0.0.1:8080").await?;
     let reader = listener.accept().await?.0;
-    let decoder = &mut sofh::TokioCodec::default().framed(reader);
+    let decoder = &mut fesofh::TokioCodec::default().framed(reader);
     while let Some(frame) = decoder.next().await {
         if let Ok(frame) = frame {
             let payload_clone = &frame.payload().to_vec()[..];

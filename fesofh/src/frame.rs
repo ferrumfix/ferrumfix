@@ -31,7 +31,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use fefix::sofh::Frame;
+    /// use fesofh::Frame;
     ///
     /// let frame = Frame::new(0xF500, b"{}" as &[u8]);
     /// assert_eq!(frame.payload().len(), 2);
@@ -51,7 +51,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use fefix::sofh::{EncodingType, Frame};
+    /// use fesofh::{EncodingType, Frame};
     ///
     /// let frame = Frame::new(0xF500, &[] as &[u8]);
     /// let encoding_type = EncodingType::from(frame.encoding_type());
@@ -67,7 +67,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use fefix::sofh::Frame;
+    /// use fesofh::Frame;
     ///
     /// let frame = Frame::new(0x0, &[42u8] as &[u8]);
     /// assert_eq!(frame.payload(), &[42]);
@@ -84,7 +84,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use fefix::sofh::Frame;
+    /// use fesofh::Frame;
     ///
     /// // Message_Length:                        ~~~~~~~~~~~
     /// // Encoding_Type:                                     ~~~~~~~~~
@@ -106,7 +106,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use fefix::sofh::Frame;
+    /// use fesofh::Frame;
     ///
     /// // Message_Length:
     /// //            ~~~~~~~~~~~~~

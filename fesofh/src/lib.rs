@@ -13,6 +13,26 @@
 //! The preferred way to send and receive SOFH-enclosed messages over wire is with
 //! [`TokioCodec`].
 
+#![doc(html_root_url = "https://docs.rs/fesofh/")]
+#![warn(missing_docs, missing_doc_code_examples)]
+#![deny(
+    unused,
+    missing_debug_implementations,
+    unsafe_op_in_unsafe_fn,
+    rustdoc::broken_intra_doc_links,
+    //missing_docs,
+    unconditional_recursion,
+    unstable_name_collisions,
+    clippy::useless_conversion,
+    clippy::missing_panics_docs,
+    clippy::mixed_case_hex_literals,
+    clippy::needless_bool,
+    clippy::needless_lifetimes
+)]
+
+// Only enables the `doc_cfg` feature when its feature is defined.
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
+
 mod encoding_type;
 mod frame;
 mod seq_decoder;

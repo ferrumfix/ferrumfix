@@ -38,7 +38,7 @@ impl SeqDecoder {
     /// # Examples
     ///
     /// ```
-    /// use fefix::sofh::SeqDecoder;
+    /// use fesofh::SeqDecoder;
     ///
     /// let parser = SeqDecoder::with_capacity(8192);
     /// assert_eq!(parser.capacity(), 8192);
