@@ -7,6 +7,7 @@ lto = true
 
 [workspace]
 members = [
+    "fefast",
     "fefix",
     "fefix/tests/compile_full_features",
     "fefix/tests/codegen_fix44",

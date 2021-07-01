@@ -111,9 +111,6 @@ pub use fefix_core::codegen;
 pub use fefix_core::dict;
 pub use fefix_core::TagU16;
 pub mod definitions;
-#[cfg(feature = "fast-encoding")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "fast-encoding")))]
-pub mod fast;
 #[cfg(feature = "fixp")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fixp")))]
 pub mod fixp;

@@ -1067,6 +1067,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "fefast"
+version = "0.1.0"
+dependencies = [
+ "arbitrary",
+ "bitvec 0.18.4",
+ "bytes",
+ "chrono",
+ "criterion",
+ "decimal",
+ "enum-as-inner",
+ "fnv",
+ "futures",
+ "futures-timer",
+ "heck",
+ "indoc",
+ "lazy_static",
+ "nohash-hasher",
+ "openssl",
+ "quick-xml",
+ "quickcheck",
+ "quickcheck_derive",
+ "quickcheck_macros",
+ "rayon",
+ "roxmltree",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "slog",
+ "sqlx",
+ "strum",
+ "strum_macros",
+ "syn",
+ "thiserror",
+ "tokio-util",
+ "uuid",
+]
+
+[[package]]
 name = "fefix"
 version = "0.1.0"
 dependencies = [

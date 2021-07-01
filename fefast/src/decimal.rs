@@ -40,7 +40,7 @@ impl Decimal {
     /// The greatest value that can be represented by a [`Decimal`].
     ///
     /// ```
-    /// use fefix::fast::Decimal;
+    /// use fefast::Decimal;
     ///
     /// assert!(Decimal::MAX > Decimal::ZERO);
     /// ```
@@ -52,7 +52,7 @@ impl Decimal {
     /// The smallest value that can be represented by a [`Decimal`].
     ///
     /// ```
-    /// use fefix::fast::Decimal;
+    /// use fefast::Decimal;
     ///
     /// assert!(Decimal::MIN < Decimal::ZERO);
     /// ```
@@ -65,7 +65,7 @@ impl Decimal {
     /// multiplication.
     ///
     /// ```
-    /// use fefix::fast::Decimal;
+    /// use fefast::Decimal;
     ///
     /// assert_eq!(Decimal::MAX * Decimal::ONE, Decimal::MAX);
     /// assert_eq!(Decimal::MIN * Decimal::ONE, Decimal::MIN);
@@ -111,7 +111,7 @@ impl Decimal {
     /// # Example
     ///
     /// ```
-    /// use fefix::fast::Decimal;
+    /// use fefast::Decimal;
     ///
     /// let pi = Decimal::new(3141, -3);
     /// assert_eq!(pi.to_string(), "3.141");
@@ -131,7 +131,7 @@ impl Decimal {
     /// # Example
     ///
     /// ```
-    /// use fefix::fast::Decimal;
+    /// use fefast::Decimal;
     ///
     /// let pi = Decimal::new(3141, -3);
     /// assert_eq!(pi.to_string(), "3.141");
@@ -159,7 +159,7 @@ impl Decimal {
     /// # Example
     ///
     /// ```
-    /// use fefix::fast::Decimal;
+    /// use fefast::Decimal;
     ///
     /// let num = Decimal::new(1234, 3);
     /// assert_eq!(num.exp(), 3i32);
@@ -174,7 +174,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::Decimal;
+    /// use fefast::Decimal;
     ///
     /// let num = Decimal::new(314159, -5);
     /// assert_eq!(num.mantissa(), 314159);
@@ -192,7 +192,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::Decimal;
+    /// use fefast::Decimal;
     ///
     /// let num = Decimal::new(314159, -5);
     /// assert_eq!(num.signum(), Decimal::ONE);
@@ -218,7 +218,7 @@ impl Decimal {
     /// # Example
     ///
     /// ```
-    /// use fefix::fast::Decimal;
+    /// use fefast::Decimal;
     ///
     /// let num = Decimal::new(-1337, 0);
     /// assert_eq!(num.abs().to_string(), "1337");
@@ -287,7 +287,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::Decimal;
+    /// use fefast::Decimal;
     ///
     /// let num = Decimal::new(-130, -4);
     /// assert!(num.is_negative());
@@ -305,7 +305,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::Decimal;
+    /// use fefast::Decimal;
     ///
     /// let num = Decimal::new(1, -8);
     /// assert!(num.is_positive());
@@ -322,7 +322,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::Decimal;
+    /// use fefast::Decimal;
     ///
     /// let num = Decimal::new(11, -1);
     /// assert_eq!(num.pow(2), Decimal::new(121, -2));
@@ -341,7 +341,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::Decimal;
+    /// use fefast::Decimal;
     ///
     /// let num = Decimal::new(314, -2);
     /// assert_eq!(num.truncate(), Decimal::new(3, 0));
@@ -357,7 +357,7 @@ impl Decimal {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fast::Decimal;
+    /// use fefast::Decimal;
     ///
     /// let num = Decimal::new(314, -2);
     /// assert_eq!(num.fract(), Decimal::new(14, -2));
