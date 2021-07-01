@@ -19,10 +19,10 @@ use std::ops::Range;
 /// ```
 /// use fefix::tagvalue::{Config, Encoder};
 ///
-/// let buffer = &mut Vec::new();
-/// let encoder = &mut Encoder::<Config>::default();
+/// let mut buffer = Vec::new();
+/// let mut encoder = Encoder::<Config>::default();
 /// encoder.config_mut().set_separator(b'|');
-/// let msg = encoder.start_message(b"FIX.4.4", buffer, b"A");
+/// let msg = encoder.start_message(b"FIX.4.4", &mut buffer, b"A");
 /// let data = msg.wrap();
 /// ```
 #[derive(Debug, Clone, Default)]
@@ -46,7 +46,7 @@ where
     ///
     /// let mut config = Config::default();
     /// config.set_separator(b'|');
-    /// let encoder = &mut Encoder::new(config);
+    /// let encoder = Encoder::new(config);
     /// assert_eq!(encoder.config().separator(), b'|');
     /// ```
     pub fn new(config: C) -> Self {

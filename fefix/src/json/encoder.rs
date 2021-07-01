@@ -165,7 +165,7 @@ mod test {
 
     #[test]
     fn empty_message_is_valid_json() {
-        let encoder = &mut Encoder::new();
+        let mut encoder = Encoder::new();
         let message = encoder
             .start_message()
             .with_header()

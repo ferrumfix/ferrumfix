@@ -10,7 +10,7 @@ const QUICKFIX_SPEC: &str = include_str!("coinbase_quickfix.xml");
 const FIX_MESSAGE_EXEC_REPORT: &[u8] = b"";
 
 fn main() {
-    let decoder = &mut fix_decoder();
+    let mut decoder = fix_decoder();
     decoder.config_mut().set_separator(b'|');
     let msg = decoder
         .decode(FIX_MESSAGE_EXEC_REPORT)

@@ -14,12 +14,12 @@ use tokio_util::codec;
 /// use tokio_util::codec::{Decoder, Encoder};
 ///
 /// let payload = Bytes::from_static(b"payload");
-/// let codec = &mut fesofh::TokioCodec::default();
-/// let destination = &mut BytesMut::new();
-/// codec.encode(fesofh::Frame::new(0x1337, payload.clone()), destination);
+/// let mut codec = fesofh::TokioCodec::default();
+/// let mut destination = BytesMut::new();
+/// codec.encode(fesofh::Frame::new(0x1337, payload.clone()), &mut destination);
 ///
 /// assert_eq!(
-///     codec.decode(destination).unwrap(),
+///     codec.decode(&mut destination).unwrap(),
 ///     Some(fesofh::Frame::new(0x1337, payload))
 /// );
 /// ```

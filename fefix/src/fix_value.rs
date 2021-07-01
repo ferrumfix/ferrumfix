@@ -578,10 +578,10 @@ mod test {
 
     #[quickcheck]
     fn u32_serialize(n: u32) -> bool {
-        let buffer = &mut Vec::new();
+        let mut buffer = Vec::new();
         let s = FixValue::to_string(&n);
         let bytes = s.as_bytes();
-        let len = n.serialize(buffer);
+        let len = n.serialize(&mut buffer);
         bytes == buffer.as_slice() && len == bytes.len()
     }
 

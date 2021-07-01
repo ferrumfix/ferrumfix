@@ -43,9 +43,9 @@
 //! assert!(u32::deserialize(b"invalid integer").is_err());
 //! assert!(u32::deserialize_lossy(b"invalid integer").is_ok());
 //!
-//! let buffer: &mut Vec<u8> = &mut vec![];
+//! let mut buffer: Vec<u8> = vec![];
 //! // Use `FixValue::serialize` to write values to buffers.
-//! 1337u32.serialize(buffer);
+//! 1337u32.serialize(&mut buffer);
 //! assert_eq!(&buffer[..], b"1337" as &[u8]);
 //! ```
 //!

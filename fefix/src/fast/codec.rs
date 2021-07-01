@@ -130,11 +130,11 @@ impl Codec for Vec<u8> {
     }
 
     fn deserialize(&mut self, input: &mut impl io::Read) -> io::Result<usize> {
-        let len = &mut 0u32;
+        let mut len = 0u32;
         len.deserialize(input)?;
-        *self = vec![0u8; *len as usize];
+        *self = vec![0u8; len as usize];
         input.read_exact(&mut self[..])?;
-        Ok(*len as usize)
+        Ok(len as usize)
     }
 }
 
@@ -148,12 +148,12 @@ impl Codec for String {
     }
 
     fn deserialize(&mut self, input: &mut impl io::Read) -> io::Result<usize> {
-        let len = &mut 0u32;
+        let mut len = 0u32;
         len.deserialize(input)?;
-        let mut bytes = vec![0u8; *len as usize];
+        let mut bytes = vec![0u8; len as usize];
         input.read_exact(&mut bytes[..])?;
         *self = String::from_utf8_lossy(&bytes[..]).to_string();
-        Ok(*len as usize)
+        Ok(len as usize)
     }
 }
 
@@ -270,9 +270,9 @@ mod test {
     fn encode_then_decode_u32(expected_value: u32) -> bool {
         let mut bytes: Vec<u8> = Vec::new();
         expected_value.serialize(&mut bytes).unwrap();
-        let value = &mut 0u32;
+        let mut value = 0u32;
         value.deserialize(&mut &bytes[..]).unwrap();
-        *value == expected_value
+        value == expected_value
     }
 
     #[test]
@@ -302,16 +302,16 @@ mod test {
         let expected_value = 99i32;
         let mut bytes: Vec<u8> = Vec::new();
         expected_value.serialize(&mut bytes).unwrap();
-        let value = &mut 0i32;
+        let mut value = 0i32;
         value.deserialize(&mut &bytes[..]).unwrap();
-        assert_eq!(*value, expected_value);
+        assert_eq!(value, expected_value);
     }
 
     #[quickcheck]
     fn encode_then_decode_string(expected_value: String) -> bool {
         let mut bytes: Vec<u8> = Vec::new();
         expected_value.serialize(&mut bytes).unwrap();
-        let value = &mut String::default();
+        let mut value = String::default();
         value.deserialize(&mut &bytes[..]).unwrap();
         *value == expected_value
     }
@@ -320,7 +320,7 @@ mod test {
     fn encode_then_decode_bytes(expected_value: Vec<u8>) -> bool {
         let mut bytes: Vec<u8> = Vec::default();
         expected_value.serialize(&mut bytes).unwrap();
-        let value = &mut Vec::default();
+        let mut value = Vec::default();
         value.deserialize(&mut &bytes[..]).unwrap();
         *value == expected_value
     }

@@ -192,7 +192,7 @@ mod test {
 
     #[test]
     fn config_checksum_verification_can_be_changed() {
-        let config = &mut Config::default();
+        let mut config = Config::default();
         config.set_verify_checksum(false);
         assert_eq!(config.verify_checksum(), false);
         config.set_verify_checksum(true);

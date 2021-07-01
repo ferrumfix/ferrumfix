@@ -84,7 +84,7 @@ mod test {
 
     #[test]
     fn config_pretty_print_behavior_can_be_changed() {
-        let config = &mut Config::default();
+        let mut config = Config::default();
         config.set_pretty_print(true);
         assert_eq!(config.pretty_print(), true);
         config.set_pretty_print(false);

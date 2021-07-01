@@ -124,7 +124,7 @@ where
     /// use fefix::Dictionary;
     ///
     /// let dict = Dictionary::fix44();
-    /// let decoder = &mut Decoder::<Config>::new(dict);
+    /// let mut decoder = Decoder::<Config>::new(dict);
     /// decoder.config_mut().set_separator(b'|');
     /// assert_eq!(decoder.config().separator(), b'|');
     /// ```
@@ -153,7 +153,7 @@ where
     /// use fefix::Dictionary;
     ///
     /// let dict = Dictionary::fix44();
-    /// let decoder = &mut Decoder::<Config>::new(dict);
+    /// let mut decoder = Decoder::<Config>::new(dict);
     /// decoder.config_mut().set_separator(b'|');
     /// let data = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
     /// let message = decoder.decode(data).unwrap();
@@ -745,7 +745,7 @@ mod test {
     #[test]
     fn can_parse_simple_message() {
         let message = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
-        let decoder = &mut decoder();
+        let mut decoder = decoder();
         let result = decoder.decode(message.as_bytes());
         assert!(result.is_ok());
     }
@@ -763,7 +763,7 @@ mod test {
     #[test]
     fn skip_checksum_verification() {
         let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
-        let decoder = &mut decoder();
+        let mut decoder = decoder();
         let result = decoder.decode(message.as_bytes());
         assert!(result.is_ok());
     }
@@ -784,8 +784,8 @@ mod test {
     #[test]
     fn top_level_tag_after_empty_group() {
         let bytes = b"8=FIX.4.4|9=17|35=X|268=0|346=1|10=171|";
-        let decoder = &mut decoder();
-        let message = decoder.decode(bytes).unwrap();
+        let mut decoder = decoder();
+        let message = decoder.decode(&bytes).unwrap();
         let group = message.group(fix44::NO_MD_ENTRIES).unwrap();
         assert_eq!(group.len(), 0);
         assert_eq!(

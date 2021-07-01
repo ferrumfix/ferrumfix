@@ -355,7 +355,7 @@ mod test {
 
     #[test]
     fn message_with_bad_checksum_is_invalid() {
-        let decoder = &mut new_decoder();
+        let mut decoder = new_decoder();
         decoder.config_mut().set_verify_checksum(true);
         let msg = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=000|".as_bytes();
         assert!(matches!(decoder.decode(msg), Err(DecodeError::CheckSum)));
@@ -401,7 +401,7 @@ mod test {
             stream
         };
         let mut i = 0;
-        let decoder = &mut new_decoder_buffered();
+        let mut decoder = new_decoder_buffered();
         let mut frame = None;
         while frame.is_none() || i >= stream.len() {
             let buf = decoder.supply_buffer();

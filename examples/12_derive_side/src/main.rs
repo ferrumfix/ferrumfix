@@ -6,7 +6,7 @@ const FIX_MESSAGE: &[u8] = b"8=FIX.4.2|9=97|35=6|49=BKR|56=IM|34=14|52=20100204-
 
 fn main() {
     let fix_dictionary = Dictionary::fix42();
-    let fix_decoder = &mut Decoder::<Config>::new(fix_dictionary);
+    let mut fix_decoder = Decoder::<Config>::new(fix_dictionary);
     fix_decoder.config_mut().set_separator(b'|');
     let msg = fix_decoder
         .decode(FIX_MESSAGE)

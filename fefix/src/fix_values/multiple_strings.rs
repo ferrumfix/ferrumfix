@@ -10,7 +10,7 @@ const SEPARATOR: u8 = b' ';
 /// ```
 /// use fefix::fix_values::MultipleStrings;
 ///
-/// let words = &mut MultipleStrings::new(b"foo bar qwerty");
+/// let mut words = MultipleStrings::new(b"foo bar qwerty");
 /// assert_eq!(words.next(), Some("foo".as_bytes()));
 /// assert_eq!(words.next(), Some("bar".as_bytes()));
 /// assert_eq!(words.next(), Some("qwerty".as_bytes()));
@@ -58,26 +58,26 @@ mod test {
 
     #[test]
     fn empty_data_has_no_values() {
-        let dtf = &mut MultipleStrings::new(&[]);
+        let mut dtf = MultipleStrings::new(&[]);
         assert_eq!(dtf.next(), None);
     }
 
     #[test]
     fn whitespace_has_no_values() {
-        let dtf = &mut MultipleStrings::new(b"     ");
+        let mut dtf = MultipleStrings::new(b"     ");
         assert_eq!(dtf.next(), None);
     }
 
     #[test]
     fn a_single_word_has_one_value() {
-        let dtf = &mut MultipleStrings::new(b"foobar");
+        let mut dtf = MultipleStrings::new(b"foobar");
         assert_eq!(dtf.next(), Some(b"foobar" as &[u8]));
         assert_eq!(dtf.next(), None);
     }
 
     #[test]
     fn words_separated_by_space() {
-        let dtf = &mut MultipleStrings::new(b"foo bar spam");
+        let mut dtf = MultipleStrings::new(b"foo bar spam");
         assert_eq!(dtf.next(), Some(b"foo" as &[u8]));
         assert_eq!(dtf.next(), Some(b"bar" as &[u8]));
         assert_eq!(dtf.next(), Some(b"spam" as &[u8]));
@@ -86,14 +86,14 @@ mod test {
 
     #[test]
     fn word_with_trailing_space() {
-        let dtf = &mut MultipleStrings::new(b"foo ");
+        let mut dtf = MultipleStrings::new(b"foo ");
         assert_eq!(dtf.next(), Some(b"foo" as &[u8]));
         assert_eq!(dtf.next(), None);
     }
 
     #[test]
     fn words_with_trailing_spaces() {
-        let dtf = &mut MultipleStrings::new(b"foo  bar    ");
+        let mut dtf = MultipleStrings::new(b"foo  bar    ");
         assert_eq!(dtf.next(), Some(b"foo" as &[u8]));
         assert_eq!(dtf.next(), Some(b"bar" as &[u8]));
         assert_eq!(dtf.next(), None);
@@ -101,7 +101,7 @@ mod test {
 
     #[test]
     fn words_with_leading_spaces() {
-        let dtf = &mut MultipleStrings::new(b"  \t  bar spam");
+        let mut dtf = MultipleStrings::new(b"  \t  bar spam");
         assert_eq!(dtf.next(), Some(b"\t" as &[u8]));
         assert_eq!(dtf.next(), Some(b"bar" as &[u8]));
         assert_eq!(dtf.next(), Some(b"spam" as &[u8]));

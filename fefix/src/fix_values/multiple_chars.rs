@@ -8,7 +8,7 @@ use std::iter::FusedIterator;
 /// ```
 /// use fefix::fix_values::MultipleChars;
 ///
-/// let chars = &mut MultipleChars::new(b"a b c");
+/// let mut chars = MultipleChars::new(b"a b c");
 /// assert_eq!(chars.next(), Some(b'a'));
 /// assert_eq!(chars.next(), Some(b'b'));
 /// assert_eq!(chars.next(), Some(b'c'));
@@ -69,27 +69,27 @@ mod test {
 
     #[test]
     fn empty() {
-        let dtf = &mut MultipleChars::new(b"");
+        let mut dtf = MultipleChars::new(b"");
         assert_eq!(dtf.next(), None);
     }
 
     #[test]
     fn one_char() {
-        let dtf = &mut MultipleChars::new(b"t");
+        let mut dtf = MultipleChars::new(b"t");
         assert_eq!(dtf.next(), Some(b't'));
         assert_eq!(dtf.next(), None);
     }
 
     #[test]
     fn one_char_trailing_space() {
-        let dtf = &mut MultipleChars::new(b": ");
+        let mut dtf = MultipleChars::new(b": ");
         assert_eq!(dtf.next(), Some(b':'));
         assert_eq!(dtf.next(), None);
     }
 
     #[test]
     fn leading_space_not_detected() {
-        let dtf = &mut MultipleChars::new(b" f o o b a r");
+        let mut dtf = MultipleChars::new(b" f o o b a r");
         assert_eq!(dtf.next(), Some(b' '));
         assert_eq!(dtf.next(), Some(b' '));
         assert_eq!(dtf.next(), Some(b' '));
