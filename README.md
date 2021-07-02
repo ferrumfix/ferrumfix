@@ -20,7 +20,7 @@ FerrumFIX is a free and open source FIX engine implementation in Rust. Please no
 
 FerrumFIX provides parsing, validation, error recovery, and (de)serialization for the FIX family of protocols.
 
-![FIX Technical Standard stack](docs/FIX-Technical-Standard-Stack.png)
+![FIX Technical Standard stack](https://github.com/ferrumfix/ferrumfix/raw/develop/docs/FIX-Technical-Standard-Stack.png)
 
 The above illustration succintly describes the full scope of FIX and it serves as a reference point for all modern FIX implementations. FerrumFIX aims with total compliance... *eventually*. Engineering efforts are initially focused on core features e.g. tag-value encoding and FIX 4.4.
 
@@ -54,7 +54,7 @@ You don't have to understand the whole tech stack to use a single layer; in fact
 
 *FerrumFIX is kindly sponsored by **Bitwyre**. Bitwyre is a next gen, HFT-friendly Cryptocurrency Derivatives Exchange.*
 
-![Bitwyre logo](docs/bitwyre-logo.png)
+![Bitwyre logo](https://github.com/ferrumfix/ferrumfix/raw/develop/docs/bitwyre-logo.png)
 
 Please reach out to `Filippo Costa <filippo.costa@protonmail.com>` for business inquiries.
 
