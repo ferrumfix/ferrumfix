@@ -26,9 +26,9 @@ The above illustration succintly describes the full scope of FIX and it serves a
 
 FerrumFIX enforces strict separation of concerns according to the OSI model, as reasonably allowed by the FIX specification.
 
-- Layer 4 (Transport Layer): `fefix::fixs`.
+- Layer 4 (Transport Layer): `fefixs`.
 - Layer 5 (Session Layer): `fefix::session`.
-- Layer 6 (Presentation Layer): `fefix::tagvalue`, `fefix::json`, `fefix::fast`.
+- Layer 6 (Presentation Layer): `fefix::tagvalue`, `fefix::json`, `fefast`.
 - Layer 7 (Application Layer): `fefix::Dictionary`.
 
 You don't have to understand the whole tech stack to use a single layer; in fact, FerrumFIX makes sure that you only ever need to worry about layers above your chosen abstraction level. For most users, that would be Layer 7 (i.e. semantics of FIX messages and business logic). On the other hand, you will need to delve deep into lower layers in case you plan on building a fully-fledged FIX engine.

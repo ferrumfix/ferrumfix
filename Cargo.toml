@@ -9,6 +9,8 @@ lto = true
 members = [
     "fefast",
     "fefix",
+    "fefixp",
+    "fefixs",
     "fefix/tests/compile_full_features",
     "fefix/tests/codegen_fix44",
     "fefix_derive",

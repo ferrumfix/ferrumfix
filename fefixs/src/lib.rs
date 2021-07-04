@@ -7,18 +7,11 @@
 //! but **this may change in the future** and all users are advised to update
 //! OpenSSL to avoid any issues.
 
-use lazy_static::lazy_static;
+mod iana_to_openssl;
+
+use iana_to_openssl::IANA_TO_OPENSSL;
 #[cfg(feature = "utils-openssl")]
 use openssl::ssl::*;
-use std::collections::HashMap;
-
-lazy_static! {
-    static ref IANA_TO_OPENSSL: HashMap<String, String> = {
-        let json_file = include_str!("iana2openssl.json");
-        serde_json::from_str(json_file)
-            .expect("IANA-to-OpenSSL mapping JSON file is invalid. This is a bug.")
-    };
-}
 
 /// Which version of FIX-over-TLS (FIXS) to use.
 #[derive(Debug, Copy, Clone)]
@@ -32,7 +25,7 @@ impl Version {
     /// according to `self` version. The ciphersuites are specified in IANA format.
     ///
     /// ```
-    /// use fefix::fixs::Version;
+    /// use fefixs::Version;
     ///
     /// let version = Version::V1Draft;
     /// let ciphersuites_iana = version.recommended_cs_iana(false);
@@ -59,7 +52,7 @@ impl Version {
     /// # Examples:
     ///
     /// ```
-    /// use fefix::fixs::Version;
+    /// use fefixs::Version;
     ///
     /// let version = Version::V1Draft;
     /// let ciphersuites_openssl = version.recommended_cs_openssl(false);
@@ -70,7 +63,7 @@ impl Version {
     /// [`openssl-ciphers`](https://www.openssl.org/docs/manmaster/man1/openssl-ciphers.html).
     ///
     /// ```
-    /// use fefix::fixs::Version;
+    /// use fefixs::Version;
     ///
     /// let version = Version::V1Draft;
     /// let ciphersuites_openssl = version.recommended_cs_openssl(false);
@@ -80,7 +73,13 @@ impl Version {
     pub fn recommended_cs_openssl(&self, psk: bool) -> Vec<String> {
         self.recommended_cs_iana(psk)
             .iter()
-            .map(|s| IANA_TO_OPENSSL.get(s.as_str()).unwrap().clone())
+            .map(|s| {
+                IANA_TO_OPENSSL
+                    .iter()
+                    .find(|(iana, _openssl)| iana == s)
+                    .map(|(_iana, openssl)| openssl.to_string())
+                    .unwrap()
+            })
             .collect()
     }
 

@@ -26,7 +26,7 @@ name = "fix_decode"
 harness = false
 
 [features]
-default = ["fixs", "utils-openssl", "utils-tokio", "utils-chrono"]
+default = ["utils-openssl", "utils-tokio", "utils-chrono"]
 derive = []
 fix40 = []
 fix41 = []
@@ -36,9 +36,6 @@ fix50 = []
 fix50sp1 = []
 fix50sp2 = []
 fixt11 = []
-fixs = []
-fixp = []
-fast-encoding = []
 json-encoding = []
 codegen = ["heck", "indoc"]
 utils-bytes = ["bytes"]
@@ -60,9 +57,6 @@ full = [
     "fix50sp1",
     "fix50sp2",
     "fixt11",
-    "fixs",
-    "fixp",
-    "fast-encoding",
     "json-encoding",
     "utils-bytes",
     "utils-chrono",

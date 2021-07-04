@@ -1155,6 +1155,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "fefixp"
+version = "0.1.0"
+
+[[package]]
+name = "fefixs"
+version = "0.1.0"
+
+[[package]]
 name = "femme"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

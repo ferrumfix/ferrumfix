@@ -111,12 +111,6 @@ pub use fefix_core::codegen;
 pub use fefix_core::dict;
 pub use fefix_core::TagU16;
 pub mod definitions;
-#[cfg(feature = "fixp")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "fixp")))]
-pub mod fixp;
-#[cfg(feature = "fixs")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "fixs")))]
-pub mod fixs;
 #[cfg(feature = "json-encoding")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "json-encoding")))]
 pub mod json;
