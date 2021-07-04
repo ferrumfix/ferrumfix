@@ -8,6 +8,7 @@ repository = "https://github.com/neysofu/ferrum-fix"
 publish = true
 keywords = ["fix", "protocol", "finance", "fintech"]
 categories = ["network-programming", "parser-implementations", "encoding"]
+description = "FIX FAST implementation in pure Rust"
 license = "MIT OR Apache-2.0"
 
 # https://stackoverflow.com/q/61417452/
