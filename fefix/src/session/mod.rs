@@ -24,7 +24,10 @@ pub use seq_numbers::{SeqNumberError, SeqNumbers};
 use crate::tagvalue::Message;
 use std::ops::Range;
 
+/// The owner of a [`FixConnection`]. It can react to events, store incoming
+/// messages, send messages, etc..
 pub trait Backend: Clone {
+    /// The type of errors that can arise during a [`FixConnection`].
     type Error;
 
     #[inline]
@@ -32,10 +35,13 @@ pub trait Backend: Clone {
         Ok(())
     }
 
+    /// Callback for processing incoming FIX application messages.
     fn on_inbound_app_message(&mut self, message: Message<&[u8]>) -> Result<(), Self::Error>;
 
+    /// Callback for post-processing outbound FIX messages.
     fn on_outbound_message(&mut self, message: &[u8]) -> Result<(), Self::Error>;
 
+    /// Callback for processing incoming FIX messages.
     #[inline]
     fn on_inbound_message(
         &mut self,
@@ -49,8 +55,11 @@ pub trait Backend: Clone {
         }
     }
 
+    /// Callback for processing `ResendRequest` messages.
     fn on_resend_request(&mut self, range: Range<u64>) -> Result<(), Self::Error>;
 
+    /// Callback for additional logic to execute after a valid [`FixConnection`]
+    /// is established with the counterparty.
     fn on_successful_handshake(&mut self) -> Result<(), Self::Error>;
 
     fn fetch_messages(&mut self) -> Result<&[&[u8]], Self::Error>;
@@ -79,6 +88,21 @@ pub enum Environment {
 }
 
 impl Environment {
+    /// Returns `true` if an only if `self` allows test messages, depending on
+    /// the provided configuration.
+    ///
+    /// This is used to determine whether to accept or refuse incoming test
+    /// messages within a [`FixConnection`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::session::Environment;
+    ///
+    /// assert_eq!(Environment::Testing.allows_testing(), true);
+    /// assert_eq!(Environment::Production { allow_test: true }, true);
+    /// assert_eq!(Environment::Production { allow_test: false }, false);
+    /// ```
     #[inline]
     pub fn allows_testing(&self) -> bool {
         match self {
