@@ -67,22 +67,7 @@ where
     pub fn with_config(dict: Dictionary, config: C) -> Self {
         Self {
             dict: dict.clone(),
-            builder: MessageBuilder {
-                state: DecoderState {
-                    group_information: Vec::new(),
-                    new_group: None,
-                    data_field_length: None,
-                },
-                raw: b"",
-                field_locators: Vec::new(),
-                fields: HashMap::new(),
-                i_first_cell: 0,
-                i_last_cell: 0,
-                len_end_body: 0,
-                len_end_trailer: 0,
-                len_end_header: 0,
-                bytes: b"",
-            },
+            builder: MessageBuilder::default(),
             raw_decoder: RawDecoder::with_config(config),
             tag_lookup: dict
                 .iter_fields()
@@ -594,6 +579,27 @@ pub struct MessageBuilder<'a> {
     len_end_body: usize,
     len_end_trailer: usize,
     bytes: &'a [u8],
+}
+
+impl<'a> Default for MessageBuilder<'a> {
+    fn default() -> Self {
+        Self {
+            state: DecoderState {
+                group_information: Vec::new(),
+                new_group: None,
+                data_field_length: None,
+            },
+            raw: b"",
+            field_locators: Vec::new(),
+            fields: HashMap::new(),
+            i_first_cell: 0,
+            i_last_cell: 0,
+            len_end_body: 0,
+            len_end_trailer: 0,
+            len_end_header: 0,
+            bytes: b"",
+        }
+    }
 }
 
 impl<'a> MessageBuilder<'a> {
