@@ -1,6 +1,5 @@
 //! Field and message definitions for all FIX application versions.
 //!
-//!
 //! # What is this and why is this necessary?
 //!
 //! FerrumFIX internals rely on [`Dictionary`](crate::Dictionary) for accessing
