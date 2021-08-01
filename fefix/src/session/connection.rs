@@ -245,9 +245,12 @@ impl FixConnection {
     {
         let event_loop = &mut LlEventLoop::new(decoder, input, self.heartbeat);
         loop {
-            let event = event_loop.next().await;
+            let event = event_loop
+                .next()
+                .await
+                .expect("The connection died unexpectedly.");
             match event {
-                LlEvent::Message { msg } => {
+                LlEvent::Message(msg) => {
                     let response = self.on_inbound_message(msg, &mut app);
                     match response {
                         Response::OutboundBytes(bytes) => {
@@ -260,7 +263,7 @@ impl FixConnection {
                         _ => {}
                     }
                 }
-                LlEvent::IoError { err: _err } => {
+                LlEvent::IoError(_) => {
                     return;
                 }
                 LlEvent::Heartbeat => {
