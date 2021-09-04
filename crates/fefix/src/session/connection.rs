@@ -1,10 +1,10 @@
-use super::{errs, Backend, LlEvent, LlEventLoop};
+use super::{errs, Backend, Config, Configure, LlEvent, LlEventLoop};
 use crate::definitions::fix44;
 use crate::dict::IsFieldDefinition;
 use crate::session::{Environment, SeqNumbers};
 use crate::tagvalue::FieldAccess;
 use crate::tagvalue::Message;
-use crate::tagvalue::{Decoder, DecoderBuffered, Encoder, EncoderHandle};
+use crate::tagvalue::{DecoderBuffered, Encoder, EncoderHandle};
 use crate::Buffer;
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use std::cmp::Ordering;
@@ -60,52 +60,44 @@ pub enum Response<'a> {
 
 /// A FIX connection message processor.
 #[derive(Debug)]
-pub struct FixConnection {
+pub struct FixConnection<C = Config> {
     uuid: Uuid,
-    begin_string: String,
-    environment: Environment,
+    config: C,
     encoder: Encoder,
     buffer: Vec<u8>,
-    heartbeat: Duration,
-    seq_numbers: SeqNumbers,
     msg_seq_num_inbound: MsgSeqNumCounter,
     msg_seq_num_outbound: MsgSeqNumCounter,
-    sender_comp_id: String,
-    target_comp_id: String,
 }
 
 #[allow(dead_code)]
-impl FixConnection {
+impl<C> FixConnection<C>
+where
+    C: Configure,
+{
     /// Creates a new [`FixConnection`] with the settings provided by `config`.
-    pub fn new(config: Config) -> Self {
+    pub fn new(config: C) -> Self {
         Self {
             uuid: Uuid::new_v4(),
-            begin_string: config.begin_string,
-            environment: config.environment,
+            config,
             encoder: Encoder::default(),
             buffer: vec![],
-            heartbeat: config.heartbeat,
-            seq_numbers: config.seq_numbers,
             msg_seq_num_inbound: MsgSeqNumCounter::START,
             msg_seq_num_outbound: MsgSeqNumCounter::START,
-            sender_comp_id: config.sender_comp_id(),
-            target_comp_id: config.target_comp_id(),
         }
     }
 
-    /// The entry point within a [`FixConnection`].
+    /// The entry point for a [`FixConnection`].
     pub async fn start<B, I, O>(
         &mut self,
         mut app: B,
         mut input: I,
         mut output: O,
-        decoder: Decoder,
+        mut decoder: DecoderBuffered,
     ) where
         B: Backend,
         I: AsyncRead + Unpin,
         O: AsyncWrite + Unpin,
     {
-        let mut decoder = decoder.buffered();
         self.establish_connection(&mut app, &mut input, &mut output, &mut decoder)
             .await;
         self.event_loop(app, input, output, decoder).await;
@@ -123,9 +115,10 @@ impl FixConnection {
         O: AsyncWrite + Unpin,
     {
         let logon = {
-            let begin_string = self.begin_string.as_bytes();
-            let sender_comp_id = self.sender_comp_id.as_str();
-            let target_comp_id = self.target_comp_id.as_str();
+            let begin_string = self.config.begin_string();
+            let sender_comp_id = self.config.sender_comp_id();
+            let target_comp_id = self.config.target_comp_id();
+            let heartbeat = self.config.heartbeat().as_secs();
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let mut msg = self
                 .encoder
@@ -135,7 +128,7 @@ impl FixConnection {
             msg.set(fix44::SENDING_TIME, chrono::Utc::now());
             msg.set(fix44::MSG_SEQ_NUM, msg_seq_num);
             msg.set(fix44::ENCRYPT_METHOD, fix44::EncryptMethod::None);
-            msg.set(fix44::HEART_BT_INT, self.heartbeat.as_secs());
+            msg.set(fix44::HEART_BT_INT, heartbeat);
             msg.wrap()
         };
         output.write(logon).await.unwrap();
@@ -168,7 +161,7 @@ impl FixConnection {
         I: AsyncRead + Unpin,
         O: AsyncWrite + Unpin,
     {
-        let event_loop = &mut LlEventLoop::new(decoder, input, self.heartbeat);
+        let event_loop = &mut LlEventLoop::new(decoder, input, self.heartbeat());
         loop {
             let event = event_loop
                 .next()
@@ -203,27 +196,30 @@ impl FixConnection {
     }
 
     fn seq_numbers(&self) -> SeqNumbers {
-        self.seq_numbers
-    }
-
-    fn seq_numbers_mut(&mut self) -> &mut SeqNumbers {
-        &mut self.seq_numbers
+        SeqNumbers {
+            next_inbound: self.msg_seq_num_inbound.expected(),
+            next_outbound: self.msg_seq_num_outbound.expected(),
+        }
     }
 
     fn environment(&self) -> Environment {
-        self.environment
+        self.config.environment()
     }
 
-    fn sender_comp_id(&self) -> &str {
-        self.sender_comp_id.as_str()
+    fn sender_comp_id(&self) -> &[u8] {
+        self.config.sender_comp_id()
     }
 
-    fn target_comp_id(&self) -> &str {
-        self.target_comp_id.as_str()
+    fn target_comp_id(&self) -> &[u8] {
+        self.config.target_comp_id()
     }
 
     fn begin_string(&self) -> &[u8] {
-        self.begin_string.as_bytes()
+        self.config.begin_string()
+    }
+
+    fn heartbeat(&self) -> Duration {
+        self.config.heartbeat()
     }
 
     fn on_inbound_message<'a, B>(
@@ -310,9 +306,9 @@ impl FixConnection {
 
     fn on_logout(&mut self, _msg: &Message<&[u8]>) -> &[u8] {
         let fix_message = {
-            let begin_string = self.begin_string.as_bytes();
-            let sender_comp_id = self.sender_comp_id.as_str();
-            let target_comp_id = self.target_comp_id.as_str();
+            let begin_string = self.config.begin_string();
+            let sender_comp_id = self.config.sender_comp_id();
+            let target_comp_id = self.config.target_comp_id();
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let mut msg = self
                 .encoder
@@ -336,10 +332,10 @@ impl FixConnection {
         }
     }
 
-    fn add_comp_id<B, C>(msg: &mut EncoderHandle<B, C>, sender: &str, target: &str)
+    fn add_comp_id<B, T>(msg: &mut EncoderHandle<B, T>, sender: &str, target: &str)
     where
         B: Buffer,
-        C: crate::tagvalue::Configure,
+        T: crate::tagvalue::Configure,
     {
         msg.set(fix44::SENDER_COMP_ID, sender);
         msg.set(fix44::TARGET_COMP_ID, target);
@@ -357,9 +353,9 @@ impl FixConnection {
     //    #[must_use]
     pub fn on_heartbeat_is_due(&mut self) -> &[u8] {
         let fix_message = {
-            let begin_string = self.begin_string.as_bytes();
-            let sender_comp_id = self.sender_comp_id.as_str();
-            let target_comp_id = self.target_comp_id.as_str();
+            let begin_string = self.config.begin_string();
+            let sender_comp_id = self.config.sender_comp_id();
+            let target_comp_id = self.config.target_comp_id();
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let mut msg = self
                 .encoder
@@ -380,9 +376,9 @@ impl FixConnection {
     fn on_test_request(&mut self, msg: Message<&[u8]>) -> &[u8] {
         let test_req_id = msg.fv::<&[u8], _>(fix44::TEST_REQ_ID).unwrap();
         let fix_message = {
-            let begin_string = self.begin_string.as_bytes();
-            let sender_comp_id = self.sender_comp_id.as_str();
-            let target_comp_id = self.target_comp_id.as_str();
+            let begin_string = self.config.begin_string();
+            let sender_comp_id = self.config.sender_comp_id();
+            let target_comp_id = self.config.target_comp_id();
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let mut msg = self
                 .encoder
@@ -403,9 +399,9 @@ impl FixConnection {
 
     fn generate_error_seqnum_too_low(&mut self) -> &[u8] {
         let fix_message = {
-            let begin_string = self.begin_string.as_bytes();
-            let sender_comp_id = self.sender_comp_id.as_str();
-            let target_comp_id = self.target_comp_id.as_str();
+            let begin_string = self.config.begin_string();
+            let sender_comp_id = self.config.sender_comp_id();
+            let target_comp_id = self.config.target_comp_id();
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let text = errs::msg_seq_num(self.msg_seq_num_inbound.0 + 1);
             let mut msg = self
@@ -441,9 +437,9 @@ impl FixConnection {
         err_text: String,
     ) -> Response {
         let fix_message = {
-            let begin_string = self.begin_string.as_bytes();
-            let sender_comp_id = self.sender_comp_id.as_str();
-            let target_comp_id = self.target_comp_id.as_str();
+            let begin_string = self.config.begin_string();
+            let sender_comp_id = self.config.sender_comp_id();
+            let target_comp_id = self.config.target_comp_id();
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let mut msg = self
                 .encoder
@@ -478,9 +474,9 @@ impl FixConnection {
 
     fn make_logout(&mut self, text: String) -> Response {
         let fix_message = {
-            let begin_string = self.begin_string.as_bytes();
-            let sender_comp_id = self.sender_comp_id.as_str();
-            let target_comp_id = self.target_comp_id.as_str();
+            let begin_string = self.config.begin_string();
+            let sender_comp_id = self.config.sender_comp_id();
+            let target_comp_id = self.config.target_comp_id();
             let msg_seq_num = self.msg_seq_num_outbound.next();
             let mut msg = self
                 .encoder
@@ -495,7 +491,7 @@ impl FixConnection {
     }
 
     fn make_resend_request(&mut self, start: u64, end: u64) -> Response {
-        let begin_string = self.begin_string.as_bytes();
+        let begin_string = self.config.begin_string();
         let mut msg = self
             .encoder
             .start_message(begin_string, &mut self.buffer, b"2");
@@ -514,7 +510,7 @@ impl FixConnection {
     }
 
     fn on_logon(&mut self, _logon: Message<&[u8]>) {
-        let begin_string = self.begin_string.as_bytes();
+        let begin_string = self.config.begin_string();
         let mut _msg = self
             .encoder
             .start_message(begin_string, &mut self.buffer, b"A");

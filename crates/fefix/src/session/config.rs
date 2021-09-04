@@ -1,7 +1,9 @@
+use super::{Environment, MsgSeqNumCounter, SeqNumbers};
+use std::num::NonZeroU64;
 use std::time::Duration;
 
 /// Collection of configuration options related to
-/// [`FixConnectin`](super::FixConnection).
+/// [`FixConnection`](super::FixConnection).
 ///
 /// # Naming conventions
 ///
@@ -20,10 +22,30 @@ pub trait Configure: Clone + Default {
     fn max_allowed_latency(&self) -> Duration {
         Duration::from_secs(3)
     }
+
+    fn begin_string(&self) -> &[u8] {
+        b"FIX.4.4"
+    }
+
+    fn sender_comp_id(&self) -> &[u8] {
+        b"SENDER_COMP"
+    }
+
+    fn target_comp_id(&self) -> &[u8] {
+        b"TARGET_COMP"
+    }
+
+    fn environment(&self) -> Environment {
+        Environment::Production { allow_test: true }
+    }
+
+    fn heartbeat(&self) -> Duration {
+        Duration::from_secs(30)
+    }
 }
 
 /// The canonical implementor of [`Configure`]. Every setting can be changed.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct Config {
     verify_test_indicator: bool,
     max_allowed_latency: Duration,
@@ -104,6 +126,26 @@ impl Configure for Config {
     fn max_allowed_latency(&self) -> Duration {
         self.max_allowed_latency
     }
+
+    fn sender_comp_id(&self) -> &[u8] {
+        self.sender_comp_id.as_bytes()
+    }
+
+    fn target_comp_id(&self) -> &[u8] {
+        self.target_comp_id.as_bytes()
+    }
+
+    fn begin_string(&self) -> &[u8] {
+        self.begin_string.as_bytes()
+    }
+
+    fn environment(&self) -> Environment {
+        self.environment
+    }
+
+    fn heartbeat(&self) -> Duration {
+        self.heartbeat
+    }
 }
 
 impl Default for Config {
@@ -111,6 +153,14 @@ impl Default for Config {
         Self {
             verify_test_indicator: true,
             max_allowed_latency: Duration::from_secs(3),
+            begin_string: "FIX.4.4".to_string(),
+            environment: Environment::Production { allow_test: true },
+            heartbeat: Duration::from_secs(30),
+            seq_numbers: SeqNumbers::new(NonZeroU64::new(1).unwrap(), NonZeroU64::new(1).unwrap()),
+            msg_seq_num_inbound: MsgSeqNumCounter(1),
+            msg_seq_num_outbound: MsgSeqNumCounter(1),
+            sender_comp_id: "SENDER_COMP".to_string(),
+            target_comp_id: "TARGET_COMP".to_string(),
         }
     }
 }

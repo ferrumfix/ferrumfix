@@ -12,10 +12,7 @@ use std::time::Instant;
 /// single entity. This event loop keeps track of such events within a FIX
 /// session. See [`LlEvent`] for more information.
 #[derive(Debug)]
-pub struct LlEventLoop<I>
-where
-    I: AsyncRead,
-{
+pub struct LlEventLoop<I> {
     decoder: DecoderBuffered,
     input: I,
     heartbeat: Duration,
@@ -62,12 +59,15 @@ where
         if !self.is_alive {
             return None;
         }
+
         self.decoder.clear();
+
         let mut timer_heartbeat = self.timer_heartbeat().fuse();
         let mut timer_test_request = self.timer_test_request().fuse();
         let mut timer_logout = self.timer_logout().fuse();
         let next_message = decode_next_message(&mut self.decoder, &mut self.input).fuse();
         futures::pin_mut!(next_message);
+
         select! {
             decoder = next_message => {
                 match decoder {
@@ -116,7 +116,7 @@ where
 /// A low level event produced by a [`LlEventLoop`].
 #[derive(Debug)]
 pub enum LlEvent<'a> {
-    /// Incoming  FIX message.
+    /// Incoming FIX message.
     Message(Message<'a, &'a [u8]>),
     /// I/O error at the transport layer.
     IoError(io::Error),
@@ -162,6 +162,7 @@ mod test {
     async fn events(events: &'static [(&[u8], Duration)]) -> TcpStream {
         let tcp_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let local_addr = tcp_listener.local_addr().unwrap();
+
         tokio::spawn(async move {
             let mut stream = TcpStream::connect(local_addr).await.unwrap();
             for (event_bytes, delay) in events.iter() {
@@ -169,6 +170,7 @@ mod test {
                 tokio::time::sleep(*delay).await;
             }
         });
+
         tcp_listener.accept().await.unwrap().0
     }
 
@@ -181,7 +183,6 @@ mod test {
             Duration::from_secs(3),
         );
         let event = event_loop.next().await;
-        println!("{:?}", event);
         assert!(matches!(event, Some(LlEvent::TestRequest)));
     }
 }
