@@ -7,14 +7,14 @@ lto = true
 
 [workspace]
 members = [
-    "fefast",
-    "fefix",
-    "fefixp",
-    "fefixs",
-    "fefix/tests/compile_full_features",
-    "fefix/tests/codegen_fix44",
-    "fefix_derive",
-    "fesofh",
+    "crates/fefast",
+    "crates/fefix",
+    "crates/fefixp",
+    "crates/fefixs",
+    "crates/fefix/tests/compile_full_features",
+    "crates/fefix/tests/codegen_fix44",
+    "crates/fefix_derive",
+    "crates/fesofh",
     "examples/00_decode_fix",
     "examples/03_decode_fix_stream",
     "examples/05_coinbase_codegen",

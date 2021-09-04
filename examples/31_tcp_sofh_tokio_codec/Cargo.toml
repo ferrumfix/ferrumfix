@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-fesofh = { path = "../../fesofh", features = ["utils-tokio"] }
+fesofh = { path = "../../crates/fesofh", features = ["utils-tokio"] }
 futures-util = "0.3"
 tokio = { version = "1", features = ["full"] }
 tokio-util = { version = "0.6", features = ["codec"] }
