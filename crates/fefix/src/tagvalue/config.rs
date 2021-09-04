@@ -30,7 +30,7 @@ const DEFAULT_MAX_MESSAGE_SIZE: usize = 0xffff;
 /// }
 /// ```
 ///
-/// Needless to say, **think twice before polluting your codebase with such
+/// Needless to say, **think twice** before polluting your codebase with such
 /// micro-optimizations.
 pub trait Configure: Clone + Default {
     /// The delimiter character, which terminates every tag-value pair including
@@ -59,8 +59,8 @@ pub trait Configure: Clone + Default {
         true
     }
 
-    /// Determines wheather or not the decoder needs to have access to
-    /// associative FIX fields.
+    /// Determines whether or not the decoder needs to have access to
+    /// associative FIX fields. If turned off, only linear access is possible.
     #[inline]
     fn should_decode_associative(&self) -> bool {
         true
