@@ -16,7 +16,7 @@ pub struct CheckSum(pub u8);
 
 impl CheckSum {
     /// Returns the [`CheckSum`] of `data`. The result is always the sum of each
-    /// byte in `data` wrapped at 0xFF, as per the FIX specification.
+    /// byte in `data` wrapped at `0xFF`, as per the FIX specification.
     pub fn compute(data: &[u8]) -> Self {
         let mut value = 0u8;
         for byte in data {
@@ -43,46 +43,39 @@ impl<'a> FixValue<'a> for CheckSum {
     }
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        if let Ok(digits) = data.try_into() {
-            if is_ascii_digit(data[0]) & is_ascii_digit(data[1]) & is_ascii_digit(data[2]) {
-                Ok(checksum_from_digits(digits))
-            } else {
-                Err(ERR_ASCII_DIGITS)
-            }
+        let digits = data.try_into().map_err(|_| ERR_LENGTH)?;
+
+        if is_ascii_digit(data[0]) & is_ascii_digit(data[1]) & is_ascii_digit(data[2]) {
+            Ok(checksum_from_digits(digits))
         } else {
-            Err(ERR_LENGTH)
+            Err(ERR_ASCII_DIGITS)
         }
     }
 
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
+        let digits = data.try_into().map_err(|_| ERR_LENGTH)?;
+
         // Skip ASCII digits checking.
-        if let Ok(digits) = data.try_into() {
-            Ok(checksum_from_digits(digits))
-        } else {
-            Err(ERR_LENGTH)
-        }
+        Ok(checksum_from_digits(digits))
     }
 }
 
 fn checksum_from_digits(data: [u8; LEN_IN_BYTES]) -> CheckSum {
-    CheckSum(
-        ascii_digit_to_u8(data[0], 100)
-            .wrapping_add(ascii_digit_to_u8(data[1], 10))
-            .wrapping_add(ascii_digit_to_u8(data[2], 1)),
-    )
+    let a = ascii_digit_to_u8(data[0], 100);
+    let b = ascii_digit_to_u8(data[1], 10);
+    let c = ascii_digit_to_u8(data[2], 1);
+
+    CheckSum(a.wrapping_add(b).wrapping_add(c))
 }
 
-#[inline]
 fn is_ascii_digit(byte: u8) -> bool {
     byte >= b'0' && byte <= b'9'
 }
 
-#[inline]
 fn digit_to_ascii(byte: u8) -> u8 {
     byte + b'0'
 }
 
-#[inline]
 fn ascii_digit_to_u8(digit: u8, multiplier: u8) -> u8 {
     digit.wrapping_sub(b'0').wrapping_mul(multiplier)
 }

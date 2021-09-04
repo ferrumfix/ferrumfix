@@ -29,7 +29,7 @@ where
     }
 
     /// Writes `self` to `buffer` using custom serialization `settings`.
-    fn serialize_with<B>(&self, buffer: &mut B, _settings: Self::SerializeSettings) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, settings: Self::SerializeSettings) -> usize
     where
         B: Buffer;
 
@@ -39,6 +39,10 @@ where
     /// Like [`FixValue::deserialize`], but it's allowed to skip *some* amount of
     /// input checking. Invalid inputs might not trigger errors and instead be
     /// deserialized as random values.
+    ///
+    /// # Safety
+    ///
+    /// This method remains 100% safe even on malformed inputs.
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
         Self::deserialize(data)
     }
@@ -173,8 +177,10 @@ impl<'a> FixValue<'a> for rust_decimal::Decimal {
 
     #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        const ERR_DECIMAL_INVALID: &str = "Invalid decimal number.";
         use std::str::FromStr;
+
+        const ERR_DECIMAL_INVALID: &str = "Invalid decimal number.";
+
         let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
         rust_decimal::Decimal::from_str(s).map_err(|_| ERR_DECIMAL_INVALID)
     }
@@ -199,11 +205,13 @@ impl<'a> FixValue<'a> for decimal::d128 {
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         use std::str::FromStr;
+
         decimal::d128::set_status(decimal::Status::empty());
         let s = std::str::from_utf8(data).unwrap_or("invalid UTF-8");
         let number =
             decimal::d128::from_str(s).expect("decimal::d128 should always parse without errors");
         let status = decimal::d128::get_status();
+
         if status.is_empty() {
             Ok(number)
         } else {
@@ -288,7 +296,7 @@ impl<'a> FixValue<'a> for u8 {
 }
 
 impl<'a> FixValue<'a> for &'a [u8] {
-    type Error = ();
+    type Error = std::convert::Infallible;
     type SerializeSettings = ();
 
     #[inline]

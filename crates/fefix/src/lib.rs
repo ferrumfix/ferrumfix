@@ -103,14 +103,10 @@
 mod buffer;
 mod fefix_core;
 mod fix_value;
-pub mod fix_values;
 mod utils;
-#[cfg(feature = "codegen")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "codegen")))]
-pub use fefix_core::codegen;
-pub use fefix_core::dict;
-pub use fefix_core::TagU16;
+
 pub mod definitions;
+pub mod fix_values;
 #[cfg(feature = "json-encoding")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "json-encoding")))]
 pub mod json;
@@ -120,6 +116,11 @@ pub mod tagvalue;
 
 pub use buffer::Buffer;
 pub use dict::Dictionary;
+#[cfg(feature = "codegen")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "codegen")))]
+pub use fefix_core::codegen;
+pub use fefix_core::dict;
+pub use fefix_core::TagU16;
 // We don't derive macros to pollute the docs.
 #[doc(hidden)]
 pub use fefix_derive::FixValue;
