@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-fefix = { path = "../../fefix", features = ["fix42"] }
+fefix = { path = "../../crates/fefix", features = ["fix42"] }
 slog = "2"
 slog-term = "2"
 slog-async = "2"
