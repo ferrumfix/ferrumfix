@@ -8,7 +8,7 @@ use indoc::indoc;
 const FEFIX_VERSION: &str = env!("CARGO_PKG_VERSION");
 const FOUR_SPACES: &str = "    ";
 
-/// Creates a `String` that contains a multiline Rust "Doc" comment explaining
+/// Creates a [`String`] that contains a multiline Rust "Doc" comment explaining
 /// that the subsequent code was automatically generated.
 ///
 /// The following example is for illustrative purposes only and the actual
@@ -24,6 +24,7 @@ const FOUR_SPACES: &str = "    ";
 /// ```
 pub fn generated_code_notice() -> String {
     use chrono::prelude::*;
+
     format!(
         indoc!(
             r#"
@@ -125,13 +126,13 @@ impl Settings {
         self.indentation_depth += 1;
     }
 
-    /// Returns a mutable reference to the `Vec` of derive macros used for
+    /// Returns a mutable reference to the [`Vec`] of derive macros used for
     /// `enum`s.
     pub fn derives_for_allowed_values_mut(&mut self) -> &mut Vec<String> {
         &mut self.derives_for_allowed_values
     }
 
-    /// Returns a mutable reference to the `Vec` of macro attributes for
+    /// Returns a mutable reference to the [`Vec`] of macro attributes for
     /// `enum`s.
     pub fn attributes_for_allowed_values_mut(&mut self) -> &mut Vec<String> {
         &mut self.attributes_for_allowed_values
@@ -202,9 +203,10 @@ pub fn gen_field_definition(fix_dictionary: dict::Dictionary, field: dict::Field
 /// The generated module will contain:
 ///
 /// - A generated code notice ([generated_code_notice]).
-/// - `enum` definitions for FIX fields.
+/// - `enum` definitions for FIX field types.
 /// - A constant implementor of
-/// [`IsFieldDefinition`](super::dict::IsFieldDefinition) for each FIX field.
+///   [`IsFieldDefinition`](super::dict::IsFieldDefinition)
+///   for each FIX field.
 ///
 /// The Rust code will be free of any leading and trailing whitespace.
 /// An effort is made to provide good formatting, but users shouldn't rely on it
