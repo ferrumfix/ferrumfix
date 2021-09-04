@@ -58,99 +58,6 @@ pub enum Response<'a> {
     LogGarbled,
 }
 
-//#[derive(Debug)]
-//pub struct Responses<'a> {
-//    connection: &'a mut FixConnection,
-//}
-//
-//impl<'a> Iterator for Responses<'a> {
-//    type Item = Response<'a>;
-//
-//    fn next(&mut self) -> Option<Self::Item> {
-//        None
-//    }
-//}
-
-#[derive(Debug, Clone)]
-pub struct FixConnectionBuilder {
-    begin_string: String,
-    environment: Environment,
-    heartbeat: Duration,
-    seq_numbers: SeqNumbers,
-    msg_seq_num_inbound: MsgSeqNumCounter,
-    msg_seq_num_outbound: MsgSeqNumCounter,
-    sender_comp_id: String,
-    target_comp_id: String,
-}
-
-impl FixConnectionBuilder {
-    pub fn set_begin_string<S>(&mut self, begin_string: S)
-    where
-        S: Into<String>,
-    {
-        self.begin_string = begin_string.into();
-    }
-
-    pub fn set_environmen(&mut self, env: Environment) {
-        self.environment = env;
-    }
-
-    pub fn set_seq_numbers(&mut self, inbound: u64, outbound: u64) {
-        if inbound == 0 || outbound == 0 {
-            panic!("FIX sequence numbers must be strictly positive");
-        }
-        self.seq_numbers = SeqNumbers {
-            next_inbound: inbound,
-            next_outbound: outbound,
-        };
-    }
-
-    pub fn set_sender_comp_id<S>(&mut self, sender_comp_id: S)
-    where
-        S: Into<String>,
-    {
-        self.sender_comp_id = sender_comp_id.into();
-    }
-
-    pub fn set_target_comp_id<S>(&mut self, target_comp_id: S)
-    where
-        S: Into<String>,
-    {
-        self.target_comp_id = target_comp_id.into();
-    }
-
-    pub fn build(self) -> FixConnection {
-        FixConnection {
-            uuid: Uuid::new_v4(),
-            buffer: vec![],
-            begin_string: self.begin_string,
-            environment: self.environment,
-            encoder: Encoder::default(),
-            heartbeat: self.heartbeat,
-            seq_numbers: self.seq_numbers,
-            msg_seq_num_inbound: self.msg_seq_num_inbound,
-            msg_seq_num_outbound: self.msg_seq_num_outbound,
-            sender_comp_id: self.sender_comp_id,
-            target_comp_id: self.target_comp_id,
-        }
-    }
-}
-
-impl Default for FixConnectionBuilder {
-    fn default() -> Self {
-        Self {
-            msg_seq_num_inbound: MsgSeqNumCounter::START,
-            msg_seq_num_outbound: MsgSeqNumCounter::START,
-            begin_string: "FIX-4.4".to_string(),
-            environment: Environment::Testing,
-            heartbeat: Duration::from_secs(30),
-            seq_numbers: SeqNumbers::default(),
-            sender_comp_id: "ABC".to_string(),
-            target_comp_id: "XYZ".to_string(),
-        }
-    }
-}
-
 /// A FIX connection message processor.
 #[derive(Debug)]
 pub struct FixConnection {
@@ -169,6 +76,24 @@ pub struct FixConnection {
 
 #[allow(dead_code)]
 impl FixConnection {
+    /// Creates a new [`FixConnection`] with the settings provided by `config`.
+    pub fn new(config: Config) -> Self {
+        Self {
+            uuid: Uuid::new_v4(),
+            begin_string: config.begin_string,
+            environment: config.environment,
+            encoder: Encoder::default(),
+            buffer: vec![],
+            heartbeat: config.heartbeat,
+            seq_numbers: config.seq_numbers,
+            msg_seq_num_inbound: MsgSeqNumCounter::START,
+            msg_seq_num_outbound: MsgSeqNumCounter::START,
+            sender_comp_id: config.sender_comp_id(),
+            target_comp_id: config.target_comp_id(),
+        }
+    }
+
+    /// The entry point within a [`FixConnection`].
     pub async fn start<B, I, O>(
         &mut self,
         mut app: B,
