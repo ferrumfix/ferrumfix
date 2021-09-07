@@ -138,7 +138,7 @@ where
             let mut input = Pin::new(&mut input);
             let buffer = decoder.supply_buffer();
             input.read_exact(buffer).await.unwrap();
-            if let Ok(Some(())) = decoder.state() {
+            if let Ok(Some(())) = decoder.parse() {
                 logon = decoder.message();
                 break;
             }
@@ -164,7 +164,7 @@ where
         let event_loop = &mut LlEventLoop::new(decoder, input, self.heartbeat());
         loop {
             let event = event_loop
-                .next()
+                .next_event()
                 .await
                 .expect("The connection died unexpectedly.");
             match event {
@@ -181,6 +181,7 @@ where
                         _ => {}
                     }
                 }
+                LlEvent::BadMessage(_err) => {}
                 LlEvent::IoError(_) => {
                     return;
                 }

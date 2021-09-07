@@ -106,7 +106,7 @@ where
 /// - `_opt` stands for *optional*, for better error reporting.
 pub trait FieldAccess {
     /// The type returned by [`FieldAccess::group()`] and [`FieldAccess::group_opt()`].
-    type Group: RepeatingGroup;
+    type Group: RepeatingGroup<Entry = Self>;
 
     /// Queries `self` for a group tagged with `key`. An unsuccessful query
     /// results in [`OptError::None`].

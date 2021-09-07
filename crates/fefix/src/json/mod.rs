@@ -8,9 +8,7 @@ mod decoder;
 mod encoder;
 
 pub use config::{Config, Configure};
-pub use decoder::{
-    Decoder, FieldOrGroup, Message, MessageFieldsIter, MessageGroup, MessageGroupEntry,
-};
+pub use decoder::{Decoder, FieldOrGroup, Message, MessageFieldsIter, MessageGroup};
 pub use encoder::Encoder;
 
 #[doc(inline)]

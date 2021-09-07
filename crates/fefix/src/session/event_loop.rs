@@ -1,4 +1,4 @@
-use crate::tagvalue::{DecoderBuffered, Message};
+use crate::tagvalue::{DecodeError, DecoderBuffered, Message};
 use futures::select;
 use futures::{AsyncRead, AsyncReadExt, FutureExt};
 use futures_timer::Delay;
@@ -55,42 +55,65 @@ where
         self.heartbeat_hard_tolerance = hard_tolerance;
     }
 
-    pub async fn next<'a>(&'a mut self) -> Option<LlEvent<'a>> {
-        if !self.is_alive {
-            return None;
-        }
+    pub async fn next_event<'a>(&'a mut self) -> Option<LlEvent<'a>> {
+        let mut buf_filled_len = 0;
 
-        self.decoder.clear();
+        loop {
+            if !self.is_alive {
+                return None;
+            }
 
-        let mut timer_heartbeat = self.timer_heartbeat().fuse();
-        let mut timer_test_request = self.timer_test_request().fuse();
-        let mut timer_logout = self.timer_logout().fuse();
-        let next_message = decode_next_message(&mut self.decoder, &mut self.input).fuse();
-        futures::pin_mut!(next_message);
+            let mut timer_heartbeat = self.timer_heartbeat().fuse();
+            let mut timer_test_request = self.timer_test_request().fuse();
+            let mut timer_logout = self.timer_logout().fuse();
 
-        select! {
-            decoder = next_message => {
-                match decoder {
-                    Ok(decoder) => {
-                        let msg = decoder.message();
-                        return Some(LlEvent::Message(msg));
-                    }
-                    Err(err) => {
-                        self.is_alive = false;
-                        return Some(LlEvent::IoError(err))
-                    }
+            let buf = &mut self.decoder.supply_buffer()[buf_filled_len..];
+            assert!(buf.len() > 0);
+
+            let mut read_result = self.input.read(buf).fuse();
+
+            select! {
+                read_result = read_result => {
+                    match read_result {
+                        Err(e) => {
+                            return Some(LlEvent::IoError(e));
+                        }
+                        Ok(num_bytes) => {
+                            buf_filled_len += num_bytes;
+
+                            if buf_filled_len < buf.len() {
+                                continue
+                            }
+
+                            buf_filled_len = 0;
+                            match self.decoder.parse() {
+                                Ok(Some(())) => {
+                                    let msg = self.decoder.message();
+                                    return Some(LlEvent::Message(msg));
+                                }
+                                Ok(None) => {
+                                    continue;
+                                }
+                                Err(err) => {
+                                    println!("contents after {} are {:?}", buf_filled_len, &self.decoder.raw_decoder.buffer);
+                                    self.is_alive = false;
+                                    return Some(LlEvent::BadMessage(err))
+                                }
+                            }
+                        }
+                    };
+                },
+                () = timer_heartbeat => {
+                    self.last_heartbeat = Instant::now();
+                    return Some(LlEvent::Heartbeat);
+                },
+                () = timer_test_request => {
+                    return Some(LlEvent::TestRequest);
+                },
+                () = timer_logout => {
+                    self.is_alive = false;
+                    return Some(LlEvent::Logout);
                 }
-            },
-            () = timer_heartbeat => {
-                self.last_heartbeat = Instant::now();
-                return Some(LlEvent::Heartbeat);
-            },
-            () = timer_test_request => {
-                return Some(LlEvent::TestRequest);
-            },
-            () = timer_logout => {
-                self.is_alive = false;
-                return Some(LlEvent::Logout);
             }
         }
     }
@@ -118,6 +141,8 @@ where
 pub enum LlEvent<'a> {
     /// Incoming FIX message.
     Message(Message<'a, &'a [u8]>),
+    /// Tried to parse an incoming FIX message, but got illegal data.
+    BadMessage(DecodeError),
     /// I/O error at the transport layer.
     IoError(io::Error),
     /// Time to send a new `HeartBeat <0>` message.
@@ -132,25 +157,6 @@ pub enum LlEvent<'a> {
     Logout,
 }
 
-async fn decode_next_message<'a, I>(
-    decoder: &'a mut DecoderBuffered,
-    input: &mut I,
-) -> io::Result<&'a mut DecoderBuffered>
-where
-    I: AsyncRead + std::marker::Unpin,
-{
-    loop {
-        let buffer = decoder.supply_buffer();
-        if buffer.is_empty() {
-            return Ok(decoder); // FIXME
-        }
-        input.read_exact(buffer).await.ok();
-        if let Ok(Some(())) = decoder.state() {
-            return Ok(decoder);
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -159,7 +165,7 @@ mod test {
     use tokio::net::{TcpListener, TcpStream};
     use tokio_util::compat::*;
 
-    async fn events(events: &'static [(&[u8], Duration)]) -> TcpStream {
+    async fn produce_events(events: &'static [(&[u8], Duration)]) -> TcpStream {
         let tcp_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let local_addr = tcp_listener.local_addr().unwrap();
 
@@ -174,15 +180,23 @@ mod test {
         tcp_listener.accept().await.unwrap().0
     }
 
-    #[tokio::test]
-    async fn dead_input_triggers_logout() {
-        let input = events(&[]).await;
-        let mut event_loop = LlEventLoop::new(
+    async fn new_event_loop(
+        events: &'static [(&[u8], Duration)],
+    ) -> LlEventLoop<Compat<TcpStream>> {
+        let input = produce_events(events).await;
+
+        LlEventLoop::new(
             Decoder::<Config>::new(crate::Dictionary::fix44()).buffered(),
             input.compat(),
             Duration::from_secs(3),
-        );
-        let event = event_loop.next().await;
+        )
+    }
+
+    #[tokio::test]
+    async fn dead_input_triggers_logout() {
+        let mut event_loop = new_event_loop(&[]).await;
+        let event = event_loop.next_event().await;
+        println!("{:?}", event);
         assert!(matches!(event, Some(LlEvent::TestRequest)));
     }
 }

@@ -50,15 +50,17 @@ mod config;
 mod decoder;
 mod encoder;
 mod field_access;
+mod field_locator;
 mod raw_decoder;
 #[cfg(feature = "utils-tokio")]
 mod tokio_decoder;
 mod utils;
 
 pub use config::{Config, Configure};
-pub use decoder::{Decoder, DecoderBuffered, Fields, Message, MessageGroup, MessageGroupEntry};
+pub use decoder::{Decoder, DecoderBuffered, Fields, Message, MessageGroup};
 pub use encoder::{Encoder, EncoderHandle};
 pub use field_access::{FieldAccess, RepeatingGroup};
+pub use field_locator::{FieldLocator, FieldLocatorContext};
 pub use raw_decoder::{RawDecoder, RawDecoderBuffered, RawFrame};
 #[cfg(feature = "utils-tokio")]
 pub use tokio_decoder::TokioDecoder;

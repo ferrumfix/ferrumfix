@@ -23,7 +23,7 @@ fn main() {
         let mut buffer = fix_decoder.supply_buffer();
         // You *must* use `std::io::Read::read_exact`.
         stream.read_exact(&mut buffer).unwrap();
-        if let Ok(Some(())) = fix_decoder.state() {
+        if let Ok(Some(())) = fix_decoder.parse() {
             let msg = fix_decoder.message();
             assert_eq!(msg.fv(fix42::BEGIN_STRING), Ok("FIX.4.2"));
         }
