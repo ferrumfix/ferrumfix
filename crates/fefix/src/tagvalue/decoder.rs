@@ -1,6 +1,6 @@
 use super::{
-    Config, Configure, DecodeError, FieldAccess, RawDecoder, RawDecoderBuffered, RawFrame,
-    RepeatingGroup,
+    Config, Configure, DecodeError, FieldAccess, FieldLocator, FieldLocatorContext, RawDecoder,
+    RawDecoderBuffered, RawFrame, RepeatingGroup,
 };
 use crate::dict;
 use crate::dict::IsFieldDefinition;
@@ -9,7 +9,9 @@ use crate::TagU16;
 use crate::{dict::FixDatatype, Dictionary};
 use nohash_hasher::IntMap;
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::fmt::Debug;
+use std::iter::FusedIterator;
 use std::marker::PhantomData;
 
 // Number of bytes before the start of the `BeginString` field:
@@ -18,34 +20,11 @@ use std::marker::PhantomData;
 //   8=FIX.4.2|...
 const BEGIN_STRING_OFFSET: usize = 2;
 
-/// Univocally locates a tag within a FIX message, even with nested groups.
-///
-/// Typically, every FIX tag is guaranteed to be unique within a single FIX
-/// message. Repeating groups, however, break this promise and allow *multiple*
-/// values with the same tag, each in a different *group entry*. This means that
-/// a FIX message is a tree rather than an associative array. [`FieldLocator`]
-/// generates unique identifiers for tags both outsite and within groups, which
-/// allows for random (i.e. non-sequential) reads on a FIX message.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum FieldLocator {
-    WithinGroup {
-        tag: TagU16,
-        index_of_group_tag: u32,
-        entry_index: u32,
-    },
-    TopLevel {
-        tag: TagU16,
-    },
-}
-
 /// FIX message decoder.
 ///
 /// One should create a [`Decoder`] per stream of FIX messages.
 #[derive(Debug)]
-pub struct Decoder<C = Config>
-where
-    C: Configure,
-{
+pub struct Decoder<C = Config> {
     dict: Dictionary,
     builder: MessageBuilder<'static>,
     raw_decoder: RawDecoder<C>,
@@ -59,31 +38,10 @@ where
     /// Creates a new [`Decoder`] for the tag-value format. `dict` is used to parse
     /// messages.
     pub fn new(dict: Dictionary) -> Self {
-        Self::with_config(dict, C::default())
-    }
-
-    /// Creates a new [`Decoder`] with custom `config`. `dict` is used to parse
-    /// messages.
-    pub fn with_config(dict: Dictionary, config: C) -> Self {
         Self {
             dict: dict.clone(),
-            builder: MessageBuilder {
-                state: DecoderState {
-                    group_information: Vec::new(),
-                    new_group: None,
-                    data_field_length: None,
-                },
-                raw: b"",
-                field_locators: Vec::new(),
-                fields: HashMap::new(),
-                i_first_cell: 0,
-                i_last_cell: 0,
-                len_end_body: 0,
-                len_end_trailer: 0,
-                len_end_header: 0,
-                bytes: b"",
-            },
-            raw_decoder: RawDecoder::with_config(config),
+            builder: MessageBuilder::default(),
+            raw_decoder: RawDecoder::default(),
             tag_lookup: dict
                 .iter_fields()
                 .filter_map(|field| {
@@ -136,9 +94,11 @@ where
     /// Turns `self` into a [`DecoderBuffered`] by allocating an internal buffer.
     pub fn buffered(self) -> DecoderBuffered<C> {
         let raw_decoder = self.raw_decoder.clone().buffered();
+
         DecoderBuffered {
             decoder: self,
             raw_decoder,
+            is_ready: false,
         }
     }
 
@@ -235,6 +195,7 @@ where
         Ok(Message {
             builder: self.message_builder_mut(),
             phantom: PhantomData::default(),
+            field_locator_context: FieldLocatorContext::TopLevel,
         })
     }
 
@@ -293,12 +254,10 @@ where
 ///
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
 #[derive(Debug)]
-pub struct DecoderBuffered<C = Config>
-where
-    C: Configure,
-{
+pub struct DecoderBuffered<C = Config> {
     decoder: Decoder<C>,
-    raw_decoder: RawDecoderBuffered<C>,
+    pub raw_decoder: RawDecoderBuffered<C>,
+    is_ready: bool,
 }
 
 impl<C> DecoderBuffered<C>
@@ -345,13 +304,15 @@ where
         self.raw_decoder.supply_buffer()
     }
 
+    /// Completes erases the contents of the internal buffer of `self`.
     #[inline]
     pub fn clear(&mut self) {
         self.raw_decoder.clear();
+        self.is_ready = false;
     }
 
     #[inline]
-    pub fn state(&mut self) -> Result<Option<()>, DecodeError> {
+    pub fn parse(&mut self) -> Result<Option<()>, DecodeError> {
         match self.raw_decoder.current_frame() {
             Ok(Some(frame)) => {
                 self.decoder.from_frame(frame)?;
@@ -362,11 +323,17 @@ where
         }
     }
 
+    /// # Panics
+    ///
+    /// Panics if [`DecoderBuffered::parse()`] didn't return [`Ok(Some(()))`].
     #[inline]
     pub fn message(&self) -> Message<&[u8]> {
+        assert!(self.is_ready);
+
         Message {
             builder: &self.decoder.builder,
             phantom: PhantomData::default(),
+            field_locator_context: FieldLocatorContext::TopLevel,
         }
     }
 }
@@ -382,130 +349,55 @@ where
     len: usize,
 }
 
-impl<'a, T> MessageGroup<'a, T>
-where
-    T: AsRef<[u8]> + Clone,
-{
-    pub fn len(&self) -> usize {
-        self.len
-    }
-
-    pub fn entry(&self, index: usize) -> MessageGroupEntry<'a, T> {
-        MessageGroupEntry {
-            group: self.clone(),
-            entry_index: index as u32,
-        }
-    }
-}
-
-impl<'a, T> FieldAccess for MessageGroupEntry<'a, T>
-where
-    T: AsRef<[u8]> + Clone,
-{
-    type Group = MessageGroup<'a, T>;
-
-    fn group_opt<F>(&self, field: &F) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>>
-    where
-        F: IsFieldDefinition,
-    {
-        let field_locator_of_group_tag = FieldLocator::TopLevel { tag: field.tag() };
-        let num_in_group = self
-            .group
-            .message
-            .builder
-            .fields
-            .get(&field_locator_of_group_tag)?;
-        let index_of_group_tag = num_in_group.2 as u32;
-        let field_value_str = std::str::from_utf8(num_in_group.1).ok()?;
-        let num_entries = str::parse(field_value_str).unwrap();
-        Some(Ok(MessageGroup {
-            message: self.group.message.clone(),
-            index_of_group_tag,
-            len: num_entries,
-        }))
-    }
-
-    fn fv_raw<F>(&self, field: &F) -> Option<&[u8]>
-    where
-        F: IsFieldDefinition,
-    {
-        let field_locator = FieldLocator::WithinGroup {
-            tag: field.tag(),
-            index_of_group_tag: self.group.index_of_group_tag,
-            entry_index: self.entry_index,
-        };
-        self.group
-            .message
-            .builder
-            .fields
-            .get(&field_locator)
-            .map(|field| field.1)
-    }
-}
-
 impl<'a, T> RepeatingGroup for MessageGroup<'a, T>
 where
     T: AsRef<[u8]> + Clone,
 {
-    type Entry = MessageGroupEntry<'a, T>;
+    type Entry = Message<'a, T>;
 
     fn len(&self) -> usize {
-        MessageGroup::len(self)
+        self.len
     }
 
     fn entry(&self, i: usize) -> Self::Entry {
-        MessageGroup::entry(self, i)
+        Message {
+            builder: self.message.builder,
+            phantom: PhantomData::default(),
+            field_locator_context: FieldLocatorContext::WithinGroup {
+                index_of_group_tag: self.index_of_group_tag,
+                entry_index: i.try_into().unwrap(),
+            },
+        }
     }
 }
 
-/// A specific [`MessageGroup`] entry.
-#[derive(Debug)]
-pub struct MessageGroupEntry<'a, T>
-where
-    T: AsRef<[u8]>,
-{
-    group: MessageGroup<'a, T>,
-    entry_index: u32,
-}
-
+/// A FIX message returned by [`Decoder`] or [`DecoderBuffered`].
 #[derive(Debug, Copy, Clone)]
-pub struct Message<'a, T>
-where
-    T: AsRef<[u8]>,
-{
+pub struct Message<'a, T> {
     builder: &'a MessageBuilder<'a>,
     phantom: PhantomData<T>,
+    field_locator_context: FieldLocatorContext,
 }
 
-impl<'a, T> PartialEq for Message<'a, T>
-where
-    T: AsRef<[u8]>,
-{
-    fn eq(&self, other: &Self) -> bool {
-        // Two messages are equal *if and only if* messages are exactly the
-        // same. Fields must also have the same order (things get complicated
-        // when you allow for different order of fields).
-        self.fields().eq(other.fields())
-    }
-}
-
-impl<'a, T> Eq for Message<'a, T> where T: AsRef<[u8]> {}
-
-impl<'a, T> Message<'a, T>
-where
-    T: AsRef<[u8]>,
-{
+impl<'a, T> Message<'a, T> {
     /// Returns an [`Iterator`] over all fields in `self`, in sequential order
     /// starting from the very first field.
     ///
+    /// # Examples
+    ///
     /// ```
-    /// use fefix::prelude::*;
-    /// use fefix::tagvalue::{Config, Configure, Decoder};
-    /// use fefix::Dictionary;
+    /// use fefix::tagvalue::{FieldAccess, Config, Decoder};
+    /// use fefix::{Dictionary, TagU16};
+    ///
+    /// const DATA: &[u8] = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
     ///
     /// let mut decoder = Decoder::<Config>::new(Dictionary::fix44());
     /// decoder.config_mut().set_separator(b'|');
-    /// assert_eq!(decoder.config().separator(), b'|');
+    ///
+    /// let message = decoder.decode(data).unwrap();
+    /// let first_field = message.fields().next().unwrap();
+    ///
+    /// assert_eq!(first_field, Some((TagU16::new(8).unwrap(), b"FIX.4.4"));
     /// ```
     pub fn fields(&'a self) -> Fields<'a, T> {
         Fields {
@@ -514,14 +406,57 @@ where
         }
     }
 
+    /// Returns the underlying byte contents of `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::tagvalue::{FieldAccess, Config, Decoder};
+    /// use fefix::{Dictionary, TagU16};
+    ///
+    /// const DATA: &[u8] = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
+    ///
+    /// let mut decoder = Decoder::<Config>::new(Dictionary::fix44());
+    /// decoder.config_mut().set_separator(b'|');
+    ///
+    /// let message = decoder.decode(data).unwrap();
+    /// assert_eq!(message.as_bytes(), DATA);
+    /// ```
     pub fn as_bytes(&self) -> &[u8] {
         self.builder.bytes
     }
 
+    /// Returns the number of FIX tags contained in `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fefix::tagvalue::{FieldAccess, Config, Decoder};
+    /// use fefix::{Dictionary, TagU16};
+    ///
+    /// const DATA: &[u8] = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
+    ///
+    /// let mut decoder = Decoder::<Config>::new(Dictionary::fix44());
+    /// decoder.config_mut().set_separator(b'|');
+    ///
+    /// let message = decoder.decode(data).unwrap();
+    /// assert_eq!(message.len(), message.fields().count());
+    /// ```
     pub fn len(&self) -> usize {
         self.builder.field_locators.len()
     }
 }
+
+impl<'a, T> PartialEq for Message<'a, T> {
+    fn eq(&self, other: &Self) -> bool {
+        // Two messages are equal *if and only if* messages are exactly the
+        // same. Fields must also have the same order (things get complicated
+        // when you allow for different order of fields).
+        self.fields().eq(other.fields())
+    }
+}
+
+impl<'a, T> Eq for Message<'a, T> {}
 
 #[derive(Debug, Copy, Clone)]
 struct DecoderGroupState {
@@ -547,13 +482,15 @@ struct DecoderState {
 
 impl DecoderState {
     fn current_field_locator(&self, tag: TagU16) -> FieldLocator {
-        match self.group_information.last() {
-            Some(group_info) => FieldLocator::WithinGroup {
-                tag,
-                index_of_group_tag: group_info.index_of_group_tag as u32,
-                entry_index: group_info.current_entry_i as u32,
+        FieldLocator {
+            tag,
+            context: match self.group_information.last() {
+                Some(group_info) => FieldLocatorContext::WithinGroup {
+                    index_of_group_tag: group_info.index_of_group_tag as u32,
+                    entry_index: group_info.current_entry_i as u32,
+                },
+                None => FieldLocatorContext::TopLevel,
             },
-            None => FieldLocator::TopLevel { tag },
         }
     }
 
@@ -583,7 +520,7 @@ impl DecoderState {
 
 /// FIX message data structure with fast associative and sequential access.
 #[derive(Debug, Clone)]
-pub struct MessageBuilder<'a> {
+struct MessageBuilder<'a> {
     state: DecoderState,
     raw: &'a [u8],
     fields: HashMap<FieldLocator, (TagU16, &'a [u8], usize)>,
@@ -594,6 +531,27 @@ pub struct MessageBuilder<'a> {
     len_end_body: usize,
     len_end_trailer: usize,
     bytes: &'a [u8],
+}
+
+impl<'a> Default for MessageBuilder<'a> {
+    fn default() -> Self {
+        Self {
+            state: DecoderState {
+                group_information: Vec::new(),
+                new_group: None,
+                data_field_length: None,
+            },
+            raw: b"",
+            field_locators: Vec::new(),
+            fields: HashMap::new(),
+            i_first_cell: 0,
+            i_last_cell: 0,
+            len_end_body: 0,
+            len_end_trailer: 0,
+            len_end_header: 0,
+            bytes: b"",
+        }
+    }
 }
 
 impl<'a> MessageBuilder<'a> {
@@ -621,18 +579,20 @@ impl<'a> MessageBuilder<'a> {
 
 /// An [`Iterator`] over fields and groups within a FIX message.
 #[derive(Debug)]
-pub struct Fields<'a, T>
-where
-    T: AsRef<[u8]>,
-{
+pub struct Fields<'a, T> {
     message: &'a Message<'a, T>,
     i: usize,
 }
 
-impl<'a, T> Iterator for Fields<'a, T>
-where
-    T: AsRef<[u8]>,
-{
+impl<'a, T> ExactSizeIterator for Fields<'a, T> {
+    fn len(&self) -> usize {
+        self.message.len()
+    }
+}
+
+impl<'a, T> FusedIterator for Fields<'a, T> {}
+
+impl<'a, T> Iterator for Fields<'a, T> {
     type Item = (TagU16, &'a [u8]);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -657,8 +617,10 @@ where
     where
         F: IsFieldDefinition,
     {
-        // FIXME
-        let field_locator_of_group_tag = FieldLocator::TopLevel { tag: field.tag() };
+        let field_locator_of_group_tag = FieldLocator {
+            tag: field.tag(),
+            context: self.field_locator_context,
+        };
         let num_in_group = self.builder.fields.get(&field_locator_of_group_tag)?;
         let index_of_group_tag = num_in_group.2 as u32;
         let field_value_str = std::str::from_utf8(num_in_group.1).ok()?;
@@ -667,6 +629,7 @@ where
             message: Message {
                 builder: self.builder,
                 phantom: PhantomData::default(),
+                field_locator_context: FieldLocatorContext::TopLevel,
             },
             index_of_group_tag,
             len: num_entries,
@@ -677,7 +640,10 @@ where
     where
         F: dict::IsFieldDefinition,
     {
-        let field_locator = FieldLocator::TopLevel { tag: field.tag() };
+        let field_locator = FieldLocator {
+            tag: field.tag(),
+            context: self.field_locator_context,
+        };
         self.builder.fields.get(&field_locator).map(|field| field.1)
     }
 }
@@ -731,25 +697,6 @@ mod test {
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
-    fn with_soh(msg: &str) -> String {
-        msg.split("|").collect::<Vec<&str>>().join("\x01")
-    }
-
-    fn decoder() -> Decoder<Config> {
-        let dict = Dictionary::fix44();
-        let mut config = Config::default();
-        config.set_separator(b'|');
-        Decoder::with_config(dict, config)
-    }
-
-    #[test]
-    fn can_parse_simple_message() {
-        let message = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
-        let mut decoder = decoder();
-        let result = decoder.decode(message.as_bytes());
-        assert!(result.is_ok());
-    }
-
     const RANDOM_MESSAGES: &[&str] = &[
         "8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|",
         "8=FIX.4.2|9=97|35=6|49=BKR|56=IM|34=14|52=20100204-09:18:42|23=115685|28=N|55=SPMI.MI|54=2|44=2200.75|27=S|25=H|10=248|",
@@ -759,6 +706,24 @@ mod test {
         "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072|",
         "8=FIX.4.2|9=196|35=X|49=A|56=B|34=12|52=20100318-03:21:11.364|262=A|268=2|279=0|269=0|278=BID|55=EUR/USD|270=1.37215|15=EUR|271=2500000|346=1|279=0|269=1|278=OFFER|55=EUR/USD|270=1.37224|15=EUR|271=2503200|346=1|10=171|",
     ];
+
+    fn with_soh(msg: &str) -> String {
+        msg.split("|").collect::<Vec<&str>>().join("\x01")
+    }
+
+    fn decoder() -> Decoder<Config> {
+        let mut decoder = Decoder::<Config>::new(Dictionary::fix44());
+        decoder.config_mut().set_separator(b'|');
+        decoder
+    }
+
+    #[test]
+    fn can_parse_simple_message() {
+        let message = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
+        let mut decoder = decoder();
+        let result = decoder.decode(message.as_bytes());
+        assert!(result.is_ok());
+    }
 
     #[test]
     fn skip_checksum_verification() {
@@ -828,10 +793,8 @@ mod test {
 
     #[test]
     fn message_without_final_separator() {
+        let mut codec = decoder();
         let message = "8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072";
-        let mut config = Config::default();
-        config.set_separator(b'|');
-        let mut codec = Decoder::with_config(Dictionary::fix44(), config);
         let result = codec.decode(message.as_bytes());
         assert!(result.is_err());
     }

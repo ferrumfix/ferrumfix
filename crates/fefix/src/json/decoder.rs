@@ -13,6 +13,7 @@ use std::collections::HashMap;
 #[derive(Debug, Copy, Clone)]
 pub struct Message<'a> {
     internal: &'a MessageInternal<'a>,
+    group_component: Option<&'a Component<'a>>,
 }
 
 impl<'a> FieldAccess for Message<'a> {
@@ -46,7 +47,7 @@ pub struct MessageGroup<'a> {
 }
 
 impl<'a> RepeatingGroup for MessageGroup<'a> {
-    type Entry = MessageGroupEntry<'a>;
+    type Entry = Message<'a>;
 
     fn len(&self) -> usize {
         self.entries.len()
@@ -55,73 +56,11 @@ impl<'a> RepeatingGroup for MessageGroup<'a> {
     fn entry(&self, i: usize) -> Self::Entry {
         self.entries
             .get(i)
-            .map(|component| MessageGroupEntry { component })
+            .map(|component| Message {
+                internal: self.message.internal,
+                group_component: Some(component),
+            })
             .unwrap()
-    }
-}
-
-impl<'a> FieldAccess for MessageGroupEntry<'a> {
-    type Group = MessageGroup<'a>;
-
-    fn group_opt<F>(
-        &self,
-        _field: &F,
-    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>>
-    where
-        F: IsFieldDefinition,
-    {
-        None
-    }
-
-    fn fv_raw<F>(&self, _field: &F) -> Option<&[u8]>
-    where
-        F: IsFieldDefinition,
-    {
-        // FIXME
-        None
-    }
-}
-
-/// A specific [`MessageGroup`] entry.
-#[derive(Debug)]
-pub struct MessageGroupEntry<'a> {
-    component: &'a Component<'a>,
-}
-
-impl<'a> MessageGroupEntry<'a> {
-    pub fn group<'b, F, T>(&'b self, _field_def: &F) -> Option<MessageGroup<'b>>
-    where
-        'b: 'a,
-        F: IsFieldDefinition,
-        T: FixValue<'b>,
-    {
-        None
-    }
-
-    pub fn field_ref<'b, F, T>(
-        &'b self,
-        _field_def: &F,
-    ) -> Option<Result<T, <T as FixValue<'b>>::Error>>
-    where
-        'b: 'a,
-        F: IsFieldDefinition,
-        T: FixValue<'b>,
-    {
-        unimplemented!()
-    }
-
-    pub fn field_raw(&self, _name: &str, _location: FieldLocation) -> Option<&str> {
-        unimplemented!()
-    }
-
-    //type FieldsIter = FieldsIter<'a>;
-    //type FieldsIterStdHeader = FieldsIter<'a>;
-    //type FieldsIterBody = FieldsIter<'a>;
-
-    /// Creates an [`Iterator`] over all FIX fields in `self`.
-    pub fn iter_fields(&self) -> impl Iterator<Item = Cow<'a, str>> {
-        // TODO
-        std::iter::empty()
     }
 }
 
@@ -222,7 +161,10 @@ where
                 DecodeError::Schema
             }
         })?;
-        Ok(Message { internal: msg })
+        Ok(Message {
+            internal: msg,
+            group_component: None,
+        })
     }
 }
 

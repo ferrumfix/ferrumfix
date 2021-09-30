@@ -1,5 +1,4 @@
 use fefix::prelude::*;
-use fefix::session::FixConnectionBuilder;
 use fefix::tagvalue::Decoder;
 use slog::{debug, info, o, Logger};
 use std::io;
@@ -17,16 +16,20 @@ async fn main() -> io::Result<()> {
     let tcp_stream = tcp_socket.connect(socket_address.into()).await?;
     tcp_stream.set_nodelay(true)?;
     let app = Application::new(logger());
-    let mut builder = FixConnectionBuilder::default();
-    builder.set_begin_string("FIX.4.2");
-    builder.set_target_comp_id("TW");
-    builder.set_sender_comp_id("INCA");
+    let mut config = fefix::session::Config::default();
+    config.set_begin_string("FIX.4.2");
+    config.set_target_comp_id("TW");
+    config.set_sender_comp_id("INCA");
     let fix_dictionary = Dictionary::fix42();
     let fix_decoder = Decoder::new(fix_dictionary);
     let (reader, writer) = tokio::io::split(tcp_stream);
-    builder
-        .build()
-        .start(app, reader.compat(), writer.compat_write(), fix_decoder)
+    fefix::session::FixConnection::new(config)
+        .start(
+            app,
+            reader.compat(),
+            writer.compat_write(),
+            fix_decoder.buffered(),
+        )
         .await;
     Ok(())
 }

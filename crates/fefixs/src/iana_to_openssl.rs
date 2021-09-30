@@ -1,3 +1,5 @@
+/// See <https://testssl.sh/openssl-iana.mapping.html> and
+/// <https://wiki.mozilla.org/Security/Cipher_Suites>.
 #[rustfmt::skip]
 pub const IANA_TO_OPENSSL: &[(&str, &str)] = &[
     ("TLS_RSA_WITH_NULL_MD5", "NULL-MD5"),

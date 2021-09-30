@@ -97,6 +97,7 @@ mod test {
         let rule_range_5_30 =
             HeartbeatRule::Range(Duration::from_secs(5)..=Duration::from_secs(30));
         let rule_any = HeartbeatRule::Any;
+
         assert!(rule_exact_1.validate(&Duration::from_secs(1)).is_ok());
         assert!(!rule_exact_1.validate(&Duration::from_secs(2)).is_ok());
         assert!(!rule_exact_1.validate(&Duration::from_secs(0)).is_ok());

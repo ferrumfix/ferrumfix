@@ -105,10 +105,7 @@ where
 /// `BodyLength (9)` and `CheckSum (10)` to the final user. Everything else is
 /// left to the user to deal with.
 #[derive(Debug, Clone, Default)]
-pub struct RawDecoder<C = Config>
-where
-    C: Configure,
-{
+pub struct RawDecoder<C = Config> {
     config: C,
 }
 
@@ -173,11 +170,8 @@ where
 
 /// A [`RawDecoder`] that can buffer incoming data and read a stream of messages.
 #[derive(Debug, Clone)]
-pub struct RawDecoderBuffered<C = Config>
-where
-    C: Configure,
-{
-    buffer: Vec<u8>,
+pub struct RawDecoderBuffered<C = Config> {
+    pub buffer: Vec<u8>,
     decoder: RawDecoder<C>,
     error: Option<DecodeError>,
 }
@@ -206,26 +200,25 @@ where
     /// Provides a buffer that must be filled before re-attempting to deserialize
     /// the next [`RawFrame`].
     pub fn supply_buffer(&mut self) -> &mut [u8] {
-        if self.buffer.as_slice().len() < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
-            let current_len = self.buffer.as_slice().len();
-            let missing_len = utils::MIN_FIX_MESSAGE_LEN_IN_BYTES - current_len;
-            debug_assert!(missing_len > 0);
-            self.buffer.resize(missing_len, 0);
-            &mut self.buffer.as_mut_slice()[current_len..]
-        } else {
-            match HeaderInfo::parse(self.buffer.as_slice(), self.config().separator()) {
-                Ok(info) => {
-                    let start_of_body = info.start_of_body();
-                    let body_len = info.body_range().len();
-                    let total_len = start_of_body + body_len + utils::FIELD_CHECKSUM_LEN_IN_BYTES;
-                    let current_len = self.buffer.as_slice().len();
-                    self.buffer.resize(total_len, 0);
-                    &mut self.buffer.as_mut_slice()[current_len..]
-                }
-                Err(e) => {
-                    self.error = Some(e);
-                    &mut []
-                }
+        let len = self.buffer.as_slice().len();
+
+        if len < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
+            self.buffer.resize(utils::MIN_FIX_MESSAGE_LEN_IN_BYTES, 0);
+            return &mut self.buffer.as_mut_slice()[len..];
+        }
+
+        match HeaderInfo::parse(self.buffer.as_slice(), self.config().separator()) {
+            Ok(info) => {
+                let start_of_body = info.start_of_body();
+                let body_len = info.body_range().len();
+                let total_len = start_of_body + body_len + utils::FIELD_CHECKSUM_LEN_IN_BYTES;
+                let current_len = self.buffer.as_slice().len();
+                self.buffer.resize(total_len, 0);
+                &mut self.buffer.as_mut_slice()[current_len..]
+            }
+            Err(e) => {
+                self.error = Some(e);
+                &mut []
             }
         }
     }
