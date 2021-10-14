@@ -2,8 +2,8 @@
 name = "fefixs"
 version = "0.1.0"
 authors = ["Filippo Costa @neysofu"]
-homepage = "https://github.com/neysofu/ferrum-fix"
-repository = "https://github.com/neysofu/ferrum-fix"
+homepage = "https://github.com/ferrumfix/ferrumfix"
+repository = "https://github.com/ferrumfix/ferrumfix"
 description = "FIXP implementation in pure Rust."
 publish = true
 edition = "2018"

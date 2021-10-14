@@ -7,7 +7,7 @@
 [![Minimal rustc version](https://img.shields.io/badge/rustc-1.52%2B-lightgrey)](https://img.shields.io/badge/rustc-1.52%2B-lightgrey)
 [![matrix.org](https://img.shields.io/badge/matrix.org-%23ferrum--fix-blue)](https://matrix.to/#/#ferrum-fix:matrix.org)
 [![License](https://img.shields.io/crates/l/fefix)](https://crates.io/crates/fefix)
-[![CI status](https://img.shields.io/github/workflow/status/neysofu/ferrum-fix/CI/develop)](https://github.com/neysofu/ferrum-fix/actions)
+[![CI status](https://img.shields.io/github/workflow/status/ferrumfix/ferrumfix/CI/develop)](https://github.com/ferrumfix/ferrumfix/actions)
 
 FerrumFIX is a free and open source FIX engine implementation in Rust. Please note that it's currently under heavy development and wildly unstable, so all interested parties should refrain from using it in production prior to its 1.0 release. Performance and full adherence to the FIX protocol are nevertheless core goals of the project which, if anything, might serve as a useful foundation for others' work.
 
@@ -60,7 +60,7 @@ Please reach out to `Filippo Costa <filippo.costa@protonmail.com>` for business 
 
 ## Contributing
 
-All development happens on GitHub at [`neysofu/ferrum-fix`](https://github.com/neysofu/ferrum-fix). Contributions both from volunteers and companies are welcome. Depending on the size and scope of your intented contributions, it's likely a good idea to open beforehand a GitHub issue to discuss any details. Please note that our branching strategy is inspired by the (in)famous [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/), which is a good fit for software that requires complex versioning such as FIX implementations. Versioning adheres to [SemVer 2.0](https://semver.org/).
+All development happens on GitHub at [`ferrumfix/ferrumfix`](https://github.com/ferrumfix/ferrumfix). Contributions both from volunteers and companies are welcome. Depending on the size and scope of your intented contributions, it's likely a good idea to open beforehand a GitHub issue to discuss any details. Please note that our branching strategy is inspired by the (in)famous [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/), which is a good fit for software that requires complex versioning such as FIX implementations. Versioning adheres to [SemVer 2.0](https://semver.org/).
 
 ## Legal
 
