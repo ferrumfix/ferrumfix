@@ -70,7 +70,7 @@ impl SeqDecoder {
     }
 
     /// Returns the current [`Frame`]
-    pub fn current_frame(&self) -> Frame<&[u8]> {
+    pub fn raw_frame(&self) -> Frame<&[u8]> {
         let slice = &self.buffer.as_slice()[..self.buffer_actual_len];
         let decode_result = Frame::<&[u8]>::deserialize(slice);
         decode_result.unwrap()
@@ -108,7 +108,7 @@ where
             }
             match self.decoder.attempt_decoding() {
                 Ok(()) => {
-                    return Ok(Some(self.decoder.current_frame()));
+                    return Ok(Some(self.decoder.raw_frame()));
                 }
                 Err(e) => {
                     return Err(e);

@@ -139,3 +139,22 @@ pub enum OptError<E> {
     /// Data is present but there's some other error.
     Other(E),
 }
+
+pub trait GetConfig {
+    type Config;
+
+    /// Returns an immutable reference to the configuration object used by
+    /// `self`.
+    fn config(&self) -> &Self::Config;
+
+    /// Returns a mutable reference to the configuration object used by
+    /// `self`.
+    fn config_mut(&mut self) -> &mut Self::Config;
+}
+
+pub trait IntoBuffered {
+    type Buffered;
+
+    /// Turns `self` into a buffered decoder by adding an internal buffer.
+    fn buffered(self) -> Self::Buffered;
+}

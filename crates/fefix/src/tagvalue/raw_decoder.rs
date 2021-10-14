@@ -1,35 +1,19 @@
 use crate::tagvalue::{utils, Config, Configure, DecodeError};
-use std::ops::Range;
+use crate::{GetConfig, IntoBuffered};
+use std::{marker::PhantomData, ops::Range};
 
 /// An immutable view over the contents of a FIX message by a [`RawDecoder`].
 #[derive(Debug)]
-pub struct RawFrame<T>
-where
-    T: AsRef<[u8]>,
-{
-    data: T,
-    begin_string: Range<usize>,
-    payload: Range<usize>,
-    payload_offset: usize,
+pub struct RawFrame<T> {
+    pub data: T,
+    pub begin_string: Range<usize>,
+    pub payload: Range<usize>,
 }
 
 impl<T> RawFrame<T>
 where
     T: AsRef<[u8]>,
 {
-    pub fn map_data<F, M>(self, f: F) -> RawFrame<M>
-    where
-        F: Fn(T) -> M,
-        M: AsRef<[u8]>,
-    {
-        RawFrame {
-            data: f(self.data),
-            begin_string: self.begin_string,
-            payload: self.payload,
-            payload_offset: self.payload_offset,
-        }
-    }
-
     /// Returns an immutable reference to the raw contents of `self`.
     ///
     /// # Examples
@@ -91,11 +75,6 @@ where
     pub fn payload(&self) -> &[u8] {
         &self.as_bytes()[self.payload.clone()]
     }
-
-    /// Returns the offset of [`RawFrame::payload`].
-    pub fn payload_offset(&self) -> usize {
-        self.payload_offset
-    }
 }
 
 /// A bare-bones FIX decoder for low-level message handling.
@@ -106,7 +85,10 @@ where
 /// left to the user to deal with.
 #[derive(Debug, Clone, Default)]
 pub struct RawDecoder<C = Config> {
+    /// The [`Config`] implementor used during decoding operations.
     config: C,
+
+    phatom: PhantomData<()>,
 }
 
 impl<C> RawDecoder<C>
@@ -118,33 +100,6 @@ where
         Self::default()
     }
 
-    /// Creates a new [`RawDecoder`] with `config` as a [`Configure`]
-    /// implementor.
-    pub fn with_config(config: C) -> Self {
-        Self { config }
-    }
-
-    /// Turns `self` into a [`RawDecoderBuffered`] by adding an internal buffer.
-    pub fn buffered(self) -> RawDecoderBuffered<C> {
-        RawDecoderBuffered {
-            buffer: Vec::new(),
-            decoder: self,
-            error: None,
-        }
-    }
-
-    /// Returns an immutable reference to the [`Configure`] implementor used by
-    /// `self`.
-    pub fn config(&self) -> &C {
-        &self.config
-    }
-
-    /// Returns a mutable reference to the [`Configure`] implementor used by
-    /// `self`.
-    pub fn config_mut(&mut self) -> &mut C {
-        &mut self.config
-    }
-
     /// Does minimal parsing on `data` and returns a [`RawFrame`] if it's valid.
     pub fn decode<T>(&self, src: T) -> Result<RawFrame<T>, DecodeError>
     where
@@ -154,52 +109,75 @@ where
         if data.len() < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
             return Err(DecodeError::Length);
         }
-        let info = HeaderInfo::parse(data, self.config().separator())?;
+        let info = HeaderInfo::parse(data, self.config.separator())?;
         utils::verify_body_length(data, info.start_of_body(), info.body_range().len())?;
-        if self.config().verify_checksum() {
+        if self.config.verify_checksum() {
             utils::verify_checksum(data)?;
         }
         Ok(RawFrame {
             data: src,
             begin_string: info.begin_string_range(),
             payload: info.body_range(),
-            payload_offset: info.body_range().start,
         })
+    }
+}
+
+impl<C> IntoBuffered for RawDecoder<C> {
+    type Buffered = RawDecoderBuffered<C>;
+
+    fn buffered(self) -> Self::Buffered {
+        RawDecoderBuffered {
+            buffer: Vec::new(),
+            decoder: self,
+            parsing_err: None,
+        }
+    }
+}
+
+impl<C> GetConfig for RawDecoder<C> {
+    type Config = C;
+
+    fn config(&self) -> &C {
+        &self.config
+    }
+
+    fn config_mut(&mut self) -> &mut C {
+        &mut self.config
     }
 }
 
 /// A [`RawDecoder`] that can buffer incoming data and read a stream of messages.
 #[derive(Debug, Clone)]
 pub struct RawDecoderBuffered<C = Config> {
-    pub buffer: Vec<u8>,
-    decoder: RawDecoder<C>,
-    error: Option<DecodeError>,
+    /// The internal [`RawDecoder`].
+    pub decoder: RawDecoder<C>,
+
+    buffer: Vec<u8>,
+    parsing_err: Option<DecodeError>,
 }
 
 impl<C> RawDecoderBuffered<C>
 where
     C: Configure,
 {
-    /// Returns an immutable reference to the [`Configure`] implementor used by
-    /// `self`.
-    pub fn config(&self) -> &C {
-        self.decoder.config()
-    }
-
-    /// Returns a mutable reference to the [`Configure`] implementor used by
-    /// `self`.
-    pub fn config_mut(&mut self) -> &mut C {
-        self.decoder.config_mut()
-    }
-
+    /// Empties all contents of the internal buffer of `self`.
     pub fn clear(&mut self) {
         self.buffer.clear();
-        self.error = None;
+        self.parsing_err.take();
     }
 
     /// Provides a buffer that must be filled before re-attempting to deserialize
     /// the next [`RawFrame`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if the last call to [`RawDecoderBuffered::raw_frame`]
+    /// returned an [`Err`].
     pub fn supply_buffer(&mut self) -> &mut [u8] {
+        if self.parsing_err.is_some() {
+            panic!("This decoder is not valid anymore and it shouldn't have been used.");
+        }
+
         let len = self.buffer.as_slice().len();
 
         if len < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
@@ -207,33 +185,46 @@ where
             return &mut self.buffer.as_mut_slice()[len..];
         }
 
-        match HeaderInfo::parse(self.buffer.as_slice(), self.config().separator()) {
-            Ok(info) => {
-                let start_of_body = info.start_of_body();
-                let body_len = info.body_range().len();
-                let total_len = start_of_body + body_len + utils::FIELD_CHECKSUM_LEN_IN_BYTES;
-                let current_len = self.buffer.as_slice().len();
-                self.buffer.resize(total_len, 0);
-                &mut self.buffer.as_mut_slice()[current_len..]
-            }
-            Err(e) => {
-                self.error = Some(e);
-                &mut []
-            }
+        let info = HeaderInfo::parse(self.buffer.as_slice(), self.decoder.config.separator())
+            .expect("Invalid FIX message data.");
+
+        let start_of_body = info.start_of_body();
+        let body_len = info.body_range().len();
+        let total_len = start_of_body + body_len + utils::FIELD_CHECKSUM_LEN_IN_BYTES;
+        let current_len = self.buffer.as_slice().len();
+        self.buffer.resize(total_len, 0);
+        &mut self.buffer.as_mut_slice()[current_len..]
+    }
+
+    pub fn parse(&mut self) {
+        let parsed = HeaderInfo::parse(self.buffer.as_slice(), self.decoder.config.separator());
+
+        if let Err(e) = parsed {
+            self.parsing_err = Some(e);
         }
     }
 
-    pub fn current_frame<'a>(&'a self) -> Result<Option<RawFrame<&'a [u8]>>, DecodeError> {
-        if let Some(err) = self.error.clone() {
-            Err(err)
+    pub fn raw_frame<'a>(&'a self) -> Result<Option<RawFrame<&'a [u8]>>, DecodeError> {
+        HeaderInfo::parse(self.buffer.as_slice(), self.decoder.config.separator())?;
+
+        let data = &self.buffer.as_slice();
+        if data.len() == 0 || data.len() == utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
+            Ok(None)
         } else {
-            let data = &self.buffer.as_slice();
-            if data.len() == 0 || data.len() == utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
-                Ok(None)
-            } else {
-                self.decoder.decode(*data).map(|message| Some(message))
-            }
+            self.decoder.decode(*data).map(|message| Some(message))
         }
+    }
+}
+
+impl<C> GetConfig for RawDecoderBuffered<C> {
+    type Config = C;
+
+    fn config(&self) -> &C {
+        self.decoder.config()
+    }
+
+    fn config_mut(&mut self) -> &mut C {
+        self.decoder.config_mut()
     }
 }
 
@@ -309,7 +300,10 @@ mod test {
     fn new_decoder() -> RawDecoder {
         let mut config = Config::default();
         config.set_separator(b'|');
-        RawDecoder::with_config(config)
+
+        let mut decoder = RawDecoder::new();
+        *decoder.config_mut() = config;
+        decoder
     }
 
     #[test]
@@ -371,15 +365,10 @@ mod test {
             .is_err());
     }
 
-    fn new_decoder_buffered() -> RawDecoderBuffered {
-        let mut config = Config::default();
-        config.set_separator(b'|');
-        RawDecoder::with_config(config).buffered()
-    }
     #[test]
     fn new_buffered_decoder_has_no_current_frame() {
-        let decoder = new_decoder_buffered();
-        assert!(decoder.current_frame().unwrap().is_none());
+        let decoder = new_decoder().buffered();
+        assert!(decoder.raw_frame().unwrap().is_none());
     }
 
     #[test]
@@ -394,13 +383,13 @@ mod test {
             stream
         };
         let mut i = 0;
-        let mut decoder = new_decoder_buffered();
+        let mut decoder = new_decoder().buffered();
         let mut frame = None;
         while frame.is_none() || i >= stream.len() {
             let buf = decoder.supply_buffer();
             buf.clone_from_slice(&stream[i..i + buf.len()]);
             i = buf.len();
-            frame = decoder.current_frame().unwrap();
+            frame = decoder.raw_frame().unwrap();
         }
         assert!(frame.is_some());
     }

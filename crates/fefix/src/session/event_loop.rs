@@ -82,10 +82,11 @@ where
                             buf_filled_len += num_bytes;
 
                             if buf_filled_len < buf.len() {
-                                continue
+                                continue;
+                            } else {
+                            buf_filled_len = 0;
                             }
 
-                            buf_filled_len = 0;
                             match self.decoder.parse() {
                                 Ok(Some(())) => {
                                     let msg = self.decoder.message();
@@ -95,7 +96,6 @@ where
                                     continue;
                                 }
                                 Err(err) => {
-                                    println!("contents after {} are {:?}", buf_filled_len, &self.decoder.raw_decoder.buffer);
                                     self.is_alive = false;
                                     return Some(LlEvent::BadMessage(err))
                                 }
@@ -161,6 +161,7 @@ pub enum LlEvent<'a> {
 mod test {
     use super::*;
     use crate::tagvalue::{Config, Decoder};
+    use crate::IntoBuffered;
     use tokio::io::AsyncWriteExt;
     use tokio::net::{TcpListener, TcpStream};
     use tokio_util::compat::*;

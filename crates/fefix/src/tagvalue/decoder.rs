@@ -2,11 +2,8 @@ use super::{
     Config, Configure, DecodeError, FieldAccess, FieldLocator, FieldLocatorContext, RawDecoder,
     RawDecoderBuffered, RawFrame, RepeatingGroup,
 };
-use crate::dict;
 use crate::dict::IsFieldDefinition;
-use crate::FixValue;
-use crate::TagU16;
-use crate::{dict::FixDatatype, Dictionary};
+use crate::{dict, dict::FixDatatype, Dictionary, FixValue, GetConfig, IntoBuffered, TagU16};
 use nohash_hasher::IntMap;
 use std::collections::HashMap;
 use std::convert::TryInto;
@@ -53,52 +50,6 @@ where
                     }
                 })
                 .collect(),
-        }
-    }
-
-    /// Returns an immutable reference to the [`Configure`] used by `self`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use fefix::tagvalue::{Config, Configure, Decoder};
-    /// use fefix::Dictionary;
-    ///
-    /// let dict = Dictionary::fix44();
-    /// let decoder = Decoder::<Config>::new(dict);
-    /// assert_eq!(decoder.config().separator(), 0x1);
-    /// ```
-    #[inline]
-    pub fn config(&self) -> &C {
-        self.raw_decoder.config()
-    }
-
-    /// Returns a mutable reference to the [`Configure`] used by `self`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use fefix::tagvalue::{Config, Configure, Decoder};
-    /// use fefix::Dictionary;
-    ///
-    /// let dict = Dictionary::fix44();
-    /// let mut decoder = Decoder::<Config>::new(dict);
-    /// decoder.config_mut().set_separator(b'|');
-    /// assert_eq!(decoder.config().separator(), b'|');
-    /// ```
-    #[inline]
-    pub fn config_mut(&mut self) -> &mut C {
-        self.raw_decoder.config_mut()
-    }
-
-    /// Turns `self` into a [`DecoderBuffered`] by allocating an internal buffer.
-    pub fn buffered(self) -> DecoderBuffered<C> {
-        let raw_decoder = self.raw_decoder.clone().buffered();
-
-        DecoderBuffered {
-            decoder: self,
-            raw_decoder,
-            is_ready: false,
         }
     }
 
@@ -243,6 +194,35 @@ where
     }
 }
 
+impl<C> IntoBuffered for Decoder<C>
+where
+    C: Clone,
+{
+    type Buffered = DecoderBuffered<C>;
+
+    fn buffered(self) -> Self::Buffered {
+        let raw_decoder = self.raw_decoder.clone().buffered();
+
+        DecoderBuffered {
+            decoder: self,
+            raw_decoder,
+            is_ready: false,
+        }
+    }
+}
+
+impl<C> GetConfig for Decoder<C> {
+    type Config = C;
+
+    fn config(&self) -> &Self::Config {
+        self.raw_decoder.config()
+    }
+
+    fn config_mut(&mut self) -> &mut Self::Config {
+        self.raw_decoder.config_mut()
+    }
+}
+
 /// A (de)serializer for the classic FIX tag-value encoding.
 ///
 /// The FIX tag-value encoding is designed to be both human-readable and easy for
@@ -264,41 +244,15 @@ impl<C> DecoderBuffered<C>
 where
     C: Configure,
 {
-    /// Returns an immutable reference to the [`Configure`] used by `self`.
+    /// Provides a buffer that must be filled before re-attempting to deserialize
+    /// the next [`Message`].
     ///
-    /// # Examples
+    /// [`DecoderBuffered::supply_buffer`] is *guaranteed* to be non-empty.
     ///
-    /// ```
-    /// use fefix::tagvalue::{Config, Configure, Decoder};
-    /// use fefix::Dictionary;
+    /// # Panics
     ///
-    /// let dict = Dictionary::fix44();
-    /// let decoder = Decoder::<Config>::new(dict);
-    /// assert_eq!(decoder.config().separator(), 0x1);
-    /// ```
-    #[inline]
-    pub fn config(&self) -> &C {
-        self.decoder.config()
-    }
-
-    /// Returns a mutable reference to the [`Configure`] used by `self`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use fefix::tagvalue::{Config, Configure, Decoder};
-    /// use fefix::Dictionary;
-    ///
-    /// let dict = Dictionary::fix44();
-    /// let decoder = &mut Decoder::<Config>::new(dict);
-    /// decoder.config_mut().set_separator(b'|');
-    /// assert_eq!(decoder.config().separator(), b'|');
-    /// ```
-    #[inline]
-    pub fn config_mut(&mut self) -> &mut C {
-        self.decoder.config_mut()
-    }
-
+    /// Panics if the last call to [`DecoderBuffered::parse`]
+    /// returned an [`Err`].
     #[inline]
     pub fn supply_buffer(&mut self) -> &mut [u8] {
         self.raw_decoder.supply_buffer()
@@ -311,9 +265,17 @@ where
         self.is_ready = false;
     }
 
+    /// After filling the buffer provided by [`DecoderBuffered::supply_buffer`],
+    /// attempt to read its contents. It returns:
+    ///
+    /// - [`Ok(None)`] in case you need to call
+    ///   [`DecoderBuffered::supply_buffer`] again.
+    /// - [`Ok(Some(()))`] in case the internal buffer contains a valid
+    ///   [`Message`], ready to be extracted via [`DecoderBuffered::message`].
+    /// - [`Err`] on decoding errors.
     #[inline]
     pub fn parse(&mut self) -> Result<Option<()>, DecodeError> {
-        match self.raw_decoder.current_frame() {
+        match self.raw_decoder.raw_frame() {
             Ok(Some(frame)) => {
                 self.decoder.from_frame(frame)?;
                 Ok(Some(()))
@@ -335,6 +297,18 @@ where
             phantom: PhantomData::default(),
             field_locator_context: FieldLocatorContext::TopLevel,
         }
+    }
+}
+
+impl<C> GetConfig for DecoderBuffered<C> {
+    type Config = C;
+
+    fn config(&self) -> &Self::Config {
+        self.decoder.config()
+    }
+
+    fn config_mut(&mut self) -> &mut Self::Config {
+        self.decoder.config_mut()
     }
 }
 
