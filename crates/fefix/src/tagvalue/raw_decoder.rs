@@ -123,7 +123,7 @@ where
         Ok(RawFrame {
             data: src,
             begin_string: header_info.field_0,
-            payload: body_range,
+            payload: header_info.field_1,
         })
     }
 }
