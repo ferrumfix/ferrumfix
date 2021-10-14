@@ -75,7 +75,7 @@ impl Date {
     ///
     /// assert_eq!(&Date::new(2021, 01, 01).unwrap().to_bytes(), b"20210101");
     /// ```
-    pub fn to_bytes(&self) -> [u8; LEN_IN_BYTES] {
+    pub fn to_yyyymmdd(&self) -> [u8; LEN_IN_BYTES] {
         fn digit_to_ascii(n: u32) -> u8 {
             (n + b'0' as u32) as u8
         }

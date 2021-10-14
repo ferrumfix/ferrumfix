@@ -28,11 +28,11 @@ pub enum PrimitiveType {
 
 #[derive(Clone, Debug)]
 pub struct FieldInstruction {
-    field_type: FieldType,
-    name: String,
-    id: u32,
-    mandatory: bool,
-    operator: FieldOperatorInstruction,
+    pub field_type: FieldType,
+    pub name: String,
+    pub id: u32,
+    pub mandatory: bool,
+    pub operator: FieldOperatorInstruction,
 }
 
 impl FieldInstruction {

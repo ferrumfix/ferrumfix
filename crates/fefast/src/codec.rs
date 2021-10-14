@@ -13,36 +13,17 @@ pub trait Codec {
 
 impl Codec for u32 {
     fn serialize(&self, output: &mut impl io::Write) -> io::Result<usize> {
-        let mut bytes = [0u8; 5];
-        let i;
-        if *self >= 0x1000_0000 {
-            bytes[0] = (self >> 28) as u8;
-            bytes[1] = (self >> 21) as u8 & SIGNIFICANT_BYTE;
-            bytes[2] = (self >> 14) as u8 & SIGNIFICANT_BYTE;
-            bytes[3] = (self >> 7) as u8 & SIGNIFICANT_BYTE;
-            bytes[4] = *self as u8 | STOP_BYTE;
-            i = 5;
-        } else if *self >= 0x20_0000 {
-            bytes[0] = (self >> 21) as u8 & SIGNIFICANT_BYTE;
-            bytes[1] = (self >> 14) as u8 & SIGNIFICANT_BYTE;
-            bytes[2] = (self >> 7) as u8 & SIGNIFICANT_BYTE;
-            bytes[3] = *self as u8 | STOP_BYTE;
-            i = 4;
-        } else if *self >= 0x4000 {
-            bytes[0] = (self >> 14) as u8 & SIGNIFICANT_BYTE;
-            bytes[1] = (self >> 7) as u8 & SIGNIFICANT_BYTE;
-            bytes[2] = *self as u8 | STOP_BYTE;
-            i = 3;
-        } else if *self >= 0x80 {
-            bytes[0] = (self >> 7) as u8 & SIGNIFICANT_BYTE;
-            bytes[1] = *self as u8 | STOP_BYTE;
-            i = 2;
-        } else {
-            bytes[0] = *self as u8 | STOP_BYTE;
-            i = 1;
-        }
-        output.write_all(&bytes[..i])?;
-        Ok(i)
+        let num_ignored_bytes = self.leading_zeros() / 7;
+        let bytes = [
+            (self >> 28) as u8 & SIGNIFICANT_BYTE,
+            (self >> 21) as u8 & SIGNIFICANT_BYTE,
+            (self >> 14) as u8 & SIGNIFICANT_BYTE,
+            (self >> 7) as u8 & SIGNIFICANT_BYTE,
+            *self as u8 | STOP_BYTE,
+        ];
+
+        output.write_all(&bytes[num_ignored_bytes as usize..])?;
+        Ok(bytes.len() - num_ignored_bytes as usize)
     }
 
     fn deserialize(&mut self, input: &mut impl io::Read) -> io::Result<usize> {

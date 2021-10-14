@@ -65,24 +65,20 @@ impl<'a> FixValue<'a> for CheckSum {
 }
 
 fn checksum_from_digits(data: [u8; LEN_IN_BYTES]) -> CheckSum {
-    CheckSum(
-        ascii_digit_to_u8(data[0], 100)
-            .wrapping_add(ascii_digit_to_u8(data[1], 10))
-            .wrapping_add(ascii_digit_to_u8(data[2], 1)),
-    )
+    let digit0 = ascii_digit_to_u8(data[0], 100);
+    let digit1 = ascii_digit_to_u8(data[1], 10);
+    let digit2 = ascii_digit_to_u8(data[2], 1);
+    CheckSum(digit0.wrapping_add(digit1).wrapping_add(digit2))
 }
 
-#[inline]
 fn is_ascii_digit(byte: u8) -> bool {
     byte >= b'0' && byte <= b'9'
 }
 
-#[inline]
 fn digit_to_ascii(byte: u8) -> u8 {
     byte + b'0'
 }
 
-#[inline]
 fn ascii_digit_to_u8(digit: u8, multiplier: u8) -> u8 {
     digit.wrapping_sub(b'0').wrapping_mul(multiplier)
 }

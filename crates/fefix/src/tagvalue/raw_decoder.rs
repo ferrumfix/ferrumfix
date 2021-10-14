@@ -1,6 +1,6 @@
 use crate::tagvalue::{utils, Config, Configure, DecodeError};
 use crate::{GetConfig, IntoBuffered};
-use std::{marker::PhantomData, ops::Range};
+use std::ops::Range;
 
 /// An immutable view over the contents of a FIX message by a [`RawDecoder`].
 #[derive(Debug)]
@@ -85,10 +85,7 @@ where
 /// left to the user to deal with.
 #[derive(Debug, Clone, Default)]
 pub struct RawDecoder<C = Config> {
-    /// The [`Config`] implementor used during decoding operations.
     config: C,
-
-    phatom: PhantomData<()>,
 }
 
 impl<C> RawDecoder<C>
@@ -109,15 +106,24 @@ where
         if data.len() < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
             return Err(DecodeError::Length);
         }
-        let info = HeaderInfo::parse(data, self.config.separator())?;
-        utils::verify_body_length(data, info.start_of_body(), info.body_range().len())?;
+
+        let header_info = HeaderInfo::parse(data, self.config().separator()).unwrap();
+        let body_len = 0;
+
+        utils::verify_body_length(
+            data,
+            header_info.field_1.end + 1,
+            header_info.nominal_body_len as usize,
+        )?;
+
         if self.config.verify_checksum() {
             utils::verify_checksum(data)?;
         }
+
         Ok(RawFrame {
             data: src,
-            begin_string: info.begin_string_range(),
-            payload: info.body_range(),
+            begin_string: header_info.field_0,
+            payload: body_range,
         })
     }
 }
@@ -127,9 +133,9 @@ impl<C> IntoBuffered for RawDecoder<C> {
 
     fn buffered(self) -> Self::Buffered {
         RawDecoderBuffered {
+            config: self.config,
             buffer: Vec::new(),
-            decoder: self,
-            parsing_err: None,
+            last_parser_state: ParserState::Empty,
         }
     }
 }
@@ -146,14 +152,19 @@ impl<C> GetConfig for RawDecoder<C> {
     }
 }
 
+#[derive(Debug, Clone)]
+pub enum ParserState {
+    Empty,
+    Header(HeaderInfo, usize),
+    Err(DecodeError),
+}
+
 /// A [`RawDecoder`] that can buffer incoming data and read a stream of messages.
 #[derive(Debug, Clone)]
 pub struct RawDecoderBuffered<C = Config> {
-    /// The internal [`RawDecoder`].
-    pub decoder: RawDecoder<C>,
-
+    config: C,
     buffer: Vec<u8>,
-    parsing_err: Option<DecodeError>,
+    last_parser_state: ParserState,
 }
 
 impl<C> RawDecoderBuffered<C>
@@ -163,7 +174,7 @@ where
     /// Empties all contents of the internal buffer of `self`.
     pub fn clear(&mut self) {
         self.buffer.clear();
-        self.parsing_err.take();
+        self.last_parser_state = ParserState::Empty;
     }
 
     /// Provides a buffer that must be filled before re-attempting to deserialize
@@ -174,44 +185,58 @@ where
     /// Panics if the last call to [`RawDecoderBuffered::raw_frame`]
     /// returned an [`Err`].
     pub fn supply_buffer(&mut self) -> &mut [u8] {
-        if self.parsing_err.is_some() {
-            panic!("This decoder is not valid anymore and it shouldn't have been used.");
+        match self.last_parser_state {
+            ParserState::Empty => {
+                debug_assert_eq!(self.buffer.len(), 0);
+
+                // There's no point in validating a FIX message that is too short to
+                // ever be valid.
+                self.buffer.resize(utils::MIN_FIX_MESSAGE_LEN_IN_BYTES, 0);
+                self.buffer.as_mut_slice()
+            }
+            ParserState::Header(_, expected_len) => {
+                let old_len = self.buffer.as_slice().len();
+                self.buffer.resize(expected_len, 0);
+                &mut self.buffer.as_mut_slice()[old_len..]
+            }
+            ParserState::Err(_) => {
+                panic!("This decoder is not valid anymore and it shouldn't have been used.")
+            }
         }
-
-        let len = self.buffer.as_slice().len();
-
-        if len < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
-            self.buffer.resize(utils::MIN_FIX_MESSAGE_LEN_IN_BYTES, 0);
-            return &mut self.buffer.as_mut_slice()[len..];
-        }
-
-        let info = HeaderInfo::parse(self.buffer.as_slice(), self.decoder.config.separator())
-            .expect("Invalid FIX message data.");
-
-        let start_of_body = info.start_of_body();
-        let body_len = info.body_range().len();
-        let total_len = start_of_body + body_len + utils::FIELD_CHECKSUM_LEN_IN_BYTES;
-        let current_len = self.buffer.as_slice().len();
-        self.buffer.resize(total_len, 0);
-        &mut self.buffer.as_mut_slice()[current_len..]
     }
 
     pub fn parse(&mut self) {
-        let parsed = HeaderInfo::parse(self.buffer.as_slice(), self.decoder.config.separator());
+        match self.last_parser_state {
+            ParserState::Empty => {
+                let header_info =
+                    HeaderInfo::parse(self.buffer.as_slice(), self.config().separator()).unwrap();
 
-        if let Err(e) = parsed {
-            self.parsing_err = Some(e);
+                let expected_len_of_frame = info.field_1.end
+                    + 1
+                    + info.nominal_body_len
+                    + utils::FIELD_CHECKSUM_LEN_IN_BYTES;
+
+                self.last_parser_state = ParserState::Header(info, expected_len_of_frame);
+            }
+            ParserState::Header(_, _) => {}
+            ParserState::Err(_) => {}
         }
     }
 
     pub fn raw_frame<'a>(&'a self) -> Result<Option<RawFrame<&'a [u8]>>, DecodeError> {
-        HeaderInfo::parse(self.buffer.as_slice(), self.decoder.config.separator())?;
+        match self.last_parser_state {
+            ParserState::Empty => Ok(None),
+            ParserState::Err(e) => Err(e),
+            ParserState::Header(header_info, len) => {
+                let data = &self.buffer.as_slice();
 
-        let data = &self.buffer.as_slice();
-        if data.len() == 0 || data.len() == utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
-            Ok(None)
-        } else {
-            self.decoder.decode(*data).map(|message| Some(message))
+                Ok(Some(RawFrame {
+                    data,
+                    begin_string: header_info.field_0,
+                    payload: header_info.field_1.end + 1
+                        ..data.len() - utils::FIELD_CHECKSUM_LEN_IN_BYTES,
+                }))
+            }
         }
     }
 }
@@ -220,76 +245,53 @@ impl<C> GetConfig for RawDecoderBuffered<C> {
     type Config = C;
 
     fn config(&self) -> &C {
-        self.decoder.config()
+        &self.config
     }
 
     fn config_mut(&mut self) -> &mut C {
-        self.decoder.config_mut()
+        &mut self.config
     }
 }
 
-// Information regarding the indices of "important" parts of the FIX message.
+#[derive(Debug, Clone)]
 struct HeaderInfo {
-    i_equal_sign: [usize; 2],
-    i_sep: [usize; 2],
-    body_length: usize,
+    field_0: Range<usize>,
+    field_1: Range<usize>,
+    nominal_body_len: usize,
 }
 
 impl HeaderInfo {
-    fn empty() -> Self {
-        Self {
-            i_equal_sign: [0, 0],
-            i_sep: [0, 0],
-            body_length: 0,
-        }
-    }
+    fn parse(data: &[u8], separator: u8) -> Option<Self> {
+        let mut info = Self {
+            field_0: 0..1,
+            field_1: 0..1,
+            nominal_body_len: 0,
+        };
 
-    pub fn start_of_body(&self) -> usize {
-        // The body starts at the character immediately after the separator of
-        // `BodyLength`.
-        self.i_sep[1] + 1
-    }
-
-    pub fn begin_string_range(&self) -> Range<usize> {
-        self.i_equal_sign[0] + 1..self.i_sep[0]
-    }
-
-    pub fn body_range(&self) -> Range<usize> {
-        let start = self.start_of_body();
-        start..start + self.body_length
-    }
-
-    fn parse(data: &[u8], separator: u8) -> Result<Self, DecodeError> {
-        let mut info = HeaderInfo::empty();
-        let mut field_i = 0;
+        let mut iterator = data.iter();
         let mut i = 0;
-        while field_i < 2 && i < data.len() {
-            let byte = data[i];
-            if byte == b'=' {
-                info.i_equal_sign[field_i] = i;
-                info.body_length = 0;
-            } else if byte == separator {
-                info.i_sep[field_i] = i;
-                field_i += 1;
-            } else {
-                info.body_length = info
-                    .body_length
-                    .wrapping_mul(10)
-                    .wrapping_add(byte.wrapping_sub(b'0') as usize);
-            }
-            i += 1;
+        let mut ranges = [0..1; 2];
+
+        let mut find_byte = |byte| iterator.position(|b| *b == byte);
+
+        i += find_byte(b'=')?;
+        info.field_0.start = i;
+        i += find_byte(separator)?;
+        info.field_0.end = i;
+
+        i += find_byte(b'=')?;
+        info.field_1.start = i;
+        i += find_byte(separator)?;
+        info.field_1.end = i;
+
+        for byte in ranges[1] {
+            info.nominal_body_len = info
+                .nominal_body_len
+                .wrapping_mul(10)
+                .wrapping_add(byte as usize);
         }
-        // Let's check that we got valid values for everything we need.
-        if info.i_equal_sign[0] != 0
-            && info.i_equal_sign[1] != 0
-            && info.i_sep[0] != 0
-            && info.i_sep[1] != 0
-        {
-            debug_assert!(info.i_sep[1] < data.len());
-            Ok(info)
-        } else {
-            Err(DecodeError::Invalid)
-        }
+
+        Some(info)
     }
 }
 
@@ -351,18 +353,16 @@ mod test {
     #[test]
     fn edge_cases_dont_cause_panic() {
         let decoder = new_decoder();
-        assert!(decoder.decode("8=|9=0|10=225|".as_bytes()).is_err());
-        assert!(decoder.decode("8=|9=0|10=|".as_bytes()).is_err());
-        assert!(decoder.decode("8====|9=0|10=|".as_bytes()).is_err());
-        assert!(decoder.decode("|||9=0|10=|".as_bytes()).is_err());
-        assert!(decoder.decode("9999999999999".as_bytes()).is_err());
-        assert!(decoder.decode("-9999999999999".as_bytes()).is_err());
-        assert!(decoder.decode("==============".as_bytes()).is_err());
-        assert!(decoder.decode("9999999999999|".as_bytes()).is_err());
-        assert!(decoder.decode("|999999999999=|".as_bytes()).is_err());
-        assert!(decoder
-            .decode("|999=999999999999999999|=".as_bytes())
-            .is_err());
+        decoder.decode("8=|9=0|10=225|".as_bytes()).ok();
+        decoder.decode("8=|9=0|10=|".as_bytes()).ok();
+        decoder.decode("8====|9=0|10=|".as_bytes()).ok();
+        decoder.decode("|||9=0|10=|".as_bytes()).ok();
+        decoder.decode("9999999999999".as_bytes()).ok();
+        decoder.decode("-9999999999999".as_bytes()).ok();
+        decoder.decode("==============".as_bytes()).ok();
+        decoder.decode("9999999999999|".as_bytes()).ok();
+        decoder.decode("|999999999999=|".as_bytes()).ok();
+        decoder.decode("|999=999999999999999999|=".as_bytes()).ok();
     }
 
     #[test]
