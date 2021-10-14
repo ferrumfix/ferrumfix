@@ -5,8 +5,8 @@
 //! FerrumFIX internals rely on [`Dictionary`](crate::Dictionary) for accessing
 //! details about fields, messages and other abstract entities defined in the
 //! FIX Dictionary specifications. Although this approach works quite well, it
-//! can become daunting to query a [`Dictionary`](crate::Dictionary) for
-//! everything.
+//! can become daunting to query a [`Dictionary`](crate::Dictionary) for even
+//! the most basic operation.
 
 use crate::{dict, dict::FixDatatype, TagU16};
 
