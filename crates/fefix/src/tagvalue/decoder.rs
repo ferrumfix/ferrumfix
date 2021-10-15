@@ -236,7 +236,7 @@ impl<C> GetConfig for Decoder<C> {
 #[derive(Debug)]
 pub struct DecoderBuffered<C = Config> {
     decoder: Decoder<C>,
-    pub raw_decoder: RawDecoderBuffered<C>,
+    raw_decoder: RawDecoderBuffered<C>,
     is_ready: bool,
 }
 

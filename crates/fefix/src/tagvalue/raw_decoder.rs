@@ -108,7 +108,6 @@ where
         }
 
         let header_info = HeaderInfo::parse(data, self.config().separator()).unwrap();
-        let body_len = 0;
 
         utils::verify_body_length(
             data,
@@ -211,12 +210,12 @@ where
                 let header_info =
                     HeaderInfo::parse(self.buffer.as_slice(), self.config().separator()).unwrap();
 
-                let expected_len_of_frame = info.field_1.end
+                let expected_len_of_frame = header_info.field_1.end
                     + 1
-                    + info.nominal_body_len
+                    + header_info.nominal_body_len
                     + utils::FIELD_CHECKSUM_LEN_IN_BYTES;
 
-                self.last_parser_state = ParserState::Header(info, expected_len_of_frame);
+                self.last_parser_state = ParserState::Header(header_info, expected_len_of_frame);
             }
             ParserState::Header(_, _) => {}
             ParserState::Err(_) => {}
@@ -224,15 +223,15 @@ where
     }
 
     pub fn raw_frame<'a>(&'a self) -> Result<Option<RawFrame<&'a [u8]>>, DecodeError> {
-        match self.last_parser_state {
+        match &self.last_parser_state {
             ParserState::Empty => Ok(None),
-            ParserState::Err(e) => Err(e),
-            ParserState::Header(header_info, len) => {
+            ParserState::Err(e) => Err(e.clone()),
+            ParserState::Header(header_info, _len) => {
                 let data = &self.buffer.as_slice();
 
                 Ok(Some(RawFrame {
                     data,
-                    begin_string: header_info.field_0,
+                    begin_string: header_info.field_0.clone(),
                     payload: header_info.field_1.end + 1
                         ..data.len() - utils::FIELD_CHECKSUM_LEN_IN_BYTES,
                 }))
@@ -270,7 +269,7 @@ impl HeaderInfo {
 
         let mut iterator = data.iter();
         let mut i = 0;
-        let mut ranges = [0..1; 2];
+        let ranges = [0..1, 0..1];
 
         let mut find_byte = |byte| iterator.position(|b| *b == byte);
 
@@ -284,7 +283,7 @@ impl HeaderInfo {
         i += find_byte(separator)?;
         info.field_1.end = i;
 
-        for byte in ranges[1] {
+        for byte in ranges[1].clone() {
             info.nominal_body_len = info
                 .nominal_body_len
                 .wrapping_mul(10)
