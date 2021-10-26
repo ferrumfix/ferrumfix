@@ -23,7 +23,7 @@ where
     }
 
     /// Writes `self` to `buffer` using custom serialization `settings`.
-    fn serialize_with<B>(&self, buffer: &mut B, _settings: Self::SerializeSettings) -> usize
+    fn serialize_with<B>(&self, buffer: &mut B, settings: Self::SerializeSettings) -> usize
     where
         B: Buffer;
 
@@ -33,6 +33,10 @@ where
     /// Like [`FixValue::deserialize`], but it's allowed to skip *some* amount of
     /// input checking. Invalid inputs might not trigger errors and instead be
     /// deserialized as random values.
+    ///
+    /// # Safety
+    ///
+    /// This method remains 100% safe even on malformed inputs.
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
         Self::deserialize(data)
     }

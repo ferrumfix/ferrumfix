@@ -6,7 +6,7 @@ use crate::dict::IsFieldDefinition;
 use crate::{dict::FixDatatype, Dictionary, FixValue, GetConfig, TagU16};
 use nohash_hasher::IntMap;
 use std::collections::HashMap;
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::fmt::Debug;
 use std::iter::FusedIterator;
 use std::marker::PhantomData;
@@ -572,16 +572,16 @@ impl<'a, T> Iterator for Fields<'a, T> {
     }
 }
 
-impl<'a, F, T> FieldAccess<F> for Message<'a, T>
+impl<'a, T> FieldAccess<u32> for Message<'a, T>
 where
-    F: IsFieldDefinition,
     T: AsRef<[u8]> + Clone,
 {
     type Group = MessageGroup<'a, T>;
 
-    fn group_opt(&self, field: &F) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
+    fn group_opt(&self, tag: &u32) -> Option<Result<Self::Group, <usize as FixValue>::Error>> {
+        let tag = TagU16::new(u16::try_from(*tag).ok()?)?;
         let field_locator_of_group_tag = FieldLocator {
-            tag: field.tag(),
+            tag,
             context: self.field_locator_context,
         };
         let num_in_group = self.builder.fields.get(&field_locator_of_group_tag)?;
@@ -599,12 +599,29 @@ where
         }))
     }
 
-    fn fv_raw(&self, field: &F) -> Option<&[u8]> {
+    fn fv_raw(&self, tag: &u32) -> Option<&[u8]> {
+        let tag = TagU16::new(u16::try_from(*tag).ok()?)?;
         let field_locator = FieldLocator {
-            tag: field.tag(),
+            tag,
             context: self.field_locator_context,
         };
         self.builder.fields.get(&field_locator).map(|field| field.1)
+    }
+}
+
+impl<'a, F, T> FieldAccess<F> for Message<'a, T>
+where
+    F: IsFieldDefinition,
+    T: AsRef<[u8]> + Clone,
+{
+    type Group = MessageGroup<'a, T>;
+
+    fn group_opt(&self, field: &F) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
+        self.group_opt(&u32::from(field.tag().get()))
+    }
+
+    fn fv_raw(&self, field: &F) -> Option<&[u8]> {
+        self.fv_raw(&u32::from(field.tag().get()))
     }
 }
 

@@ -9,8 +9,8 @@ use indoc::indoc;
 
 const FEFIX_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// Creates a `String` that contains a multiline Rust comment explaining
-/// that the subsequent code has been automatically generated.
+/// Creates a [`String`] that contains a multiline Rust "Doc" comment explaining
+/// that the subsequent code was automatically generated.
 ///
 /// The following example is for illustrative purposes only and the actual
 /// contents might change. The string is guaranteed not to have any trailing or
@@ -21,6 +21,7 @@ const FEFIX_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// ```
 pub fn generated_code_notice() -> String {
     use chrono::prelude::*;
+
     format!(
         indoc!(
             r#"
@@ -187,9 +188,10 @@ pub fn gen_field_definition(fix_dictionary: dict::Dictionary, field: dict::Field
 /// The generated module will contain:
 ///
 /// - A generated code notice ([generated_code_notice]).
-/// - `enum` definitions for FIX fields.
+/// - `enum` definitions for FIX field types.
 /// - A constant implementor of
-/// [`IsFieldDefinition`](super::dict::IsFieldDefinition) for each FIX field.
+///   [`IsFieldDefinition`](super::dict::IsFieldDefinition)
+///   for each FIX field.
 ///
 /// The Rust code will be free of any leading and trailing whitespace.
 /// An effort is made to provide good formatting, but users shouldn't rely on it

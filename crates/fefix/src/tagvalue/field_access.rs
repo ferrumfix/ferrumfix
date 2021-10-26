@@ -110,7 +110,7 @@ pub trait RepeatingGroup: Sized {
     /// Creates and returns an [`Iterator`] over the entries in `self`.
     /// Iteration MUST be done in sequential order, i.e. in which they appear in
     /// the original FIX message.
-    fn entries<F>(&self) -> Entries<Self> {
+    fn entries(&self) -> Entries<Self> {
         Entries {
             group: self,
             i: 0,

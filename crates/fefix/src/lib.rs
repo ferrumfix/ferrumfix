@@ -107,10 +107,8 @@ mod fefix_core;
 mod fix_value;
 mod utils;
 
-pub mod fix_values;
-pub use fefix_core::dict;
-pub use fefix_core::TagU16;
 pub mod definitions;
+pub mod fix_values;
 pub mod prelude;
 pub mod session;
 pub mod tagvalue;
@@ -124,9 +122,11 @@ pub use fefix_core::codegen;
 
 pub use buffer::Buffer;
 pub use dict::Dictionary;
+pub use fefix_core::dict;
+pub use fefix_core::TagU16;
 pub use fix_value::FixValue;
 
-// We don't derive macros to pollute the docs.
+// We don't show derive macros to pollute the docs.
 #[doc(hidden)]
 pub use fefix_derive::FixValue;
 

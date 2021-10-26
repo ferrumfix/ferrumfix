@@ -16,7 +16,7 @@ pub struct CheckSum(pub u8);
 
 impl CheckSum {
     /// Returns the [`CheckSum`] of `data`. The result is always the sum of each
-    /// byte in `data` wrapped at 0xFF, as per the FIX specification.
+    /// byte in `data` wrapped at `0xFF`, as per the FIX specification.
     pub fn compute(data: &[u8]) -> Self {
         let mut value = 0u8;
         for byte in data {
@@ -43,32 +43,29 @@ impl<'a> FixValue<'a> for CheckSum {
     }
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        if let Ok(digits) = data.try_into() {
-            if is_ascii_digit(data[0]) & is_ascii_digit(data[1]) & is_ascii_digit(data[2]) {
-                Ok(checksum_from_digits(digits))
-            } else {
-                Err(ERR_ASCII_DIGITS)
-            }
+        let digits = data.try_into().map_err(|_| ERR_LENGTH)?;
+
+        if is_ascii_digit(data[0]) & is_ascii_digit(data[1]) & is_ascii_digit(data[2]) {
+            Ok(checksum_from_digits(digits))
         } else {
-            Err(ERR_LENGTH)
+            Err(ERR_ASCII_DIGITS)
         }
     }
 
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
+        let digits = data.try_into().map_err(|_| ERR_LENGTH)?;
+
         // Skip ASCII digits checking.
-        if let Ok(digits) = data.try_into() {
-            Ok(checksum_from_digits(digits))
-        } else {
-            Err(ERR_LENGTH)
-        }
+        Ok(checksum_from_digits(digits))
     }
 }
 
 fn checksum_from_digits(data: [u8; LEN_IN_BYTES]) -> CheckSum {
-    let digit0 = ascii_digit_to_u8(data[0], 100);
-    let digit1 = ascii_digit_to_u8(data[1], 10);
-    let digit2 = ascii_digit_to_u8(data[2], 1);
-    CheckSum(digit0.wrapping_add(digit1).wrapping_add(digit2))
+    let digit1 = ascii_digit_to_u8(data[0], 100);
+    let digit2 = ascii_digit_to_u8(data[1], 10);
+    let digit3 = ascii_digit_to_u8(data[2], 1);
+
+    CheckSum(digit1.wrapping_add(digit2).wrapping_add(digit3))
 }
 
 fn is_ascii_digit(byte: u8) -> bool {

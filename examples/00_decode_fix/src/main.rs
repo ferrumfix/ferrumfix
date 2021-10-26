@@ -37,6 +37,10 @@ fn main() {
     let md_entries = msg.group(fix42::NO_MD_ENTRIES).unwrap();
     assert_eq!(md_entries.len(), 2);
 
+    for entry in md_entries.entries() {
+        assert_eq!(entry.fv(fix42::CURRENCY), Ok(b"EUR"));
+    }
+
     let md0 = md_entries.entry(0);
     assert_eq!(
         md0.fv(fix42::MD_UPDATE_ACTION),
@@ -64,4 +68,7 @@ fn main() {
     assert_eq!(md1.fv(fix42::CURRENCY), Ok(b"EUR"));
     assert_eq!(md1.fv(fix42::MD_ENTRY_SIZE), Ok(2_503_200));
     assert_eq!(md1.fv(fix42::NUMBER_OF_ORDERS), Ok(1));
+
+    // You can use either mnemonics (like above) or tag numbers for keys.
+    assert_eq!(msg.fv(&49), Ok(1));
 }
