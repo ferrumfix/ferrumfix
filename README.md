@@ -1,5 +1,3 @@
-<!-- omit in TOC -->
-
 <div align="center">
 
 # FerrumFIX
