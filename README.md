@@ -1,4 +1,7 @@
 <!-- omit in TOC -->
+
+<div align="center">
+
 # FerrumFIX
 
 [![Crates.io](https://img.shields.io/crates/v/fefix)](https://crates.io/crates/fefix)
@@ -9,12 +12,17 @@
 [![License](https://img.shields.io/crates/l/fefix)](https://crates.io/crates/fefix)
 [![CI status](https://img.shields.io/github/workflow/status/ferrumfix/ferrumfix/CI/develop)](https://github.com/ferrumfix/ferrumfix/actions)
 
+<i>Love FerrumFIX? Buy me a coffee and [support](https://github.com/sponsors/ferrumfix) the project!</i>
+
+</div>
+
 FerrumFIX is a free and open source FIX engine implementation in Rust. Please note that it's currently under heavy development and wildly unstable, so all interested parties should refrain from using it in production prior to its 1.0 release. Performance and full adherence to the FIX protocol are nevertheless core goals of the project which, if anything, might serve as a useful foundation for others' work.
 
-- [About](#about)
-- [Sponsors](#sponsors)
-- [Contributing](#contributing)
-- [Legal](#legal)
+- [FerrumFIX](#ferrumfix)
+	- [About](#about)
+	- [Sponsors](#sponsors)
+	- [Contributing](#contributing)
+	- [Legal](#legal)
 
 ## About
 
