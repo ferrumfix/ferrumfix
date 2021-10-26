@@ -7,7 +7,8 @@
 
 pub mod backends;
 mod config;
-mod connection;
+//mod connection; FIXME
+mod environment;
 mod errs;
 mod event_loop;
 mod heartbeat_rule;
@@ -15,20 +16,38 @@ mod resend_request_range;
 mod seq_numbers;
 
 pub use config::{Config, Configure};
-pub use connection::*;
+// pub use connection::*; FIXME
+pub use environment::Environment;
 pub use event_loop::*;
 pub use heartbeat_rule::HeartbeatRule;
 pub use resend_request_range::ResendRequestRange;
 pub use seq_numbers::{SeqNumberError, SeqNumbers};
 
-use crate::tagvalue::Message;
+use crate::tagvalue::FvWrite;
+use crate::{tagvalue::Message, FixValue};
 use std::ops::Range;
 
 /// The owner of a [`FixConnection`]. It can react to events, store incoming
 /// messages, send messages, etc..
 pub trait Backend: Clone {
     /// The type of errors that can arise during a [`FixConnection`].
-    type Error;
+    type Error: for<'a> FixValue<'a>;
+
+    fn sender_comp_id(&self) -> &[u8];
+    fn target_comp_id(&self) -> &[u8];
+
+    fn message_encoding(&self) -> Option<&[u8]> {
+        None
+    }
+
+    fn set_sender_and_target<'a>(&'a self, msg: &mut impl FvWrite<'a, u32>) {
+        msg.set_fv(&49, self.sender_comp_id());
+        msg.set_fv(&56, self.target_comp_id());
+    }
+
+    fn environment(&self) -> Environment {
+        Environment::Production { allow_test: false }
+    }
 
     #[inline]
     fn on_heartbeat_is_due(&mut self) -> Result<(), Self::Error> {
@@ -73,41 +92,28 @@ pub struct State {
     next_outbound: u64,
 }
 
-/// An indicator for the kind of environment relative to a FIX Connection.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum Environment {
-    /// Test messages will be ignored or refused under this environment setting.
-    Production {
-        /// Flag that indicates whether or not test messages should be allowed
-        /// in this production environment.
-        allow_test: bool,
-    },
-    /// Production messages will be refused under this environment setting.
-    Testing,
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct MsgSeqNumCounter(u64);
+
+impl MsgSeqNumCounter {
+    pub const START: Self = Self(0);
+
+    #[inline]
+    pub fn next(&mut self) -> u64 {
+        self.0 += 1;
+        self.0
+    }
+
+    #[inline]
+    pub fn expected(&self) -> u64 {
+        self.0 + 1
+    }
 }
 
-impl Environment {
-    /// Returns `true` if an only if `self` allows test messages, depending on
-    /// the provided configuration.
-    ///
-    /// This is used to determine whether to accept or refuse incoming test
-    /// messages within a [`FixConnection`].
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use fefix::session::Environment;
-    ///
-    /// assert_eq!(Environment::Testing.allows_testing(), true);
-    /// assert_eq!(Environment::Production { allow_test: true }.allows_testing(), true);
-    /// assert_eq!(Environment::Production { allow_test: false }.allows_testing(), false);
-    /// ```
-    #[inline]
-    pub fn allows_testing(&self) -> bool {
-        match self {
-            Self::Production { allow_test } => *allow_test,
-            Self::Testing => true,
-        }
+impl Iterator for MsgSeqNumCounter {
+    type Item = u64;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(MsgSeqNumCounter::next(self))
     }
 }

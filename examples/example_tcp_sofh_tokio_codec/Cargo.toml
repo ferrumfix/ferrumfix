@@ -2,7 +2,7 @@
 name = "example_tcp_sofh_tokio_codec"
 version = "0.1.0"
 authors = ["Filippo Costa @neysofu <filippo@neysofu.me>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

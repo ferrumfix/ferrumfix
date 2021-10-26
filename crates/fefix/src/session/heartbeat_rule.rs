@@ -3,7 +3,7 @@ use std::ops::RangeInclusive;
 use std::time::Duration;
 
 /// Rules placed on the expected heartbeat interval via out-of-band rules of
-/// engatement.
+/// engagement.
 ///
 /// Please note that [`HeartbeatRule`] is marked with
 /// `#[non_exhaustive]`, which future-proofs the enumeration type in case more

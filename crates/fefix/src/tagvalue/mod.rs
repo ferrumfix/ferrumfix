@@ -81,15 +81,8 @@ pub enum DecodeError {
     IO(#[from] std::io::Error),
 }
 
-pub trait FvWrite<'a> {
-    type Key;
-
-    fn set_fv_with_key<'b, T>(&'b mut self, key: &Self::Key, value: T)
+pub trait FvWrite<'a, F> {
+    fn set_fv<'b, V>(&'b mut self, field: &F, value: V)
     where
-        T: FixValue<'b>;
-
-    fn set_fv<'b, V, F>(&'b mut self, field: &F, value: V)
-    where
-        V: FixValue<'b>,
-        F: IsFieldDefinition;
+        V: FixValue<'b>;
 }

@@ -1,7 +1,7 @@
 [package]
 name = "example_json_encoding"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 fefix = { path = "../../crates/fefix", features = ["json-encoding", "fix42"] }

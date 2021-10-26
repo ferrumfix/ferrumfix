@@ -6,6 +6,6 @@ homepage = "https://github.com/ferrumfix/ferrumfix"
 repository = "https://github.com/ferrumfix/ferrumfix"
 description = "FIXS implementation in pure Rust."
 publish = true
-edition = "2018"
+edition = "2021"
 categories = ["network-programming", "parser-implementations", "encoding"]
 license = "MIT OR Apache-2.0"

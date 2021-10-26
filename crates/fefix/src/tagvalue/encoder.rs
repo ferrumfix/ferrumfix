@@ -1,6 +1,5 @@
 use super::{Config, Configure, FvWrite};
 use crate::buffer::Buffer;
-use crate::definitions::fix44;
 use crate::dict;
 use crate::dict::IsFieldDefinition;
 use crate::fix_values::CheckSum;
@@ -76,7 +75,7 @@ where
             buffer,
             body_start_i: 0,
         };
-        state.set(fix44::BEGIN_STRING, begin_string);
+        state.set_fv(&8, begin_string);
         // The second field is supposed to be `BodyLength(9)`, but obviously
         // the length of the message is unknow until later in the
         // serialization phase. This alone would usually require to
@@ -92,9 +91,10 @@ where
         // some bytes but the benefits largely outweight the costs.
         //
         // Six digits (~1MB) ought to be enough for every message.
-        state.set_any(fix44::BODY_LENGTH.tag(), b"000000" as &[u8]);
+        let tag = TagU16::new(10 as u16).unwrap();
+        state.set_fv(&9, b"000000" as &[u8]);
         state.body_start_i = state.buffer.len();
-        state.set_any(fix44::MSG_TYPE.tag(), msg_type);
+        state.set_fv(&35, msg_type);
         state
     }
 }
@@ -110,6 +110,34 @@ where
     raw_encoder: &'a mut Encoder<C>,
     buffer: &'a mut B,
     body_start_i: usize,
+}
+
+impl<'a, B, C> FvWrite<'a, u32> for EncoderHandle<'a, B, C>
+where
+    B: Buffer,
+    C: Configure,
+{
+    fn set_fv<'b, V>(&'b mut self, field: &u32, value: V)
+    where
+        V: FixValue<'b>,
+    {
+        let tag = TagU16::new(*field as u16).unwrap();
+        self.set_any(tag, value)
+    }
+}
+
+impl<'a, B, C, F> FvWrite<'a, F> for EncoderHandle<'a, B, C>
+where
+    B: Buffer,
+    C: Configure,
+    F: IsFieldDefinition,
+{
+    fn set_fv<'b, V>(&'b mut self, field: &F, value: V)
+    where
+        V: FixValue<'b>,
+    {
+        self.set(field, value)
+    }
 }
 
 impl<'a, B, C> EncoderHandle<'a, B, C>
@@ -171,30 +199,7 @@ where
 
     fn write_checksum(&mut self) {
         let checksum = CheckSum::compute(self.buffer.as_slice());
-        self.set(fix44::CHECK_SUM, checksum);
-    }
-}
-
-impl<'a, B, C> FvWrite<'a> for EncoderHandle<'a, B, C>
-where
-    B: Buffer,
-    C: Configure,
-{
-    type Key = TagU16;
-
-    fn set_fv_with_key<'b, T>(&'b mut self, key: &Self::Key, value: T)
-    where
-        T: FixValue<'b>,
-    {
-        self.set_any(*key, value);
-    }
-
-    fn set_fv<'b, V, F>(&'b mut self, field: &F, value: V)
-    where
-        V: FixValue<'b>,
-        F: IsFieldDefinition,
-    {
-        self.set_fv_with_key(&field.tag(), value);
+        self.set_fv(&10, checksum);
     }
 }
 
