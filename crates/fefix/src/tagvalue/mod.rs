@@ -67,15 +67,19 @@ pub use tokio_decoder::TokioDecoder;
 /// The type returned in the event of an error during message decoding.
 #[derive(Debug, thiserror::Error)]
 pub enum DecodeError {
+    /// Mandatory field not found.
     #[error("Field not found.")]
     FieldPresence,
     /// Invalid FIX message syntax.
     #[error("Invalid FIX message syntax.")]
     Invalid,
+    /// `BodyLength <9>` FIX field value mismatch.
     #[error("Invalid `BodyLength <9>` FIX field value.")]
     Length,
+    /// Invalid `CheckSum <10>` FIX field value.
     #[error("Invalid `CheckSum <10>` FIX field value.")]
     CheckSum,
+    /// I/O error.
     #[error("I/O error: {0}")]
     IO(#[from] std::io::Error),
 }
