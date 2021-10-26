@@ -266,6 +266,7 @@ where
     /// - [`Err`] on decoding errors.
     #[inline]
     pub fn parse(&mut self) -> Result<Option<()>, DecodeError> {
+        self.raw_decoder.parse();
         match self.raw_decoder.raw_frame() {
             Ok(Some(frame)) => {
                 self.decoder.from_frame(frame)?;

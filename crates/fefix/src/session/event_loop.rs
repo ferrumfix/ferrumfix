@@ -84,7 +84,7 @@ where
                             if buf_filled_len < buf.len() {
                                 continue;
                             } else {
-                            buf_filled_len = 0;
+                                buf_filled_len = 0;
                             }
 
                             match self.decoder.parse() {

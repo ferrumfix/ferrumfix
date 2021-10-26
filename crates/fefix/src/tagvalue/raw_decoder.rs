@@ -115,7 +115,7 @@ where
         let data = src.as_ref();
         let len = data.len();
         if len < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
-            return Err(DecodeError::Length);
+            return Err(DecodeError::Invalid);
         }
 
         let header_info =
@@ -232,7 +232,6 @@ where
             ParserState::Err(e) => match e {
                 DecodeError::CheckSum => Err(DecodeError::CheckSum),
                 DecodeError::Invalid => Err(DecodeError::Invalid),
-                DecodeError::Length => Err(DecodeError::Length),
                 DecodeError::FieldPresence => Err(DecodeError::FieldPresence),
                 DecodeError::IO(_) => unreachable!("Can't have an I/O error here."),
             },
@@ -321,7 +320,7 @@ mod test {
         let decoder = new_decoder();
         assert!(matches!(
             decoder.decode(&[] as &[u8]),
-            Err(DecodeError::Length)
+            Err(DecodeError::Invalid)
         ));
     }
 
@@ -347,7 +346,7 @@ mod test {
     fn message_with_empty_payload_is_invalid() {
         let decoder = new_decoder();
         let msg = "8=?|9=5|10=082|".as_bytes();
-        assert!(matches!(decoder.decode(msg), Err(DecodeError::Length)));
+        assert!(matches!(decoder.decode(msg), Err(DecodeError::Invalid)));
     }
 
     #[test]
@@ -397,6 +396,7 @@ mod test {
             let buf = decoder.supply_buffer();
             buf.clone_from_slice(&stream[i..i + buf.len()]);
             i += buf.len();
+            decoder.parse();
             frame = decoder.raw_frame().unwrap();
         }
         assert!(frame.is_some());

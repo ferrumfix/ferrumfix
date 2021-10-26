@@ -70,12 +70,9 @@ pub enum DecodeError {
     /// Mandatory field not found.
     #[error("Field not found.")]
     FieldPresence,
-    /// Invalid FIX message syntax.
+    /// Invalid FIX message syntax, `BodyLength <9>` value mismatch, or similar errors.
     #[error("Invalid FIX message syntax.")]
     Invalid,
-    /// `BodyLength <9>` FIX field value mismatch.
-    #[error("Invalid `BodyLength <9>` FIX field value.")]
-    Length,
     /// Invalid `CheckSum <10>` FIX field value.
     #[error("Invalid `CheckSum <10>` FIX field value.")]
     CheckSum,
