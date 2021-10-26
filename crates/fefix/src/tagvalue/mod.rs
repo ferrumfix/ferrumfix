@@ -36,15 +36,13 @@
 //! |**Decoder type**      |Operates on              |Produces    |
 //! |----------------------|-------------------------|------------|
 //! |[`RawDecoder`]        |`&[u8]`                  |[`RawFrame`]|
+//! |[`RawDecoderBuffered`]|byte streams             |[`RawFrame`]|
 //! |[`Decoder`]           |`&[u8]`                  |[`Message`] |
-//! |[`RawDecoderBuffered`]|`Vec<u8>` internal buffer|[`RawFrame`]|
-//! |[`DecoderBuffered`]   |`Vec<u8>` internal buffer|[`Message`] |
+//! |[`DecoderBuffered`]   |data streams             |[`Message`] |
 
 use crate::dict::IsFieldDefinition;
 use crate::FixValue;
-use std::fmt;
 use std::fmt::Debug;
-use std::io;
 
 mod config;
 mod decoder;
@@ -52,8 +50,6 @@ mod encoder;
 mod field_access;
 mod field_locator;
 mod raw_decoder;
-#[cfg(feature = "utils-tokio")]
-mod tokio_decoder;
 mod utils;
 
 pub use config::{Config, Configure};
@@ -62,35 +58,26 @@ pub use encoder::{Encoder, EncoderHandle};
 pub use field_access::{FieldAccess, RepeatingGroup};
 pub use field_locator::{FieldLocator, FieldLocatorContext};
 pub use raw_decoder::{RawDecoder, RawDecoderBuffered, RawFrame};
+
+#[cfg(feature = "utils-tokio")]
+mod tokio_decoder;
 #[cfg(feature = "utils-tokio")]
 pub use tokio_decoder::TokioDecoder;
 
 /// The type returned in the event of an error during message decoding.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, thiserror::Error)]
 pub enum DecodeError {
+    #[error("Field not found.")]
     FieldPresence,
     /// Invalid FIX message syntax.
+    #[error("Invalid FIX message syntax.")]
     Invalid,
+    #[error("Invalid `BodyLength <9>` FIX field value.")]
     Length,
+    #[error("Invalid `CheckSum <10>` FIX field value.")]
     CheckSum,
-}
-
-impl fmt::Display for DecodeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "SuperError is here!")
-    }
-}
-
-impl std::error::Error for DecodeError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
-}
-
-impl From<io::Error> for DecodeError {
-    fn from(_err: io::Error) -> Self {
-        Self::Invalid // FIXME
-    }
+    #[error("I/O error: {0}")]
+    IO(#[from] std::io::Error),
 }
 
 pub trait FvWrite<'a> {

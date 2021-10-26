@@ -117,6 +117,6 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(checksum: CheckSum) -> bool {
-        super::super::verify_serialization_behavior(checksum)
+        super::super::test_utility_verify_serialization_behavior(checksum)
     }
 }

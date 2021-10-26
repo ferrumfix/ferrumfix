@@ -1,7 +1,7 @@
 use fefix::prelude::*;
 use fefix::tagvalue::{Config, Decoder};
 
-const FIX_MESSAGE: &[u8] = b"8=FIX.4.2|9=97|35=6|49=BKR|56=IM|34=14|52=20100204-09:18:42|23=115685|28=N|55=SPMI.MI|54=2|44=2200.75|27=S|25=H|10=248|";
+const FIX_MESSAGE: &[u8] = b"8=FIX.4.2|9=196|35=X|49=A|56=B|34=12|52=20100318-03:21:11.364|262=A|268=2|279=0|269=0|278=BID|55=EUR/USD|270=1.37215|15=EUR|271=2500000|346=1|279=0|269=1|278=OFFER|55=EUR/USD|270=1.37224|15=EUR|271=2503200|346=1|10=171|";
 
 fn main() {
     let fix_dictionary = Dictionary::fix42();
@@ -14,18 +14,54 @@ fn main() {
     let msg = fix_decoder
         .decode(FIX_MESSAGE)
         .expect("Invalid FIX message");
-    // Read the FIX message!
-    assert_eq!(msg.fv(fix42::BEGIN_STRING), Ok("FIX.4.2"));
+
+    // Read the FIX message! You get nice type inference out of the box. You
+    // have fine-grained control over how to decode each field, even down to raw
+    // bytes if you want full control.
+    assert_eq!(msg.fv(fix42::BEGIN_STRING), Ok(b"FIX.4.2"));
+    assert_eq!(msg.fv(fix42::MSG_TYPE), Ok(b"X"));
     assert_eq!(
         msg.fv(fix42::MSG_TYPE),
-        Ok(fix42::MsgType::IndicationOfInterest)
+        Ok(fix42::MsgType::MarketDataIncrementalRefresh)
     );
-    assert_eq!(msg.fv(fix42::SENDER_COMP_ID), Ok("BKR"));
-    assert_eq!(msg.fv(fix42::TARGET_COMP_ID), Ok("IM"));
-    assert_eq!(msg.fv(fix42::MSG_SEQ_NUM), Ok(14));
-    assert_eq!(msg.fv(fix42::IO_IID), Ok("115685"));
-    assert_eq!(msg.fv(fix42::IOI_TRANS_TYPE), Ok(fix42::IoiTransType::New));
-    assert_eq!(msg.fv(fix42::SYMBOL), Ok("SPMI.MI"));
-    assert_eq!(msg.fv(fix42::SIDE), Ok(fix42::Side::Sell));
-    assert_eq!(msg.fv(fix42::IOI_QLTY_IND), Ok(fix42::IoiQltyInd::High));
+    assert_eq!(
+        msg.fv(fix42::MSG_TYPE),
+        Ok(fix42::MsgType::MarketDataIncrementalRefresh)
+    );
+    assert_eq!(msg.fv(fix42::SENDER_COMP_ID), Ok(b"A"));
+    assert_eq!(msg.fv(fix42::TARGET_COMP_ID), Ok(b"B"));
+    assert_eq!(msg.fv(fix42::MSG_SEQ_NUM), Ok(12));
+    assert_eq!(msg.fv(fix42::MD_REQ_ID), Ok(b"A"));
+
+    // Repeating groups!
+    let md_entries = msg.group(fix42::NO_MD_ENTRIES).unwrap();
+    assert_eq!(md_entries.len(), 2);
+
+    let md0 = md_entries.entry(0);
+    assert_eq!(
+        md0.fv(fix42::MD_UPDATE_ACTION),
+        Ok(fix42::MdUpdateAction::New)
+    );
+    assert_eq!(md0.fv(fix42::MD_UPDATE_TYPE), Ok(fix42::MdEntryType::Bid));
+    assert_eq!(md0.fv(fix42::MD_ENTRY_ID), Ok(b"BID"));
+    assert_eq!(md0.fv(fix42::SYMBOL), Ok(b"EUR/USD"));
+    assert_eq!(md0.fv(fix42::MD_ENTRY_PX), Ok(1.37215f32));
+    assert_eq!(md0.fv(fix42::MD_ENTRY_PX), Ok(b"1.37215"));
+    assert_eq!(md0.fv(fix42::CURRENCY), Ok(b"EUR"));
+    assert_eq!(md0.fv(fix42::MD_ENTRY_SIZE), Ok(2_500_000));
+    assert_eq!(md0.fv(fix42::NUMBER_OF_ORDERS), Ok(1));
+
+    let md1 = md_entries.entry(1);
+    assert_eq!(
+        md1.fv(fix42::MD_UPDATE_ACTION),
+        Ok(fix42::MdUpdateAction::New)
+    );
+    assert_eq!(md1.fv(fix42::MD_UPDATE_TYPE), Ok(fix42::MdEntryType::Offer));
+    assert_eq!(md1.fv(fix42::MD_ENTRY_ID), Ok(b"OFFER"));
+    assert_eq!(md1.fv(fix42::SYMBOL), Ok(b"EUR/USD"));
+    assert_eq!(md1.fv(fix42::MD_ENTRY_PX), Ok(1.37224f32));
+    assert_eq!(md1.fv(fix42::MD_ENTRY_PX), Ok(b"1.37215"));
+    assert_eq!(md1.fv(fix42::CURRENCY), Ok(b"EUR"));
+    assert_eq!(md1.fv(fix42::MD_ENTRY_SIZE), Ok(2_503_200));
+    assert_eq!(md1.fv(fix42::NUMBER_OF_ORDERS), Ok(1));
 }

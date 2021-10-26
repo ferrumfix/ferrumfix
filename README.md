@@ -60,7 +60,7 @@ Please reach out to `Filippo Costa <filippo.costa@protonmail.com>` for business 
 
 ## Contributing
 
-All development happens on GitHub at [`ferrumfix/ferrumfix`](https://github.com/ferrumfix/ferrumfix). Contributions both from volunteers and companies are welcome. Depending on the size and scope of your intented contributions, it's likely a good idea to open beforehand a GitHub issue to discuss any details. Please note that our branching strategy is inspired by the (in)famous [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/), which is a good fit for software that requires complex versioning such as FIX implementations. Versioning adheres to [SemVer 2.0](https://semver.org/).
+All development happens on GitHub at [`ferrumfix/ferrumfix`](https://github.com/ferrumfix/ferrumfix). Contributions both from volunteers and companies are welcome. Depending on the size and scope of your intended contributions, it's likely a good idea to open beforehand a GitHub issue to discuss any details. Please note that our branching strategy is inspired by the (in)famous [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/), which is a good fit for software that requires complex versioning such as FIX implementations. Versioning adheres to [SemVer 2.0](https://semver.org/).
 
 ## Legal
 

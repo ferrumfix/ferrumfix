@@ -22,7 +22,7 @@ enum DayOrWeek {
 
 impl MonthYear {
     /// Converts `self` to a byte array.
-    pub fn to_bytes(&self) -> [u8; LEN_IN_BYTES] {
+    pub fn to_yyyymmww(&self) -> [u8; LEN_IN_BYTES] {
         let day_or_week_1 = match self.day_or_week {
             DayOrWeek::Day(day) => (day / 10) as u8 + b'0',
             DayOrWeek::Week(_) => b'w',
@@ -145,7 +145,7 @@ impl<'a> FixValue<'a> for MonthYear {
     where
         B: Buffer,
     {
-        let bytes = self.to_bytes();
+        let bytes = self.to_yyyymmww();
         buffer.extend_from_slice(&bytes[..]);
         bytes.len()
     }
@@ -240,7 +240,7 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(my: MonthYear) -> bool {
-        super::super::verify_serialization_behavior(my)
+        super::super::test_utility_verify_serialization_behavior(my)
     }
 
     #[quickcheck]

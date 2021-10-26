@@ -1,10 +1,8 @@
 use super::{Config, Configure, DecodeError};
-use crate::dict;
 use crate::dict::FieldLocation;
 use crate::dict::IsFieldDefinition;
 use crate::tagvalue::{FieldAccess, RepeatingGroup};
-use crate::Dictionary;
-use crate::FixValue;
+use crate::{Dictionary, FixValue, GetConfig};
 use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
@@ -13,37 +11,76 @@ use std::collections::HashMap;
 #[derive(Debug, Copy, Clone)]
 pub struct Message<'a> {
     internal: &'a MessageInternal<'a>,
-    group_component: Option<&'a Component<'a>>,
+    group_map: Option<&'a FieldMap<'a>>,
 }
 
-impl<'a> FieldAccess for Message<'a> {
-    type Group = MessageGroup<'a>;
+impl<'a> Message<'a> {
+    /// Creates an [`Iterator`] over all FIX fields in `self`.
+    pub fn iter_fields(&self) -> MessageFieldsIter<'a> {
+        MessageFieldsIter {
+            fields: self.internal.std_header.iter(),
+        }
+    }
 
-    fn group_opt<F>(
-        &self,
-        _field: &F,
-    ) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>>
+    fn field_map<F>(&self, field: &F) -> &'a FieldMap<'a>
     where
         F: IsFieldDefinition,
     {
-        None
+        if let Some(context) = self.group_map {
+            context
+        } else {
+            match field.location() {
+                FieldLocation::Body => &self.internal.body,
+                FieldLocation::Header => &self.internal.std_header,
+                FieldLocation::Trailer => &self.internal.std_trailer,
+            }
+        }
+    }
+}
+
+impl<'a, F> FieldAccess<F> for Message<'a>
+where
+    F: IsFieldDefinition,
+{
+    type Group = MessageGroup<'a>;
+
+    fn group_opt(&self, field: &F) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
+        self.field_map(field)
+            .get(field.name())
+            .and_then(|field_or_group| {
+                if let FieldOrGroup::Group(ref entries) = field_or_group {
+                    Some(Ok(MessageGroup {
+                        message: Message {
+                            internal: &self.internal,
+                            group_map: None,
+                        },
+                        entries,
+                    }))
+                } else {
+                    None
+                }
+            })
     }
 
-    fn fv_raw<F>(&self, field: &F) -> Option<&[u8]>
-    where
-        F: dict::IsFieldDefinition,
-    {
-        self.internal
-            .field_raw(field.name(), field.location())
-            .map(|s| s.as_bytes())
+    fn fv_raw(&self, field: &F) -> Option<&[u8]> {
+        self.field_map(field)
+            .get(field.name())
+            .and_then(|field_or_group| {
+                if let FieldOrGroup::Field(value) = field_or_group {
+                    let s: &str = value.borrow();
+                    Some(s.as_bytes())
+                } else {
+                    None
+                }
+            })
     }
 }
 
 /// A repeating group within a [`Message`].
 #[derive(Debug, Copy, Clone)]
 pub struct MessageGroup<'a> {
-    message: &'a Message<'a>,
-    entries: &'a [Component<'a>],
+    message: Message<'a>,
+    entries: &'a [FieldMap<'a>],
 }
 
 impl<'a> RepeatingGroup for MessageGroup<'a> {
@@ -56,51 +93,30 @@ impl<'a> RepeatingGroup for MessageGroup<'a> {
     fn entry(&self, i: usize) -> Self::Entry {
         self.entries
             .get(i)
-            .map(|component| Message {
+            .map(|context| Message {
                 internal: self.message.internal,
-                group_component: Some(component),
+                group_map: Some(context),
             })
             .unwrap()
     }
 }
 
-impl<'a> Message<'a> {
-    pub fn group<'b, F, T>(&'b self, _field_def: &F) -> Option<MessageGroup<'b>>
-    where
-        'b: 'a,
-        F: IsFieldDefinition,
-        T: FixValue<'b>,
-    {
-        None
-    }
-
-    /// Creates an [`Iterator`] over all FIX fields in `self`.
-    pub fn iter_fields(&self) -> MessageFieldsIter<'a> {
-        MessageFieldsIter {
-            fields: self.internal.std_header.iter(),
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct MessageFieldsIter<'a> {
-    fields: std::collections::hash_map::Iter<'a, &'a str, FieldOrGroup<'a>>,
+    fields: std::collections::hash_map::Iter<'a, Cow<'a, str>, FieldOrGroup<'a>>,
 }
 
 impl<'a> Iterator for MessageFieldsIter<'a> {
     type Item = (&'a str, &'a FieldOrGroup<'a>);
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.fields.next().map(|x| (*x.0, x.1))
+        self.fields.next().map(|x| (x.0.borrow(), x.1))
     }
 }
 
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]
-pub struct Decoder<C = Config>
-where
-    C: Configure,
-{
+pub struct Decoder<C = Config> {
     dictionaries: HashMap<String, Dictionary>,
     message_builder: MessageInternal<'static>,
     config: C,
@@ -110,44 +126,15 @@ impl<C> Decoder<C>
 where
     C: Configure,
 {
-    /// Creates a new codec. `dict` serves as a reference for data type inference
-    /// of incoming messages' fields. `config` handles encoding details. See the
-    /// [`Configure`] trait for more information.
+    /// Creates a new JSON [`Decoder`]. `dict` serves as a reference for data type inference
+    /// of incoming messages' fields. Configuration options are initialized via [`Default`].
     pub fn new(dict: Dictionary) -> Self {
-        Self::with_config(dict, C::default())
-    }
-
-    /// Creates a new codec. `dict` serves as a reference for data type inference
-    /// of incoming messages' fields. `config` handles encoding details. See the
-    /// [`Configure`] trait for more information.
-    pub fn with_config(dict: Dictionary, config: C) -> Self {
         let mut dictionaries = HashMap::new();
         dictionaries.insert(dict.get_version().to_string(), dict);
         Self {
             dictionaries,
             message_builder: MessageInternal::default(),
-            config,
-        }
-    }
-
-    /// Returns an immutable reference to the [`Configure`] implementor used by
-    /// `self`.
-    pub fn config(&self) -> &C {
-        &self.config
-    }
-
-    /// Returns a mutable reference to the [`Configure`] implementor used by
-    /// `self`.
-    pub fn config_mut(&mut self) -> &mut C {
-        &mut self.config
-    }
-
-    fn message_builder<'a>(&'a mut self) -> &'a mut MessageInternal<'a> {
-        self.message_builder.clear();
-        unsafe {
-            std::mem::transmute::<&'a mut MessageInternal<'static>, &'a mut MessageInternal<'a>>(
-                &mut self.message_builder,
-            )
+            config: C::default(),
         }
     }
 
@@ -163,29 +150,50 @@ where
         })?;
         Ok(Message {
             internal: msg,
-            group_component: None,
+            group_map: None,
         })
+    }
+
+    fn message_builder<'a>(&'a mut self) -> &'a mut MessageInternal<'a> {
+        self.message_builder.clear();
+        unsafe {
+            std::mem::transmute::<&'a mut MessageInternal<'static>, &'a mut MessageInternal<'a>>(
+                &mut self.message_builder,
+            )
+        }
     }
 }
 
-type Component<'a> = HashMap<&'a str, FieldOrGroup<'a>>;
+impl<C> GetConfig for Decoder<C> {
+    type Config = C;
+
+    fn config(&self) -> &Self::Config {
+        &self.config
+    }
+
+    fn config_mut(&mut self) -> &mut Self::Config {
+        &mut self.config
+    }
+}
+
+type FieldMap<'a> = HashMap<Cow<'a, str>, FieldOrGroup<'a>>;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum FieldOrGroup<'a> {
     Field(Cow<'a, str>),
     #[serde(borrow)]
-    Group(Vec<Component<'a>>),
+    Group(Vec<FieldMap<'a>>),
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 struct MessageInternal<'a> {
     #[serde(borrow, rename = "Header")]
-    std_header: Component<'a>,
+    std_header: FieldMap<'a>,
     #[serde(borrow, rename = "Body")]
-    body: Component<'a>,
+    body: FieldMap<'a>,
     #[serde(borrow, rename = "Trailer")]
-    std_trailer: Component<'a>,
+    std_trailer: FieldMap<'a>,
 }
 
 impl<'a> std::ops::Drop for MessageInternal<'a> {
@@ -200,32 +208,6 @@ impl<'a> MessageInternal<'a> {
         self.body.clear();
         self.std_trailer.clear();
     }
-
-    fn field_raw(&self, name: &str, location: FieldLocation) -> Option<&str> {
-        match location {
-            FieldLocation::Body => self.body.get(name).and_then(|field_or_group| {
-                if let FieldOrGroup::Field(value) = field_or_group {
-                    Some(value.borrow())
-                } else {
-                    None
-                }
-            }),
-            FieldLocation::Header => self.std_header.get(name).and_then(|field_or_group| {
-                if let FieldOrGroup::Field(value) = field_or_group {
-                    Some(value.borrow())
-                } else {
-                    None
-                }
-            }),
-            FieldLocation::Trailer => self.std_trailer.get(name).and_then(|field_or_group| {
-                if let FieldOrGroup::Field(value) = field_or_group {
-                    Some(value.borrow())
-                } else {
-                    None
-                }
-            }),
-        }
-    }
 }
 
 #[cfg(test)]
@@ -235,12 +217,8 @@ mod test {
     const MESSAGE_SIMPLE: &str = include_str!("test_data/message_simple.json");
     const MESSAGE_WITHOUT_HEADER: &str = include_str!("test_data/message_without_header.json");
 
-    fn dict_fix44() -> Dictionary {
-        Dictionary::fix44()
-    }
-
-    fn encoder_fix44() -> Decoder<impl Configure> {
-        Decoder::with_config(dict_fix44(), Config::default())
+    fn encoder_fix44() -> Decoder {
+        Decoder::new(Dictionary::fix44())
     }
 
     #[test]

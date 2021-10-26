@@ -17,9 +17,9 @@ async fn main() -> io::Result<()> {
     tcp_stream.set_nodelay(true)?;
     let app = Application::new(logger());
     let mut config = fefix::session::Config::default();
-    config.set_begin_string("FIX.4.2");
-    config.set_target_comp_id("TW");
-    config.set_sender_comp_id("INCA");
+    config.begin_string = "FIX.4.2".to_string();
+    config.target_comp_id = "TW".to_string();
+    config.sender_comp_id = "INCA".to_string();
     let fix_dictionary = Dictionary::fix42();
     let fix_decoder = Decoder::new(fix_dictionary);
     let (reader, writer) = tokio::io::split(tcp_stream);

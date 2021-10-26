@@ -161,7 +161,6 @@ pub enum LlEvent<'a> {
 mod test {
     use super::*;
     use crate::tagvalue::{Config, Decoder};
-    use crate::IntoBuffered;
     use tokio::io::AsyncWriteExt;
     use tokio::net::{TcpListener, TcpStream};
     use tokio_util::compat::*;

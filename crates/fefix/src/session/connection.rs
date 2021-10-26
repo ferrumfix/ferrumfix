@@ -233,12 +233,12 @@ where
     {
         let env = self.environment();
         // Check `TestMessageIndicator <464>`.
-        if let Ok(indicator) = msg.fv::<bool, _>(fix44::TEST_MESSAGE_INDICATOR) {
+        if let Ok(indicator) = msg.fv::<bool>(fix44::TEST_MESSAGE_INDICATOR) {
             if !env.allows_testing() && indicator {
                 return self.on_wrong_environment(msg);
             }
         }
-        let msg_seq_num = msg.fv::<u64, _>(fix44::MSG_SEQ_NUM);
+        let msg_seq_num = msg.fv::<u64>(fix44::MSG_SEQ_NUM);
         // Compare seq. numbers.
         let msg_seq_num_cmp =
             msg_seq_num.map(|seqnum| seqnum.cmp(&self.msg_seq_num_inbound.expected()));
@@ -263,7 +263,7 @@ where
         if !self.sending_time_is_ok(&msg) {
             return self.make_reject_for_inaccurate_sending_time(msg);
         }
-        let msg_type = msg.fv::<&[u8], _>(fix44::MSG_TYPE).unwrap();
+        let msg_type = msg.fv::<&[u8]>(fix44::MSG_TYPE).unwrap();
         match msg_type {
             b"A" => {
                 self.on_logon(msg);
@@ -324,7 +324,7 @@ where
     }
 
     fn sending_time_is_ok(&self, msg: &Message<&[u8]>) -> bool {
-        let sending_time = msg.fv::<&str, _>(fix44::SENDING_TIME);
+        let sending_time = msg.fv::<&str>(fix44::SENDING_TIME);
         if let Ok(_sending_time) = sending_time {
             // TODO
             true
@@ -375,7 +375,7 @@ where
     }
 
     fn on_test_request(&mut self, msg: Message<&[u8]>) -> &[u8] {
-        let test_req_id = msg.fv::<&[u8], _>(fix44::TEST_REQ_ID).unwrap();
+        let test_req_id = msg.fv::<&[u8]>(fix44::TEST_REQ_ID).unwrap();
         let fix_message = {
             let begin_string = self.config.begin_string();
             let sender_comp_id = self.config.sender_comp_id();
@@ -463,7 +463,7 @@ where
 
     fn make_reject_for_inaccurate_sending_time(&mut self, offender: Message<&[u8]>) -> Response {
         let ref_seq_num = offender.fv(fix44::MSG_SEQ_NUM).unwrap();
-        let ref_msg_type = offender.fv::<&str, _>(fix44::MSG_TYPE).unwrap();
+        let ref_msg_type = offender.fv::<&str>(fix44::MSG_TYPE).unwrap();
         self.on_reject(
             ref_seq_num,
             Some(fix44::SENDING_TIME.tag().get().into()),

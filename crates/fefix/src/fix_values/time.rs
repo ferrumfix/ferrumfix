@@ -270,6 +270,6 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(time: Time) -> bool {
-        super::super::verify_serialization_behavior(time)
+        super::super::test_utility_verify_serialization_behavior(time)
     }
 }

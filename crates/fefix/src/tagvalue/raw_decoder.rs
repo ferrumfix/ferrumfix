@@ -1,5 +1,5 @@
 use crate::tagvalue::{utils, Config, Configure, DecodeError};
-use crate::{GetConfig, IntoBuffered};
+use crate::GetConfig;
 use std::ops::Range;
 
 /// An immutable view over the contents of a FIX message by a [`RawDecoder`].
@@ -97,17 +97,29 @@ where
         Self::default()
     }
 
+    /// Turns `self` into a [`RawDecoderBuffered`], allocating an internal
+    /// buffer.
+    pub fn buffered(self) -> RawDecoderBuffered<C> {
+        RawDecoderBuffered {
+            config: self.config,
+            buffer: Vec::new(),
+            last_parser_state: ParserState::Empty,
+        }
+    }
+
     /// Does minimal parsing on `data` and returns a [`RawFrame`] if it's valid.
     pub fn decode<T>(&self, src: T) -> Result<RawFrame<T>, DecodeError>
     where
         T: AsRef<[u8]>,
     {
         let data = src.as_ref();
-        if data.len() < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
+        let len = data.len();
+        if len < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
             return Err(DecodeError::Length);
         }
 
-        let header_info = HeaderInfo::parse(data, self.config().separator()).unwrap();
+        let header_info =
+            HeaderInfo::parse(data, self.config().separator()).ok_or(DecodeError::Invalid)?;
 
         utils::verify_body_length(
             data,
@@ -122,20 +134,8 @@ where
         Ok(RawFrame {
             data: src,
             begin_string: header_info.field_0,
-            payload: header_info.field_1,
+            payload: header_info.field_1.end + 1..len - utils::FIELD_CHECKSUM_LEN_IN_BYTES,
         })
-    }
-}
-
-impl<C> IntoBuffered for RawDecoder<C> {
-    type Buffered = RawDecoderBuffered<C>;
-
-    fn buffered(self) -> Self::Buffered {
-        RawDecoderBuffered {
-            config: self.config,
-            buffer: Vec::new(),
-            last_parser_state: ParserState::Empty,
-        }
     }
 }
 
@@ -151,15 +151,15 @@ impl<C> GetConfig for RawDecoder<C> {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum ParserState {
+#[derive(Debug)]
+enum ParserState {
     Empty,
     Header(HeaderInfo, usize),
     Err(DecodeError),
 }
 
 /// A [`RawDecoder`] that can buffer incoming data and read a stream of messages.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct RawDecoderBuffered<C = Config> {
     config: C,
     buffer: Vec<u8>,
@@ -208,14 +208,18 @@ where
         match self.last_parser_state {
             ParserState::Empty => {
                 let header_info =
-                    HeaderInfo::parse(self.buffer.as_slice(), self.config().separator()).unwrap();
+                    HeaderInfo::parse(self.buffer.as_slice(), self.config().separator());
+                if let Some(header_info) = header_info {
+                    let expected_len_of_frame = header_info.field_1.end
+                        + 1
+                        + header_info.nominal_body_len
+                        + utils::FIELD_CHECKSUM_LEN_IN_BYTES;
 
-                let expected_len_of_frame = header_info.field_1.end
-                    + 1
-                    + header_info.nominal_body_len
-                    + utils::FIELD_CHECKSUM_LEN_IN_BYTES;
-
-                self.last_parser_state = ParserState::Header(header_info, expected_len_of_frame);
+                    self.last_parser_state =
+                        ParserState::Header(header_info, expected_len_of_frame);
+                } else {
+                    self.last_parser_state = ParserState::Err(DecodeError::Invalid);
+                }
             }
             ParserState::Header(_, _) => {}
             ParserState::Err(_) => {}
@@ -225,7 +229,13 @@ where
     pub fn raw_frame<'a>(&'a self) -> Result<Option<RawFrame<&'a [u8]>>, DecodeError> {
         match &self.last_parser_state {
             ParserState::Empty => Ok(None),
-            ParserState::Err(e) => Err(e.clone()),
+            ParserState::Err(e) => match e {
+                DecodeError::CheckSum => Err(DecodeError::CheckSum),
+                DecodeError::Invalid => Err(DecodeError::Invalid),
+                DecodeError::Length => Err(DecodeError::Length),
+                DecodeError::FieldPresence => Err(DecodeError::FieldPresence),
+                DecodeError::IO(_) => unreachable!("Can't have an I/O error here."),
+            },
             ParserState::Header(header_info, _len) => {
                 let data = &self.buffer.as_slice();
 
@@ -268,26 +278,25 @@ impl HeaderInfo {
         };
 
         let mut iterator = data.iter();
-        let mut i = 0;
-        let ranges = [0..1, 0..1];
-
         let mut find_byte = |byte| iterator.position(|b| *b == byte);
+        let mut i = 0;
 
-        i += find_byte(b'=')?;
+        i += find_byte(b'=')? + 1;
         info.field_0.start = i;
         i += find_byte(separator)?;
         info.field_0.end = i;
+        i += 1;
 
-        i += find_byte(b'=')?;
+        i += find_byte(b'=')? + 1;
         info.field_1.start = i;
         i += find_byte(separator)?;
         info.field_1.end = i;
 
-        for byte in ranges[1].clone() {
+        for byte in &data[info.field_1.clone()] {
             info.nominal_body_len = info
                 .nominal_body_len
                 .wrapping_mul(10)
-                .wrapping_add(byte as usize);
+                .wrapping_add(byte.wrapping_sub(b'0') as usize);
         }
 
         Some(info)
@@ -387,7 +396,7 @@ mod test {
         while frame.is_none() || i >= stream.len() {
             let buf = decoder.supply_buffer();
             buf.clone_from_slice(&stream[i..i + buf.len()]);
-            i = buf.len();
+            i += buf.len();
             frame = decoder.raw_frame().unwrap();
         }
         assert!(frame.is_some());

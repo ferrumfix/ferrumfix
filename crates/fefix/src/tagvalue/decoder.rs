@@ -3,7 +3,7 @@ use super::{
     RawDecoderBuffered, RawFrame, RepeatingGroup,
 };
 use crate::dict::IsFieldDefinition;
-use crate::{dict, dict::FixDatatype, Dictionary, FixValue, GetConfig, IntoBuffered, TagU16};
+use crate::{dict::FixDatatype, Dictionary, FixValue, GetConfig, TagU16};
 use nohash_hasher::IntMap;
 use std::collections::HashMap;
 use std::convert::TryInto;
@@ -22,7 +22,6 @@ const BEGIN_STRING_OFFSET: usize = 2;
 /// One should create a [`Decoder`] per stream of FIX messages.
 #[derive(Debug)]
 pub struct Decoder<C = Config> {
-    dict: Dictionary,
     builder: MessageBuilder<'static>,
     raw_decoder: RawDecoder<C>,
     tag_lookup: IntMap<u16, FixDatatype>,
@@ -36,7 +35,6 @@ where
     /// messages.
     pub fn new(dict: Dictionary) -> Self {
         Self {
-            dict: dict.clone(),
             builder: MessageBuilder::default(),
             raw_decoder: RawDecoder::default(),
             tag_lookup: dict
@@ -50,6 +48,16 @@ where
                     }
                 })
                 .collect(),
+        }
+    }
+
+    pub fn buffered(self) -> DecoderBuffered<C> {
+        let raw_decoder = self.raw_decoder.clone().buffered();
+
+        DecoderBuffered {
+            decoder: self,
+            raw_decoder,
+            is_ready: false,
         }
     }
 
@@ -190,23 +198,6 @@ where
             let s = std::str::from_utf8(last_field_value).unwrap();
             let data_field_length = str::parse(s).unwrap();
             self.builder.state.data_field_length = Some(data_field_length);
-        }
-    }
-}
-
-impl<C> IntoBuffered for Decoder<C>
-where
-    C: Clone,
-{
-    type Buffered = DecoderBuffered<C>;
-
-    fn buffered(self) -> Self::Buffered {
-        let raw_decoder = self.raw_decoder.clone().buffered();
-
-        DecoderBuffered {
-            decoder: self,
-            raw_decoder,
-            is_ready: false,
         }
     }
 }
@@ -371,7 +362,7 @@ impl<'a, T> Message<'a, T> {
     /// let message = decoder.decode(data).unwrap();
     /// let first_field = message.fields().next().unwrap();
     ///
-    /// assert_eq!(first_field, Some((TagU16::new(8).unwrap(), b"FIX.4.4"));
+    /// assert_eq!(first_field, Some((TagU16::new(8).unwrap(), b"FIX.4.4")));
     /// ```
     pub fn fields(&'a self) -> Fields<'a, T> {
         Fields {
@@ -581,16 +572,14 @@ impl<'a, T> Iterator for Fields<'a, T> {
     }
 }
 
-impl<'a, T> FieldAccess for Message<'a, T>
+impl<'a, F, T> FieldAccess<F> for Message<'a, T>
 where
+    F: IsFieldDefinition,
     T: AsRef<[u8]> + Clone,
 {
     type Group = MessageGroup<'a, T>;
 
-    fn group_opt<F>(&self, field: &F) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>>
-    where
-        F: IsFieldDefinition,
-    {
+    fn group_opt(&self, field: &F) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
         let field_locator_of_group_tag = FieldLocator {
             tag: field.tag(),
             context: self.field_locator_context,
@@ -610,10 +599,7 @@ where
         }))
     }
 
-    fn fv_raw<F>(&self, field: &F) -> Option<&[u8]>
-    where
-        F: dict::IsFieldDefinition,
-    {
+    fn fv_raw(&self, field: &F) -> Option<&[u8]> {
         let field_locator = FieldLocator {
             tag: field.tag(),
             context: self.field_locator_context,
@@ -778,7 +764,7 @@ mod test {
         let msg = "8=FIX.4.2|9=41|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127";
         let mut codec = decoder();
         let result = codec.decode(msg.as_bytes());
-        assert_eq!(result, Err(DecodeError::Invalid));
+        assert!(matches!(result, Err(DecodeError::Invalid)));
     }
 
     #[test]
@@ -786,7 +772,7 @@ mod test {
         let msg = "8=FIX.4.4|9=37|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|";
         let mut codec = decoder();
         let result = codec.decode(msg.as_bytes());
-        assert_eq!(result, Err(DecodeError::Invalid));
+        assert!(matches!(result, Err(DecodeError::Invalid)));
     }
 
     #[test]
@@ -796,10 +782,10 @@ mod test {
         let mut codec = decoder();
         let result = codec.decode(msg.as_bytes()).unwrap();
         assert_eq!(result.fv(fix44::SIGNATURE_LENGTH), Ok(8));
-        assert_eq!(
+        assert!(matches!(
             result.fv_raw(fix44::SIGNATURE),
-            Some(b"foo|\x01bar" as &[u8])
-        );
+            Some(b"foo|\x01bar")
+        ));
     }
 
     #[test]
@@ -807,7 +793,7 @@ mod test {
         let msg = "35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=000|";
         let mut codec = decoder();
         let result = codec.decode(msg.as_bytes());
-        assert_eq!(result, Err(DecodeError::Invalid));
+        assert!(matches!(result, Err(DecodeError::Invalid)));
     }
 
     #[test]
@@ -815,6 +801,6 @@ mod test {
         let msg = "8=FIX.4.2|9=43|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=146|";
         let mut codec = decoder();
         let result = codec.decode(msg.as_bytes());
-        assert_eq!(result, Err(DecodeError::Invalid));
+        assert!(matches!(result, Err(DecodeError::Invalid)));
     }
 }

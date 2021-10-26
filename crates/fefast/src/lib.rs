@@ -2,7 +2,7 @@
 //! ([FAST](https://www.fixtrading.org/standards/fast/)) support.
 
 #![doc(html_root_url = "https://docs.rs/fefast/")]
-#![warn(missing_doc_code_examples)]
+#![warn(rustdoc::missing_doc_code_examples)]
 #![deny(
     unused,
     missing_debug_implementations,

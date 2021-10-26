@@ -1,26 +1,23 @@
 //! Code generation utilities.
 
+use std::marker::PhantomData;
+
 use super::{dict, TagU16};
 use fnv::FnvHashSet;
 use heck::{CamelCase, ShoutySnakeCase};
 use indoc::indoc;
 
 const FEFIX_VERSION: &str = env!("CARGO_PKG_VERSION");
-const FOUR_SPACES: &str = "    ";
 
-/// Creates a `String` that contains a multiline Rust "Doc" comment explaining
-/// that the subsequent code was automatically generated.
+/// Creates a `String` that contains a multiline Rust comment explaining
+/// that the subsequent code has been automatically generated.
 ///
 /// The following example is for illustrative purposes only and the actual
 /// contents might change. The string is guaranteed not to have any trailing or
 /// leading whitespace.
 ///
 /// ```text
-/// // Generated automatically by FerrumFIX v0.3 on Mon, 25 Dec 1995 13:30:00 GMT.
-/// //
-/// // DO NOT MODIFY MANUALLY.
-/// // DO NOT COMMIT TO VERSION CONTROL.
-/// // ALL CHANGES WILL BE OVERWRITTEN.
+/// // Generated automatically by FerrumFIX. Do not modify manually.
 /// ```
 pub fn generated_code_notice() -> String {
     use chrono::prelude::*;
@@ -97,63 +94,51 @@ fn gen_enum_variant_of_allowed_value(
     )
 }
 
-/// Code generation settings.
+/// Code generation settings. Instantiate with [`Default::default`] and then
+/// change field values if necessary.
 #[derive(Debug, Clone)]
 pub struct Settings {
-    indentation: String,
-    indentation_depth: u32,
-    fefix_crate_name: String,
-    derives_for_allowed_values: Vec<String>,
-    attributes_for_allowed_values: Vec<String>,
-    custom_derive_lines: Vec<String>,
-}
+    phantom: PhantomData<()>,
 
-impl Settings {
-    /// Creates a new [`Settings`] set to defaults.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Changes the indentation prefix of all generated Rust code. It's four
+    /// The indentation prefix of all generated Rust code. Four
     /// spaces by default.
-    pub fn set_indentation(&mut self, indentation: &str) {
-        self.indentation = indentation.to_string();
-    }
-
-    /// Increments the indentation level of all generated Rust code by one.
-    pub fn incr_indentation(&mut self) {
-        self.indentation_depth += 1;
-    }
-
-    /// Returns a mutable reference to the `Vec` of derive macros used for
-    /// `enum`s.
-    pub fn derives_for_allowed_values_mut(&mut self) -> &mut Vec<String> {
-        &mut self.derives_for_allowed_values
-    }
-
-    /// Returns a mutable reference to the `Vec` of macro attributes for
-    /// `enum`s.
-    pub fn attributes_for_allowed_values_mut(&mut self) -> &mut Vec<String> {
-        &mut self.attributes_for_allowed_values
-    }
-
-    /// Sets the name of the `fefix` crate. `fefix` by default.
-    pub fn set_fefix_crate_name<S>(&mut self, name: S)
-    where
-        S: Into<String>,
-    {
-        self.fefix_crate_name = name.into();
-    }
-
-    fn fefix_crate_name(&self) -> &str {
-        self.fefix_crate_name.as_str()
-    }
+    pub indentation: String,
+    /// The indentation level of all generated Rust code. Zero by default.
+    pub indentation_depth: u32,
+    /// The name of the `fefix` crate for imports. `fefix` by default.
+    pub fefix_crate_name: String,
+    /// A list of derive macros on top of all generated FIX datatype `enum`s. E.g.:
+    ///
+    /// ```
+    /// #[derive(Foobar, Spam)]
+    /// enum FoodOrDrink {
+    ///     Food,
+    ///     Drink,
+    /// }
+    /// ```
+    ///
+    /// Contains [`Debug`], [`Copy`], [`PartialEq`], [`Eq`], [`Hash`],
+    /// [`FixValue`](crate::FixValue) by default.
+    pub derives_for_allowed_values: Vec<String>,
+    /// A list of attribute macros for generated `enum`s variants. E.g.:
+    ///
+    /// ```
+    /// enum FoodOrDrink {
+    ///     #[foobar]
+    ///     Food,
+    ///     #[foobar]
+    ///     Drink,
+    /// }
+    /// ```
+    ///
+    /// Empty by default.
+    pub attributes_for_allowed_values: Vec<String>,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            indentation: FOUR_SPACES.to_string(),
+            indentation: "    ".to_string(),
             indentation_depth: 0,
             derives_for_allowed_values: vec![
                 "Debug".to_string(),
@@ -166,7 +151,7 @@ impl Default for Settings {
             ],
             attributes_for_allowed_values: vec![],
             fefix_crate_name: "fefix".to_string(),
-            custom_derive_lines: vec![],
+            phantom: PhantomData::default(),
         }
     }
 }
@@ -242,7 +227,7 @@ pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) ->
         top_comment = top_comment,
         enum_definitions = enums,
         field_defs = field_defs,
-        fefix_path = settings.fefix_crate_name(),
+        fefix_path = settings.fefix_crate_name,
     );
     code
 }

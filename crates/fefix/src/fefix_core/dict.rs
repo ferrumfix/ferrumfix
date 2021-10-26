@@ -1,36 +1,15 @@
 //! Access to FIX Dictionary reference and message specifications.
 
+#![allow(dead_code)]
+
 use self::symbol_table::{Key, KeyRef, SymbolTable, SymbolTableIndex};
 use super::TagU16;
 use fnv::FnvHashMap;
-use lazy_static::lazy_static;
 use quickfix::{ParseDictionaryError, QuickFixReader};
 use std::fmt;
 use std::sync::Arc;
 
 pub use datatype::FixDatatype;
-
-const SPEC_FIX_40: &str = include_str!("resources/quickfix/FIX-4.0.xml");
-const SPEC_FIX_41: &str = include_str!("resources/quickfix/FIX-4.1.xml");
-const SPEC_FIX_42: &str = include_str!("resources/quickfix/FIX-4.2.xml");
-const SPEC_FIX_43: &str = include_str!("resources/quickfix/FIX-4.3.xml");
-const SPEC_FIX_44: &str = include_str!("resources/quickfix/FIX-4.4.xml");
-const SPEC_FIX_50: &str = include_str!("resources/quickfix/FIX-5.0.xml");
-const SPEC_FIX_50SP1: &str = include_str!("resources/quickfix/FIX-5.0-SP1.xml");
-const SPEC_FIX_50SP2: &str = include_str!("resources/quickfix/FIX-5.0-SP2.xml");
-const SPEC_FIXT_11: &str = include_str!("resources/quickfix/FIXT-1.1.xml");
-
-lazy_static! {
-    static ref DICT_FIX_40: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_40).unwrap();
-    static ref DICT_FIX_41: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_41).unwrap();
-    static ref DICT_FIX_42: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_42).unwrap();
-    static ref DICT_FIX_43: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_43).unwrap();
-    static ref DICT_FIX_44: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_44).unwrap();
-    static ref DICT_FIX_50: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_50).unwrap();
-    static ref DICT_FIX_50SP1: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_50SP1).unwrap();
-    static ref DICT_FIX_50SP2: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIX_50SP2).unwrap();
-    static ref DICT_FIXT_11: Dictionary = Dictionary::from_quickfix_spec(SPEC_FIXT_11).unwrap();
-}
 
 /// The expected location of a field within a FIX message (i.e. header, body, or
 /// trailer).
@@ -49,17 +28,19 @@ type InternalId = u32;
 /// Specifies business semantics for application-level entities within the FIX
 /// Protocol.
 ///
-/// [`Dictionary`] doesn't provide information regarding
-/// the detailed layouts of messages and components; such intricacies are handled
-/// by the presentation layer.
+/// You can rely on [`Dictionary`] for accessing details about
+/// fields, messages, and other abstract entities as defined in the FIX
+/// specifications. Examples of such information include:
 ///
-/// All FIX Dictionaries have a version string which MUST be unique and
-/// established out-of-band between involved parties.
+/// - The mapping of FIX field names to numeric tags (e.g. `BeginString` is 8).
+/// - Which FIX fields are mandatory and which are optional.
+/// - The data type of each and every FIX field.
+/// - What fields to expect in FIX headers.
 ///
 /// N.B. The FIX Protocol mandates separation of concerns between session and
 /// application protocol only for FIX 5.0 and subsequent versions. All FIX
-/// Dictionaries with older versions will also contain information about session
-/// layer.
+/// Dictionaries for older versions will also contain information about the
+/// session layer.
 #[derive(Clone, Debug)]
 pub struct Dictionary {
     inner: Arc<DictionaryData>,
@@ -69,7 +50,7 @@ pub struct Dictionary {
 struct DictionaryData {
     version: String,
     symbol_table: SymbolTable,
-    abbreviations: Vec<AbbreviatonData>,
+    abbreviations: Vec<AbbreviationData>,
     data_types: Vec<DatatypeData>,
     fields: Vec<FieldData>,
     components: Vec<ComponentData>,
@@ -205,65 +186,74 @@ impl Dictionary {
         self.inner.version.as_str()
     }
 
-    /// Creates a new [`Dictionary`] for FIXT 4.0.
+    /// Creates a new [`Dictionary`] for FIX 4.0.
     #[cfg(feature = "fix40")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "fix40")))]
     pub fn fix40() -> Self {
-        DICT_FIX_40.clone()
+        let spec = include_str!("resources/quickfix/FIX-4.0.xml");
+        Dictionary::from_quickfix_spec(spec).unwrap()
     }
 
-    /// Creates a new [`Dictionary`] for FIXT 4.1.
+    /// Creates a new [`Dictionary`] for FIX 4.1.
     #[cfg(feature = "fix41")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "fix41")))]
     pub fn fix41() -> Self {
-        DICT_FIX_41.clone()
+        let spec = include_str!("resources/quickfix/FIX-4.1.xml");
+        Dictionary::from_quickfix_spec(spec).unwrap()
     }
 
-    /// Creates a new [`Dictionary`] for FIXT 4.2.
+    /// Creates a new [`Dictionary`] for FIX 4.2.
     #[cfg(feature = "fix42")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "fix42")))]
     pub fn fix42() -> Self {
-        DICT_FIX_42.clone()
+        let spec = include_str!("resources/quickfix/FIX-4.2.xml");
+        Dictionary::from_quickfix_spec(spec).unwrap()
     }
 
-    /// Creates a new [`Dictionary`] for FIXT 4.3.
+    /// Creates a new [`Dictionary`] for FIX 4.3.
     #[cfg(feature = "fix43")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "fix43")))]
     pub fn fix43() -> Self {
-        DICT_FIX_43.clone()
+        let spec = include_str!("resources/quickfix/FIX-4.3.xml");
+        Dictionary::from_quickfix_spec(spec).unwrap()
     }
 
     /// Creates a new [`Dictionary`] for FIX 4.4.
     pub fn fix44() -> Self {
-        DICT_FIX_44.clone()
+        let spec = include_str!("resources/quickfix/FIX-4.4.xml");
+        Dictionary::from_quickfix_spec(spec).unwrap()
     }
 
     /// Creates a new [`Dictionary`] for FIX 5.0.
     #[cfg(feature = "fix50")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "fix50")))]
     pub fn fix50() -> Self {
-        DICT_FIX_50.clone()
+        let spec = include_str!("resources/quickfix/FIX-5.0.xml");
+        Dictionary::from_quickfix_spec(spec).unwrap()
     }
 
     /// Creates a new [`Dictionary`] for FIX 5.0 SP1.
     #[cfg(feature = "fix50sp1")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "fix50sp1")))]
     pub fn fix50sp1() -> Self {
-        DICT_FIX_50SP1.clone()
+        let spec = include_str!("resources/quickfix/FIX-5.0-SP1.xml");
+        Dictionary::from_quickfix_spec(spec).unwrap()
     }
 
     /// Creates a new [`Dictionary`] for FIX 5.0 SP2.
     #[cfg(feature = "fix50sp2")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "fix50sp1")))]
     pub fn fix50sp2() -> Self {
-        DICT_FIX_50SP2.clone()
+        let spec = include_str!("resources/quickfix/FIX-5.0-SP2.xml");
+        Dictionary::from_quickfix_spec(spec).unwrap()
     }
 
     /// Creates a new [`Dictionary`] for FIXT 1.1.
     #[cfg(feature = "fixt11")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "fixt11")))]
     pub fn fixt11() -> Self {
-        DICT_FIXT_11.clone()
+        let spec = include_str!("resources/quickfix/FIXT-1.1.xml");
+        Dictionary::from_quickfix_spec(spec).unwrap()
     }
 
     #[cfg(test)]
@@ -442,7 +432,7 @@ impl Dictionary {
 struct DictionaryBuilder {
     version: String,
     symbol_table: FnvHashMap<Key, InternalId>,
-    abbreviations: Vec<AbbreviatonData>,
+    abbreviations: Vec<AbbreviationData>,
     data_types: Vec<DatatypeData>,
     fields: Vec<FieldData>,
     components: Vec<ComponentData>,
@@ -519,7 +509,7 @@ impl DictionaryBuilder {
 }
 
 #[derive(Clone, Debug)]
-struct AbbreviatonData {
+struct AbbreviationData {
     abbreviation: String,
     is_last: bool,
 }
@@ -529,7 +519,7 @@ struct AbbreviatonData {
 /// purposes, but in general it can have other uses as well, e.g. FIXML field
 /// naming.
 #[derive(Debug)]
-pub struct Abbreviation<'a>(&'a Dictionary, &'a AbbreviatonData);
+pub struct Abbreviation<'a>(&'a Dictionary, &'a AbbreviationData);
 
 impl<'a> Abbreviation<'a> {
     /// Returns the full term (non-abbreviated) associated with `self`.

@@ -73,6 +73,8 @@ pub mod fix43 {
     include!(concat!(env!("OUT_DIR"), "/fix43.rs"));
 }
 
+#[cfg(feature = "fix44")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "fix44")))]
 #[allow(dead_code, unused, warnings)]
 #[rustfmt::skip]
 /// Field and message definitions for FIX.4.4.

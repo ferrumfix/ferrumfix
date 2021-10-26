@@ -103,6 +103,6 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(timestamp: Timestamp) -> bool {
-        super::super::verify_serialization_behavior(timestamp)
+        super::super::test_utility_verify_serialization_behavior(timestamp)
     }
 }

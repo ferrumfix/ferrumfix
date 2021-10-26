@@ -136,7 +136,7 @@ impl<'a> FixValue<'a> for Date {
     where
         B: Buffer,
     {
-        let bytes = self.to_bytes();
+        let bytes = self.to_yyyymmdd();
         buffer.extend_from_slice(&bytes[..]);
         bytes.len()
     }
@@ -198,7 +198,7 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(date: Date) -> bool {
-        super::super::verify_serialization_behavior(date)
+        super::super::test_utility_verify_serialization_behavior(date)
     }
 
     const VALID_DATES: &[&[u8]] = &[
@@ -229,8 +229,8 @@ mod test {
     ];
 
     #[quickcheck]
-    fn serialize_and_to_bytes_are_the_same(date: Date) -> bool {
-        date.to_bytes() == &FixValue::to_bytes(&date)[..]
+    fn to_yyyymmdd_to_bytes_are_the_same(date: Date) -> bool {
+        date.to_yyyymmdd() == &FixValue::to_bytes(&date)[..]
     }
 
     #[test]
