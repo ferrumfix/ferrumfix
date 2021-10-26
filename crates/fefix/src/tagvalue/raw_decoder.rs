@@ -20,6 +20,7 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, RawDecoder};
+    /// use fefix::prelude::*;
     ///
     /// let mut decoder = RawDecoder::<Config>::new();
     /// decoder.config_mut().set_separator(b'|');
@@ -39,6 +40,7 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, RawDecoder};
+    /// use fefix::prelude::*;
     ///
     /// let mut decoder = RawDecoder::<Config>::new();
     /// decoder.config_mut().set_separator(b'|');
@@ -64,6 +66,7 @@ where
     ///
     /// ```
     /// use fefix::tagvalue::{Config, RawDecoder};
+    /// use fefix::prelude::*;
     ///
     /// let mut decoder = RawDecoder::<Config>::new();
     /// decoder.config_mut().set_separator(b'|');
@@ -186,8 +189,6 @@ where
     pub fn supply_buffer(&mut self) -> &mut [u8] {
         match self.last_parser_state {
             ParserState::Empty => {
-                debug_assert_eq!(self.buffer.len(), 0);
-
                 // There's no point in validating a FIX message that is too short to
                 // ever be valid.
                 self.buffer.resize(utils::MIN_FIX_MESSAGE_LEN_IN_BYTES, 0);

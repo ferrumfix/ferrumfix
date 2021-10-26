@@ -67,9 +67,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::{FieldAccess, Config, Decoder};
-    /// use fefix::definitions::fix44;
-    /// use fefix::Dictionary;
+    /// use fefix::tagvalue::{Config, Decoder};
+    /// use fefix::prelude::*;
     ///
     /// let dict = Dictionary::fix44();
     /// let mut decoder = Decoder::<Config>::new(dict);
@@ -96,6 +95,7 @@ where
         T: AsRef<[u8]>,
     {
         self.builder.clear();
+        self.message_builder_mut().bytes = frame.as_bytes();
         let separator = self.config().separator();
         let payload = frame.payload();
         self.store_field(
@@ -352,18 +352,18 @@ impl<'a, T> Message<'a, T> {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::{FieldAccess, Config, Decoder};
-    /// use fefix::{Dictionary, TagU16};
+    /// use fefix::tagvalue::{Config, Decoder};
+    /// use fefix::prelude::*;
     ///
     /// const DATA: &[u8] = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
     ///
     /// let mut decoder = Decoder::<Config>::new(Dictionary::fix44());
     /// decoder.config_mut().set_separator(b'|');
     ///
-    /// let message = decoder.decode(data).unwrap();
-    /// let first_field = message.fields().next().unwrap();
+    /// let message = decoder.decode(DATA).unwrap();
+    /// let first_field = message.fields().next();
     ///
-    /// assert_eq!(first_field, Some((TagU16::new(8).unwrap(), b"FIX.4.4")));
+    /// assert_eq!(first_field, Some((TagU16::new(8).unwrap(), b"FIX.4.4" as &[u8])));
     /// ```
     pub fn fields(&'a self) -> Fields<'a, T> {
         Fields {
@@ -377,15 +377,15 @@ impl<'a, T> Message<'a, T> {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::{FieldAccess, Config, Decoder};
-    /// use fefix::{Dictionary, TagU16};
+    /// use fefix::tagvalue::{Config, Decoder};
+    /// use fefix::prelude::*;
     ///
     /// const DATA: &[u8] = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
     ///
     /// let mut decoder = Decoder::<Config>::new(Dictionary::fix44());
     /// decoder.config_mut().set_separator(b'|');
     ///
-    /// let message = decoder.decode(data).unwrap();
+    /// let message = decoder.decode(DATA).unwrap();
     /// assert_eq!(message.as_bytes(), DATA);
     /// ```
     pub fn as_bytes(&self) -> &[u8] {
@@ -397,15 +397,15 @@ impl<'a, T> Message<'a, T> {
     /// # Examples
     ///
     /// ```
-    /// use fefix::tagvalue::{FieldAccess, Config, Decoder};
-    /// use fefix::{Dictionary, TagU16};
+    /// use fefix::tagvalue::{Config, Decoder};
+    /// use fefix::prelude::*;
     ///
     /// const DATA: &[u8] = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
     ///
     /// let mut decoder = Decoder::<Config>::new(Dictionary::fix44());
     /// decoder.config_mut().set_separator(b'|');
     ///
-    /// let message = decoder.decode(data).unwrap();
+    /// let message = decoder.decode(DATA).unwrap();
     /// assert_eq!(message.len(), message.fields().count());
     /// ```
     pub fn len(&self) -> usize {

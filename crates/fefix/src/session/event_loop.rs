@@ -1,4 +1,6 @@
 use crate::tagvalue::{DecodeError, DecoderBuffered, Message};
+use futures::future::Fuse;
+use futures::future::Ready;
 use futures::select;
 use futures::{AsyncRead, AsyncReadExt, FutureExt};
 use futures_timer::Delay;
@@ -39,7 +41,7 @@ where
             heartbeat_soft_tolerance,
             heartbeat_hard_tolerance,
             last_reset: Instant::now(),
-            last_heartbeat: Instant::now() - heartbeat / 2,
+            last_heartbeat: Instant::now(),
             is_alive: true,
         }
     }
@@ -57,19 +59,19 @@ where
 
     pub async fn next_event<'a>(&'a mut self) -> Option<LlEvent<'a>> {
         let mut buf_filled_len = 0;
+        let mut buf = &mut self.decoder.supply_buffer()[buf_filled_len..];
 
         loop {
             if !self.is_alive {
                 return None;
             }
 
-            let mut timer_heartbeat = self.timer_heartbeat().fuse();
-            let mut timer_test_request = self.timer_test_request().fuse();
-            let mut timer_logout = self.timer_logout().fuse();
-
-            let buf = &mut self.decoder.supply_buffer()[buf_filled_len..];
-            assert!(buf.len() > 0);
-
+            let now = Instant::now();
+            let mut timer_heartbeat = Delay::new(now - self.last_heartbeat + self.heartbeat).fuse();
+            let mut timer_test_request =
+                Delay::new(now - self.last_reset + self.heartbeat_soft_tolerance).fuse();
+            let mut timer_logout =
+                Delay::new(now - self.last_reset + self.heartbeat_hard_tolerance).fuse();
             let mut read_result = self.input.read(buf).fuse();
 
             select! {
@@ -80,14 +82,15 @@ where
                         }
                         Ok(num_bytes) => {
                             buf_filled_len += num_bytes;
-
                             if buf_filled_len < buf.len() {
                                 continue;
-                            } else {
-                                buf_filled_len = 0;
                             }
 
-                            match self.decoder.parse() {
+                            let result = self.decoder.parse();
+                            buf_filled_len = 0;
+                            buf = &mut self.decoder.supply_buffer()[buf_filled_len..];
+
+                            match result {
                                 Ok(Some(())) => {
                                     let msg = self.decoder.message();
                                     return Some(LlEvent::Message(msg));
@@ -122,18 +125,6 @@ where
     pub fn ping_heartbeat(&mut self) {
         self.last_reset = Instant::now();
     }
-
-    fn timer_heartbeat(&self) -> Delay {
-        Delay::new(self.last_heartbeat + self.heartbeat - Instant::now())
-    }
-
-    fn timer_test_request(&self) -> Delay {
-        Delay::new(self.last_reset + self.heartbeat_soft_tolerance - Instant::now())
-    }
-
-    fn timer_logout(&self) -> Delay {
-        Delay::new(self.last_reset + self.heartbeat_hard_tolerance - Instant::now())
-    }
 }
 
 /// A low level event produced by a [`LlEventLoop`].
@@ -165,7 +156,7 @@ mod test {
     use tokio::net::{TcpListener, TcpStream};
     use tokio_util::compat::*;
 
-    async fn produce_events(events: &'static [(&[u8], Duration)]) -> TcpStream {
+    async fn produce_events(events: Vec<(&'static [u8], Duration)>) -> TcpStream {
         let tcp_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let local_addr = tcp_listener.local_addr().unwrap();
 
@@ -181,7 +172,7 @@ mod test {
     }
 
     async fn new_event_loop(
-        events: &'static [(&[u8], Duration)],
+        events: Vec<(&'static [u8], Duration)>,
     ) -> LlEventLoop<Compat<TcpStream>> {
         let input = produce_events(events).await;
 
@@ -194,9 +185,13 @@ mod test {
 
     #[tokio::test]
     async fn dead_input_triggers_logout() {
-        let mut event_loop = new_event_loop(&[]).await;
+        let mut event_loop = new_event_loop(vec![(b"8", Duration::from_secs(10))]).await;
         let event = event_loop.next_event().await;
-        println!("{:?}", event);
-        assert!(matches!(event, Some(LlEvent::TestRequest)));
+        assert!(matches!(event, Some(LlEvent::Heartbeat)));
+        let event = event_loop.next_event().await;
+        assert!(
+            matches!(event, Some(LlEvent::Heartbeat))
+                || matches!(event, Some(LlEvent::TestRequest))
+        );
     }
 }

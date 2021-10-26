@@ -100,8 +100,8 @@ impl Environment {
     /// use fefix::session::Environment;
     ///
     /// assert_eq!(Environment::Testing.allows_testing(), true);
-    /// assert_eq!(Environment::Production { allow_test: true }, true);
-    /// assert_eq!(Environment::Production { allow_test: false }, false);
+    /// assert_eq!(Environment::Production { allow_test: true }.allows_testing(), true);
+    /// assert_eq!(Environment::Production { allow_test: false }.allows_testing(), false);
     /// ```
     #[inline]
     pub fn allows_testing(&self) -> bool {

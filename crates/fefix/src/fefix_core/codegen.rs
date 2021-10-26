@@ -111,7 +111,7 @@ pub struct Settings {
     /// A list of derive macros on top of all generated FIX datatype `enum`s. E.g.:
     ///
     /// ```
-    /// #[derive(Foobar, Spam)]
+    /// // #[derive(Foobar, Spam)]
     /// enum FoodOrDrink {
     ///     Food,
     ///     Drink,
@@ -125,9 +125,9 @@ pub struct Settings {
     ///
     /// ```
     /// enum FoodOrDrink {
-    ///     #[foobar]
+    ///     // #[foobar]
     ///     Food,
-    ///     #[foobar]
+    ///     // #[spam]
     ///     Drink,
     /// }
     /// ```
