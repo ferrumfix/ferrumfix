@@ -38,7 +38,7 @@ impl<'a> Message<'a> {
     }
 }
 
-impl<'a, F> FieldAccess<F> for Message<'a>
+impl<'a, F> FieldAccess<&F> for Message<'a>
 where
     F: IsFieldDefinition,
 {

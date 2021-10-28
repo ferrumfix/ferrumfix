@@ -20,7 +20,7 @@ pub trait FieldAccess<F> {
 
     /// Queries `self` for a group tagged with `key`. An unsuccessful query
     /// results in [`Err(None)`].
-    fn group(&self, field: &F) -> Result<Self::Group, Option<<usize as FixValue>::Error>> {
+    fn group(&self, field: F) -> Result<Self::Group, Option<<usize as FixValue>::Error>> {
         match self.group_opt(field) {
             Some(Ok(group)) => Ok(group),
             Some(Err(e)) => Err(Some(e)),
@@ -32,14 +32,14 @@ pub trait FieldAccess<F> {
     /// present in `self`. This differs from
     /// [`FieldAccess::group()`] as missing groups result in [`None`] rather than
     /// [`Err`].
-    fn group_opt(&self, field: &F) -> Option<Result<Self::Group, <usize as FixValue>::Error>>;
+    fn group_opt(&self, field: F) -> Option<Result<Self::Group, <usize as FixValue>::Error>>;
 
     /// Queries `self` for `field` and returns its raw contents.
-    fn fv_raw(&self, field: &F) -> Option<&[u8]>;
+    fn fv_raw(&self, field: F) -> Option<&[u8]>;
 
     /// Queries `self` for `field` and deserializes it.
     #[inline]
-    fn fv<'a, V>(&'a self, field: &F) -> Result<V, Option<V::Error>>
+    fn fv<'a, V>(&'a self, field: F) -> Result<V, Option<V::Error>>
     where
         V: FixValue<'a>,
     {
@@ -52,7 +52,7 @@ pub trait FieldAccess<F> {
 
     /// Like [`FieldAccess::fv()`], but with lossy deserialization.
     #[inline]
-    fn fvl<'a, V>(&'a self, field: &F) -> Result<V, Option<V::Error>>
+    fn fvl<'a, V>(&'a self, field: F) -> Result<V, Option<V::Error>>
     where
         V: FixValue<'a>,
     {
@@ -67,7 +67,7 @@ pub trait FieldAccess<F> {
     /// differs from [`FieldAccess::fv()`] as missing fields result in [`None`]
     /// rather than [`Err`].
     #[inline]
-    fn fv_opt<'a, V>(&'a self, field: &F) -> Option<Result<V, V::Error>>
+    fn fv_opt<'a, V>(&'a self, field: F) -> Option<Result<V, V::Error>>
     where
         V: FixValue<'a>,
     {
@@ -79,7 +79,7 @@ pub trait FieldAccess<F> {
 
     /// Like [`FieldAccess::fv_opt()`], but with lossy deserialization.
     #[inline]
-    fn fvl_opt<'a, V>(&'a self, field: &F) -> Option<Result<V, V::Error>>
+    fn fvl_opt<'a, V>(&'a self, field: F) -> Option<Result<V, V::Error>>
     where
         V: FixValue<'a>,
     {

@@ -585,8 +585,8 @@ where
 {
     type Group = MessageGroup<'a, T>;
 
-    fn group_opt(&self, tag: &u32) -> Option<Result<Self::Group, <usize as FixValue>::Error>> {
-        let tag = TagU16::new(u16::try_from(*tag).ok()?)?;
+    fn group_opt(&self, tag: u32) -> Option<Result<Self::Group, <usize as FixValue>::Error>> {
+        let tag = TagU16::new(u16::try_from(tag).ok()?)?;
         let field_locator_of_group_tag = FieldLocator {
             tag,
             context: self.field_locator_context,
@@ -606,8 +606,8 @@ where
         }))
     }
 
-    fn fv_raw(&self, tag: &u32) -> Option<&[u8]> {
-        let tag = TagU16::new(u16::try_from(*tag).ok()?)?;
+    fn fv_raw(&self, tag: u32) -> Option<&[u8]> {
+        let tag = TagU16::new(u16::try_from(tag).ok()?)?;
         let field_locator = FieldLocator {
             tag,
             context: self.field_locator_context,
@@ -616,7 +616,7 @@ where
     }
 }
 
-impl<'a, F, T> FieldAccess<F> for Message<'a, T>
+impl<'a, F, T> FieldAccess<&F> for Message<'a, T>
 where
     F: IsFieldDefinition,
     T: AsRef<[u8]> + Clone,
@@ -624,11 +624,11 @@ where
     type Group = MessageGroup<'a, T>;
 
     fn group_opt(&self, field: &F) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
-        self.group_opt(&u32::from(field.tag().get()))
+        self.group_opt(u32::from(field.tag().get()))
     }
 
     fn fv_raw(&self, field: &F) -> Option<&[u8]> {
-        self.fv_raw(&u32::from(field.tag().get()))
+        self.fv_raw(u32::from(field.tag().get()))
     }
 }
 
@@ -722,9 +722,9 @@ mod test {
         let bytes = b"8=FIX.4.2|9=196|35=X|49=A|56=B|34=12|52=20100318-03:21:11.364|262=A|268=2|279=0|269=0|278=BID|55=EUR/USD|270=1.37215|15=EUR|271=2500000|346=1|279=0|269=1|278=OFFER|55=EUR/USD|270=1.37224|15=EUR|271=2503200|346=1|10=171|";
         let decoder = &mut decoder();
         let message = decoder.decode(bytes).unwrap();
-        let group = message.group(&268).unwrap();
+        let group = message.group(268).unwrap();
         assert_eq!(group.len(), 2);
-        assert_eq!(group.entry(0).fv_raw(&278).unwrap(), b"BID" as &[u8]);
+        assert_eq!(group.entry(0).fv_raw(278).unwrap(), b"BID" as &[u8]);
     }
 
     #[test]
@@ -732,9 +732,9 @@ mod test {
         let bytes = b"8=FIX.4.4|9=17|35=X|268=0|346=1|10=171|";
         let mut decoder = decoder();
         let message = decoder.decode(&bytes).unwrap();
-        let group = message.group(&268).unwrap();
+        let group = message.group(268).unwrap();
         assert_eq!(group.len(), 0);
-        assert_eq!(message.fv_raw(&346), Some("1".as_bytes()));
+        assert_eq!(message.fv_raw(346), Some("1".as_bytes()));
     }
 
     #[test]
@@ -761,10 +761,10 @@ mod test {
     fn heartbeat_message_fields_are_ok() {
         let mut codec = decoder();
         let message = codec.decode(RANDOM_MESSAGES[0].as_bytes()).unwrap();
-        assert_eq!(message.fv(&35), Ok(b"0"));
-        assert_eq!(message.fv_raw(&8), Some(b"FIX.4.2" as &[u8]));
-        assert_eq!(message.fv(&34), Ok(12));
-        assert_eq!(message.fv_raw(&34), Some(b"12" as &[u8]));
+        assert_eq!(message.fv(35), Ok(b"0"));
+        assert_eq!(message.fv_raw(8), Some(b"FIX.4.2" as &[u8]));
+        assert_eq!(message.fv(34), Ok(12));
+        assert_eq!(message.fv_raw(34), Some(b"12" as &[u8]));
     }
 
     #[test]
@@ -797,8 +797,8 @@ mod test {
             "8=FIX.4.4|9=58|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|39=0|93=8|89=foo|\x01bar|10=000|";
         let mut codec = decoder();
         let result = codec.decode(msg.as_bytes()).unwrap();
-        assert_eq!(result.fv(&93), Ok(8));
-        assert!(matches!(result.fv_raw(&89), Some(b"foo|\x01bar")));
+        assert_eq!(result.fv(93), Ok(8));
+        assert!(matches!(result.fv_raw(89), Some(b"foo|\x01bar")));
     }
 
     #[test]

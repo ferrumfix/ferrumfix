@@ -70,5 +70,5 @@ fn main() {
     assert_eq!(md1.fv(fix42::NUMBER_OF_ORDERS), Ok(1));
 
     // You can use either mnemonics (like above) or tag numbers for keys.
-    assert_eq!(msg.fv(&49), Ok(1));
+    assert_eq!(msg.fv(49), Ok(1));
 }
