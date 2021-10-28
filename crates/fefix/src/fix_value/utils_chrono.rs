@@ -1,5 +1,7 @@
-use super::{Date, ZeroPadding};
-use crate::{Buffer, FixValue};
+use super::{Date, ERR_TIME, ERR_UTF8};
+use crate::{Buffer, BufferWriter, FixValue};
+use chrono::NaiveDateTime;
+use std::fmt::Write;
 
 /// Specifies whether a timestamp should have millisecond or second precision;
 /// see [`FixValue::SerializeSettings`].
@@ -20,33 +22,31 @@ impl<'a> FixValue<'a> for chrono::DateTime<chrono::Utc> {
     type Error = &'static str;
     type SerializeSettings = WithMilliseconds;
 
-    #[inline]
-    fn serialize<B>(&self, buffer: &mut B) -> usize
+    fn serialize_with<B>(
+        &self,
+        buffer: &mut B,
+        WithMilliseconds(with_millis): Self::SerializeSettings,
+    ) -> usize
     where
         B: Buffer,
     {
-        // Serialize with milliseconds by default.
-        self.serialize_with(buffer, WithMilliseconds(true))
-    }
-
-    #[inline]
-    fn serialize_with<B>(&self, buffer: &mut B, settings: Self::SerializeSettings) -> usize
-    where
-        B: Buffer,
-    {
-        use chrono::{Datelike, Timelike};
-        (self.year() as u32).serialize_with(buffer, ZeroPadding(4));
-        (self.month() as u32).serialize_with(buffer, ZeroPadding(2));
-        (self.day() as u32).serialize_with(buffer, ZeroPadding(2));
-        buffer.extend_from_slice(b"-");
-        (self.hour() as u32).serialize_with(buffer, ZeroPadding(2));
-        buffer.extend_from_slice(b":");
-        (self.minute() as u32).serialize_with(buffer, ZeroPadding(2));
-        buffer.extend_from_slice(b":");
-        (self.second() as u32).serialize_with(buffer, ZeroPadding(2));
-        if settings.0 {
-            buffer.extend_from_slice(b".");
-            (self.nanosecond() / 10E6 as u32).serialize_with(buffer, ZeroPadding(3));
+        use chrono::Timelike;
+        write!(
+            BufferWriter(buffer),
+            "{}-{:02}:{:02}:{:02}",
+            self.date().naive_utc(),
+            self.hour(),
+            self.minute(),
+            self.second()
+        )
+        .unwrap();
+        if with_millis {
+            write!(
+                BufferWriter(buffer),
+                ".{:03}",
+                self.nanosecond() / 1_000_000
+            )
+            .unwrap();
             21
         } else {
             17
@@ -54,8 +54,16 @@ impl<'a> FixValue<'a> for chrono::DateTime<chrono::Utc> {
     }
 
     #[inline]
-    fn deserialize(_data: &'a [u8]) -> Result<Self, Self::Error> {
-        Err("TODO")
+    fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
+        let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
+        let naive;
+        if data.len() == 21 {
+            naive =
+                NaiveDateTime::parse_from_str(s, "%Y%m%d-%H:%M:%S.%3f").map_err(|_| ERR_TIME)?;
+        } else {
+            naive = NaiveDateTime::parse_from_str(s, "%Y%m%d-%H:%M:%S").map_err(|_| ERR_TIME)?;
+        }
+        Ok(Self::from_utc(naive, chrono::Utc))
     }
 }
 
@@ -70,9 +78,14 @@ impl<'a> FixValue<'a> for chrono::NaiveDate {
         B: Buffer,
     {
         use chrono::Datelike;
-        (self.year() as u32).serialize_with(buffer, ZeroPadding(4));
-        (self.month() as u32).serialize_with(buffer, ZeroPadding(2));
-        (self.day() as u32).serialize_with(buffer, ZeroPadding(2));
+        write!(
+            BufferWriter(buffer),
+            "{:04}{:02}{:02}",
+            self.year(),
+            self.month(),
+            self.day(),
+        )
+        .unwrap();
         8
     }
 

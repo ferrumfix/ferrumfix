@@ -94,6 +94,20 @@ impl Buffer for bytes::BytesMut {
     }
 }
 
+/// A [`Buffer`] wrapper that implements [`std::fmt::Write`].
+#[allow(missing_debug_implementations)]
+pub struct BufferWriter<'a, B>(pub &'a mut B);
+
+impl<'a, B> std::fmt::Write for BufferWriter<'a, B>
+where
+    B: Buffer,
+{
+    fn write_str(&mut self, s: &str) -> std::fmt::Result {
+        self.0.extend_from_slice(s.as_bytes());
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

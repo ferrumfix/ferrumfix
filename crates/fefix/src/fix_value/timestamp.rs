@@ -1,4 +1,4 @@
-use crate::{fix_values::Date, fix_values::Time, Buffer, FixValue};
+use crate::{fix_value::Date, fix_value::Time, Buffer, FixValue};
 
 /// Representation for `UtcTimestamp`.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -73,7 +73,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_values::Time;
+    /// use fefix::fix_value::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.hour(), 12)
@@ -88,7 +88,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_values::Time;
+    /// use fefix::fix_value::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
@@ -103,7 +103,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_values::Time;
+    /// use fefix::fix_value::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
@@ -113,7 +113,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_values::Time;
+    /// use fefix::fix_value::Time;
     ///
     /// let dtf = Time::deserialize(b"23:59:60").unwrap();
     /// assert_eq!(dtf.second(), 60)
@@ -128,7 +128,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_values::Time;
+    /// use fefix::fix_value::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00.328").unwrap();
     /// assert_eq!(dtf.milli(), 328)

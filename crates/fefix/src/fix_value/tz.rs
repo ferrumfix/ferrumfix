@@ -14,7 +14,7 @@ const MINUTE: u32 = 60;
 ///
 /// ```
 /// use fefix::FixValue;
-/// use fefix::fix_values::Tz;
+/// use fefix::fix_value::Tz;
 /// use std::time::Duration;
 ///
 /// let timezone = Tz::deserialize(b"Z").unwrap();

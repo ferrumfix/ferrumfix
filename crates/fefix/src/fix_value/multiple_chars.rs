@@ -6,7 +6,7 @@ use std::iter::FusedIterator;
 /// # Example
 ///
 /// ```
-/// use fefix::fix_values::MultipleChars;
+/// use fefix::fix_value::MultipleChars;
 ///
 /// let mut chars = MultipleChars::new(b"a b c");
 /// assert_eq!(chars.next(), Some(b'a'));
@@ -53,7 +53,7 @@ impl<'a> ExactSizeIterator for MultipleChars<'a> {
 impl<'a> DoubleEndedIterator for MultipleChars<'a> {
     fn next_back(&mut self) -> Option<Self::Item> {
         if let Some(byte) = self.data.last().copied() {
-            self.data = &self.data[..self.data.len() - 2];
+            self.data = &self.data.get(..self.data.len() - 2).unwrap_or(&[]);
             Some(byte)
         } else {
             None

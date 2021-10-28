@@ -2,8 +2,7 @@ use super::{Config, Configure, FvWrite};
 use crate::buffer::Buffer;
 use crate::dict;
 use crate::dict::IsFieldDefinition;
-use crate::fix_values::CheckSum;
-use crate::FixValue;
+use crate::fix_value::{CheckSum, FixValue};
 use crate::TagU16;
 use std::ops::Range;
 

@@ -1,7 +1,5 @@
-use super::{FixValue, Tz};
+use super::{FixValue, Tz, ERR_TIME};
 use crate::Buffer;
-
-const ERR_INVALID: &str = "Invalid time.";
 
 /// Timezone-aware intra-day timestamp.
 ///
@@ -9,7 +7,7 @@ const ERR_INVALID: &str = "Invalid time.";
 ///
 /// ```
 /// use fefix::FixValue;
-/// use fefix::fix_values::{Tz, TzTime};
+/// use fefix::fix_value::{Tz, TzTime};
 ///
 /// let tztime = TzTime::deserialize(b"07:39:20Z").unwrap();
 /// assert_eq!(tztime.hour(), 7);
@@ -33,7 +31,7 @@ impl TzTime {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_values::TzTime;
+    /// use fefix::fix_value::TzTime;
     ///
     /// let dtf = TzTime::deserialize(b"12:45:00Z").unwrap();
     /// assert_eq!(dtf.minute(), 45);
@@ -84,7 +82,7 @@ impl<'a> FixValue<'a> for TzTime {
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         if data.len() < 6 || data[2] != b':' {
-            return Err(ERR_INVALID);
+            return Err(ERR_TIME);
         }
         let hour = ascii_digit_to_u32(data[0], 10) + ascii_digit_to_u32(data[1], 1);
         let minute = ascii_digit_to_u32(data[3], 10) + ascii_digit_to_u32(data[4], 1);
@@ -96,7 +94,7 @@ impl<'a> FixValue<'a> for TzTime {
                     minute,
                     second,
                     second_is_explicit: true,
-                    tz: Tz::deserialize(&data[8..]).map_err(|_| ERR_INVALID)?,
+                    tz: Tz::deserialize(&data[8..]).map_err(|_| ERR_TIME)?,
                 })
             }
             _ => Ok(TzTime {
@@ -104,7 +102,7 @@ impl<'a> FixValue<'a> for TzTime {
                 minute,
                 second: 0,
                 second_is_explicit: false,
-                tz: Tz::deserialize(&data[5..]).map_err(|_| ERR_INVALID)?,
+                tz: Tz::deserialize(&data[5..]).map_err(|_| ERR_TIME)?,
             }),
         }
     }

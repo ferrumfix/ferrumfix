@@ -49,7 +49,7 @@ impl MonthYear {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_values::MonthYear;
+    /// use fefix::fix_value::MonthYear;
     ///
     /// let dtf = MonthYear::deserialize(b"19390901").unwrap();
     /// assert_eq!(dtf.year(), 1939)
@@ -64,7 +64,7 @@ impl MonthYear {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_values::MonthYear;
+    /// use fefix::fix_value::MonthYear;
     ///
     /// let dtf = MonthYear::deserialize(b"20000101").unwrap();
     /// assert_eq!(dtf.month(), 1)
@@ -81,7 +81,7 @@ impl MonthYear {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_values::MonthYear;
+    /// use fefix::fix_value::MonthYear;
     ///
     /// let dtf = MonthYear::deserialize(b"20191225").unwrap();
     /// assert_eq!(dtf.day(), Some(25))
@@ -91,7 +91,7 @@ impl MonthYear {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_values::MonthYear;
+    /// use fefix::fix_value::MonthYear;
     ///
     /// let dtf = MonthYear::deserialize(b"201801w3").unwrap();
     /// assert_eq!(dtf.day(), None)
@@ -113,7 +113,7 @@ impl MonthYear {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_values::MonthYear;
+    /// use fefix::fix_value::MonthYear;
     ///
     /// let dtf = MonthYear::deserialize(b"201912w1").unwrap();
     /// assert_eq!(dtf.week(), Some(1))
@@ -123,7 +123,7 @@ impl MonthYear {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_values::MonthYear;
+    /// use fefix::fix_value::MonthYear;
     ///
     /// let dtf = MonthYear::deserialize(b"20191225").unwrap();
     /// assert_eq!(dtf.week(), None)

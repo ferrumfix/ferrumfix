@@ -104,11 +104,10 @@
 
 mod buffer;
 mod fefix_core;
-mod fix_value;
 mod utils;
 
 pub mod definitions;
-pub mod fix_values;
+pub mod fix_value;
 pub mod prelude;
 pub mod session;
 pub mod tagvalue;
@@ -120,7 +119,7 @@ pub mod json;
 #[cfg_attr(doc_cfg, doc(cfg(feature = "codegen")))]
 pub use fefix_core::codegen;
 
-pub use buffer::Buffer;
+pub use buffer::{Buffer, BufferWriter};
 pub use dict::Dictionary;
 pub use fefix_core::dict;
 pub use fefix_core::TagU16;

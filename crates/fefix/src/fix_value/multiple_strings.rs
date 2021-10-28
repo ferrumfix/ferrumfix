@@ -8,7 +8,7 @@ const SEPARATOR: u8 = b' ';
 /// # Example
 ///
 /// ```
-/// use fefix::fix_values::MultipleStrings;
+/// use fefix::fix_value::MultipleStrings;
 ///
 /// let mut words = MultipleStrings::new(b"foo bar qwerty");
 /// assert_eq!(words.next(), Some("foo".as_bytes()));

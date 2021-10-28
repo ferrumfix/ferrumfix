@@ -38,7 +38,7 @@ impl Date {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fix_values::Date;
+    /// use fefix::fix_value::Date;
     ///
     /// assert!(Date::new(2021, 4, 16).is_some());
     /// assert!(Date::new(2021, 13, 32).is_none());
@@ -71,7 +71,7 @@ impl Date {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fix_values::Date;
+    /// use fefix::fix_value::Date;
     ///
     /// assert_eq!(&Date::new(2021, 01, 01).unwrap().to_yyyymmdd(), b"20210101");
     /// ```
