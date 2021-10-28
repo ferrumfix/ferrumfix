@@ -1,9 +1,11 @@
 use super::{
-    Config, Configure, DecodeError, FieldAccess, FieldLocator, FieldLocatorContext, RawDecoder,
-    RawDecoderBuffered, RawFrame, RepeatingGroup,
+    Config, Configure, DecodeError, FieldLocator, FieldLocatorContext, RawDecoder,
+    RawDecoderBuffered, RawFrame,
 };
 use crate::dict::IsFieldDefinition;
-use crate::{dict::FixDatatype, Dictionary, FixValue, GetConfig, TagU16};
+use crate::{
+    dict::FixDatatype, Dictionary, FieldAccess, FixValue, GetConfig, RepeatingGroup, TagU16,
+};
 use nohash_hasher::IntMap;
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
@@ -325,14 +327,18 @@ where
         self.len
     }
 
-    fn entry(&self, i: usize) -> Self::Entry {
-        Message {
-            builder: self.message.builder,
-            phantom: PhantomData::default(),
-            field_locator_context: FieldLocatorContext::WithinGroup {
-                index_of_group_tag: self.index_of_group_tag,
-                entry_index: i.try_into().unwrap(),
-            },
+    fn entry_opt(&self, i: usize) -> Option<Self::Entry> {
+        if i < self.len {
+            Some(Message {
+                builder: self.message.builder,
+                phantom: PhantomData::default(),
+                field_locator_context: FieldLocatorContext::WithinGroup {
+                    index_of_group_tag: self.index_of_group_tag,
+                    entry_index: i.try_into().unwrap(),
+                },
+            })
+        } else {
+            None
         }
     }
 }

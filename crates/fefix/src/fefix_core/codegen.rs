@@ -1,11 +1,10 @@
 //! Code generation utilities.
 
-use std::marker::PhantomData;
-
 use super::{dict, TagU16};
 use fnv::FnvHashSet;
 use heck::{CamelCase, ShoutySnakeCase};
 use indoc::indoc;
+use std::marker::PhantomData;
 
 const FEFIX_VERSION: &str = env!("CARGO_PKG_VERSION");
 

@@ -1,5 +1,6 @@
 use crate::FixValue;
 use std::iter::FusedIterator;
+use std::ops::Range;
 
 /// A trait to retrieve field values in a FIX message.
 ///
@@ -99,22 +100,26 @@ pub trait RepeatingGroup: Sized {
     /// Returns the number of FIX group entries in `self`.
     fn len(&self) -> usize;
 
+    /// Returns the `i` -th entry in `self`, if present.
+    fn entry_opt(&self, i: usize) -> Option<Self::Entry>;
+
     /// Returns the `i` -th entry in `self`.
     ///
     /// # Panics
     ///
-    /// This method will panic if and only if `i` is outside the legal range of
-    /// `self`.
-    fn entry(&self, i: usize) -> Self::Entry;
+    /// Panics if `i` is outside the legal range of `self`.
+    fn entry(&self, i: usize) -> Self::Entry {
+        self.entry_opt(i)
+            .expect("Index outside bounds of FIX repeating group.")
+    }
 
     /// Creates and returns an [`Iterator`] over the entries in `self`.
     /// Iteration MUST be done in sequential order, i.e. in which they appear in
     /// the original FIX message.
-    fn entries(&self) -> Entries<Self> {
-        Entries {
+    fn entries(&self) -> GroupEntries<Self> {
+        GroupEntries {
             group: self,
-            i: 0,
-            max_i_plus_one: self.len(),
+            range: 0..self.len(),
         }
     }
 }
@@ -125,56 +130,37 @@ pub trait RepeatingGroup: Sized {
 /// also implements [`FusedIterator`], [`DoubleEndedIterator`], and
 /// [`ExactSizeIterator`].
 #[derive(Debug, Clone)]
-pub struct Entries<'a, G> {
+pub struct GroupEntries<'a, G> {
     group: &'a G,
-    i: usize,
-    max_i_plus_one: usize,
+    range: Range<usize>,
 }
 
-impl<'a, G> Iterator for Entries<'a, G>
+impl<'a, G> Iterator for GroupEntries<'a, G>
 where
     G: RepeatingGroup,
 {
     type Item = G::Entry;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.i == self.max_i_plus_one {
-            None
-        } else {
-            let entry = self.group.entry(self.i);
-            self.i += 1;
-            Some(entry)
-        }
+        let i = self.range.next()?;
+        Some(self.group.entry(i))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let n = self.group.len() - self.i;
-        (n, Some(n))
+        self.range.size_hint()
     }
 }
 
-impl<'a, G> FusedIterator for Entries<'a, G> where G: RepeatingGroup {}
+impl<'a, G> FusedIterator for GroupEntries<'a, G> where G: RepeatingGroup {}
 
-impl<'a, G> DoubleEndedIterator for Entries<'a, G>
+impl<'a, G> DoubleEndedIterator for GroupEntries<'a, G>
 where
     G: RepeatingGroup,
 {
     fn next_back(&mut self) -> Option<Self::Item> {
-        if self.i == self.max_i_plus_one {
-            None
-        } else {
-            self.max_i_plus_one -= 1;
-            let entry = self.group.entry(self.max_i_plus_one);
-            Some(entry)
-        }
+        let i = self.range.next_back()?;
+        Some(self.group.entry(i))
     }
 }
 
-impl<'a, G> ExactSizeIterator for Entries<'a, G>
-where
-    G: RepeatingGroup,
-{
-    fn len(&self) -> usize {
-        self.group.len()
-    }
-}
+impl<'a, G> ExactSizeIterator for GroupEntries<'a, G> where G: RepeatingGroup {}

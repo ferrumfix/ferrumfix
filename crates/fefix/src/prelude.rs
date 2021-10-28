@@ -1,8 +1,8 @@
 //! Convenience re-exports of common traits and various items within `fefix`.
 
 pub use crate::dict::Dictionary;
-pub use crate::tagvalue::{Configure, FieldAccess, RepeatingGroup};
-pub use crate::{Buffer, FixValue, GetConfig, TagU16};
+pub use crate::tagvalue::Configure;
+pub use crate::{Buffer, FieldAccess, FixValue, GetConfig, RepeatingGroup, TagU16};
 
 #[cfg(feature = "fix40")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fix40")))]

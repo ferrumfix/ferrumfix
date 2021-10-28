@@ -1,8 +1,8 @@
 use super::{Config, Configure, DecodeError};
 use crate::dict::FieldLocation;
 use crate::dict::IsFieldDefinition;
-use crate::tagvalue::{FieldAccess, RepeatingGroup};
 use crate::{Dictionary, FixValue, GetConfig};
+use crate::{FieldAccess, RepeatingGroup};
 use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
@@ -90,14 +90,11 @@ impl<'a> RepeatingGroup for MessageGroup<'a> {
         self.entries.len()
     }
 
-    fn entry(&self, i: usize) -> Self::Entry {
-        self.entries
-            .get(i)
-            .map(|context| Message {
-                internal: self.message.internal,
-                group_map: Some(context),
-            })
-            .unwrap()
+    fn entry_opt(&self, i: usize) -> Option<Self::Entry> {
+        self.entries.get(i).map(|context| Message {
+            internal: self.message.internal,
+            group_map: Some(context),
+        })
     }
 }
 

@@ -47,7 +47,6 @@ use std::fmt::Debug;
 mod config;
 mod decoder;
 mod encoder;
-mod field_access;
 mod field_locator;
 mod raw_decoder;
 mod utils;
@@ -55,7 +54,6 @@ mod utils;
 pub use config::{Config, Configure};
 pub use decoder::{Decoder, DecoderBuffered, Fields, Message, MessageGroup};
 pub use encoder::{Encoder, EncoderHandle};
-pub use field_access::{FieldAccess, RepeatingGroup};
 pub use field_locator::{FieldLocator, FieldLocatorContext};
 pub use raw_decoder::{RawDecoder, RawDecoderBuffered, RawFrame};
 
