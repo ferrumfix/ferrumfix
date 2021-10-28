@@ -6,10 +6,39 @@ use self::symbol_table::{Key, KeyRef, SymbolTable, SymbolTableIndex};
 use super::TagU16;
 use fnv::FnvHashMap;
 use quickfix::{ParseDictionaryError, QuickFixReader};
+use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
 
 pub use datatype::FixDatatype;
+
+pub trait DataFieldLookup<F> {
+    fn field_is_data(&self, field: F) -> bool;
+}
+
+pub trait NumInGroupLookup<F> {
+    fn field_is_num_in_group(&self, field: F) -> bool;
+}
+
+impl DataFieldLookup<u32> for Dictionary {
+    fn field_is_data(&self, tag: u32) -> bool {
+        if let Some(field) = self.field_by_tag(tag) {
+            field.data_type().basetype() == FixDatatype::Data
+        } else {
+            false
+        }
+    }
+}
+
+impl NumInGroupLookup<u32> for Dictionary {
+    fn field_is_num_in_group(&self, tag: u32) -> bool {
+        if let Some(field) = self.field_by_tag(tag) {
+            field.data_type().basetype() == FixDatatype::NumInGroup
+        } else {
+            false
+        }
+    }
+}
 
 /// The expected location of a field within a FIX message (i.e. header, body, or
 /// trailer).
