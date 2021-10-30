@@ -104,14 +104,16 @@
 
 mod buffer;
 mod fefix_core;
-mod field_access;
+mod random_field_access;
+mod set_field;
 mod utils;
 
 pub mod definitions;
 pub mod fix_value;
 pub mod prelude;
 pub mod session;
-pub use field_access::{FieldAccess, GroupEntries, RepeatingGroup};
+pub use random_field_access::{GroupEntries, RandomFieldAccess, RepeatingGroup};
+pub use set_field::SetField;
 pub mod tagvalue;
 
 #[cfg(feature = "json-encoding")]

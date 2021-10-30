@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 /// Configuration interface for the FIX JSON encoding format.
 pub trait Configure: Clone + Default {
     /// This setting indicates that all encoded messages should be "prettified"
@@ -6,7 +8,7 @@ pub trait Configure: Clone + Default {
     /// readability. Some performance loss and increased payload size is
     /// expected.
     ///
-    /// This is turned off be default.
+    /// This is turned **off** be default.
     ///
     /// This setting has no effect when decoding messages.
     ///
@@ -40,23 +42,13 @@ pub trait Configure: Clone + Default {
 }
 
 /// The canonical implementor of [`Configure`]. It simply stores configuration
-/// options as fields.
+/// options as `struct` fields.
 #[derive(Debug, Clone)]
 pub struct Config {
-    pretty_print: bool,
-}
+    phantom: PhantomData<()>,
 
-impl Config {
-    /// Creates a new [`Config`] with default settings.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Enables [`Configure::pretty_print`] if and only if
-    /// `pretty_print` is true; otherwise it disables pretty-printing.
-    pub fn set_pretty_print(&mut self, pretty_print: bool) {
-        self.pretty_print = pretty_print;
-    }
+    /// Enables [`Configure::pretty_print`].
+    pub pretty_print: bool,
 }
 
 impl Configure for Config {
@@ -68,6 +60,7 @@ impl Configure for Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
+            phantom: PhantomData::default(),
             pretty_print: false,
         }
     }
@@ -85,9 +78,9 @@ mod test {
     #[test]
     fn config_pretty_print_behavior_can_be_changed() {
         let mut config = Config::default();
-        config.set_pretty_print(true);
+        config.pretty_print = true;
         assert_eq!(config.pretty_print(), true);
-        config.set_pretty_print(false);
+        config.pretty_print = false;
         assert_eq!(config.pretty_print(), false);
     }
 }

@@ -14,7 +14,7 @@
 //! [`TokioCodec`].
 
 #![doc(html_root_url = "https://docs.rs/fesofh/")]
-#![warn(missing_docs, missing_doc_code_examples)]
+#![warn(missing_docs, rustdoc::missing_doc_code_examples)]
 #![deny(
     unused,
     missing_debug_implementations,
@@ -35,6 +35,7 @@
 mod encoding_type;
 mod frame;
 mod seq_decoder;
+
 #[cfg(feature = "utils-tokio")]
 mod tokio_codec;
 
@@ -44,6 +45,7 @@ pub use seq_decoder::{Frames, SeqDecoder};
 use std::convert::TryInto;
 use std::io;
 use thiserror::Error;
+
 #[cfg(feature = "utils-tokio")]
 pub use tokio_codec::TokioCodec;
 
@@ -68,7 +70,10 @@ pub enum Error {
 /// The header of a SOFH-enclosed message.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 struct Header {
+    /// The length of the message payload, in bytes. This does *not* include the
+    /// length of the header itself.
     pub nominal_message_length_in_bytes: usize,
+    /// The "encoding type" of the message payload.
     pub encoding_type: u16,
 }
 

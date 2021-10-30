@@ -23,8 +23,7 @@ pub use heartbeat_rule::HeartbeatRule;
 pub use resend_request_range::ResendRequestRange;
 pub use seq_numbers::{SeqNumberError, SeqNumbers};
 
-use crate::tagvalue::FvWrite;
-use crate::{tagvalue::Message, FixValue};
+use crate::{tagvalue::Message, FixValue, SetField};
 use std::ops::Range;
 
 /// The owner of a [`FixConnection`]. It can react to events, store incoming
@@ -40,9 +39,9 @@ pub trait Backend: Clone {
         None
     }
 
-    fn set_sender_and_target<'a>(&'a self, msg: &mut impl FvWrite<'a, u32>) {
-        msg.set_fv(&49, self.sender_comp_id());
-        msg.set_fv(&56, self.target_comp_id());
+    fn set_sender_and_target<'a>(&'a self, msg: &mut impl SetField<u32>) {
+        msg.set(49, self.sender_comp_id());
+        msg.set(56, self.target_comp_id());
     }
 
     fn environment(&self) -> Environment {
@@ -117,3 +116,7 @@ impl Iterator for MsgSeqNumCounter {
         Some(MsgSeqNumCounter::next(self))
     }
 }
+
+// FIXME
+#[derive(Debug)]
+pub struct FixConnection;

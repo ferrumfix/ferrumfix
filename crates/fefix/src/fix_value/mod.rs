@@ -1,30 +1,33 @@
 //! A wide collection of [`FixValue`](crate::FixValue) implementors.
 //!
-//! | FIX datatype               | Relevant [`FixValue`] implementors                                                 |
+//! | FIX datatype               | Suggested [`FixValue`] implementors                                                 |
 //! |----------------------------|------------------------------------------------------------------------------------|
-//! | `int`                      | [`u32`], [`i32`], [`u64`], [`i64`]
-//! | `Length`                   | [`usize`]                                                                          |
-//! | `NumInGroup`               | [`usize`]                                                                          |
-//! | `SeqNum`                   | [`u64`]                                                                            |
-//! | `TagNum`                   | [`TagU16`](crate::TagU16)                                                          |
-//! | `DayOfMonth`               | [`u32`]                                                                            |
-//! | `float` and `float` -like  | [`f32`], [`f64`]. [`rust_decimal::Decimal`](https://docs.rs/rust_decimal/1.16.0/rust_decimal/struct.Decimal.html) and [`decimal::d128`](https://docs.rs/decimal/2.1.0/decimal/struct.d128.html) are also supported. |
-//! | `Boolean`                  | [`bool`]                                                                           |
-//! | `char`                     | [`u8`] [^1]                                                                        |
-//! | `String`                   | [`Vec<u8>`], `&[u8]`.[^1]                                                            |
-//! | `data`                     | [`Vec<u8>`], `&[u8]` (also [`String`], [`str`] for UTF-8 content).                   |
-//! | `MultipleCharValue`        | [`MultipleChars`] [^1]                                                             |
-//! | `MultipleValueString`      | [`MultipleStrings`] [^1]                                                           |
-//! | `Country`                  | [`Country`]                                                                        |
-//! | `Currency`                 | [`Currency`]                                                                       |
-//! | `Exchange`                 | [`Exchange`]                                                                       |
-//! | `month-year`               | [`MonthYear`]                                                                      |
-//! | `UTCTimestamp`             | [`Timestamp`]                                                                      |
-//! | `LocalMktDate`             | [`Timestamp`]                                                                      |
-//! | `UTCTimeOnly`              | [`Time`]                                                                           |
-//! | `TZTimestamp`              | [`TzTimestamp`]                                                                    |
-//! | `TZTimeOnly`               | [`TzTime`]                                                                         |
-//! | `UTCDateOnly`              | [`Date`]                                                                           |
+//! | `int`                      | [`u32`], [`i32`], [`u64`], [`i64`], [`u128`], [`i128`].                            |
+//! | `Length`                   | [`usize`].                                                                         |
+//! | `NumInGroup`               | [`usize`].                                                                         |
+//! | `SeqNum`                   | [`u64`].                                                                           |
+//! | `TagNum`                   | [`TagU16`](crate::TagU16).                                                         |
+//! | `DayOfMonth`               | [`u32`].                                                                           |
+//! | `float`, `Price`, etc.     | [`f32`], [`f64`], [`struct@rust_decimal::Decimal`], [`struct@decimal::d128`]. |
+//! | `Boolean`                  | [`bool`].                                                                          |
+//! | `char`                     | [`u8`] [^1].                                                                      |
+//! | `String`                   | [`Vec<u8>`], `&[u8]`.[^1]                                                          |
+//! | `data`                     | [`Vec<u8>`], `&[u8]` (also [`String`], [`str`] for UTF-8 content).                 |
+//! | `MultipleCharValue`        | [`MultipleChars`] [^1].                                                            |
+//! | `MultipleValueString`      | [`MultipleStrings`] [^1].                                                          |
+//! | `Country`                  | [`Country`].                                                                       |
+//! | `Currency`                 | [`Currency`].                                                                      |
+//! | `Exchange`                 | [`Exchange`].                                                                      |
+//! | `month-year`               | [`MonthYear`].                                                                     |
+//! | `UTCTimeOnly`              | [`Time`], [`chrono::NaiveTime`].                                                                          |
+//! | `UTCDateOnly`              | [`Date`], [`chrono::NaiveDate`].                                                                          |
+//! | `UTCTimestamp`             | [`Timestamp`], [`chrono::NaiveDateTime`].                                                                     |
+//! | `TZTimestamp`              | [`TzTimestamp`], [`chrono::DateTime<chrono::FixedOffset>`].                                                                   |
+//! | `LocalMktDate`             | [`Date`], [`chrono::NaiveDate`].                                                                     |
+//! | `TZTimeOnly`               | [`TzTime`],  |
+//!
+//! The above table provides some useful guidelines that work for the vast
+//! majority of use cases.
 //!
 //! # Quick tour of [`FixValue`]
 //!

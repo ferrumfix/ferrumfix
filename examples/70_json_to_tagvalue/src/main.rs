@@ -22,13 +22,13 @@ fn main() {
 
         match field_value {
             FieldOrGroup::Field(s) => {
-                fix_msg_builder.set_any(field.tag(), s.as_ref());
+                fix_msg_builder.set(field.tag(), s.as_ref());
             }
             FieldOrGroup::Group(_g) => {}
         }
     }
 
-    let fix_msg = fix_msg_builder.wrap();
+    let fix_msg = fix_msg_builder.done().0;
 
     println!("Successful conversion from JSON syntax to tag=value|.");
     println!();

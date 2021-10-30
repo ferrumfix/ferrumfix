@@ -2,7 +2,7 @@ use super::{Config, Configure, DecodeError};
 use crate::dict::FieldLocation;
 use crate::dict::IsFieldDefinition;
 use crate::{Dictionary, FixValue, GetConfig};
-use crate::{FieldAccess, RepeatingGroup};
+use crate::{RandomFieldAccess, RepeatingGroup};
 use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
@@ -38,7 +38,7 @@ impl<'a> Message<'a> {
     }
 }
 
-impl<'a, F> FieldAccess<&F> for Message<'a>
+impl<'a, F> RandomFieldAccess<&F> for Message<'a>
 where
     F: IsFieldDefinition,
 {

@@ -2,24 +2,56 @@ use crate::FixValue;
 use std::iter::FusedIterator;
 use std::ops::Range;
 
-/// A trait to retrieve field values in a FIX message.
+/// Provides random (i.e. non-sequential) access to FIX fields and groups within
+/// messages.
+///
+/// # Methods
+///
+/// [`RandomFieldAccess`] provides two kinds of methods:
+///
+/// 1. Group getters: [`RandomFieldAccess::group`] and
+/// [`RandomFieldAccess::group_opt`].
+///
+/// 2. Field getters: [`RandomFieldAccess::fv_raw`], [`RandomFieldAccess::fv`],
+/// etc..
+///
+/// The most basic form of field access is done via
+/// [`RandomFieldAccess::fv_raw`], which performs no deserialization at all: it
+/// simply returns the bytes contents associated with a FIX field, if found.
+///
+/// Building upon [`RandomFieldAccess::fv_raw`] and [`FixValue`], the other
+/// field access methods all provide some utility deserialization logic. These
+/// methods all have the `fv` prefix, with the following considerations:
+///
+/// - `fvl` methods perform "lossy" deserialization via
+/// [`FixValue::deserialize_lossy`]. Unlike lossless deserialization, these
+/// methods may skip some error checking logic and thus prove to be faster.
+/// Memory-safety is still guaranteed, but malformed FIX fields won't be
+/// detected 100% of the time.
+/// - `_opt` methods work exactly like their non-`_opt` counterparties, but they
+/// have a different return type: instead of returning [`Err(None)`] for missing
+/// fields, these methods return [`None`] for missing fields and
+/// [`Some(Ok(field))`] for existing fields.
 ///
 /// # Type parameters
 ///
-/// This trait is generic over a lifetime `'a`, which
-///
-/// # Field getters naming scheme
-///
-/// All getters start with `fv`, which stands for Field Value.
-/// - `l` stands for *lossy*, i.e. invalid field values might not be detected to
-/// improve performance.
-/// - `_opt` stands for *optional*, for better error reporting.
+/// This trait is generic over a type `F`, which must univocally identify FIX
+/// fields (besides FIX repeating groups, which allow repetitions).
 pub trait RandomFieldAccess<F> {
-    /// The type returned by [`RandomFieldAccess::group()`] and [`RandomFieldAccess::group_opt()`].
+    /// The type returned by [`RandomFieldAccess::group`] and
+    /// [`RandomFieldAccess::group_opt`].
     type Group: RepeatingGroup<Entry = Self>;
 
-    /// Queries `self` for a group tagged with `key`. An unsuccessful query
-    /// results in [`Err(None)`].
+    /// Looks for a `field` within `self` and then returns its raw byte
+    /// contents, if it exists.
+    fn fv_raw(&self, field: F) -> Option<&[u8]>;
+
+    /// Like [`RandomFieldAccess::group`], but doesn't return an [`Err`] if the
+    /// group is missing.
+    fn group_opt(&self, field: F) -> Option<Result<Self::Group, <usize as FixValue>::Error>>;
+
+    /// Looks for a group that starts with `field` within `self`.
+    #[inline]
     fn group(&self, field: F) -> Result<Self::Group, Option<<usize as FixValue>::Error>> {
         match self.group_opt(field) {
             Some(Ok(group)) => Ok(group),
@@ -28,16 +60,8 @@ pub trait RandomFieldAccess<F> {
         }
     }
 
-    /// Queries `self` for a group tagged with `key` which may or may not be
-    /// present in `self`. This differs from
-    /// [`RandomFieldAccess::group()`] as missing groups result in [`None`] rather than
-    /// [`Err`].
-    fn group_opt(&self, field: F) -> Option<Result<Self::Group, <usize as FixValue>::Error>>;
-
-    /// Queries `self` for `field` and returns its raw contents.
-    fn fv_raw(&self, field: F) -> Option<&[u8]>;
-
-    /// Queries `self` for `field` and deserializes it.
+    /// Looks for a `field` within `self` and then decodes its raw byte contents
+    /// via [`FixValue::deserialize`], if found.
     #[inline]
     fn fv<'a, V>(&'a self, field: F) -> Result<V, Option<V::Error>>
     where
@@ -50,7 +74,7 @@ pub trait RandomFieldAccess<F> {
         }
     }
 
-    /// Like [`RandomFieldAccess::fv()`], but with lossy deserialization.
+    /// Like [`RandomFieldAccess::fv`], but with lossy deserialization.
     #[inline]
     fn fvl<'a, V>(&'a self, field: F) -> Result<V, Option<V::Error>>
     where
@@ -63,9 +87,8 @@ pub trait RandomFieldAccess<F> {
         }
     }
 
-    /// Queries `self` for `field` and deserializes it. This
-    /// differs from [`RandomFieldAccess::fv()`] as missing fields result in [`None`]
-    /// rather than [`Err`].
+    /// Like [`RandomFieldAccess::fv`], but doesn't return an [`Err`] if `field`
+    /// is missing.
     #[inline]
     fn fv_opt<'a, V>(&'a self, field: F) -> Option<Result<V, V::Error>>
     where
@@ -77,7 +100,7 @@ pub trait RandomFieldAccess<F> {
         })
     }
 
-    /// Like [`RandomFieldAccess::fv_opt()`], but with lossy deserialization.
+    /// Like [`RandomFieldAccess::fv_opt`], but with lossy deserialization.
     #[inline]
     fn fvl_opt<'a, V>(&'a self, field: F) -> Option<Result<V, V::Error>>
     where
@@ -124,9 +147,9 @@ pub trait RepeatingGroup: Sized {
     }
 }
 
-/// An [`Iterator`] that runs over the entries of a FIX [`RepeatingGroup`].
+/// An [`Iterator`] over the entries of a FIX repeating group.
 ///
-/// This `struct` is created by the method [`RepeatingGroup::entries()`]. It
+/// This `struct` is created by the method [`RepeatingGroup::entries`]. It
 /// also implements [`FusedIterator`], [`DoubleEndedIterator`], and
 /// [`ExactSizeIterator`].
 #[derive(Debug, Clone)]
@@ -152,6 +175,7 @@ where
 }
 
 impl<'a, G> FusedIterator for GroupEntries<'a, G> where G: RepeatingGroup {}
+impl<'a, G> ExactSizeIterator for GroupEntries<'a, G> where G: RepeatingGroup {}
 
 impl<'a, G> DoubleEndedIterator for GroupEntries<'a, G>
 where
@@ -162,5 +186,3 @@ where
         Some(self.group.entry(i))
     }
 }
-
-impl<'a, G> ExactSizeIterator for GroupEntries<'a, G> where G: RepeatingGroup {}

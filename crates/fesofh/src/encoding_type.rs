@@ -4,23 +4,7 @@
 /// specified by the SOFH specification. This type is marked with
 /// `#[non_exhaustive]` to
 /// support new encoding types without breaking compatibility.
-/// [`EncodingType::Unknown`] can represent all values that are
-/// not included in the SOFH specification; this way conversion is infallible
-/// and doesn't lose any information.
-///
-/// # Equality
-///
-/// It's important to note that the behavior of [`Eq`] and
-/// [`PartialEq`] for this type always falls back to equality on
-/// `u16`. This may cause unusual behavior when comparing
-/// [`EncodingType::Unknown`] values e.g.:
-///
-/// ```
-/// use fesofh::EncodingType;
-///
-/// assert_eq!(EncodingType::Unknown(0xF500), EncodingType::Json);
-/// ```
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum EncodingType {
     /// User-specified encoding types. Legal values and their respective semantics
@@ -67,23 +51,31 @@ pub enum EncodingType {
     /// BSON encoding. See the [docs](https://www.fixtrading.org/standards/bson/)
     /// for more information.
     Bson,
-    /// This variant can represent any encoding type that isn't officially
-    /// supported by FIX. The original `u16` value is available for custom
-    /// processing or logging.
-    Unknown(u16),
 }
 
 impl EncodingType {
+    /// Tries to create a [`EncodingType`] from its [`u16`] representation.
+    ///
+    /// ```
+    /// use fesofh::EncodingType;
+    ///
+    /// assert_eq!(EncodingType::new(0x4700), Some(EncodingType::Protobuf));
+    /// assert_eq!(EncodingType::new(0), None);
+    /// ```
+    pub const fn new(value: u16) -> Option<Self> {
+        from_u16(value)
+    }
+
     /// Deserializes [`EncodingType`] from two bytes. Big-endian byte order is
     /// assumed, as mandated by the SOFH specification.
     ///
     /// ```
     /// use fesofh::EncodingType;
     ///
-    /// assert_eq!(EncodingType::from_bytes([0xF0, 0x00]), EncodingType::TagValue);
-    /// assert_eq!(EncodingType::from_bytes([0xFA, 0x42]), EncodingType::Fast(0x42));
+    /// assert_eq!(EncodingType::from_bytes([0xF0, 0x00]), Some(EncodingType::TagValue));
+    /// assert_eq!(EncodingType::from_bytes([0xFA, 0x42]), Some(EncodingType::Fast(0x42)));
     /// ```
-    pub const fn from_bytes(bytes: [u8; 2]) -> Self {
+    pub const fn from_bytes(bytes: [u8; 2]) -> Option<Self> {
         from_u16(u16::from_be_bytes(bytes))
     }
 
@@ -101,32 +93,9 @@ impl EncodingType {
     }
 }
 
-impl From<u16> for EncodingType {
-    fn from(value: u16) -> Self {
-        from_u16(value)
-    }
-}
-
 impl From<EncodingType> for u16 {
     fn from(etype: EncodingType) -> Self {
         to_u16(etype)
-    }
-}
-
-impl PartialEq for EncodingType {
-    fn eq(&self, other: &Self) -> bool {
-        u16::from(*self) == u16::from(*other)
-    }
-}
-
-impl std::cmp::Eq for EncodingType {}
-
-impl std::hash::Hash for EncodingType {
-    fn hash<H>(&self, state: &mut H)
-    where
-        H: std::hash::Hasher,
-    {
-        u16::from(*self).hash(state)
     }
 }
 
@@ -146,9 +115,9 @@ const ENCODING_TYPE_FAST_START: u16 = ENCODING_TYPE_FAST_OFFSET + 0x1;
 const ENCODING_TYPE_FAST_END: u16 = ENCODING_TYPE_FAST_OFFSET + 0xFF;
 const ENCODING_TYPE_BSON: u16 = 0xFB00;
 
-const fn from_u16(value: u16) -> EncodingType {
+const fn from_u16(value: u16) -> Option<EncodingType> {
     // https://www.fixtrading.org/standards/fix-sofh-online/#encoding_type-field
-    match value {
+    Some(match value {
         ENCODING_TYPE_PRIVATE_START..=ENCODING_TYPE_PRIVATE_END => {
             EncodingType::Private(value as u8)
         }
@@ -165,8 +134,8 @@ const fn from_u16(value: u16) -> EncodingType {
             EncodingType::Fast((value - ENCODING_TYPE_FAST_OFFSET) as u8)
         }
         ENCODING_TYPE_BSON => EncodingType::Bson,
-        _ => EncodingType::Unknown(value),
-    }
+        _ => return None,
+    })
 }
 
 const fn to_u16(etype: EncodingType) -> u16 {
@@ -183,7 +152,6 @@ const fn to_u16(etype: EncodingType) -> u16 {
         EncodingType::Json => ENCODING_TYPE_JSON,
         EncodingType::Fast(x) => ENCODING_TYPE_FAST_OFFSET + (x as u16),
         EncodingType::Bson => ENCODING_TYPE_BSON,
-        EncodingType::Unknown(x) => x,
     }
 }
 
@@ -194,25 +162,19 @@ mod test {
     #[test]
     fn convert_encoding_type_to_bytes_then_back_has_no_side_effects() {
         for value in 0..=u16::MAX {
-            let etype = EncodingType::from(value);
-            let etype_after = EncodingType::from_bytes(etype.to_bytes());
-            assert_eq!(etype, etype_after);
+            if let Some(etype) = EncodingType::new(value) {
+                let etype_after = EncodingType::from_bytes(etype.to_bytes());
+                assert_eq!(Some(etype), etype_after);
+            }
         }
     }
 
     #[test]
     fn convert_u16_into_encoding_type_then_back_has_no_side_effects() {
         for value in 0..=u16::MAX {
-            let value_after = u16::from(EncodingType::from(value));
-            assert_eq!(value, value_after);
-        }
-    }
-
-    #[test]
-    fn equality_is_reflexive() {
-        for value in 0..=u16::MAX {
-            let etype = EncodingType::from(value);
-            assert_eq!(etype, etype);
+            if let Some(etype) = EncodingType::new(value) {
+                assert_eq!(value, u16::from(etype));
+            }
         }
     }
 
@@ -225,7 +187,7 @@ mod test {
     #[test]
     fn low_values_correspond_to_private_encoding_types() {
         for value in &[0x1, 0x82, 0xff] {
-            let etype = EncodingType::from(*value);
+            let etype = EncodingType::new(*value).unwrap();
             assert!(matches!(etype, EncodingType::Private(x) if x as u16 == *value));
         }
     }
@@ -233,24 +195,24 @@ mod test {
     #[test]
     fn boundary_values_for_private_encoding_type() {
         assert!(!matches!(
-            EncodingType::from(0x0u16),
-            EncodingType::Private(_)
+            EncodingType::new(0x0u16),
+            Some(EncodingType::Private(_))
         ));
         assert!(!matches!(
-            EncodingType::from(0x100u16),
-            EncodingType::Private(_)
+            EncodingType::new(0x100u16),
+            Some(EncodingType::Private(_))
         ));
     }
 
     #[test]
     fn boundary_values_for_fast_encoding_type() {
         assert!(!matches!(
-            EncodingType::from(0xFA00u16),
-            EncodingType::Fast(_)
+            EncodingType::new(0xFA00u16),
+            Some(EncodingType::Fast(_))
         ));
         assert!(!matches!(
-            EncodingType::from(0xFB00u16),
-            EncodingType::Fast(_)
+            EncodingType::new(0xFB00u16),
+            Some(EncodingType::Fast(_))
         ));
     }
 }

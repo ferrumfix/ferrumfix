@@ -78,9 +78,3 @@ pub enum DecodeError {
     #[error("I/O error: {0}")]
     IO(#[from] std::io::Error),
 }
-
-pub trait FvWrite<'a, F> {
-    fn set_fv<'b, V>(&'b mut self, field: &F, value: V)
-    where
-        V: FixValue<'b>;
-}

@@ -1,18 +1,24 @@
-//! Zero-copy buffering utilities.
-
 /// Operations on a growable in-memory buffer.
 ///
-/// [`Buffer`] allows common data operations on in-memory data buffers. While
-/// [`std::io::Write`] only allows sequential write operations, [`Buffer`] allows
-/// arbitrary data manipulation over the whole buffer.
+/// This trait is intented to be used as a thin compatibility layer between
+/// [`Vec<u8>`] and
+/// [`bytes::BytesMut`](https://docs.rs/bytes/1.1.0/bytes/struct.BytesMut.html).
+/// By writing generic code that operates on [`Buffer`], FerrumFIX users can
+/// decide for themselves if they want to use `bytes` and still use most of the
+/// features.
+///
+/// It's important to note that, unlike [`std::io::Write`] which only allows
+/// sequential write operations, [`Buffer`] allows arbitrary data manipulation
+/// over the whole buffer.
 pub trait Buffer {
-    /// Returns an immutable reference to the contents of the buffer.
+    /// Returns an immutable reference to the whole contents of the buffer.
     fn as_slice(&self) -> &[u8];
 
-    /// Returns a mutable reference to the contents of the buffer.
+    /// Returns a mutable reference to the whole contents of the buffer.
     fn as_mut_slice(&mut self) -> &mut [u8];
 
-    /// Returns the length of the contents of the buffer.
+    /// Returns the length of the whole contents of the buffer.
+    #[inline]
     fn len(&self) -> usize {
         self.as_slice().len()
     }
@@ -20,7 +26,7 @@ pub trait Buffer {
     /// Returns the number of bytes that `self` can hold without reallocating.
     fn capacity(&self) -> usize;
 
-    /// Erases the contents of `self`.
+    /// Completely erases the contents of `self`.
     fn clear(&mut self);
 
     /// Appends the contents of `extend` onto `self`, growing the buffer if
@@ -30,9 +36,10 @@ pub trait Buffer {
     /// Resizes this [`Buffer`] in-place so that its new `len()` is equal to
     /// `new_len`.
     ///
-    /// If `new_len` is greater than `len()`, `self` is extended by the difference,
-    /// with each additional slot filled with `filler`. If `new_len` is less than `len()`,
-    /// `self` is simply truncated.
+    /// If `new_len` is greater than [`Buffer::len()`], `self` is extended by
+    /// the difference, with each additional byte set as `filler`. If `new_len`
+    /// is less than [`Buffer::len()`], `self` is simply truncated.
+    #[inline]
     fn resize(&mut self, new_len: usize, filler: u8) {
         for _ in 0..new_len - self.as_slice().len() {
             self.extend_from_slice(&[filler]);
@@ -41,26 +48,32 @@ pub trait Buffer {
 }
 
 impl Buffer for Vec<u8> {
+    #[inline]
     fn as_slice(&self) -> &[u8] {
         self.as_slice()
     }
 
+    #[inline]
     fn as_mut_slice(&mut self) -> &mut [u8] {
         self.as_mut_slice()
     }
 
+    #[inline]
     fn capacity(&self) -> usize {
         self.capacity()
     }
 
+    #[inline]
     fn clear(&mut self) {
         self.clear()
     }
 
+    #[inline]
     fn extend_from_slice(&mut self, extend: &[u8]) {
         self.extend_from_slice(extend)
     }
 
+    #[inline]
     fn resize(&mut self, new_len: usize, filler: u8) {
         self.resize(new_len, filler)
     }
@@ -69,26 +82,32 @@ impl Buffer for Vec<u8> {
 #[cfg(feature = "utils-bytes")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-bytes")))]
 impl Buffer for bytes::BytesMut {
+    #[inline]
     fn as_slice(&self) -> &[u8] {
         &self[..]
     }
 
+    #[inline]
     fn as_mut_slice(&mut self) -> &mut [u8] {
         &mut self[..]
     }
 
+    #[inline]
     fn capacity(&self) -> usize {
         bytes::BytesMut::capacity(self)
     }
 
+    #[inline]
     fn clear(&mut self) {
         bytes::BytesMut::clear(self)
     }
 
+    #[inline]
     fn extend_from_slice(&mut self, extend: &[u8]) {
         bytes::BytesMut::extend_from_slice(self, extend)
     }
 
+    #[inline]
     fn resize(&mut self, new_len: usize, filler: u8) {
         bytes::BytesMut::resize(self, new_len, filler)
     }

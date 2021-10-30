@@ -1,8 +1,8 @@
 use super::{errs, Backend, Config, Configure, LlEvent, LlEventLoop};
 use crate::session::{Environment, SeqNumbers};
-use crate::tagvalue::FieldAccess;
 use crate::tagvalue::FvWrite;
 use crate::tagvalue::Message;
+use crate::tagvalue::RandomFieldAccess;
 use crate::tagvalue::{DecoderBuffered, Encoder, EncoderHandle};
 use crate::Buffer;
 use crate::FixValue;
@@ -102,7 +102,7 @@ where
             msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
             msg.set_fv_with_key(&ENCRYPT_METHOD, 0);
             msg.set_fv_with_key(&108, heartbeat);
-            msg.wrap()
+            msg.done()
         };
         output.write(logon).await.unwrap();
         self.backend.on_outbound_message(logon).ok();
@@ -169,10 +169,12 @@ pub trait Verify {
 
     fn verify_begin_string(&self, begin_string: &[u8]) -> Result<(), Self::Error>;
 
-    fn verify_test_message_indicator(&self, msg: &impl FieldAccess<u32>)
-        -> Result<(), Self::Error>;
+    fn verify_test_message_indicator(
+        &self,
+        msg: &impl RandomFieldAccess<u32>,
+    ) -> Result<(), Self::Error>;
 
-    fn verify_sending_time(&self, msg: &impl FieldAccess<u32>) -> Result<(), Self::Error>;
+    fn verify_sending_time(&self, msg: &impl RandomFieldAccess<u32>) -> Result<(), Self::Error>;
 }
 
 impl<'a, B, C, V> FixConnector<'a, B, C, V> for FixConnection<B, C>
@@ -343,7 +345,7 @@ where
             self.set_sender_and_target(&mut msg);
             msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
             msg.set_fv_with_key(&TEXT, "Logout");
-            msg.wrap()
+            msg.done()
         };
         fix_message
     }
@@ -368,7 +370,7 @@ where
             self.set_sender_and_target(&mut msg);
             msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
             self.set_sending_time(&mut msg);
-            msg.wrap()
+            msg.done()
         };
         fix_message
     }
@@ -397,7 +399,7 @@ where
         msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
         self.set_sending_time(&mut msg);
         msg.set_fv_with_key(&TEST_REQ_ID, test_req_id);
-        msg.wrap()
+        msg.done()
     }
 
     fn on_wrong_environment(&mut self, _message: Message<&[u8]>) -> Response {
@@ -413,7 +415,7 @@ where
         self.set_sender_and_target(&mut msg);
         msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
         msg.set_fv_with_key(&TEXT, text.as_str());
-        msg.wrap()
+        msg.done()
     }
 
     fn on_missing_seqnum(&mut self, _message: Message<&[u8]>) -> Response {
@@ -447,7 +449,7 @@ where
         }
         msg.set_fv_with_key(&SESSION_REJECT_REASON, reason);
         msg.set_fv_with_key(&TEXT, err_text.as_str());
-        Response::OutboundBytes(msg.wrap())
+        Response::OutboundBytes(msg.done())
     }
 
     fn make_reject_for_inaccurate_sending_time(&mut self, offender: Message<&[u8]>) -> Response {
@@ -473,7 +475,7 @@ where
             msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
             msg.set_fv_with_key(&TEXT, text.as_str());
             self.set_sending_time(&mut msg);
-            msg.wrap()
+            msg.done()
         };
         Response::OutboundBytes(fix_message)
     }
@@ -486,7 +488,7 @@ where
         //self.add_seqnum(msg);
         msg.set_fv_with_key(&BEGIN_SEQ_NO, start);
         msg.set_fv_with_key(&END_SEQ_NO, end);
-        Response::OutboundBytes(msg.wrap())
+        Response::OutboundBytes(msg.done())
     }
 
     fn on_high_seqnum(&mut self, msg: Message<&[u8]>) -> Response {

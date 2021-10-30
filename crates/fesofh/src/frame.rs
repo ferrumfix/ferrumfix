@@ -4,7 +4,7 @@ use std::io;
 const MAX_MESSAGE_SIZE_IN_BYTES: usize = u32::MAX as usize - Header::LENGTH_IN_BYTES;
 
 /// An immutable view into a SOFH-enclosed message, complete with its
-/// encoding type tag and message.
+/// encoding type tag and message payload.
 ///
 /// # Type parameters
 ///
@@ -54,8 +54,8 @@ where
     /// use fesofh::{EncodingType, Frame};
     ///
     /// let frame = Frame::new(0xF500, &[] as &[u8]);
-    /// let encoding_type = EncodingType::from(frame.encoding_type());
-    /// assert_eq!(encoding_type, EncodingType::Json);
+    /// let encoding_type = EncodingType::new(frame.encoding_type());
+    /// assert_eq!(encoding_type, Some(EncodingType::Json));
     /// ```
     pub fn encoding_type(&self) -> u16 {
         self.encoding_type

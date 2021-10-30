@@ -17,7 +17,7 @@ impl Environment {
     /// the provided configuration.
     ///
     /// This is used to determine whether to accept or refuse incoming test
-    /// messages within a [`FixConnection`].
+    /// messages within a [`FixConnection`](super::FixConnection).
     ///
     /// # Examples
     ///
