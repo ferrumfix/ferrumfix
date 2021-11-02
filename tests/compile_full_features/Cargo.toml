@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-fefix = { path = "../../../fefix", features = ["full"] }
+fefix = { path = "../../crates/fefix", features = ["full"] }
