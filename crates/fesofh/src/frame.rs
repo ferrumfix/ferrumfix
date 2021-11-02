@@ -61,7 +61,7 @@ where
         self.encoding_type
     }
 
-    /// Returns an immutable reference to the payload bytes of `self`, i.e.
+    /// Returns an immutable reference to the payload of `self`, i.e.
     /// without its header.
     ///
     /// # Examples
@@ -72,32 +72,13 @@ where
     /// let frame = Frame::new(0x0, &[42u8] as &[u8]);
     /// assert_eq!(frame.payload(), &[42]);
     /// ```
-    pub fn payload(&self) -> &[u8] {
-        self.payload.as_ref()
+    pub fn payload(&self) -> &T {
+        &self.payload
     }
 
-    /// Deserializes a [`Frame<&[u8]>`] from `data`. Returns an `Err` if
-    /// invalid. Zero-copy.
-    ///
-    /// This function ignores trailing bytes that are not part of the message.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use fesofh::Frame;
-    ///
-    /// // Message_Length:                        ~~~~~~~~~~~
-    /// // Encoding_Type:                                     ~~~~~~~~~
-    /// // Message:                                                     ~~
-    /// let frame = Frame::<&[u8]>::deserialize(&[0, 0, 0, 7, 0x0, 0x0, 42]).unwrap();
-    /// assert_eq!(frame.payload(), &[42]);
-    /// ```
-    pub fn deserialize(data: &[u8]) -> Result<Frame<&[u8]>, Error> {
-        let header = Header::from_bytes(data)?;
-        Ok(Frame::new(
-            header.encoding_type,
-            &data[Header::LENGTH_IN_BYTES..header.nominal_message_length_in_bytes],
-        ))
+    /// Returns a mutable reference to the payload of `self`.
+    pub fn payload_mut(&mut self) -> &mut T {
+        &mut self.payload
     }
 
     /// Serializes `self` to a `Writer`. This requires copying and thus is
@@ -122,14 +103,41 @@ where
     where
         W: io::Write,
     {
-        let nominal_message_length_in_bytes = self.payload().len() + Header::LENGTH_IN_BYTES;
+        let nominal_message_length_in_bytes =
+            self.payload().as_ref().len() + Header::LENGTH_IN_BYTES;
         let header = Header {
             nominal_message_length_in_bytes,
             encoding_type: self.encoding_type,
         };
         writer.write_all(&header.to_bytes())?;
-        writer.write_all(self.payload())?;
+        writer.write_all(self.payload().as_ref())?;
         Ok(nominal_message_length_in_bytes)
+    }
+}
+
+impl<'a> Frame<&'a [u8]> {
+    /// Tries to deserialize a [`Frame`] from `data`. Returns an `Err` if
+    /// invalid. Zero-copy.
+    ///
+    /// This function ignores trailing bytes that are not part of the message.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use fesofh::Frame;
+    ///
+    /// // Message_Length:                        ~~~~~~~~~~~
+    /// // Encoding_Type:                                     ~~~~~~~~~
+    /// // Message:                                                     ~~
+    /// let frame = Frame::<&[u8]>::deserialize(&[0, 0, 0, 7, 0x0, 0x0, 42]).unwrap();
+    /// assert_eq!(frame.payload(), &[42]);
+    /// ```
+    pub fn deserialize(data: &'a [u8]) -> Result<Self, Error> {
+        let header = Header::from_bytes(data)?;
+        Ok(Frame::new(
+            header.encoding_type,
+            &data[Header::LENGTH_IN_BYTES..header.nominal_message_length_in_bytes],
+        ))
     }
 }
 
@@ -142,10 +150,10 @@ mod test {
     fn information_retrieval_is_consistent_with_new() {
         let frame = Frame::new(0x0, b"" as &[u8]);
         assert_eq!(frame.encoding_type(), 0x0);
-        assert_eq!(frame.payload(), [] as [u8; 0]);
+        assert_eq!(frame.payload(), &[]);
         let frame = Frame::new(0x1122, b"foobar" as &[u8]);
         assert_eq!(frame.encoding_type(), 0x1122);
-        assert_eq!(frame.payload(), b"foobar" as &[u8]);
+        assert_eq!(frame.payload(), &&b"foobar"[..]);
         let frame = Frame::new(u16::MAX, &[0u8] as &[u8]);
         assert_eq!(frame.encoding_type(), u16::MAX);
         assert_eq!(frame.payload(), &[0]);
@@ -197,7 +205,7 @@ mod test {
     fn decode_empty_message() {
         let frame = Frame::<&[u8]>::deserialize(&[0, 0, 0, 6, 0, 0]).unwrap();
         assert_eq!(frame.encoding_type(), 0);
-        assert_eq!(frame.payload(), [] as [u8; 0]);
+        assert_eq!(frame.payload(), &[]);
     }
 
     #[test]
@@ -208,7 +216,7 @@ mod test {
             frame.serialize(&mut buffer).unwrap();
             let frame_decoded = Frame::<&[u8]>::deserialize(&buffer[..]).unwrap();
             frame_decoded.encoding_type() == encoding_type
-                && frame_decoded.payload() == &payload[..]
+                && frame_decoded.payload() == &&payload[..]
         }
         QuickCheck::new().quickcheck(prop as fn(u16, Vec<u8>) -> bool)
     }

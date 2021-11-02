@@ -65,7 +65,8 @@ where
     type Error = io::Error;
 
     fn encode(&mut self, frame: Frame<T>, dst: &mut BytesMut) -> Result<(), Self::Error> {
-        let nominal_message_length_in_bytes = frame.payload().len() + Header::LENGTH_IN_BYTES;
+        let nominal_message_length_in_bytes =
+            frame.payload().as_ref().len() + Header::LENGTH_IN_BYTES;
         let header = Header {
             nominal_message_length_in_bytes,
             encoding_type: frame.encoding_type(),

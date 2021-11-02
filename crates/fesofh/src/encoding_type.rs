@@ -1,3 +1,19 @@
+const ENCODING_TYPE_PRIVATE_START: u16 = 0x1;
+const ENCODING_TYPE_PRIVATE_END: u16 = 0xFF;
+const ENCODING_TYPE_PROTOBUF: u16 = 0x4700;
+const ENCODING_TYPE_SBE10BE: u16 = 0x5BE0;
+const ENCODING_TYPE_ASN1PER: u16 = 0xA500;
+const ENCODING_TYPE_ASN1BER: u16 = 0xA501;
+const ENCODING_TYPE_ASN1OER: u16 = 0xA502;
+const ENCODING_TYPE_SBE10LE: u16 = 0xEB50;
+const ENCODING_TYPE_TAGVALUE: u16 = 0xF000;
+const ENCODING_TYPE_FIXML_SCHEMA: u16 = 0xF100;
+const ENCODING_TYPE_JSON: u16 = 0xF500;
+const ENCODING_TYPE_FAST_OFFSET: u16 = 0xFA00;
+const ENCODING_TYPE_FAST_START: u16 = ENCODING_TYPE_FAST_OFFSET + 0x1;
+const ENCODING_TYPE_FAST_END: u16 = ENCODING_TYPE_FAST_OFFSET + 0xFF;
+const ENCODING_TYPE_BSON: u16 = 0xFB00;
+
 /// Sum type for all SOFH encoding types.
 ///
 /// Each variant is associated with a single value or range of values, as
@@ -63,7 +79,26 @@ impl EncodingType {
     /// assert_eq!(EncodingType::new(0), None);
     /// ```
     pub const fn new(value: u16) -> Option<Self> {
-        from_u16(value)
+        // https://www.fixtrading.org/standards/fix-sofh-online/#encoding_type-field
+        Some(match value {
+            ENCODING_TYPE_PRIVATE_START..=ENCODING_TYPE_PRIVATE_END => {
+                EncodingType::Private(value as u8)
+            }
+            ENCODING_TYPE_PROTOBUF => EncodingType::Protobuf,
+            ENCODING_TYPE_SBE10BE => EncodingType::SimpleBinaryEncodingV10BE,
+            ENCODING_TYPE_ASN1PER => EncodingType::Asn1PER,
+            ENCODING_TYPE_ASN1BER => EncodingType::Asn1BER,
+            ENCODING_TYPE_ASN1OER => EncodingType::Asn1OER,
+            ENCODING_TYPE_SBE10LE => EncodingType::SimpleBinaryEncodingV10LE,
+            ENCODING_TYPE_TAGVALUE => EncodingType::TagValue,
+            ENCODING_TYPE_FIXML_SCHEMA => EncodingType::FixmlSchema,
+            ENCODING_TYPE_JSON => EncodingType::Json,
+            ENCODING_TYPE_FAST_START..=ENCODING_TYPE_FAST_END => {
+                EncodingType::Fast((value - ENCODING_TYPE_FAST_OFFSET) as u8)
+            }
+            ENCODING_TYPE_BSON => EncodingType::Bson,
+            _ => return None,
+        })
     }
 
     /// Deserializes [`EncodingType`] from two bytes. Big-endian byte order is
@@ -76,7 +111,7 @@ impl EncodingType {
     /// assert_eq!(EncodingType::from_bytes([0xFA, 0x42]), Some(EncodingType::Fast(0x42)));
     /// ```
     pub const fn from_bytes(bytes: [u8; 2]) -> Option<Self> {
-        from_u16(u16::from_be_bytes(bytes))
+        Self::new(u16::from_be_bytes(bytes))
     }
 
     /// Serializes `self` to two bytes. Big-endian byte order is
@@ -93,51 +128,6 @@ impl EncodingType {
     }
 }
 
-impl From<EncodingType> for u16 {
-    fn from(etype: EncodingType) -> Self {
-        to_u16(etype)
-    }
-}
-
-const ENCODING_TYPE_PRIVATE_START: u16 = 0x1;
-const ENCODING_TYPE_PRIVATE_END: u16 = 0xFF;
-const ENCODING_TYPE_PROTOBUF: u16 = 0x4700;
-const ENCODING_TYPE_SBE10BE: u16 = 0x5BE0;
-const ENCODING_TYPE_ASN1PER: u16 = 0xA500;
-const ENCODING_TYPE_ASN1BER: u16 = 0xA501;
-const ENCODING_TYPE_ASN1OER: u16 = 0xA502;
-const ENCODING_TYPE_SBE10LE: u16 = 0xEB50;
-const ENCODING_TYPE_TAGVALUE: u16 = 0xF000;
-const ENCODING_TYPE_FIXML_SCHEMA: u16 = 0xF100;
-const ENCODING_TYPE_JSON: u16 = 0xF500;
-const ENCODING_TYPE_FAST_OFFSET: u16 = 0xFA00;
-const ENCODING_TYPE_FAST_START: u16 = ENCODING_TYPE_FAST_OFFSET + 0x1;
-const ENCODING_TYPE_FAST_END: u16 = ENCODING_TYPE_FAST_OFFSET + 0xFF;
-const ENCODING_TYPE_BSON: u16 = 0xFB00;
-
-const fn from_u16(value: u16) -> Option<EncodingType> {
-    // https://www.fixtrading.org/standards/fix-sofh-online/#encoding_type-field
-    Some(match value {
-        ENCODING_TYPE_PRIVATE_START..=ENCODING_TYPE_PRIVATE_END => {
-            EncodingType::Private(value as u8)
-        }
-        ENCODING_TYPE_PROTOBUF => EncodingType::Protobuf,
-        ENCODING_TYPE_SBE10BE => EncodingType::SimpleBinaryEncodingV10BE,
-        ENCODING_TYPE_ASN1PER => EncodingType::Asn1PER,
-        ENCODING_TYPE_ASN1BER => EncodingType::Asn1BER,
-        ENCODING_TYPE_ASN1OER => EncodingType::Asn1OER,
-        ENCODING_TYPE_SBE10LE => EncodingType::SimpleBinaryEncodingV10LE,
-        ENCODING_TYPE_TAGVALUE => EncodingType::TagValue,
-        ENCODING_TYPE_FIXML_SCHEMA => EncodingType::FixmlSchema,
-        ENCODING_TYPE_JSON => EncodingType::Json,
-        ENCODING_TYPE_FAST_START..=ENCODING_TYPE_FAST_END => {
-            EncodingType::Fast((value - ENCODING_TYPE_FAST_OFFSET) as u8)
-        }
-        ENCODING_TYPE_BSON => EncodingType::Bson,
-        _ => return None,
-    })
-}
-
 const fn to_u16(etype: EncodingType) -> u16 {
     match etype {
         EncodingType::Private(x) => x as u16,
@@ -152,6 +142,12 @@ const fn to_u16(etype: EncodingType) -> u16 {
         EncodingType::Json => ENCODING_TYPE_JSON,
         EncodingType::Fast(x) => ENCODING_TYPE_FAST_OFFSET + (x as u16),
         EncodingType::Bson => ENCODING_TYPE_BSON,
+    }
+}
+
+impl From<EncodingType> for u16 {
+    fn from(etype: EncodingType) -> Self {
+        to_u16(etype)
     }
 }
 
