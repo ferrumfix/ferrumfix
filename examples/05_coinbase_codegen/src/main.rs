@@ -7,7 +7,7 @@ use fefix::tagvalue::{Config, Decoder};
 
 const QUICKFIX_SPEC: &str = include_str!("coinbase_quickfix.xml");
 
-const FIX_MESSAGE_EXEC_REPORT: &[u8] = b"";
+const FIX_MESSAGE_EXEC_REPORT: &[u8] = b"8=FIX.4.2|9=21|35=8|1003=123|1057=Y|10=090|";
 
 fn main() {
     let mut decoder = fix_decoder();
