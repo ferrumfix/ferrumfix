@@ -51,7 +51,7 @@ where
                 if let FieldOrGroup::Group(ref entries) = field_or_group {
                     Some(Ok(MessageGroup {
                         message: Message {
-                            internal: &self.internal,
+                            internal: self.internal,
                             group_map: None,
                         },
                         entries,
@@ -221,7 +221,7 @@ mod test {
     #[test]
     fn message_without_header() {
         let mut encoder = encoder_fix44();
-        let result = encoder.decode(&mut MESSAGE_WITHOUT_HEADER.as_bytes());
+        let result = encoder.decode(MESSAGE_WITHOUT_HEADER.as_bytes());
         match result {
             Err(DecodeError::Schema) => (),
             _ => panic!(),
@@ -231,14 +231,14 @@ mod test {
     #[test]
     fn simple_message() {
         let mut encoder = encoder_fix44();
-        let result = encoder.decode(&mut MESSAGE_SIMPLE.as_bytes());
+        let result = encoder.decode(MESSAGE_SIMPLE.as_bytes());
         assert!(result.is_ok());
     }
 
     #[test]
     fn invalid_json() {
         let mut encoder = encoder_fix44();
-        let result = encoder.decode(&mut "this is invalid JSON".as_bytes());
+        let result = encoder.decode("this is invalid JSON".as_bytes());
         match result {
             Err(DecodeError::Syntax) => (),
             _ => panic!(),

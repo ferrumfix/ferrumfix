@@ -96,7 +96,7 @@ pub trait RandomFieldAccess<F> {
     {
         self.fv_raw(field).map(|raw| match V::deserialize(raw) {
             Ok(value) => Ok(value),
-            Err(err) => Err(err.into()),
+            Err(err) => Err(err),
         })
     }
 
@@ -109,7 +109,7 @@ pub trait RandomFieldAccess<F> {
         self.fv_raw(field)
             .map(|raw| match V::deserialize_lossy(raw) {
                 Ok(value) => Ok(value),
-                Err(err) => Err(err.into()),
+                Err(err) => Err(err),
             })
     }
 }

@@ -143,6 +143,6 @@ mod test {
     #[quickcheck]
     fn vec_clear_always_removes_content(mut vec: Vec<u8>) -> bool {
         Buffer::clear(&mut vec);
-        vec.len() == 0
+        vec.is_empty()
     }
 }

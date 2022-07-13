@@ -20,9 +20,9 @@ fn main() {
     fix_decoder.config_mut().set_separator(b'|');
     let mut stream = Cursor::new(fix_stream());
     loop {
-        let mut buffer = fix_decoder.fillable();
+        let buffer = fix_decoder.fillable();
         // You *must* use `std::io::Read::read_exact`.
-        stream.read_exact(&mut buffer).unwrap();
+        stream.read_exact(buffer).unwrap();
         if let Ok(Some(())) = fix_decoder.try_parse() {
             let msg = fix_decoder.message();
             assert_eq!(msg.fv(fix42::BEGIN_STRING), Ok("FIX.4.2"));

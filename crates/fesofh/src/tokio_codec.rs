@@ -39,7 +39,7 @@ impl codec::Decoder for TokioCodec {
     type Error = Error;
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
-        match Header::from_bytes(&src) {
+        match Header::from_bytes(src) {
             Ok(header) => {
                 let len = header.nominal_message_length_in_bytes;
                 if src.len() >= len {
@@ -51,7 +51,7 @@ impl codec::Decoder for TokioCodec {
                     Ok(None)
                 }
             }
-            Err(Error::InvalidMessageLength) => return Err(Error::InvalidMessageLength),
+            Err(Error::InvalidMessageLength) => Err(Error::InvalidMessageLength),
             Err(Error::Incomplete { needed: _ }) => Ok(None),
             Err(Error::Io(_)) => panic!("Unexpected I/O error."),
         }

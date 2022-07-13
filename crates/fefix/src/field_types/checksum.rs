@@ -68,7 +68,7 @@ fn checksum_from_digits(data: [u8; LEN_IN_BYTES]) -> CheckSum {
 }
 
 fn is_ascii_digit(byte: u8) -> bool {
-    byte >= b'0' && byte <= b'9'
+    (b'0'..=b'9').contains(&byte)
 }
 
 fn digit_to_ascii(byte: u8) -> u8 {

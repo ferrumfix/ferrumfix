@@ -364,7 +364,7 @@ impl<'a, T> Message<'a, T> {
     /// ```
     pub fn fields(&'a self) -> Fields<'a, T> {
         Fields {
-            message: &self,
+            message: self,
             i: 0,
         }
     }
@@ -683,7 +683,7 @@ mod test {
     ];
 
     fn with_soh(msg: &str) -> String {
-        msg.split("|").collect::<Vec<&str>>().join("\x01")
+        msg.split('|').collect::<Vec<&str>>().join("\x01")
     }
 
     fn decoder() -> Decoder<Config> {

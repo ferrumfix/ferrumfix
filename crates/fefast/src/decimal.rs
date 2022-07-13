@@ -426,7 +426,7 @@ impl fmt::Display for Decimal {
         if self.fract().is_positive() {
             // We just verified we have some decimal digits, so we're gonna need
             // the decimal point.
-            write!(f, ".{}", "")?;
+            write!(f, ".")?;
             // Here we take the mantissa of the fractional part.
             let digits = self.fract().mantissa().to_string();
             let digits_len = digits.chars().count();

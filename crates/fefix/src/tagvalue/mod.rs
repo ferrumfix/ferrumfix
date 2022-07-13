@@ -40,7 +40,7 @@
 //! |[`Decoder`]           |`&[u8]`                  |[`Message`] |
 //! |[`DecoderStreaming`]   |data streams             |[`Message`] |
 
-use crate::Buffer;
+
 use std::fmt::Debug;
 
 mod config;

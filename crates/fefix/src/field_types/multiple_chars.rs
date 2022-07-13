@@ -31,7 +31,7 @@ impl<'a> Iterator for MultipleChars<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(byte) = self.data.get(0).copied() {
-            self.data = &self.data.get(2..).unwrap_or(&[]);
+            self.data = self.data.get(2..).unwrap_or(&[]);
             Some(byte)
         } else {
             None
@@ -53,7 +53,7 @@ impl<'a> ExactSizeIterator for MultipleChars<'a> {
 impl<'a> DoubleEndedIterator for MultipleChars<'a> {
     fn next_back(&mut self) -> Option<Self::Item> {
         if let Some(byte) = self.data.last().copied() {
-            self.data = &self.data.get(..self.data.len() - 2).unwrap_or(&[]);
+            self.data = self.data.get(..self.data.len() - 2).unwrap_or(&[]);
             Some(byte)
         } else {
             None

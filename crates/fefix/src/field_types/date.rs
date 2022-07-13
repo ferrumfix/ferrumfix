@@ -52,8 +52,7 @@ impl Date {
     /// assert!(Date::new(2021, 2, 31).is_some());
     /// ```
     pub fn new(year: u32, month: u32, day: u32) -> Option<Self> {
-        if year >= MIN_YEAR
-            && year <= MAX_YEAR
+        if (MIN_YEAR..=MAX_YEAR).contains(&year)
             && month >= MIN_MONTH
             && month <= MAX_MONTH
             && day >= MIN_DAY

@@ -107,10 +107,9 @@ impl fmt::Display for Dictionary {
             for message in self.iter_messages() {
                 writeln!(
                     f,
-                    "  <message name='{}' msgtype='{}' msgcat='{}'>",
+                    "  <message name='{}' msgtype='{}' msgcat='TODO'>",
                     message.name(),
-                    message.msg_type(),
-                    "TODO"
+                    message.msg_type()
                 )?;
                 for item in message.layout() {
                     display_layout_item(2, item, f)?;
@@ -432,7 +431,7 @@ impl Dictionary {
         self.inner
             .messages
             .iter()
-            .map(move |data| Message(&self, data))
+            .map(move |data| Message(self, data))
     }
 
     /// Returns an [`Iterator`] over this [`Dictionary`]'s categories. Items are
@@ -441,13 +440,13 @@ impl Dictionary {
         self.inner
             .categories
             .iter()
-            .map(move |data| Category(&self, data))
+            .map(move |data| Category(self, data))
     }
 
     /// Returns an [`Iterator`] over this [`Dictionary`]'s fields. Items are
     /// in no particular order.
     pub fn iter_fields(&self) -> impl Iterator<Item = Field> {
-        self.inner.fields.iter().map(move |data| Field(&self, data))
+        self.inner.fields.iter().map(move |data| Field(self, data))
     }
 
     /// Returns an [`Iterator`] over this [`Dictionary`]'s components. Items are in
@@ -456,7 +455,7 @@ impl Dictionary {
         self.inner
             .components
             .iter()
-            .map(move |data| Component(&self, data))
+            .map(move |data| Component(self, data))
     }
 }
 
@@ -1520,7 +1519,7 @@ mod quickfix {
 
     impl<'a> QuickFixReader<'a> {
         pub fn new(xml_document: &'a roxmltree::Document<'a>) -> ParseResult<Dictionary> {
-            let mut reader = Self::empty(&xml_document)?;
+            let mut reader = Self::empty(xml_document)?;
             for child in reader.node_with_fields.children() {
                 if child.is_element() {
                     import_field(&mut reader.builder, child)?;
@@ -1753,7 +1752,7 @@ mod quickfix {
                 values.push(enum_value);
             }
         }
-        if values.len() == 0 {
+        if values.is_empty() {
             None
         } else {
             Some(values)

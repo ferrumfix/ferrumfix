@@ -93,7 +93,7 @@
     unconditional_recursion,
     unstable_name_collisions,
     clippy::useless_conversion,
-    clippy::missing_panics_docs,
+    clippy::missing_panics_doc,
     clippy::mixed_case_hex_literals,
     clippy::needless_bool,
     clippy::needless_lifetimes,

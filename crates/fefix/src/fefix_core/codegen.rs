@@ -210,7 +210,7 @@ pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) ->
         .collect::<Vec<String>>()
         .join("\n");
     let top_comment =
-        onixs_link_to_dictionary(fix_dictionary.get_version()).unwrap_or(String::new());
+        onixs_link_to_dictionary(fix_dictionary.get_version()).unwrap_or_default();
     let code = format!(
         indoc!(
             r#"
@@ -242,7 +242,7 @@ fn indent_string(s: &str, prefix: &str) -> String {
             s.push_str(prefix);
         }
         s.push_str(line);
-        s.push_str("\n");
+        s.push('\n');
         s
     })
 }

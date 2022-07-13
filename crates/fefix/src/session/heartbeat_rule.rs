@@ -99,15 +99,15 @@ mod test {
         let rule_any = HeartbeatRule::Any;
 
         assert!(rule_exact_1.validate(&Duration::from_secs(1)).is_ok());
-        assert!(!rule_exact_1.validate(&Duration::from_secs(2)).is_ok());
-        assert!(!rule_exact_1.validate(&Duration::from_secs(0)).is_ok());
+        assert!(rule_exact_1.validate(&Duration::from_secs(2)).is_err());
+        assert!(rule_exact_1.validate(&Duration::from_secs(0)).is_err());
         assert!(rule_range_5_30.validate(&Duration::from_secs(5)).is_ok());
         assert!(rule_range_5_30.validate(&Duration::from_secs(10)).is_ok());
         assert!(rule_range_5_30.validate(&Duration::from_secs(30)).is_ok());
-        assert!(!rule_range_5_30.validate(&Duration::from_secs(0)).is_ok());
-        assert!(!rule_range_5_30.validate(&Duration::from_secs(4)).is_ok());
-        assert!(!rule_range_5_30.validate(&Duration::from_secs(60)).is_ok());
+        assert!(rule_range_5_30.validate(&Duration::from_secs(0)).is_err());
+        assert!(rule_range_5_30.validate(&Duration::from_secs(4)).is_err());
+        assert!(rule_range_5_30.validate(&Duration::from_secs(60)).is_err());
         assert!(rule_any.validate(&Duration::from_secs(1)).is_ok());
-        assert!(!rule_any.validate(&Duration::from_secs(0)).is_ok());
+        assert!(rule_any.validate(&Duration::from_secs(0)).is_err());
     }
 }
