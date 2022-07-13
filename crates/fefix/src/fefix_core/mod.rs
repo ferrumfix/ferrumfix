@@ -5,5 +5,5 @@
 pub mod codegen;
 pub mod dict;
 
-/// Type alias for FIX tags: 16-bit unsigned integers, strictly positive.
-pub type TagU16 = std::num::NonZeroU16;
+/// Type alias for FIX tags: 32-bit unsigned integers, strictly positive.
+pub type TagU32 = std::num::NonZeroU32;

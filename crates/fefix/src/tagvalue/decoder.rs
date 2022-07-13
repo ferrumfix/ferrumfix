@@ -5,11 +5,11 @@ use super::{
 use crate::dict::IsFieldDefinition;
 use crate::{
     dict::FixDatatype, Buffer, Dictionary, FieldType, GetConfig, RandomFieldAccess, RepeatingGroup,
-    StreamingDecoder, TagU16,
+    StreamingDecoder, TagU32,
 };
 use nohash_hasher::IntMap;
 use std::collections::HashMap;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryInto;
 use std::fmt::Debug;
 use std::iter::FusedIterator;
 use std::marker::PhantomData;
@@ -27,7 +27,7 @@ const BEGIN_STRING_OFFSET: usize = 2;
 pub struct Decoder<C = Config> {
     builder: MessageBuilder<'static>,
     raw_decoder: RawDecoder<C>,
-    tag_lookup: IntMap<u16, FixDatatype>,
+    tag_lookup: IntMap<u32, FixDatatype>,
 }
 
 impl<C> Decoder<C>
@@ -106,7 +106,7 @@ where
         let separator = self.config().separator();
         let payload = frame.payload();
         self.store_field(
-            TagU16::new(8).unwrap(),
+            TagU32::new(8).unwrap(),
             frame.as_bytes(),
             BEGIN_STRING_OFFSET,
             frame.begin_string().len(),
@@ -142,7 +142,7 @@ where
                 for byte in (&payload[i..index_of_next_equal_sign]).iter().copied() {
                     tag = tag * 10 + (byte as u32 - b'0' as u32);
                 }
-                if let Some(tag) = TagU16::new(tag as u16) {
+                if let Some(tag) = TagU32::new(tag) {
                     tag
                 } else {
                     break;
@@ -167,7 +167,7 @@ where
 
     fn store_field<'a>(
         &mut self,
-        tag: TagU16,
+        tag: TagU32,
         raw_message: &'a [u8],
         field_value_start: usize,
         field_value_len: usize,
@@ -360,7 +360,7 @@ impl<'a, T> Message<'a, T> {
     /// let message = decoder.decode(DATA).unwrap();
     /// let first_field = message.fields().next();
     ///
-    /// assert_eq!(first_field, Some((TagU16::new(8).unwrap(), b"FIX.4.4" as &[u8])));
+    /// assert_eq!(first_field, Some((TagU32::new(8).unwrap(), b"FIX.4.4" as &[u8])));
     /// ```
     pub fn fields(&'a self) -> Fields<'a, T> {
         Fields {
@@ -423,7 +423,7 @@ impl<'a, T> Eq for Message<'a, T> {}
 
 #[derive(Debug, Copy, Clone)]
 struct DecoderGroupState {
-    first_tag_of_every_group_entry: TagU16,
+    first_tag_of_every_group_entry: TagU32,
     num_entries: usize,
     current_entry_i: usize,
     index_of_group_tag: usize,
@@ -431,7 +431,7 @@ struct DecoderGroupState {
 
 #[derive(Debug, Copy, Clone)]
 struct DecoderStateNewGroup {
-    tag: TagU16,
+    tag: TagU32,
     index_of_group_tag: usize,
     num_entries: usize,
 }
@@ -444,7 +444,7 @@ struct DecoderState {
 }
 
 impl DecoderState {
-    fn current_field_locator(&self, tag: TagU16) -> FieldLocator {
+    fn current_field_locator(&self, tag: TagU32) -> FieldLocator {
         FieldLocator {
             tag,
             context: match self.group_information.last() {
@@ -457,7 +457,7 @@ impl DecoderState {
         }
     }
 
-    fn set_new_group(&mut self, tag: TagU16) {
+    fn set_new_group(&mut self, tag: TagU32) {
         assert!(self.new_group.is_some());
         let new_group = self.new_group.take().unwrap();
         self.group_information.push(DecoderGroupState {
@@ -468,7 +468,7 @@ impl DecoderState {
         });
     }
 
-    fn add_group(&mut self, tag: TagU16, index_of_group_tag: usize, field_value: &[u8]) {
+    fn add_group(&mut self, tag: TagU32, index_of_group_tag: usize, field_value: &[u8]) {
         let field_value_str = std::str::from_utf8(field_value).unwrap();
         let num_entries = str::parse(field_value_str).unwrap();
         if num_entries > 0 {
@@ -486,7 +486,7 @@ impl DecoderState {
 struct MessageBuilder<'a> {
     state: DecoderState,
     raw: &'a [u8],
-    fields: HashMap<FieldLocator, (TagU16, &'a [u8], usize)>,
+    fields: HashMap<FieldLocator, (TagU32, &'a [u8], usize)>,
     field_locators: Vec<FieldLocator>,
     i_first_cell: usize,
     i_last_cell: usize,
@@ -526,7 +526,7 @@ impl<'a> MessageBuilder<'a> {
 
     fn add_field(
         &mut self,
-        tag: TagU16,
+        tag: TagU32,
         field_value: &'a [u8],
         associative: bool,
     ) -> Result<(), DecodeError> {
@@ -556,7 +556,7 @@ impl<'a, T> ExactSizeIterator for Fields<'a, T> {
 impl<'a, T> FusedIterator for Fields<'a, T> {}
 
 impl<'a, T> Iterator for Fields<'a, T> {
-    type Item = (TagU16, &'a [u8]);
+    type Item = (TagU32, &'a [u8]);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.i == self.message.len() {
@@ -577,7 +577,7 @@ where
     type Group = MessageGroup<'a, T>;
 
     fn group_opt(&self, tag: u32) -> Option<Result<Self::Group, <usize as FieldType>::Error>> {
-        let tag = TagU16::new(u16::try_from(tag).ok()?)?;
+        let tag = TagU32::new(tag)?;
         let field_locator_of_group_tag = FieldLocator {
             tag,
             context: self.field_locator_context,
@@ -598,7 +598,7 @@ where
     }
 
     fn fv_raw(&self, tag: u32) -> Option<&[u8]> {
-        let tag = TagU16::new(u16::try_from(tag).ok()?)?;
+        let tag = TagU32::new(tag)?;
         let field_locator = FieldLocator {
             tag,
             context: self.field_locator_context,
@@ -636,7 +636,7 @@ where
         serializer: &mut dyn slog::Serializer,
     ) -> slog::Result {
         for (tag, _value) in self.fields() {
-            serializer.emit_u16(key, tag.get())?;
+            serializer.emit_u32(key, tag.get())?;
             serializer.emit_char(key, '=')?;
             // FIXME
             serializer.emit_char(key, '?')?;

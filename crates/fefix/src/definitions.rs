@@ -8,13 +8,13 @@
 //! can become daunting to query a [`Dictionary`](crate::Dictionary) for even
 //! the most basic operation.
 
-use crate::{dict, dict::FixDatatype, TagU16};
+use crate::{dict, dict::FixDatatype, TagU32};
 
 #[derive(Debug, Clone)]
 #[doc(hidden)]
 pub struct HardCodedFixFieldDefinition {
     pub name: &'static str,
-    pub tag: u16,
+    pub tag: u32,
     pub is_group_leader: bool,
     pub data_type: FixDatatype,
     pub location: dict::FieldLocation,
@@ -22,8 +22,8 @@ pub struct HardCodedFixFieldDefinition {
 
 impl dict::IsFieldDefinition for HardCodedFixFieldDefinition {
     #[inline]
-    fn tag(&self) -> TagU16 {
-        TagU16::new(self.tag).expect("Invalid tag number 0.")
+    fn tag(&self) -> TagU32 {
+        TagU32::new(self.tag).expect("Invalid tag number 0.")
     }
 
     #[inline]

@@ -6,7 +6,7 @@
 //! | `Length`                   | [`usize`].                                                                         |
 //! | `NumInGroup`               | [`usize`].                                                                         |
 //! | `SeqNum`                   | [`u64`].                                                                           |
-//! | `TagNum`                   | [`TagU16`](crate::TagU16).                                                         |
+//! | `TagNum`                   | [`TagU32`](crate::TagU32).                                                         |
 //! | `DayOfMonth`               | [`u32`].                                                                           |
 //! | `float`, `Price`, etc.     | [`f32`], [`f64`], [`struct@rust_decimal::Decimal`], [`struct@decimal::d128`]. |
 //! | `Boolean`                  | [`bool`].                                                                          |
@@ -62,7 +62,7 @@ mod monthyear;
 mod multiple_chars;
 mod multiple_strings;
 mod primitives;
-mod tagu16;
+mod tagu32;
 mod time;
 mod timestamp;
 mod tz;

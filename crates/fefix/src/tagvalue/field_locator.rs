@@ -1,4 +1,4 @@
-use crate::TagU16;
+use crate::TagU32;
 
 /// Univocally locates a tag within a FIX message, even with nested groups.
 ///
@@ -10,7 +10,7 @@ use crate::TagU16;
 /// allows for random (i.e. non-sequential) reads on a FIX message.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct FieldLocator {
-    pub tag: TagU16,
+    pub tag: TagU32,
     pub context: FieldLocatorContext,
 }
 

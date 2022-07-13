@@ -126,7 +126,7 @@ pub use fefix_core::codegen;
 pub use buffer::{Buffer, BufferWriter};
 pub use dict::Dictionary;
 pub use fefix_core::dict;
-pub use fefix_core::TagU16;
+pub use fefix_core::TagU32;
 
 // We don't show derive macros to pollute the docs.
 #[doc(hidden)]

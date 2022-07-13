@@ -1,6 +1,6 @@
 //! Code generation utilities.
 
-use super::{dict, TagU16};
+use super::{dict, TagU32};
 use fnv::FnvHashSet;
 use heck::{ToPascalCase, ToShoutySnakeCase};
 use indoc::indoc;
@@ -209,8 +209,7 @@ pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) ->
         .map(|field| codegen_field_definition_struct(fix_dictionary.clone(), field))
         .collect::<Vec<String>>()
         .join("\n");
-    let top_comment =
-        onixs_link_to_dictionary(fix_dictionary.get_version()).unwrap_or_default();
+    let top_comment = onixs_link_to_dictionary(fix_dictionary.get_version()).unwrap_or_default();
     let code = format!(
         indoc!(
             r#"
@@ -279,8 +278,8 @@ fn onixs_dictionary_id(fix_version: &str) -> Option<&str> {
 
 fn gen_field_definition_with_hashsets(
     fix_dictionary: dict::Dictionary,
-    header_tags: &FnvHashSet<TagU16>,
-    trailer_tags: &FnvHashSet<TagU16>,
+    header_tags: &FnvHashSet<TagU32>,
+    trailer_tags: &FnvHashSet<TagU32>,
     field: dict::Field,
 ) -> String {
     let name = field.name().to_shouty_snake_case();

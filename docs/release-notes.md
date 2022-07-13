@@ -3,6 +3,7 @@
 - Reduced number of dependencies in the `fesofh` crate.
 - Reduce number of and rename public entities in `fefix::codegen`.
 - Buffered decoders are now known as streaming decoders. Please see the new `StreamingDecoder` trait.
+- Now using `u32` for tags rather than `u16`. This allows using user-defined tags with large values.
 
 # v0.7.0 (YYYY-MM-DD)
 

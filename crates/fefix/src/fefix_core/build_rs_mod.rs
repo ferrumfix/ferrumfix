@@ -1,4 +1,4 @@
 pub mod codegen;
 pub mod dict;
 
-pub type TagU16 = std::num::NonZeroU16;
+pub type TagU32 = std::num::NonZeroU32;

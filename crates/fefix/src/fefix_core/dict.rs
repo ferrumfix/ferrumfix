@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 use self::symbol_table::{Key, KeyRef, SymbolTable, SymbolTableIndex};
-use super::TagU16;
+use super::TagU32;
 use fnv::FnvHashMap;
 use quickfix::{ParseDictionaryError, QuickFixReader};
 use std::fmt;
@@ -1179,8 +1179,8 @@ impl<'a> Field<'a> {
 
     /// Returns the numeric tag of `self`. Field tags are unique across each FIX
     /// [`Dictionary`].
-    pub fn tag(&self) -> TagU16 {
-        TagU16::new(self.1.tag as u16).unwrap()
+    pub fn tag(&self) -> TagU32 {
+        TagU32::new(self.1.tag).unwrap()
     }
 
     /// In case this field allows any value, it returns `None`; otherwise; it
@@ -1209,8 +1209,8 @@ impl<'a> IsFieldDefinition for Field<'a> {
         self.1.name.as_str()
     }
 
-    fn tag(&self) -> TagU16 {
-        TagU16::new(self.1.tag as u16).expect("Invalid FIX tag (0)")
+    fn tag(&self) -> TagU32 {
+        TagU32::new(self.1.tag).expect("Invalid FIX tag (0)")
     }
 
     fn location(&self) -> FieldLocation {
@@ -1241,7 +1241,7 @@ struct LayoutItemData {
 
 pub trait IsFieldDefinition {
     /// Returns the FIX tag associated with `self`.
-    fn tag(&self) -> TagU16;
+    fn tag(&self) -> TagU32;
 
     /// Returns the official, ASCII, human-readable name associated with `self`.
     fn name(&self) -> &str;
@@ -1381,7 +1381,7 @@ impl<'a> Message<'a> {
         &self.1.description
     }
 
-    pub fn group_info(&self, num_in_group_tag: TagU16) -> Option<TagU16> {
+    pub fn group_info(&self, num_in_group_tag: TagU32) -> Option<TagU32> {
         self.layout().find_map(|layout_item| {
             if let LayoutItemKind::Group(field, items) = layout_item.kind() {
                 if field.tag() == num_in_group_tag {

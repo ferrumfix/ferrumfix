@@ -1,8 +1,8 @@
 use super::{ERR_INT_INVALID, ERR_UTF8};
-use crate::{Buffer, BufferWriter, FieldType, TagU16};
+use crate::{Buffer, BufferWriter, FieldType, TagU32};
 use std::fmt::Write;
 
-impl<'a> FieldType<'a> for TagU16 {
+impl<'a> FieldType<'a> for TagU32 {
     type Error = &'static str;
     type SerializeSettings = ();
 
@@ -27,6 +27,6 @@ impl<'a> FieldType<'a> for TagU16 {
     #[inline]
     fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
         let n = u32::deserialize_lossy(data)?;
-        Ok(TagU16::new(n.max(1) as u16).unwrap())
+        Ok(TagU32::new(n.max(1)).unwrap())
     }
 }

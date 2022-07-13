@@ -1,7 +1,7 @@
 use super::{Config, Configure};
 use crate::dict::IsFieldDefinition;
 use crate::field_types::CheckSum;
-use crate::{Buffer, BufferWriter, FieldType, GetConfig, SetField, TagU16};
+use crate::{Buffer, BufferWriter, FieldType, GetConfig, SetField, TagU32};
 use std::fmt::Write;
 use std::ops::Range;
 
@@ -154,12 +154,12 @@ where
     }
 }
 
-impl<'a, B, C> SetField<TagU16> for EncoderHandle<'a, B, C>
+impl<'a, B, C> SetField<TagU32> for EncoderHandle<'a, B, C>
 where
     B: Buffer,
     C: Configure,
 {
-    fn set_with<'s, V>(&'s mut self, tag: TagU16, value: V, settings: V::SerializeSettings)
+    fn set_with<'s, V>(&'s mut self, tag: TagU32, value: V, settings: V::SerializeSettings)
     where
         V: FieldType<'s>,
     {
