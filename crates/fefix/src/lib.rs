@@ -104,16 +104,14 @@
 
 mod buffer;
 mod fefix_core;
-mod random_field_access;
-mod set_field;
+mod field_access;
 mod utils;
 
 pub mod definitions;
 pub mod field_types;
 pub mod prelude;
 pub mod session;
-pub use random_field_access::{GroupEntries, RandomFieldAccess, RepeatingGroup};
-pub use set_field::SetField;
+pub use field_access::{GroupEntries, RandomFieldAccess, RepeatingGroup};
 pub mod tagvalue;
 
 #[cfg(feature = "json-encoding")]
@@ -251,4 +249,20 @@ pub trait StreamingDecoder {
     /// - [`Err`]: parsing failed.
     /// [`StreamingDecoder::Error`] upon failure.
     fn try_parse(&mut self) -> Result<Option<()>, Self::Error>;
+}
+
+/// Allows to write FIX fields.
+pub trait SetField<F> {
+    /// Writes a field with default [`FieldType::SerializeSettings`].
+    fn set<'a, V>(&'a mut self, field: F, value: V)
+    where
+        V: FieldType<'a>,
+    {
+        self.set_with(field, value, <V::SerializeSettings as Default>::default())
+    }
+
+    /// Writes a field with custom [`FieldType::SerializeSettings`].
+    fn set_with<'a, V>(&'a mut self, field: F, value: V, setting: V::SerializeSettings)
+    where
+        V: FieldType<'a>;
 }
