@@ -41,7 +41,7 @@ fn main() {
         assert_eq!(entry.fv(fix42::CURRENCY), Ok(b"EUR"));
     }
 
-    let md0 = md_entries.entry(0);
+    let md0 = md_entries.get(0).unwrap();
     assert_eq!(
         md0.fv(fix42::MD_UPDATE_ACTION),
         Ok(fix42::MdUpdateAction::New)
@@ -55,7 +55,7 @@ fn main() {
     assert_eq!(md0.fv(fix42::MD_ENTRY_SIZE), Ok(2_500_000));
     assert_eq!(md0.fv(fix42::NUMBER_OF_ORDERS), Ok(1));
 
-    let md1 = md_entries.entry(1);
+    let md1 = md_entries.get(1).unwrap();
     assert_eq!(
         md1.fv(fix42::MD_UPDATE_ACTION),
         Ok(fix42::MdUpdateAction::New)

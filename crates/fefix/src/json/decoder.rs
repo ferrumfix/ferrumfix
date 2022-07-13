@@ -1,6 +1,7 @@
 use super::{Config, Configure, DecodeError};
 use crate::dict::FieldLocation;
 use crate::dict::IsFieldDefinition;
+use crate::FieldValueError;
 use crate::{Dictionary, FieldType, GetConfig};
 use crate::{FieldMap, RepeatingGroup};
 use serde::{Deserialize, Serialize};
@@ -44,20 +45,24 @@ where
 {
     type Group = MessageGroup<'a>;
 
-    fn group_opt(&self, field: &F) -> Option<Result<Self::Group, <usize as FieldType<'a>>::Error>> {
+    fn group(
+        &self,
+        field: &F,
+    ) -> Result<Self::Group, FieldValueError<<usize as FieldType>::Error>> {
         self.field_map(field)
             .get(field.name())
+            .ok_or(FieldValueError::Missing)
             .and_then(|field_or_group| {
                 if let FieldOrGroup::Group(ref entries) = field_or_group {
-                    Some(Ok(MessageGroup {
+                    Ok(MessageGroup {
                         message: Message {
                             internal: self.internal,
                             group_map: None,
                         },
                         entries,
-                    }))
+                    })
                 } else {
-                    None
+                    Err(FieldValueError::Missing)
                 }
             })
     }
@@ -90,7 +95,7 @@ impl<'a> RepeatingGroup for MessageGroup<'a> {
         self.entries.len()
     }
 
-    fn entry_opt(&self, i: usize) -> Option<Self::Entry> {
+    fn get(&self, i: usize) -> Option<Self::Entry> {
         self.entries.get(i).map(|context| Message {
             internal: self.message.internal,
             group_map: Some(context),

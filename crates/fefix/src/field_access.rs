@@ -1,4 +1,4 @@
-use crate::FieldType;
+use crate::{FieldType, FieldValueError};
 use std::iter::FusedIterator;
 use std::ops::Range;
 
@@ -46,71 +46,60 @@ pub trait FieldMap<F> {
     /// contents, if it exists.
     fn fv_raw(&self, field: F) -> Option<&[u8]>;
 
+    /// Looks for a group that starts with `field` within `self`.
+    fn group(&self, field: F) -> Result<Self::Group, FieldValueError<<usize as FieldType>::Error>>;
+
     /// Like [`FieldMap::group`], but doesn't return an [`Err`] if the
     /// group is missing.
-    fn group_opt(&self, field: F) -> Option<Result<Self::Group, <usize as FieldType>::Error>>;
-
-    /// Looks for a group that starts with `field` within `self`.
     #[inline]
-    fn group(&self, field: F) -> Result<Self::Group, Option<<usize as FieldType>::Error>> {
-        match self.group_opt(field) {
-            Some(Ok(group)) => Ok(group),
-            Some(Err(e)) => Err(Some(e)),
-            None => Err(None),
+    fn group_opt(&self, field: F) -> Result<Option<Self::Group>, <usize as FieldType>::Error> {
+        match self.group(field) {
+            Ok(group) => Ok(Some(group)),
+            Err(FieldValueError::Missing) => Ok(None),
+            Err(FieldValueError::Invalid(e)) => Err(e),
         }
     }
 
     /// Looks for a `field` within `self` and then decodes its raw byte contents
     /// via [`FieldType::deserialize`], if found.
     #[inline]
-    fn fv<'a, V>(&'a self, field: F) -> Result<V, Option<V::Error>>
+    fn fv<'a, V>(&'a self, field: F) -> Result<V, FieldValueError<V::Error>>
     where
         V: FieldType<'a>,
     {
-        match self.fv_opt(field) {
-            Some(Ok(x)) => Ok(x),
-            Some(Err(err)) => Err(Some(err)),
-            None => Err(None),
-        }
+        self.fv_opt(field)
+            .map_err(FieldValueError::Invalid)
+            .and_then(|opt| opt.ok_or(FieldValueError::Missing))
     }
 
     /// Like [`FieldMap::fv`], but with lossy deserialization.
     #[inline]
-    fn fvl<'a, V>(&'a self, field: F) -> Result<V, Option<V::Error>>
+    fn fvl<'a, V>(&'a self, field: F) -> Result<V, FieldValueError<V::Error>>
     where
         V: FieldType<'a>,
     {
-        match self.fvl_opt(field) {
-            Some(Ok(x)) => Ok(x),
-            Some(Err(err)) => Err(Some(err)),
-            None => Err(None),
-        }
+        self.fvl_opt(field)
+            .map_err(FieldValueError::Invalid)
+            .and_then(|opt| opt.ok_or(FieldValueError::Missing))
     }
 
     /// Like [`FieldMap::fv`], but doesn't return an [`Err`] if `field`
     /// is missing.
     #[inline]
-    fn fv_opt<'a, V>(&'a self, field: F) -> Option<Result<V, V::Error>>
+    fn fv_opt<'a, V>(&'a self, field: F) -> Result<Option<V>, V::Error>
     where
         V: FieldType<'a>,
     {
-        self.fv_raw(field).map(|raw| match V::deserialize(raw) {
-            Ok(value) => Ok(value),
-            Err(err) => Err(err),
-        })
+        self.fv_raw(field).map(V::deserialize).transpose()
     }
 
     /// Like [`FieldMap::fv_opt`], but with lossy deserialization.
     #[inline]
-    fn fvl_opt<'a, V>(&'a self, field: F) -> Option<Result<V, V::Error>>
+    fn fvl_opt<'a, V>(&'a self, field: F) -> Result<Option<V>, V::Error>
     where
         V: FieldType<'a>,
     {
-        self.fv_raw(field)
-            .map(|raw| match V::deserialize_lossy(raw) {
-                Ok(value) => Ok(value),
-                Err(err) => Err(err),
-            })
+        self.fv_raw(field).map(V::deserialize_lossy).transpose()
     }
 }
 
@@ -124,17 +113,7 @@ pub trait RepeatingGroup: Sized {
     fn len(&self) -> usize;
 
     /// Returns the `i` -th entry in `self`, if present.
-    fn entry_opt(&self, i: usize) -> Option<Self::Entry>;
-
-    /// Returns the `i` -th entry in `self`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `i` is outside the legal range of `self`.
-    fn entry(&self, i: usize) -> Self::Entry {
-        self.entry_opt(i)
-            .expect("Index outside bounds of FIX repeating group.")
-    }
+    fn get(&self, i: usize) -> Option<Self::Entry>;
 
     /// Creates and returns an [`Iterator`] over the entries in `self`.
     /// Iteration MUST be done in sequential order, i.e. in which they appear in
@@ -166,7 +145,7 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         let i = self.range.next()?;
-        Some(self.group.entry(i))
+        self.group.get(i)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -183,6 +162,6 @@ where
 {
     fn next_back(&mut self) -> Option<Self::Item> {
         let i = self.range.next_back()?;
-        Some(self.group.entry(i))
+        self.group.get(i)
     }
 }

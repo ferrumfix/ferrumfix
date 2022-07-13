@@ -266,3 +266,36 @@ pub trait SetField<F> {
     where
         V: FieldType<'a>;
 }
+
+/// Either a field that is missing or has an invalid value.
+#[derive(Debug)]
+pub enum FieldValueError<E> {
+    /// No such field was found.
+    Missing,
+    /// The field was found, but can't be parsed.
+    Invalid(E),
+}
+
+impl<E> PartialEq<FieldValueError<E>> for FieldValueError<E> {
+    fn eq(&self, other: &FieldValueError<E>) -> bool {
+        match (self, other) {
+            (FieldValueError::Missing, FieldValueError::Missing) => true,
+            _ => false,
+        }
+    }
+}
+
+impl<E> From<Option<E>> for FieldValueError<E> {
+    fn from(e: Option<E>) -> Self {
+        match e {
+            Some(e) => FieldValueError::Invalid(e),
+            None => FieldValueError::Missing,
+        }
+    }
+}
+
+impl<E> From<E> for FieldValueError<E> {
+    fn from(e: E) -> Self {
+        FieldValueError::Invalid(e)
+    }
+}

@@ -3,6 +3,7 @@ use super::{
     RawDecoderStreaming, RawFrame,
 };
 use crate::dict::IsFieldDefinition;
+use crate::FieldValueError;
 use crate::{
     dict::FixDatatype, Buffer, Dictionary, FieldMap, FieldType, GetConfig, RepeatingGroup,
     StreamingDecoder, TagU32,
@@ -318,7 +319,7 @@ where
         self.len
     }
 
-    fn entry_opt(&self, i: usize) -> Option<Self::Entry> {
+    fn get(&self, i: usize) -> Option<Self::Entry> {
         if i < self.len {
             Some(Message {
                 builder: self.message.builder,
@@ -576,17 +577,20 @@ where
 {
     type Group = MessageGroup<'a, T>;
 
-    fn group_opt(&self, tag: u32) -> Option<Result<Self::Group, <usize as FieldType>::Error>> {
-        let tag = TagU32::new(tag)?;
+    fn group(&self, tag: u32) -> Result<Self::Group, FieldValueError<<usize as FieldType>::Error>> {
+        let tag = TagU32::new(tag).ok_or(FieldValueError::Missing)?;
         let field_locator_of_group_tag = FieldLocator {
             tag,
             context: self.field_locator_context,
         };
-        let num_in_group = self.builder.fields.get(&field_locator_of_group_tag)?;
+        let num_in_group = self
+            .builder
+            .fields
+            .get(&field_locator_of_group_tag)
+            .ok_or(FieldValueError::Missing)?;
+        let num_entries = usize::deserialize(num_in_group.1).map_err(FieldValueError::Invalid)?;
         let index_of_group_tag = num_in_group.2 as u32;
-        let field_value_str = std::str::from_utf8(num_in_group.1).ok()?;
-        let num_entries = str::parse(field_value_str).unwrap();
-        Some(Ok(MessageGroup {
+        Ok(MessageGroup {
             message: Message {
                 builder: self.builder,
                 phantom: PhantomData::default(),
@@ -594,7 +598,7 @@ where
             },
             index_of_group_tag,
             len: num_entries,
-        }))
+        })
     }
 
     fn fv_raw(&self, tag: u32) -> Option<&[u8]> {
@@ -614,8 +618,11 @@ where
 {
     type Group = MessageGroup<'a, T>;
 
-    fn group_opt(&self, field: &F) -> Option<Result<Self::Group, <usize as FieldType<'a>>::Error>> {
-        self.group_opt(u32::from(field.tag().get()))
+    fn group(
+        &self,
+        field: &F,
+    ) -> Result<Self::Group, FieldValueError<<usize as FieldType>::Error>> {
+        self.group(field.tag().get())
     }
 
     fn fv_raw(&self, field: &F) -> Option<&[u8]> {
@@ -715,7 +722,7 @@ mod test {
         let message = decoder.decode(bytes).unwrap();
         let group = message.group(268).unwrap();
         assert_eq!(group.len(), 2);
-        assert_eq!(group.entry(0).fv_raw(278).unwrap(), b"BID" as &[u8]);
+        assert_eq!(group.get(0).unwrap().fv_raw(278).unwrap(), b"BID" as &[u8]);
     }
 
     #[test]

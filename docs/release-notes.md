@@ -4,6 +4,8 @@
 - Reduce number of and rename public entities in `fefix::codegen`.
 - Buffered decoders are now known as streaming decoders. Please see the new `StreamingDecoder` trait.
 - Now using `u32` for tags rather than `u16`. This allows using user-defined tags with large values.
+- `FieldValueError` for easier missing field detection. `FieldMap` method
+  signatures changed to use this new `enum`.
 
 # v0.7.0 (YYYY-MM-DD)
 
