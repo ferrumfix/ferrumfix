@@ -239,7 +239,7 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(my: MonthYear) -> bool {
-        super::field_types::test_utility_verify_serialization_behavior(my)
+        crate::field_types::test_utility_verify_serialization_behavior(my)
     }
 
     #[quickcheck]

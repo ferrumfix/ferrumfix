@@ -269,6 +269,6 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(time: Time) -> bool {
-        super::field_types::test_utility_verify_serialization_behavior(time)
+        crate::field_types::test_utility_verify_serialization_behavior(time)
     }
 }

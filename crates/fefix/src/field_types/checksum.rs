@@ -113,6 +113,6 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(checksum: CheckSum) -> bool {
-        super::field_types::test_utility_verify_serialization_behavior(checksum)
+        crate::field_types::test_utility_verify_serialization_behavior(checksum)
     }
 }

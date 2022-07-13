@@ -197,7 +197,7 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(date: Date) -> bool {
-        super::field_types::test_utility_verify_serialization_behavior(date)
+        crate::field_types::test_utility_verify_serialization_behavior(date)
     }
 
     const VALID_DATES: &[&[u8]] = &[
