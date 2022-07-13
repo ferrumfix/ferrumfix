@@ -1,6 +1,5 @@
-use crate::tagvalue::{DecodeError, DecoderBuffered, Message};
-use futures::future::Fuse;
-use futures::future::Ready;
+use crate::tagvalue::{DecodeError, DecoderStreaming, Message};
+use crate::StreamingDecoder;
 use futures::select;
 use futures::{AsyncRead, AsyncReadExt, FutureExt};
 use futures_timer::Delay;
@@ -15,7 +14,7 @@ use std::time::Instant;
 /// session. See [`LlEvent`] for more information.
 #[derive(Debug)]
 pub struct LlEventLoop<I> {
-    decoder: DecoderBuffered,
+    decoder: DecoderStreaming<Vec<u8>>,
     input: I,
     heartbeat: Duration,
     heartbeat_soft_tolerance: Duration,
@@ -31,7 +30,7 @@ where
 {
     /// Creates a new [`LlEventLoop`] with the provided `decoder` and
     /// `heartbeat`. Events will be read from `input`.
-    pub fn new(decoder: DecoderBuffered, input: I, heartbeat: Duration) -> Self {
+    pub fn new(decoder: DecoderStreaming<Vec<u8>>, input: I, heartbeat: Duration) -> Self {
         let heartbeat_soft_tolerance = heartbeat * 2;
         let heartbeat_hard_tolerance = heartbeat * 3;
         Self {
@@ -59,7 +58,7 @@ where
 
     pub async fn next_event<'a>(&'a mut self) -> Option<LlEvent<'a>> {
         let mut buf_filled_len = 0;
-        let mut buf = &mut self.decoder.supply_buffer()[buf_filled_len..];
+        let mut buf = self.decoder.fillable();
 
         loop {
             if !self.is_alive {
@@ -86,9 +85,9 @@ where
                                 continue;
                             }
 
-                            let result = self.decoder.parse();
+                            let result = self.decoder.try_parse();
                             buf_filled_len = 0;
-                            buf = &mut self.decoder.supply_buffer()[buf_filled_len..];
+                            buf = &mut self.decoder.fillable()[buf_filled_len..];
 
                             match result {
                                 Ok(Some(())) => {
@@ -177,7 +176,7 @@ mod test {
         let input = produce_events(events).await;
 
         LlEventLoop::new(
-            Decoder::<Config>::new(crate::Dictionary::fix44()).buffered(),
+            Decoder::<Config>::new(crate::Dictionary::fix44()).streaming(vec![]),
             input.compat(),
             Duration::from_secs(3),
         )

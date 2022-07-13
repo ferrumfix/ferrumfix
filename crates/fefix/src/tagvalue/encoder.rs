@@ -32,21 +32,9 @@ impl<C> Encoder<C>
 where
     C: Configure,
 {
-    /// Creates a new [`Encoder`] from the given `config` options.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use fefix::tagvalue::{Config, Configure, Encoder};
-    /// use fefix::prelude::*;
-    ///
-    /// let mut config = Config::default();
-    /// config.set_separator(b'|');
-    /// let encoder = Encoder::new(config);
-    /// assert_eq!(encoder.config().separator(), b'|');
-    /// ```
-    pub fn new(config: C) -> Self {
-        Self { config }
+    /// Creates a new [`Encoder`] with [`Default`] configuration options.
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Creates a new [`EncoderHandle`] that allows to set the field values of a
@@ -106,11 +94,7 @@ impl<C> GetConfig for Encoder<C> {
 /// A type returned by [`Encoder::start_message`](Encoder::start_message) to
 /// actually encode data fields.
 #[derive(Debug)]
-pub struct EncoderHandle<'a, B, C = Config>
-where
-    B: Buffer,
-    C: Configure,
-{
+pub struct EncoderHandle<'a, B, C = Config> {
     encoder: &'a mut Encoder<C>,
     buffer: &'a mut B,
     initial_buffer_len: usize,
@@ -140,27 +124,18 @@ where
     }
 
     fn write_body_length(&mut self) {
-        let body_length = self.body_length() as u32;
+        use std::io::Write;
+
+        let body_length = self.body_length();
         let body_length_range = self.body_length_writable_range();
-        let slice = &mut self.buffer.as_mut_slice()[body_length_range];
-        slice[0] = to_digit((body_length / 10000000) as u8 % 10);
-        slice[1] = to_digit((body_length / 1000000) as u8 % 10);
-        slice[2] = to_digit((body_length / 100000) as u8 % 10);
-        slice[3] = to_digit((body_length / 10000) as u8 % 10);
-        slice[4] = to_digit((body_length / 1000) as u8 % 10);
-        slice[5] = to_digit((body_length / 100) as u8 % 10);
-        slice[6] = to_digit((body_length / 10) as u8 % 10);
-        slice[7] = to_digit((body_length / 1) as u8 % 10);
+        let mut slice = &mut self.buffer.as_mut_slice()[body_length_range];
+        write!(slice, "{:08}", body_length).unwrap();
     }
 
     fn write_checksum(&mut self) {
         let checksum = CheckSum::compute(self.buffer.as_slice());
         self.set(10, checksum);
     }
-}
-
-fn to_digit(byte: u8) -> u8 {
-    byte + b'0'
 }
 
 impl<'a, B, C> SetField<u32> for EncoderHandle<'a, B, C>

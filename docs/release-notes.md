@@ -2,6 +2,7 @@
 
 - Reduced number of dependencies in the `fesofh` crate.
 - Reduce number of and rename public entities in `fefix::codegen`.
+- Buffered decoders are now known as streaming decoders. Please see the new `StreamingDecoder` trait.
 
 # v0.7.0 (YYYY-MM-DD)
 

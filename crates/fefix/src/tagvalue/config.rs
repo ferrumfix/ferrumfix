@@ -45,7 +45,7 @@ pub trait Configure: Clone + Default {
     }
 
     /// The maximum allowed size for any single FIX message. No restrictions are
-    /// imposed when it is `None`.
+    /// imposed when it is [`None`].
     #[inline]
     fn max_message_size(&self) -> Option<usize> {
         Some(DEFAULT_MAX_MESSAGE_SIZE)

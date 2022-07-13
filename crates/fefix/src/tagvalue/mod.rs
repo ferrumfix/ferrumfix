@@ -13,7 +13,7 @@
 //! - You operate on byte slices.
 //! - The only features you want are `BodyLength` and `CheckSum` verification.
 //!
-//! ## Use a [`RawDecoderBuffered`] when:
+//! ## Use a [`RawDecoderStreaming`] when:
 //!
 //! - You operate on a stream of bytes, i.e. multiple FIX messages.
 //! - You want to delegate FIX message framing logic (i.e. the start and end of
@@ -25,7 +25,7 @@
 //! - You operate on byte slices.
 //! - You want both sequential and random access to FIX fields and groups.
 //!
-//! ## Use a [`DecoderBuffered`] when:
+//! ## Use a [`DecoderStreaming`] when:
 //!
 //! - You operate on a stream of bytes.
 //! - You want to delegate FIX message framing logic.
@@ -36,12 +36,11 @@
 //! |**Decoder type**      |Operates on              |Produces    |
 //! |----------------------|-------------------------|------------|
 //! |[`RawDecoder`]        |`&[u8]`                  |[`RawFrame`]|
-//! |[`RawDecoderBuffered`]|byte streams             |[`RawFrame`]|
+//! |[`RawDecoderStreaming`]|byte streams             |[`RawFrame`]|
 //! |[`Decoder`]           |`&[u8]`                  |[`Message`] |
-//! |[`DecoderBuffered`]   |data streams             |[`Message`] |
+//! |[`DecoderStreaming`]   |data streams             |[`Message`] |
 
-use crate::dict::IsFieldDefinition;
-use crate::FieldType;
+use crate::Buffer;
 use std::fmt::Debug;
 
 mod config;
@@ -52,10 +51,10 @@ mod raw_decoder;
 mod utils;
 
 pub use config::{Config, Configure};
-pub use decoder::{Decoder, DecoderBuffered, Fields, Message, MessageGroup};
+pub use decoder::{Decoder, DecoderStreaming, Fields, Message, MessageGroup};
 pub use encoder::{Encoder, EncoderHandle};
 pub use field_locator::{FieldLocator, FieldLocatorContext};
-pub use raw_decoder::{RawDecoder, RawDecoderBuffered, RawFrame};
+pub use raw_decoder::{RawDecoder, RawDecoderStreaming, RawFrame};
 
 #[cfg(feature = "utils-tokio")]
 mod tokio_decoder;

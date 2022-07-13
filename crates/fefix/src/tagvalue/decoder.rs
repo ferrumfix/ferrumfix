@@ -1,10 +1,11 @@
 use super::{
     Config, Configure, DecodeError, FieldLocator, FieldLocatorContext, RawDecoder,
-    RawDecoderBuffered, RawFrame,
+    RawDecoderStreaming, RawFrame,
 };
 use crate::dict::IsFieldDefinition;
 use crate::{
-    dict::FixDatatype, Dictionary, FieldType, GetConfig, RandomFieldAccess, RepeatingGroup, TagU16,
+    dict::FixDatatype, Buffer, Dictionary, FieldType, GetConfig, RandomFieldAccess, RepeatingGroup,
+    StreamingDecoder, TagU16,
 };
 use nohash_hasher::IntMap;
 use std::collections::HashMap;
@@ -53,10 +54,14 @@ where
         }
     }
 
-    pub fn buffered(self) -> DecoderBuffered<C> {
-        let raw_decoder = self.raw_decoder.clone().buffered();
+    /// Adds a [`Buffer`] to `self`, turning it into a [`StreamingDecoder`].
+    pub fn streaming<B>(self, buffer: B) -> DecoderStreaming<B, C>
+    where
+        B: Buffer,
+    {
+        let raw_decoder = self.raw_decoder.clone().streaming(buffer);
 
-        DecoderBuffered {
+        DecoderStreaming {
             decoder: self,
             raw_decoder,
             is_ready: false,
@@ -227,61 +232,47 @@ impl<C> GetConfig for Decoder<C> {
 ///
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
 #[derive(Debug)]
-pub struct DecoderBuffered<C = Config> {
+pub struct DecoderStreaming<B, C = Config> {
     decoder: Decoder<C>,
-    raw_decoder: RawDecoderBuffered<C>,
+    raw_decoder: RawDecoderStreaming<B, C>,
     is_ready: bool,
 }
 
-impl<C> DecoderBuffered<C>
+impl<B, C> StreamingDecoder for DecoderStreaming<B, C>
 where
+    B: Buffer,
     C: Configure,
 {
-    /// Provides a buffer that must be filled before re-attempting to deserialize
-    /// the next [`Message`].
-    ///
-    /// [`DecoderBuffered::supply_buffer`] is *guaranteed* to be non-empty.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the last call to [`DecoderBuffered::parse`]
-    /// returned an [`Err`].
-    #[inline]
-    pub fn supply_buffer(&mut self) -> &mut [u8] {
-        self.raw_decoder.supply_buffer()
+    type Buffer = B;
+    type Error = DecodeError;
+
+    fn buffer(&mut self) -> &mut Self::Buffer {
+        self.raw_decoder.buffer()
     }
 
-    /// Completes erases the contents of the internal buffer of `self`.
-    #[inline]
-    pub fn clear(&mut self) {
-        self.raw_decoder.clear();
-        self.is_ready = false;
+    fn num_bytes_required(&self) -> usize {
+        self.raw_decoder.num_bytes_required()
     }
 
-    /// After filling the buffer provided by [`DecoderBuffered::supply_buffer`],
-    /// attempt to read its contents. It returns:
-    ///
-    /// - [`Ok(None)`] in case you need to call
-    ///   [`DecoderBuffered::supply_buffer`] again.
-    /// - [`Ok(Some(()))`] in case the internal buffer contains a valid
-    ///   [`Message`], ready to be extracted via [`DecoderBuffered::message`].
-    /// - [`Err`] on decoding errors.
-    #[inline]
-    pub fn parse(&mut self) -> Result<Option<()>, DecodeError> {
-        self.raw_decoder.parse();
-        match self.raw_decoder.raw_frame() {
-            Ok(Some(frame)) => {
-                self.decoder.from_frame(frame)?;
+    fn try_parse(&mut self) -> Result<Option<()>, DecodeError> {
+        match self.raw_decoder.try_parse()? {
+            Some(()) => {
+                self.decoder.from_frame(self.raw_decoder.raw_frame())?;
                 Ok(Some(()))
             }
-            Ok(None) => Ok(None),
-            Err(e) => Err(e),
+            None => Ok(None),
         }
     }
+}
 
+impl<B, C> DecoderStreaming<B, C>
+where
+    B: Buffer,
+    C: Configure,
+{
     /// # Panics
     ///
-    /// Panics if [`DecoderBuffered::parse()`] didn't return [`Ok(Some(()))`].
+    /// Panics if [`DecoderStreaming::try_parse()`] didn't return [`Ok(Some(()))`].
     #[inline]
     pub fn message(&self) -> Message<&[u8]> {
         assert!(self.is_ready);
@@ -294,7 +285,7 @@ where
     }
 }
 
-impl<C> GetConfig for DecoderBuffered<C> {
+impl<B, C> GetConfig for DecoderStreaming<B, C> {
     type Config = C;
 
     fn config(&self) -> &Self::Config {
@@ -343,7 +334,7 @@ where
     }
 }
 
-/// A FIX message returned by [`Decoder`] or [`DecoderBuffered`].
+/// A FIX message returned by [`Decoder`] or [`DecoderStreaming`].
 #[derive(Debug, Copy, Clone)]
 pub struct Message<'a, T> {
     builder: &'a MessageBuilder<'a>,

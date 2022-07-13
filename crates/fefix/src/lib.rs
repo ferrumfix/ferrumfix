@@ -68,7 +68,7 @@
 //!
 //! - **Q.** I simply want to read FIX messages. Where do I start?  
 //!   **A.** Use [`fefix::tagvalue::Decoder`](crate::tagvalue::Decoder) and
-//!   [`fefix::tagvalue::DecoderBuffered`](crate::tagvalue::DecoderBuffered).
+//!   [`fefix::tagvalue::DecoderStreaming`](crate::tagvalue::DecoderStreaming).
 //!   The former is for individual messages, the latter is for streams.
 //!
 //! - **Q.** What about `serde` integration?  
@@ -205,4 +205,50 @@ where
     fn to_string(&self) -> String {
         String::from_utf8(self.to_bytes()).expect("Invalid UTF-8 representation of FIX field.")
     }
+}
+
+/// Common logic for interfacing with a streaming parser.
+///
+/// Streaming parsers store incoming bytes in a [`Buffer`] and try to parse
+/// them into messages.
+///
+/// # Errors
+///
+/// As soon as a single message fails to parse, the whole decoder should be
+/// assumed to be in an invalid state. Discard it and create another.
+pub trait StreamingDecoder {
+    /// The [`Buffer`] implementation used by this decoder.
+    type Buffer: Buffer;
+    /// The parsing error type.
+    type Error;
+
+    /// Returns a mutable reference to the whole internal [`Buffer`].
+    fn buffer(&mut self) -> &mut Self::Buffer;
+
+    /// Empties all contents of the internal buffer of `self`.
+    fn clear(&mut self) {
+        self.buffer().clear();
+    }
+
+    /// Provides a lower bound on the number of bytes that are required to reach the end of the
+    /// current message.
+    fn num_bytes_required(&self) -> usize;
+
+    /// Provides a buffer that must be filled before re-attempting to deserialize
+    /// the next message. The slice is *guaranteed* to be non-empty.
+    fn fillable(&mut self) -> &mut [u8] {
+        let len = self.buffer().len();
+        let num_bytes_required = self.num_bytes_required();
+        self.buffer().resize(num_bytes_required, 0);
+        &mut self.buffer().as_mut_slice()[len..]
+    }
+
+    /// Attempts to parse the contents available in the internal [`Buffer`]. The return value gives
+    /// you information about the state of the decoder:
+    ///
+    /// - [`Ok(None)`]: no errors found, but more bytes are required to finish parsing the message.
+    /// - [`Ok(Some(()))`]: no errors found, and the message has been fully parsed.
+    /// - [`Err`]: parsing failed.
+    /// [`StreamingDecoder::Error`] upon failure.
+    fn try_parse(&mut self) -> Result<Option<()>, Self::Error>;
 }

@@ -87,7 +87,7 @@ pub use tz::Tz;
 pub use tz_time::TzTime;
 pub use tz_timestamp::TzTimestamp;
 
-use crate::{Buffer, FieldType};
+use crate::FieldType;
 
 /// Type alias for ISO 3166-1 alpha-2 strings (two-letter country codes).
 pub type Country = [u8; 2];

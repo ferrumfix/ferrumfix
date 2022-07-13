@@ -3,7 +3,7 @@ use crate::session::{Environment, SeqNumbers};
 use crate::tagvalue::FvWrite;
 use crate::tagvalue::Message;
 use crate::tagvalue::RandomFieldAccess;
-use crate::tagvalue::{DecoderBuffered, Encoder, EncoderHandle};
+use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
 use crate::Buffer;
 use crate::FieldType;
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
@@ -68,7 +68,7 @@ where
     B: Backend,
 {
     /// The entry point for a [`FixConnection`].
-    async fn start<I, O>(&mut self, mut input: I, mut output: O, mut decoder: DecoderBuffered)
+    async fn start<I, O>(&mut self, mut input: I, mut output: O, mut decoder: DecoderStreaming)
     where
         I: AsyncRead + Unpin,
         O: AsyncWrite + Unpin,
@@ -82,7 +82,7 @@ where
         &mut self,
         mut input: &mut I,
         output: &mut O,
-        decoder: &mut DecoderBuffered,
+        decoder: &mut DecoderStreaming,
     ) where
         I: AsyncRead + Unpin,
         O: AsyncWrite + Unpin,
@@ -123,7 +123,7 @@ where
         self.backend.on_successful_handshake().ok();
     }
 
-    async fn event_loop<I, O>(&mut self, input: I, mut output: O, decoder: DecoderBuffered)
+    async fn event_loop<I, O>(&mut self, input: I, mut output: O, decoder: DecoderStreaming)
     where
         I: AsyncRead + Unpin,
         O: AsyncWrite + Unpin,
