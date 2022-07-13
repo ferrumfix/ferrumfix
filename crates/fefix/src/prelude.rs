@@ -4,8 +4,7 @@ pub use crate::dict::Dictionary;
 pub use crate::json::Configure as ConfigureJson;
 pub use crate::tagvalue::Configure as ConfigureTagValue;
 pub use crate::{
-    Buffer, FieldType, GetConfig, RandomFieldAccess, RepeatingGroup, SetField, StreamingDecoder,
-    TagU32,
+    Buffer, FieldMap, FieldType, GetConfig, RepeatingGroup, SetField, StreamingDecoder, TagU32,
 };
 
 #[cfg(feature = "fix40")]

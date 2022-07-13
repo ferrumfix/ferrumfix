@@ -111,7 +111,7 @@ pub mod definitions;
 pub mod field_types;
 pub mod prelude;
 pub mod session;
-pub use field_access::{GroupEntries, RandomFieldAccess, RepeatingGroup};
+pub use field_access::{FieldMap, GroupEntries, RepeatingGroup};
 pub mod tagvalue;
 
 #[cfg(feature = "json-encoding")]

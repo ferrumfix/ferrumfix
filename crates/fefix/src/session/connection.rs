@@ -2,7 +2,7 @@ use super::{errs, Backend, Config, Configure, LlEvent, LlEventLoop};
 use crate::session::{Environment, SeqNumbers};
 use crate::tagvalue::FvWrite;
 use crate::tagvalue::Message;
-use crate::tagvalue::RandomFieldAccess;
+use crate::tagvalue::FieldMap;
 use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
 use crate::Buffer;
 use crate::FieldType;
@@ -171,10 +171,10 @@ pub trait Verify {
 
     fn verify_test_message_indicator(
         &self,
-        msg: &impl RandomFieldAccess<u32>,
+        msg: &impl FieldMap<u32>,
     ) -> Result<(), Self::Error>;
 
-    fn verify_sending_time(&self, msg: &impl RandomFieldAccess<u32>) -> Result<(), Self::Error>;
+    fn verify_sending_time(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error>;
 }
 
 impl<'a, B, C, V> FixConnector<'a, B, C, V> for FixConnection<B, C>

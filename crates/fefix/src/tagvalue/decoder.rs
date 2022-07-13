@@ -4,7 +4,7 @@ use super::{
 };
 use crate::dict::IsFieldDefinition;
 use crate::{
-    dict::FixDatatype, Buffer, Dictionary, FieldType, GetConfig, RandomFieldAccess, RepeatingGroup,
+    dict::FixDatatype, Buffer, Dictionary, FieldMap, FieldType, GetConfig, RepeatingGroup,
     StreamingDecoder, TagU32,
 };
 use nohash_hasher::IntMap;
@@ -570,7 +570,7 @@ impl<'a, T> Iterator for Fields<'a, T> {
     }
 }
 
-impl<'a, T> RandomFieldAccess<u32> for Message<'a, T>
+impl<'a, T> FieldMap<u32> for Message<'a, T>
 where
     T: AsRef<[u8]> + Clone,
 {
@@ -607,7 +607,7 @@ where
     }
 }
 
-impl<'a, F, T> RandomFieldAccess<&F> for Message<'a, T>
+impl<'a, F, T> FieldMap<&F> for Message<'a, T>
 where
     F: IsFieldDefinition,
     T: AsRef<[u8]> + Clone,

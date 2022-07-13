@@ -7,19 +7,19 @@ use std::ops::Range;
 ///
 /// # Methods
 ///
-/// [`RandomFieldAccess`] provides two kinds of methods:
+/// [`FieldMap`] provides two kinds of methods:
 ///
-/// 1. Group getters: [`RandomFieldAccess::group`] and
-/// [`RandomFieldAccess::group_opt`].
+/// 1. Group getters: [`FieldMap::group`] and
+/// [`FieldMap::group_opt`].
 ///
-/// 2. Field getters: [`RandomFieldAccess::fv_raw`], [`RandomFieldAccess::fv`],
+/// 2. Field getters: [`FieldMap::fv_raw`], [`FieldMap::fv`],
 /// etc..
 ///
 /// The most basic form of field access is done via
-/// [`RandomFieldAccess::fv_raw`], which performs no deserialization at all: it
+/// [`FieldMap::fv_raw`], which performs no deserialization at all: it
 /// simply returns the bytes contents associated with a FIX field, if found.
 ///
-/// Building upon [`RandomFieldAccess::fv_raw`] and [`FieldType`], the other
+/// Building upon [`FieldMap::fv_raw`] and [`FieldType`], the other
 /// field access methods all provide some utility deserialization logic. These
 /// methods all have the `fv` prefix, with the following considerations:
 ///
@@ -37,16 +37,16 @@ use std::ops::Range;
 ///
 /// This trait is generic over a type `F`, which must univocally identify FIX
 /// fields (besides FIX repeating groups, which allow repetitions).
-pub trait RandomFieldAccess<F> {
-    /// The type returned by [`RandomFieldAccess::group`] and
-    /// [`RandomFieldAccess::group_opt`].
+pub trait FieldMap<F> {
+    /// The type returned by [`FieldMap::group`] and
+    /// [`FieldMap::group_opt`].
     type Group: RepeatingGroup<Entry = Self>;
 
     /// Looks for a `field` within `self` and then returns its raw byte
     /// contents, if it exists.
     fn fv_raw(&self, field: F) -> Option<&[u8]>;
 
-    /// Like [`RandomFieldAccess::group`], but doesn't return an [`Err`] if the
+    /// Like [`FieldMap::group`], but doesn't return an [`Err`] if the
     /// group is missing.
     fn group_opt(&self, field: F) -> Option<Result<Self::Group, <usize as FieldType>::Error>>;
 
@@ -74,7 +74,7 @@ pub trait RandomFieldAccess<F> {
         }
     }
 
-    /// Like [`RandomFieldAccess::fv`], but with lossy deserialization.
+    /// Like [`FieldMap::fv`], but with lossy deserialization.
     #[inline]
     fn fvl<'a, V>(&'a self, field: F) -> Result<V, Option<V::Error>>
     where
@@ -87,7 +87,7 @@ pub trait RandomFieldAccess<F> {
         }
     }
 
-    /// Like [`RandomFieldAccess::fv`], but doesn't return an [`Err`] if `field`
+    /// Like [`FieldMap::fv`], but doesn't return an [`Err`] if `field`
     /// is missing.
     #[inline]
     fn fv_opt<'a, V>(&'a self, field: F) -> Option<Result<V, V::Error>>
@@ -100,7 +100,7 @@ pub trait RandomFieldAccess<F> {
         })
     }
 
-    /// Like [`RandomFieldAccess::fv_opt`], but with lossy deserialization.
+    /// Like [`FieldMap::fv_opt`], but with lossy deserialization.
     #[inline]
     fn fvl_opt<'a, V>(&'a self, field: F) -> Option<Result<V, V::Error>>
     where
@@ -117,7 +117,7 @@ pub trait RandomFieldAccess<F> {
 /// Provides access to entries within a FIX repeating group.
 pub trait RepeatingGroup: Sized {
     /// The type of entries in this FIX repeating group. Must implement
-    /// [`RandomFieldAccess`].
+    /// [`FieldMap`].
     type Entry;
 
     /// Returns the number of FIX group entries in `self`.

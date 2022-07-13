@@ -2,7 +2,7 @@ use super::{Config, Configure, DecodeError};
 use crate::dict::FieldLocation;
 use crate::dict::IsFieldDefinition;
 use crate::{Dictionary, FieldType, GetConfig};
-use crate::{RandomFieldAccess, RepeatingGroup};
+use crate::{FieldMap, RepeatingGroup};
 use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
@@ -11,7 +11,7 @@ use std::collections::HashMap;
 #[derive(Debug, Copy, Clone)]
 pub struct Message<'a> {
     internal: &'a MessageInternal<'a>,
-    group_map: Option<&'a FieldMap<'a>>,
+    group_map: Option<&'a Fields<'a>>,
 }
 
 impl<'a> Message<'a> {
@@ -22,7 +22,7 @@ impl<'a> Message<'a> {
         }
     }
 
-    fn field_map<F>(&self, field: &F) -> &'a FieldMap<'a>
+    fn field_map<F>(&self, field: &F) -> &'a Fields<'a>
     where
         F: IsFieldDefinition,
     {
@@ -38,7 +38,7 @@ impl<'a> Message<'a> {
     }
 }
 
-impl<'a, F> RandomFieldAccess<&F> for Message<'a>
+impl<'a, F> FieldMap<&F> for Message<'a>
 where
     F: IsFieldDefinition,
 {
@@ -80,7 +80,7 @@ where
 #[derive(Debug, Copy, Clone)]
 pub struct MessageGroup<'a> {
     message: Message<'a>,
-    entries: &'a [FieldMap<'a>],
+    entries: &'a [Fields<'a>],
 }
 
 impl<'a> RepeatingGroup for MessageGroup<'a> {
@@ -173,24 +173,24 @@ impl<C> GetConfig for Decoder<C> {
     }
 }
 
-type FieldMap<'a> = HashMap<Cow<'a, str>, FieldOrGroup<'a>>;
+type Fields<'a> = HashMap<Cow<'a, str>, FieldOrGroup<'a>>;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum FieldOrGroup<'a> {
     Field(Cow<'a, str>),
     #[serde(borrow)]
-    Group(Vec<FieldMap<'a>>),
+    Group(Vec<Fields<'a>>),
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 struct MessageInternal<'a> {
     #[serde(borrow, rename = "Header")]
-    std_header: FieldMap<'a>,
+    std_header: Fields<'a>,
     #[serde(borrow, rename = "Body")]
-    body: FieldMap<'a>,
+    body: Fields<'a>,
     #[serde(borrow, rename = "Trailer")]
-    std_trailer: FieldMap<'a>,
+    std_trailer: Fields<'a>,
 }
 
 impl<'a> std::ops::Drop for MessageInternal<'a> {
