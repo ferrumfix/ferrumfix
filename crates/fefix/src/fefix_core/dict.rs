@@ -6,7 +6,6 @@ use self::symbol_table::{Key, KeyRef, SymbolTable, SymbolTableIndex};
 use super::TagU16;
 use fnv::FnvHashMap;
 use quickfix::{ParseDictionaryError, QuickFixReader};
-use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
 
@@ -53,6 +52,9 @@ pub enum FieldLocation {
 }
 
 type InternalId = u32;
+
+/// A mapping from FIX version strings to [`Dictionary`] values.
+pub type Dictionaries = FnvHashMap<String, Dictionary>;
 
 /// Specifies business semantics for application-level entities within the FIX
 /// Protocol.
