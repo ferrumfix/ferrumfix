@@ -118,7 +118,7 @@ pub struct Settings {
     /// ```
     ///
     /// Contains [`Debug`], [`Copy`], [`PartialEq`], [`Eq`], [`Hash`],
-    /// [`FixValue`](crate::FixValue) by default.
+    /// [`FieldType`](crate::FieldType) by default.
     pub derives_for_allowed_values: Vec<String>,
     /// A list of attribute macros for generated `enum`s variants. E.g.:
     ///
@@ -147,7 +147,7 @@ impl Default for Settings {
                 "PartialEq".to_string(),
                 "Eq".to_string(),
                 "Hash".to_string(),
-                "FixValue".to_string(),
+                "FieldType".to_string(),
             ],
             attributes_for_allowed_values: vec![],
             fefix_crate_name: "fefix".to_string(),
@@ -218,7 +218,7 @@ pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) ->
             use {fefix_path}::dict::FieldLocation;
             use {fefix_path}::dict::FixDatatype;
             use {fefix_path}::definitions::HardCodedFixFieldDefinition;
-            use {fefix_path}::FixValue;
+            use {fefix_path}::FieldType;
 
             {enum_definitions}
 

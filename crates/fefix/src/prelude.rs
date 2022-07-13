@@ -2,7 +2,9 @@
 
 pub use crate::dict::Dictionary;
 pub use crate::tagvalue::Configure;
-pub use crate::{Buffer, FixValue, GetConfig, RandomFieldAccess, RepeatingGroup, SetField, TagU16};
+pub use crate::{
+    Buffer, FieldType, GetConfig, RandomFieldAccess, RepeatingGroup, SetField, TagU16,
+};
 
 #[cfg(feature = "fix40")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fix40")))]

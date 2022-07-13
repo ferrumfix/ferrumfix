@@ -4,7 +4,7 @@ use super::{
 };
 use crate::dict::IsFieldDefinition;
 use crate::{
-    dict::FixDatatype, Dictionary, FixValue, GetConfig, RandomFieldAccess, RepeatingGroup, TagU16,
+    dict::FixDatatype, Dictionary, FieldType, GetConfig, RandomFieldAccess, RepeatingGroup, TagU16,
 };
 use nohash_hasher::IntMap;
 use std::collections::HashMap;
@@ -585,7 +585,7 @@ where
 {
     type Group = MessageGroup<'a, T>;
 
-    fn group_opt(&self, tag: u32) -> Option<Result<Self::Group, <usize as FixValue>::Error>> {
+    fn group_opt(&self, tag: u32) -> Option<Result<Self::Group, <usize as FieldType>::Error>> {
         let tag = TagU16::new(u16::try_from(tag).ok()?)?;
         let field_locator_of_group_tag = FieldLocator {
             tag,
@@ -623,7 +623,7 @@ where
 {
     type Group = MessageGroup<'a, T>;
 
-    fn group_opt(&self, field: &F) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
+    fn group_opt(&self, field: &F) -> Option<Result<Self::Group, <usize as FieldType<'a>>::Error>> {
         self.group_opt(u32::from(field.tag().get()))
     }
 

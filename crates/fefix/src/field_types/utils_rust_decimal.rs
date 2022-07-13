@@ -1,13 +1,13 @@
 use super::{ERR_DECIMAL, ERR_UTF8};
 use crate::prelude::*;
 use crate::BufferWriter;
-use decimal::d128;
+use rust_decimal::Decimal;
 use std::fmt::Write;
 use std::str::FromStr;
 
-#[cfg_attr(doc_cfg, doc(cfg(feature = "utils-decimal")))]
-impl<'a> FixValue<'a> for d128 {
-    type Error = decimal::Status;
+#[cfg_attr(doc_cfg, doc(cfg(feature = "utils-rust-decimal")))]
+impl<'a> FieldType<'a> for Decimal {
+    type Error = &'static str;
     type SerializeSettings = ();
 
     #[inline]
@@ -20,17 +20,9 @@ impl<'a> FixValue<'a> for d128 {
         buffer.len() - initial_len
     }
 
+    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        d128::set_status(decimal::Status::empty());
-
-        let s = std::str::from_utf8(data).unwrap_or(ERR_UTF8);
-        let number = d128::from_str(s).expect(ERR_DECIMAL);
-
-        let status = d128::get_status();
-        if status.is_empty() {
-            Ok(number)
-        } else {
-            Err(status)
-        }
+        let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
+        Decimal::from_str(s).map_err(|_| ERR_DECIMAL)
     }
 }

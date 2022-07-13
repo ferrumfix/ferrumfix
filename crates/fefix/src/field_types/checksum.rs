@@ -1,5 +1,4 @@
-use crate::Buffer;
-use crate::FixValue;
+use crate::{Buffer, FieldType};
 use std::convert::TryInto;
 
 const LEN_IN_BYTES: usize = 3;
@@ -26,7 +25,7 @@ impl CheckSum {
     }
 }
 
-impl<'a> FixValue<'a> for CheckSum {
+impl<'a> FieldType<'a> for CheckSum {
     type Error = &'static str;
     type SerializeSettings = ();
 
@@ -114,6 +113,6 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(checksum: CheckSum) -> bool {
-        super::super::test_utility_verify_serialization_behavior(checksum)
+        super::field_types::test_utility_verify_serialization_behavior(checksum)
     }
 }

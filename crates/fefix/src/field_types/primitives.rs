@@ -1,5 +1,5 @@
-use super::{FixValue, ZeroPadding, ERR_DECIMAL, ERR_INT_INVALID, ERR_UTF8};
-use crate::{Buffer, BufferWriter, TagU16};
+use super::{ZeroPadding, ERR_DECIMAL, ERR_INT_INVALID, ERR_UTF8};
+use crate::{Buffer, BufferWriter, FieldType, TagU16};
 use std::fmt::Write;
 
 const ERR_BOOL_LENGTH: &str = "Invalid length; a boolean is Y or N (1 char).";
@@ -32,7 +32,7 @@ macro_rules! lossy_deserialize_signed {
 
 macro_rules! impl_unsigned {
     ($ty:ty) => {
-        impl<'a> FixValue<'a> for $ty {
+        impl<'a> FieldType<'a> for $ty {
             type Error = &'static str;
             type SerializeSettings = ZeroPadding;
 
@@ -64,7 +64,7 @@ macro_rules! impl_unsigned {
 
 macro_rules! impl_signed {
     ($ty:ty) => {
-        impl<'a> FixValue<'a> for $ty {
+        impl<'a> FieldType<'a> for $ty {
             type Error = &'static str;
             type SerializeSettings = ();
 
@@ -96,7 +96,7 @@ macro_rules! impl_signed {
 
 macro_rules! impl_float {
     ($ty:ty) => {
-        impl<'a> FixValue<'a> for $ty {
+        impl<'a> FieldType<'a> for $ty {
             type Error = &'static str;
             type SerializeSettings = ();
 
@@ -133,7 +133,7 @@ impl_signed!(i128);
 impl_float!(f32);
 impl_float!(f64);
 
-impl<'a> FixValue<'a> for bool {
+impl<'a> FieldType<'a> for bool {
     type Error = &'static str;
     type SerializeSettings = ();
 
@@ -158,7 +158,7 @@ impl<'a> FixValue<'a> for bool {
     }
 }
 
-impl<'a> FixValue<'a> for &'a str {
+impl<'a> FieldType<'a> for &'a str {
     type Error = std::str::Utf8Error;
     type SerializeSettings = ();
 
@@ -177,7 +177,7 @@ impl<'a> FixValue<'a> for &'a str {
     }
 }
 
-impl<'a> FixValue<'a> for &'a [u8] {
+impl<'a> FieldType<'a> for &'a [u8] {
     type Error = ();
     type SerializeSettings = ();
 
@@ -196,7 +196,7 @@ impl<'a> FixValue<'a> for &'a [u8] {
     }
 }
 
-impl<'a, const N: usize> FixValue<'a> for [u8; N] {
+impl<'a, const N: usize> FieldType<'a> for [u8; N] {
     type Error = ();
     type SerializeSettings = ();
 
@@ -214,7 +214,7 @@ impl<'a, const N: usize> FixValue<'a> for [u8; N] {
     }
 }
 
-impl<'a, const N: usize> FixValue<'a> for &'a [u8; N] {
+impl<'a, const N: usize> FieldType<'a> for &'a [u8; N] {
     type Error = ();
     type SerializeSettings = ();
 

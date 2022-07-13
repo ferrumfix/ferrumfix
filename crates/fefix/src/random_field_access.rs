@@ -1,4 +1,4 @@
-use crate::FixValue;
+use crate::FieldType;
 use std::iter::FusedIterator;
 use std::ops::Range;
 
@@ -19,12 +19,12 @@ use std::ops::Range;
 /// [`RandomFieldAccess::fv_raw`], which performs no deserialization at all: it
 /// simply returns the bytes contents associated with a FIX field, if found.
 ///
-/// Building upon [`RandomFieldAccess::fv_raw`] and [`FixValue`], the other
+/// Building upon [`RandomFieldAccess::fv_raw`] and [`FieldType`], the other
 /// field access methods all provide some utility deserialization logic. These
 /// methods all have the `fv` prefix, with the following considerations:
 ///
 /// - `fvl` methods perform "lossy" deserialization via
-/// [`FixValue::deserialize_lossy`]. Unlike lossless deserialization, these
+/// [`FieldType::deserialize_lossy`]. Unlike lossless deserialization, these
 /// methods may skip some error checking logic and thus prove to be faster.
 /// Memory-safety is still guaranteed, but malformed FIX fields won't be
 /// detected 100% of the time.
@@ -48,11 +48,11 @@ pub trait RandomFieldAccess<F> {
 
     /// Like [`RandomFieldAccess::group`], but doesn't return an [`Err`] if the
     /// group is missing.
-    fn group_opt(&self, field: F) -> Option<Result<Self::Group, <usize as FixValue>::Error>>;
+    fn group_opt(&self, field: F) -> Option<Result<Self::Group, <usize as FieldType>::Error>>;
 
     /// Looks for a group that starts with `field` within `self`.
     #[inline]
-    fn group(&self, field: F) -> Result<Self::Group, Option<<usize as FixValue>::Error>> {
+    fn group(&self, field: F) -> Result<Self::Group, Option<<usize as FieldType>::Error>> {
         match self.group_opt(field) {
             Some(Ok(group)) => Ok(group),
             Some(Err(e)) => Err(Some(e)),
@@ -61,11 +61,11 @@ pub trait RandomFieldAccess<F> {
     }
 
     /// Looks for a `field` within `self` and then decodes its raw byte contents
-    /// via [`FixValue::deserialize`], if found.
+    /// via [`FieldType::deserialize`], if found.
     #[inline]
     fn fv<'a, V>(&'a self, field: F) -> Result<V, Option<V::Error>>
     where
-        V: FixValue<'a>,
+        V: FieldType<'a>,
     {
         match self.fv_opt(field) {
             Some(Ok(x)) => Ok(x),
@@ -78,7 +78,7 @@ pub trait RandomFieldAccess<F> {
     #[inline]
     fn fvl<'a, V>(&'a self, field: F) -> Result<V, Option<V::Error>>
     where
-        V: FixValue<'a>,
+        V: FieldType<'a>,
     {
         match self.fvl_opt(field) {
             Some(Ok(x)) => Ok(x),
@@ -92,7 +92,7 @@ pub trait RandomFieldAccess<F> {
     #[inline]
     fn fv_opt<'a, V>(&'a self, field: F) -> Option<Result<V, V::Error>>
     where
-        V: FixValue<'a>,
+        V: FieldType<'a>,
     {
         self.fv_raw(field).map(|raw| match V::deserialize(raw) {
             Ok(value) => Ok(value),
@@ -104,7 +104,7 @@ pub trait RandomFieldAccess<F> {
     #[inline]
     fn fvl_opt<'a, V>(&'a self, field: F) -> Option<Result<V, V::Error>>
     where
-        V: FixValue<'a>,
+        V: FieldType<'a>,
     {
         self.fv_raw(field)
             .map(|raw| match V::deserialize_lossy(raw) {

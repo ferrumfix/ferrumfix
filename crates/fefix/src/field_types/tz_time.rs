@@ -1,13 +1,13 @@
-use super::{FixValue, Tz, ERR_TIME};
-use crate::Buffer;
+use super::{Tz, ERR_TIME};
+use crate::{Buffer, FieldType};
 
 /// Timezone-aware intra-day timestamp.
 ///
 /// # Examples
 ///
 /// ```
-/// use fefix::FixValue;
-/// use fefix::fix_value::{Tz, TzTime};
+/// use fefix::FieldType;
+/// use fefix::field_types::{Tz, TzTime};
 ///
 /// let tztime = TzTime::deserialize(b"07:39:20Z").unwrap();
 /// assert_eq!(tztime.hour(), 7);
@@ -31,7 +31,7 @@ impl TzTime {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_value::TzTime;
+    /// use fefix::field_types::TzTime;
     ///
     /// let dtf = TzTime::deserialize(b"12:45:00Z").unwrap();
     /// assert_eq!(dtf.minute(), 45);
@@ -58,7 +58,7 @@ impl TzTime {
     }
 }
 
-impl<'a> FixValue<'a> for TzTime {
+impl<'a> FieldType<'a> for TzTime {
     type Error = &'static str;
     type SerializeSettings = ();
 
@@ -114,7 +114,7 @@ const fn ascii_digit_to_u32(digit: u8, multiplier: u32) -> u32 {
 
 #[cfg(test)]
 mod test {
-    use super::FixValue;
+    use super::FieldType;
     use super::*;
 
     struct TestCase {

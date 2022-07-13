@@ -1,6 +1,5 @@
-use super::Tz;
-use super::{Date, ERR_TIME, ERR_UTF8};
-use crate::{Buffer, BufferWriter, FixValue};
+use super::{Date, Tz, ERR_TIME, ERR_UTF8};
+use crate::{Buffer, BufferWriter, FieldType};
 use chrono::DateTime;
 use chrono::NaiveDateTime;
 use chrono::Offset;
@@ -9,7 +8,7 @@ use chrono::Timelike;
 use std::fmt::Write;
 
 /// Specifies whether a timestamp should have millisecond or second precision;
-/// see [`FixValue::SerializeSettings`].
+/// see [`FieldType::SerializeSettings`].
 ///
 /// Enabled by [`Default`].
 #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
@@ -23,7 +22,7 @@ impl Default for WithMilliseconds {
 }
 
 #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
-impl<'a> FixValue<'a> for chrono::NaiveDateTime {
+impl<'a> FieldType<'a> for chrono::NaiveDateTime {
     type Error = &'static str;
     type SerializeSettings = WithMilliseconds;
 
@@ -54,7 +53,7 @@ impl<'a> FixValue<'a> for chrono::NaiveDateTime {
 }
 
 #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
-impl<'a> FixValue<'a> for chrono::NaiveDate {
+impl<'a> FieldType<'a> for chrono::NaiveDate {
     type Error = &'static str;
     type SerializeSettings = ();
 
@@ -83,7 +82,7 @@ impl<'a> FixValue<'a> for chrono::NaiveDate {
 }
 
 #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
-impl<'a> FixValue<'a> for chrono::NaiveTime {
+impl<'a> FieldType<'a> for chrono::NaiveTime {
     type Error = &'static str;
     type SerializeSettings = WithMilliseconds;
 
@@ -128,7 +127,7 @@ impl<'a> FixValue<'a> for chrono::NaiveTime {
 }
 
 #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
-impl<'a> FixValue<'a> for chrono::FixedOffset {
+impl<'a> FieldType<'a> for chrono::FixedOffset {
     type Error = &'static str;
     type SerializeSettings = ();
 
@@ -146,7 +145,7 @@ impl<'a> FixValue<'a> for chrono::FixedOffset {
 }
 
 #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
-impl<'a> FixValue<'a> for chrono::DateTime<chrono::FixedOffset> {
+impl<'a> FieldType<'a> for chrono::DateTime<chrono::FixedOffset> {
     type Error = &'static str;
     type SerializeSettings = ();
 

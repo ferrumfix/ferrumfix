@@ -1,8 +1,8 @@
-use super::{FixValue, ERR_INT_INVALID, ERR_UTF8};
-use crate::{Buffer, BufferWriter, TagU16};
+use super::{ERR_INT_INVALID, ERR_UTF8};
+use crate::{Buffer, BufferWriter, FieldType, TagU16};
 use std::fmt::Write;
 
-impl<'a> FixValue<'a> for TagU16 {
+impl<'a> FieldType<'a> for TagU16 {
     type Error = &'static str;
     type SerializeSettings = ();
 

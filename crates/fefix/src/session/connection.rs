@@ -5,7 +5,7 @@ use crate::tagvalue::Message;
 use crate::tagvalue::RandomFieldAccess;
 use crate::tagvalue::{DecoderBuffered, Encoder, EncoderHandle};
 use crate::Buffer;
-use crate::FixValue;
+use crate::FieldType;
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use std::marker::{PhantomData, Unpin};
 use std::pin::Pin;
@@ -245,7 +245,7 @@ where
     C: Configure,
     Z: Verify,
 {
-    type Error: FixValue<'a>;
+    type Error: FieldType<'a>;
     type Msg: FvWrite<'a>;
 
     fn target_comp_id(&self) -> &[u8];

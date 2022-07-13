@@ -1,5 +1,5 @@
-use super::{FixValue, Timestamp, Tz};
-use crate::Buffer;
+use super::{Timestamp, Tz};
+use crate::{Buffer, FieldType};
 
 /// A time and date combination representing local time with an offset from UTC.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -20,7 +20,7 @@ impl TzTimestamp {
     }
 }
 
-impl<'a> FixValue<'a> for TzTimestamp {
+impl<'a> FieldType<'a> for TzTimestamp {
     type Error = &'static str;
     type SerializeSettings = ();
 

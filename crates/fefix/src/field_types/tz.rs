@@ -1,5 +1,4 @@
-use super::FixValue;
-use crate::Buffer;
+use crate::{Buffer, FieldType};
 use std::hash::Hash;
 use std::time::Duration;
 
@@ -13,8 +12,8 @@ const MINUTE: u32 = 60;
 /// # Examples
 ///
 /// ```
-/// use fefix::FixValue;
-/// use fefix::fix_value::Tz;
+/// use fefix::FieldType;
+/// use fefix::field_types::Tz;
 /// use std::time::Duration;
 ///
 /// let timezone = Tz::deserialize(b"Z").unwrap();
@@ -72,7 +71,7 @@ impl Tz {
     }
 }
 
-impl<'a> FixValue<'a> for Tz {
+impl<'a> FieldType<'a> for Tz {
     type Error = &'static str;
     type SerializeSettings = ();
 

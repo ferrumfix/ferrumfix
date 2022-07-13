@@ -23,14 +23,14 @@ pub use heartbeat_rule::HeartbeatRule;
 pub use resend_request_range::ResendRequestRange;
 pub use seq_numbers::{SeqNumberError, SeqNumbers};
 
-use crate::{tagvalue::Message, FixValue, SetField};
+use crate::{tagvalue::Message, FieldType, SetField};
 use std::ops::Range;
 
 /// The owner of a [`FixConnection`]. It can react to events, store incoming
 /// messages, send messages, etc..
 pub trait Backend: Clone {
     /// The type of errors that can arise during a [`FixConnection`].
-    type Error: for<'a> FixValue<'a>;
+    type Error: for<'a> FieldType<'a>;
 
     fn sender_comp_id(&self) -> &[u8];
     fn target_comp_id(&self) -> &[u8];

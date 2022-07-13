@@ -41,7 +41,7 @@
 //! |[`DecoderBuffered`]   |data streams             |[`Message`] |
 
 use crate::dict::IsFieldDefinition;
-use crate::FixValue;
+use crate::FieldType;
 use std::fmt::Debug;
 
 mod config;

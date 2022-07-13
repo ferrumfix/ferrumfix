@@ -1,5 +1,4 @@
-use crate::Buffer;
-use crate::FixValue;
+use crate::{Buffer, FieldType};
 use std::convert::{TryFrom, TryInto};
 
 const LEN_IN_BYTES: usize = 8;
@@ -38,7 +37,7 @@ impl Date {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fix_value::Date;
+    /// use fefix::field_types::Date;
     ///
     /// assert!(Date::new(2021, 4, 16).is_some());
     /// assert!(Date::new(2021, 13, 32).is_none());
@@ -71,7 +70,7 @@ impl Date {
     /// # Examples
     ///
     /// ```
-    /// use fefix::fix_value::Date;
+    /// use fefix::field_types::Date;
     ///
     /// assert_eq!(&Date::new(2021, 01, 01).unwrap().to_yyyymmdd(), b"20210101");
     /// ```
@@ -128,7 +127,7 @@ impl Date {
     }
 }
 
-impl<'a> FixValue<'a> for Date {
+impl<'a> FieldType<'a> for Date {
     type Error = &'static str;
     type SerializeSettings = ();
 
@@ -198,7 +197,7 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(date: Date) -> bool {
-        super::super::test_utility_verify_serialization_behavior(date)
+        super::field_types::test_utility_verify_serialization_behavior(date)
     }
 
     const VALID_DATES: &[&[u8]] = &[
@@ -230,7 +229,7 @@ mod test {
 
     #[quickcheck]
     fn to_yyyymmdd_to_bytes_are_the_same(date: Date) -> bool {
-        date.to_yyyymmdd() == &FixValue::to_bytes(&date)[..]
+        date.to_yyyymmdd() == &FieldType::to_bytes(&date)[..]
     }
 
     #[test]

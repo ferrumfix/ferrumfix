@@ -1,4 +1,4 @@
-use crate::{fix_value::Date, fix_value::Time, Buffer, FixValue};
+use crate::{field_types::Date, field_types::Time, Buffer, FieldType};
 
 /// Representation for `UtcTimestamp`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -70,7 +70,7 @@ impl Timestamp {
     }
 }
 
-impl<'a> FixValue<'a> for Timestamp {
+impl<'a> FieldType<'a> for Timestamp {
     type Error = &'static str;
     type SerializeSettings = ();
 
@@ -103,6 +103,6 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(timestamp: Timestamp) -> bool {
-        super::super::test_utility_verify_serialization_behavior(timestamp)
+        super::field_types::test_utility_verify_serialization_behavior(timestamp)
     }
 }

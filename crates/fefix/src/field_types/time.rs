@@ -1,5 +1,4 @@
-use crate::Buffer;
-use crate::FixValue;
+use crate::{Buffer, FieldType};
 
 const ERR_INVALID: &str = "Invalid time.";
 
@@ -73,7 +72,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_value::Time;
+    /// use fefix::field_types::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.hour(), 12)
@@ -88,7 +87,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_value::Time;
+    /// use fefix::field_types::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
@@ -103,7 +102,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_value::Time;
+    /// use fefix::field_types::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00").unwrap();
     /// assert_eq!(dtf.minute(), 45)
@@ -113,7 +112,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_value::Time;
+    /// use fefix::field_types::Time;
     ///
     /// let dtf = Time::deserialize(b"23:59:60").unwrap();
     /// assert_eq!(dtf.second(), 60)
@@ -128,7 +127,7 @@ impl Time {
     ///
     /// ```
     /// use fefix::prelude::*;
-    /// use fefix::fix_value::Time;
+    /// use fefix::field_types::Time;
     ///
     /// let dtf = Time::deserialize(b"12:45:00.328").unwrap();
     /// assert_eq!(dtf.milli(), 328)
@@ -152,7 +151,7 @@ impl Time {
     }
 }
 
-impl<'a> FixValue<'a> for Time {
+impl<'a> FieldType<'a> for Time {
     type Error = &'static str;
     type SerializeSettings = ();
 
@@ -270,6 +269,6 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(time: Time) -> bool {
-        super::super::test_utility_verify_serialization_behavior(time)
+        super::field_types::test_utility_verify_serialization_behavior(time)
     }
 }

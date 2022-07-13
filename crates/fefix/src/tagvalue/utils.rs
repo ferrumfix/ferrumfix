@@ -1,5 +1,6 @@
-use crate::fix_value::{CheckSum, FixValue};
+use crate::field_types::CheckSum;
 use crate::tagvalue::DecodeError;
+use crate::FieldType;
 use std::convert::TryInto;
 
 // A tag-value message can't possibly be shorter than this.

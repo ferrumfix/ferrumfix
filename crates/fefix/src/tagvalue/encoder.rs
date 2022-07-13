@@ -1,11 +1,7 @@
 use super::{Config, Configure};
-use crate::buffer::Buffer;
 use crate::dict::IsFieldDefinition;
-use crate::fix_value::{CheckSum, FixValue};
-use crate::BufferWriter;
-use crate::GetConfig;
-use crate::SetField;
-use crate::TagU16;
+use crate::field_types::CheckSum;
+use crate::{Buffer, BufferWriter, FieldType, GetConfig, SetField, TagU16};
 use std::fmt::Write;
 use std::ops::Range;
 
@@ -174,7 +170,7 @@ where
 {
     fn set_with<'s, V>(&'s mut self, tag: u32, value: V, settings: V::SerializeSettings)
     where
-        V: FixValue<'s>,
+        V: FieldType<'s>,
     {
         write!(BufferWriter(self.buffer), "{}=", tag).unwrap();
         value.serialize_with(self.buffer, settings);
@@ -190,7 +186,7 @@ where
 {
     fn set_with<'s, V>(&'s mut self, tag: TagU16, value: V, settings: V::SerializeSettings)
     where
-        V: FixValue<'s>,
+        V: FieldType<'s>,
     {
         self.set_with(tag.get() as u32, value, settings)
     }
@@ -204,7 +200,7 @@ where
 {
     fn set_with<'s, V>(&'s mut self, field: &F, value: V, settings: V::SerializeSettings)
     where
-        V: FixValue<'s>,
+        V: FieldType<'s>,
     {
         self.set_with(field.tag(), value, settings)
     }

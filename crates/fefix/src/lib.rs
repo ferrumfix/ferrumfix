@@ -35,7 +35,7 @@
 //!
 //! ### `utils-chrono`, `utils-decimal`, `utils-rust-decimal`
 //!
-//! [`FixValue`] implementations for third-party crates and type conversions.
+//! [`FieldType`] implementations for third-party crates and type conversions.
 //!
 //! ### `utils-slog`
 //!
@@ -109,7 +109,7 @@ mod set_field;
 mod utils;
 
 pub mod definitions;
-pub mod fix_value;
+pub mod field_types;
 pub mod prelude;
 pub mod session;
 pub use random_field_access::{GroupEntries, RandomFieldAccess, RepeatingGroup};
@@ -127,11 +127,10 @@ pub use buffer::{Buffer, BufferWriter};
 pub use dict::Dictionary;
 pub use fefix_core::dict;
 pub use fefix_core::TagU16;
-pub use fix_value::FixValue;
 
 // We don't show derive macros to pollute the docs.
 #[doc(hidden)]
-pub use fefix_derive::FixValue;
+pub use fefix_derive::FieldType;
 
 /// Allows to get mutable and immutable references to configuration options.
 pub trait GetConfig {
@@ -145,4 +144,65 @@ pub trait GetConfig {
     /// Returns a mutable reference to the configuration options used by
     /// `self`.
     fn config_mut(&mut self) -> &mut Self::Config;
+}
+
+/// Provides (de)serialization logic for a Rust type as FIX field values.
+///
+/// See the [`field_types`](crate::field_types) module for more information.
+pub trait FieldType<'a>
+where
+    Self: Sized,
+{
+    /// The error type that can arise during deserialization.
+    type Error;
+    /// A type with values that customize the serialization algorithm, e.g.
+    /// padding information.
+    type SerializeSettings: Default;
+
+    /// Writes `self` to `buffer` using default settings.
+    #[inline]
+    fn serialize<B>(&self, buffer: &mut B) -> usize
+    where
+        B: Buffer,
+    {
+        self.serialize_with(buffer, Self::SerializeSettings::default())
+    }
+
+    /// Writes `self` to `buffer` using custom serialization `settings`.
+    fn serialize_with<B>(&self, buffer: &mut B, settings: Self::SerializeSettings) -> usize
+    where
+        B: Buffer;
+
+    /// Parses and deserializes from `data`.
+    fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error>;
+
+    /// Like [`FieldType::deserialize`], but it's allowed to skip *some* amount of
+    /// input checking. Invalid inputs might not trigger errors and instead be
+    /// deserialized as random values.
+    ///
+    /// # Safety
+    ///
+    /// This method remains 100% safe even on malformed inputs.
+    fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
+        Self::deserialize(data)
+    }
+
+    /// Serializes `self` to a [`Vec`] of bytes, allocated on the fly.
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut buffer = Vec::new();
+        self.serialize(&mut buffer);
+        buffer
+    }
+
+    /// Allocates a [`String`] representation of `self`, using [`FieldType::to_bytes`].
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the underlying byte representation is not
+    /// valid UTF-8. As such, you should only *ever* use this function for
+    /// [`FieldType`] implementors that are guaranteed to be representable with
+    /// valid UTF-8 (like numbers with ASCII digits).
+    fn to_string(&self) -> String {
+        String::from_utf8(self.to_bytes()).expect("Invalid UTF-8 representation of FIX field.")
+    }
 }

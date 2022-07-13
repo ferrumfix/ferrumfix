@@ -43,7 +43,7 @@ pub fn derive_fix_value(input: TokenStream) -> TokenStream {
         proc_macro_crate::FoundCrate::Name(s) => Ident::new(s.as_str(), Span::call_site()),
     };
     let gen = quote! {
-        impl<'a> FixValue<'a> for #identifier {
+        impl<'a> FieldType<'a> for #identifier {
             type Error = ();
             type SerializeSettings = ();
 
@@ -56,7 +56,7 @@ pub fn derive_fix_value(input: TokenStream) -> TokenStream {
                 }
             }
 
-            fn deserialize(data: &'a [u8]) -> ::std::result::Result<Self, <Self as FixValue<'a>>::Error> {
+            fn deserialize(data: &'a [u8]) -> ::std::result::Result<Self, <Self as FieldType<'a>>::Error> {
                 match data {
                     #(#deserialize_matching_cases),*,
                     _ => ::std::result::Result::Err(())

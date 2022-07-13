@@ -1,7 +1,7 @@
 use super::{Config, Configure, DecodeError};
 use crate::dict::FieldLocation;
 use crate::dict::IsFieldDefinition;
-use crate::{Dictionary, FixValue, GetConfig};
+use crate::{Dictionary, FieldType, GetConfig};
 use crate::{RandomFieldAccess, RepeatingGroup};
 use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, Cow};
@@ -44,7 +44,7 @@ where
 {
     type Group = MessageGroup<'a>;
 
-    fn group_opt(&self, field: &F) -> Option<Result<Self::Group, <usize as FixValue<'a>>::Error>> {
+    fn group_opt(&self, field: &F) -> Option<Result<Self::Group, <usize as FieldType<'a>>::Error>> {
         self.field_map(field)
             .get(field.name())
             .and_then(|field_or_group| {
