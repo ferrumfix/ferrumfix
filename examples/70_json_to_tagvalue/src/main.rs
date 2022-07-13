@@ -34,3 +34,9 @@ fn main() {
     println!();
     println!("{}", String::from_utf8_lossy(fix_msg));
 }
+
+#[cfg(test)]
+#[test]
+fn run() {
+    main();
+}

@@ -28,3 +28,9 @@ fn main() {
 fn fix_encoder() -> Encoder<Config> {
     Encoder::default()
 }
+
+#[cfg(test)]
+#[test]
+fn run() {
+    main();
+}

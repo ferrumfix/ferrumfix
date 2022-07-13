@@ -19,3 +19,9 @@ async fn main() -> io::Result<()> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+#[test]
+fn run() {
+    main().unwrap();
+}

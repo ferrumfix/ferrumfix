@@ -25,3 +25,9 @@ fn fix_decoder() -> Decoder<Config> {
     let fix_dictionary = Dictionary::from_quickfix_spec(QUICKFIX_SPEC).unwrap();
     Decoder::<Config>::new(fix_dictionary)
 }
+
+#[cfg(test)]
+#[test]
+fn run() {
+    main();
+}

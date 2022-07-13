@@ -72,3 +72,9 @@ fn main() {
     // You can use either mnemonics (like above) or tag numbers for keys.
     assert_eq!(msg.fv(49), Ok(1));
 }
+
+#[cfg(test)]
+#[test]
+fn run() {
+    main();
+}

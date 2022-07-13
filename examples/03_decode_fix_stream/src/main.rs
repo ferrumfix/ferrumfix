@@ -29,3 +29,9 @@ fn main() {
         }
     }
 }
+
+#[cfg(test)]
+#[test]
+fn run() {
+    main();
+}
