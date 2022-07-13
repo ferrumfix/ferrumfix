@@ -40,7 +40,6 @@
 //! |[`Decoder`]           |`&[u8]`                  |[`Message`] |
 //! |[`DecoderStreaming`]   |data streams             |[`Message`] |
 
-
 use std::fmt::Debug;
 
 mod config;

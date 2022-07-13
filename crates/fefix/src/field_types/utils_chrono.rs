@@ -3,7 +3,6 @@ use crate::{Buffer, BufferWriter, FieldType};
 use chrono::DateTime;
 use chrono::NaiveDateTime;
 
-
 use chrono::Timelike;
 use std::fmt::Write;
 

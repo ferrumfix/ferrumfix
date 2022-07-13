@@ -163,7 +163,6 @@ const V1_DRAFT_RECOMMENDED_CIPHERSUITES_PSK_ONLY: &[&str] = &[
 
 #[cfg(test)]
 mod test {
-    
 
     #[test]
     #[cfg(feature = "utils-openssl")]

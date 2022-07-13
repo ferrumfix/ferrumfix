@@ -1,4 +1,1 @@
-
-
-
 pub trait Application {}

@@ -25,7 +25,6 @@ pub fn derive_fix_value(input: TokenStream) -> TokenStream {
         .expect("Invalid enum");
     let deserialize_matching_cases = darling_context
         .data
-        
         .map_enum_variants(|enum_variant| {
             let enum_discriminant = enum_variant.variant.as_str();
             let enum_variant = enum_variant.ident;
