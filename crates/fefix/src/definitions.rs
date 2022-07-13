@@ -15,7 +15,6 @@ use crate::{dict, dict::FixDatatype, TagU32};
 pub struct HardCodedFixFieldDefinition {
     pub name: &'static str,
     pub tag: u32,
-    pub is_group_leader: bool,
     pub data_type: FixDatatype,
     pub location: dict::FieldLocation,
 }

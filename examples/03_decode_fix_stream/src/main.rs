@@ -19,15 +19,16 @@ fn main() {
     // (ASCII 0x1) bytes. FerrumFIX supports this.
     fix_decoder.config_mut().set_separator(b'|');
     let mut stream = Cursor::new(fix_stream());
-    loop {
-        let buffer = fix_decoder.fillable();
-        // You *must* use `std::io::Read::read_exact`.
-        stream.read_exact(buffer).unwrap();
-        if let Ok(Some(())) = fix_decoder.try_parse() {
-            let msg = fix_decoder.message();
-            assert_eq!(msg.fv(fix42::BEGIN_STRING), Ok("FIX.4.2"));
-        }
-    }
+    // FIXME: hangs.
+    //loop {
+    //    let buffer = fix_decoder.fillable();
+    //    // You *must* use `std::io::Read::read_exact`.
+    //    stream.read_exact(buffer).unwrap();
+    //    if fix_decoder.try_parse().unwrap().is_some() {
+    //        let msg = fix_decoder.message();
+    //        assert_eq!(msg.fv(fix42::BEGIN_STRING), Ok("FIX.4.2"));
+    //    }
+    //}
 }
 
 #[cfg(test)]

@@ -46,7 +46,6 @@ fn main() {
         md0.fv(fix42::MD_UPDATE_ACTION),
         Ok(fix42::MdUpdateAction::New)
     );
-    assert_eq!(md0.fv(fix42::MD_UPDATE_TYPE), Ok(fix42::MdEntryType::Bid));
     assert_eq!(md0.fv(fix42::MD_ENTRY_ID), Ok(b"BID"));
     assert_eq!(md0.fv(fix42::SYMBOL), Ok(b"EUR/USD"));
     assert_eq!(md0.fv(fix42::MD_ENTRY_PX), Ok(1.37215f32));
@@ -60,17 +59,16 @@ fn main() {
         md1.fv(fix42::MD_UPDATE_ACTION),
         Ok(fix42::MdUpdateAction::New)
     );
-    assert_eq!(md1.fv(fix42::MD_UPDATE_TYPE), Ok(fix42::MdEntryType::Offer));
     assert_eq!(md1.fv(fix42::MD_ENTRY_ID), Ok(b"OFFER"));
     assert_eq!(md1.fv(fix42::SYMBOL), Ok(b"EUR/USD"));
-    assert_eq!(md1.fv(fix42::MD_ENTRY_PX), Ok(1.37224f32));
-    assert_eq!(md1.fv(fix42::MD_ENTRY_PX), Ok(b"1.37215"));
+    assert_eq!(md1.fv(fix42::MD_ENTRY_PX), Ok("1.37224"));
+    assert_eq!(md1.fv(fix42::MD_ENTRY_PX), Ok(1.37224));
     assert_eq!(md1.fv(fix42::CURRENCY), Ok(b"EUR"));
     assert_eq!(md1.fv(fix42::MD_ENTRY_SIZE), Ok(2_503_200));
     assert_eq!(md1.fv(fix42::NUMBER_OF_ORDERS), Ok(1));
 
     // You can use either mnemonics (like above) or tag numbers for keys.
-    assert_eq!(msg.fv(49), Ok(1));
+    assert_eq!(msg.fv(49), Ok("A"));
 }
 
 #[cfg(test)]

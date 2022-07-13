@@ -300,6 +300,7 @@ fn gen_field_definition_with_hashsets(
     } else {
         format!("/// Field attributes for `{} <{}>`.", name, tag)
     };
+
     format!(
         indoc!(
             r#"
@@ -307,7 +308,6 @@ fn gen_field_definition_with_hashsets(
                 pub const {identifier}: &HardCodedFixFieldDefinition = &HardCodedFixFieldDefinition {{
                     name: "{name}",
                     tag: {tag},
-                    is_group_leader: {group},
                     data_type: FixDatatype::{data_type},
                     location: FieldLocation::{field_location},
                 }};"#
@@ -316,7 +316,6 @@ fn gen_field_definition_with_hashsets(
         identifier = name,
         name = field.name(),
         tag = tag,
-        group = field.name().ends_with("Len"),
         field_location = field_location,
         data_type = <&'static str as From<dict::FixDatatype>>::from(field.data_type().basetype()),
     )

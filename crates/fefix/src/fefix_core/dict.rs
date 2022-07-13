@@ -1166,6 +1166,16 @@ impl<'a> Field<'a> {
         )
     }
 
+    pub fn is_num_in_group(&self) -> bool {
+        fn nth_char_is_uppercase(s: &str, i: usize) -> bool {
+            s.chars().nth(i).map(|c| c.is_ascii_uppercase()) == Some(true)
+        }
+
+        self.fix_datatype().base_type() == FixDatatype::NumInGroup
+            || self.name().ends_with("Len")
+            || (self.name().starts_with("No") && nth_char_is_uppercase(self.name(), 2))
+    }
+
     /// Returns the [`FixDatatype`] of `self`.
     pub fn fix_datatype(&self) -> FixDatatype {
         self.data_type().basetype()

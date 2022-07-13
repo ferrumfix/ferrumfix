@@ -44,7 +44,11 @@ where
             tag_lookup: dict
                 .iter_fields()
                 .filter_map(|field| {
-                    let fix_type = field.data_type().basetype();
+                    let mut fix_type = field.data_type().basetype();
+                    if field.is_num_in_group() {
+                        fix_type = FixDatatype::NumInGroup;
+                    }
+
                     if fix_type == FixDatatype::Length || fix_type == FixDatatype::NumInGroup {
                         Some((field.tag().get(), fix_type))
                     } else {
@@ -607,6 +611,7 @@ where
             tag,
             context: self.field_locator_context,
         };
+        println!("looking for {:?}", field_locator);
         self.builder.fields.get(&field_locator).map(|field| field.1)
     }
 }
