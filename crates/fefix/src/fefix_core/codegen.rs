@@ -9,7 +9,7 @@ use std::marker::PhantomData;
 const FEFIX_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Creates a [`String`] that contains a multiline Rust "Doc" comment explaining
-/// that the subsequent code was automatically generated.
+/// that all subsequent code was automatically generated.
 ///
 /// The following example is for illustrative purposes only and the actual
 /// contents might change. The string is guaranteed not to have any trailing or
@@ -37,15 +37,16 @@ pub fn generated_code_notice() -> String {
 
 /// Generates the Rust code for an `enum` that has variants that map 1:1 the
 /// available values for `field`.
-pub fn gen_enum_of_allowed_values(field: dict::Field, settings: &Settings) -> Option<String> {
+pub fn codegen_field_type_enum(field: dict::Field, settings: &Settings) -> String {
     let derives = settings.derives_for_allowed_values.join(", ");
     let attributes = settings.attributes_for_allowed_values.join("\n");
     let variants = field
-        .enums()?
-        .map(|v| gen_enum_variant_of_allowed_value(v, settings))
+        .enums()
+        .unwrap()
+        .map(|v| codegen_field_type_enum_variant(v, settings))
         .collect::<Vec<String>>()
         .join("\n");
-    Some(format!(
+    format!(
         indoc!(
             r#"
             /// Field type variants for [`{field_name}`].
@@ -60,13 +61,10 @@ pub fn gen_enum_of_allowed_values(field: dict::Field, settings: &Settings) -> Op
         attributes = attributes,
         identifier = field.name().to_pascal_case(),
         variants = variants,
-    ))
+    )
 }
 
-fn gen_enum_variant_of_allowed_value(
-    allowed_value: dict::FieldEnum,
-    settings: &Settings,
-) -> String {
+fn codegen_field_type_enum_variant(allowed_value: dict::FieldEnum, settings: &Settings) -> String {
     let mut identifier = allowed_value.description().to_pascal_case();
     let identifier_needs_prefix = !allowed_value
         .description()
@@ -89,7 +87,8 @@ fn gen_enum_variant_of_allowed_value(
             doc = format!("Field variant '{}'.", value_literal),
             value_literal = value_literal,
             identifier = identifier,
-        ),
+        )
+        .as_str(),
         settings.indentation.as_str(),
     )
 }
@@ -157,7 +156,10 @@ impl Default for Settings {
 }
 
 /// Generates the Rust code for a FIX field definition.
-pub fn gen_field_definition(fix_dictionary: dict::Dictionary, field: dict::Field) -> String {
+pub fn codegen_field_definition_struct(
+    fix_dictionary: dict::Dictionary,
+    field: dict::Field,
+) -> String {
     let mut header = FnvHashSet::default();
     let mut trailer = FnvHashSet::default();
     for item in fix_dictionary
@@ -198,12 +200,13 @@ pub fn gen_field_definition(fix_dictionary: dict::Dictionary, field: dict::Field
 pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) -> String {
     let enums = fix_dictionary
         .iter_fields()
-        .filter_map(|field| gen_enum_of_allowed_values(field, settings))
+        .filter(|f| f.enums().is_some())
+        .map(|f| codegen_field_type_enum(f, settings))
         .collect::<Vec<String>>()
         .join("\n\n");
     let field_defs = fix_dictionary
         .iter_fields()
-        .map(|field| gen_field_definition(fix_dictionary.clone(), field))
+        .map(|field| codegen_field_definition_struct(fix_dictionary.clone(), field))
         .collect::<Vec<String>>()
         .join("\n");
     let top_comment =
@@ -233,9 +236,8 @@ pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) ->
     code
 }
 
-#[doc(hidden)]
-pub fn indent_lines<'a>(lines: impl Iterator<Item = &'a str>, prefix: &str) -> String {
-    lines.fold(String::new(), |mut s, line| {
+fn indent_string(s: &str, prefix: &str) -> String {
+    s.lines().fold(String::new(), |mut s, line| {
         if line.contains(char::is_whitespace) {
             s.push_str(prefix);
         }
@@ -243,14 +245,6 @@ pub fn indent_lines<'a>(lines: impl Iterator<Item = &'a str>, prefix: &str) -> S
         s.push_str("\n");
         s
     })
-}
-
-#[doc(hidden)]
-pub fn indent_string<S>(s: S, prefix: &str) -> String
-where
-    S: AsRef<str>,
-{
-    indent_lines(s.as_ref().lines(), prefix)
 }
 
 fn onixs_link_to_field(fix_version: &str, field: dict::Field) -> Option<String> {

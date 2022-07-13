@@ -1,6 +1,7 @@
 # Next release
 
 - Reduced number of dependencies in the `fesofh` crate.
+- Reduce number of and rename public entities in `fefix::codegen`.
 
 # v0.7.0 (YYYY-MM-DD)
 
