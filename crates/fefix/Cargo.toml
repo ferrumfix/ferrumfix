@@ -70,7 +70,7 @@ full = [
 ]
 
 [dependencies]
-bitvec = "0.18.3"
+bitvec = "1"
 bytes = { version = "1", optional = true }
 chrono = "0.4"
 decimal = { version = "2", optional = true }
@@ -78,7 +78,7 @@ fefix_derive = { version = "0.7", path = "../fefix_derive" }
 fnv = "1"
 futures = "0.3"
 futures-timer = "3"
-heck = { version = "0.3", optional = true }
+heck = { version = "0.4", optional = true }
 indoc = { version = "1", optional = true }
 nohash-hasher = "0.2"
 lazy_static = "1"
@@ -89,29 +89,29 @@ rust_decimal = { version = "1", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
 slog = { version = "2", optional = true }
-sqlx = { version = "0.5", features = ["runtime-tokio-rustls", "postgres"] }
-strum = "0.22"
-strum_macros = "0.22"
+sqlx = { version = "0.6", features = ["runtime-tokio-rustls", "postgres"] }
+strum = "0.24"
+strum_macros = "0.24"
 thiserror = "1"
-tokio-util = { version = "0.6", optional = true, features = ["codec", "compat"] }
-uuid = { version = "0.8.1", features = ["v4"] }
+tokio-util = { version = "0.7", optional = true, features = ["codec", "compat"] }
+uuid = { version = "1", features = ["v4"] }
 
 [build-dependencies]
 chrono = "0.4"
 fnv = "1"
-heck = "0.3"
+heck = "0.4"
 indoc = "1"
 lazy_static = "1"
-quick-xml = "0.22"
+quick-xml = "0.23"
 roxmltree = "0.14"
 rayon = "1"
-strum = "0.22"
-strum_macros = "0.22"
+strum = "0.24"
+strum_macros = "0.24"
 
 [dev-dependencies]
 arbitrary = { version = "1.0", features = ["derive"] }
 criterion = { version = "0.3", features = ["html_reports"] }
-enum-as-inner = "0.3"
+enum-as-inner = "0.5"
 quickcheck = "1"
 quickcheck_derive = "0.3"
 quickcheck_macros = "1"

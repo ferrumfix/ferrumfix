@@ -2,7 +2,7 @@
 
 use super::{dict, TagU16};
 use fnv::FnvHashSet;
-use heck::{CamelCase, ShoutySnakeCase};
+use heck::{ToPascalCase, ToShoutySnakeCase};
 use indoc::indoc;
 use std::marker::PhantomData;
 
@@ -55,10 +55,10 @@ pub fn gen_enum_of_allowed_values(field: dict::Field, settings: &Settings) -> Op
             {variants}
             }}"#
         ),
-        field_name = field.name().to_camel_case(),
+        field_name = field.name().to_pascal_case(),
         derives = derives,
         attributes = attributes,
-        identifier = field.name().to_camel_case(),
+        identifier = field.name().to_pascal_case(),
         variants = variants,
     ))
 }
@@ -67,7 +67,7 @@ fn gen_enum_variant_of_allowed_value(
     allowed_value: dict::FieldEnum,
     settings: &Settings,
 ) -> String {
-    let mut identifier = allowed_value.description().to_camel_case();
+    let mut identifier = allowed_value.description().to_pascal_case();
     let identifier_needs_prefix = !allowed_value
         .description()
         .chars()
