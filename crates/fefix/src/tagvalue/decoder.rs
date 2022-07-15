@@ -524,9 +524,7 @@ impl<'a> Default for MessageBuilder<'a> {
 
 impl<'a> MessageBuilder<'a> {
     fn clear(&mut self) {
-        self.raw = b"";
-        self.fields.clear();
-        self.field_locators.clear();
+        *self = Self::default();
     }
 
     fn add_field(
