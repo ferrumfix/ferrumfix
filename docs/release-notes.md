@@ -6,6 +6,8 @@
 - Now using `u32` for tags rather than `u16`. This allows using user-defined tags with large values.
 - `FieldValueError` for easier missing field detection. `FieldMap` method
   signatures changed to use this new `enum`.
+- Improved repeating group logic and bug fixes (https://github.com/ferrumfix/ferrumfix/issues/12).
+- Fix: reusing `Decoder` instances might cause decoding errors (https://github.com/ferrumfix/ferrumfix/issues/17).
 
 # v0.7.0 (YYYY-MM-DD)
 
