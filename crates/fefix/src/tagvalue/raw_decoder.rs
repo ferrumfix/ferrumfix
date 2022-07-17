@@ -191,10 +191,7 @@ where
     fn num_bytes_required(&self) -> usize {
         match self.state {
             ParserState::Empty => utils::MIN_FIX_MESSAGE_LEN_IN_BYTES,
-            ParserState::Header(_, expected_len) => {
-                let old_len = self.buffer.as_slice().len();
-                expected_len - old_len
-            }
+            ParserState::Header(_, expected_len) => expected_len,
             ParserState::Failed => 0,
         }
     }
@@ -396,5 +393,6 @@ mod test {
             ready = decoder.try_parse().unwrap().is_some();
         }
         assert_eq!(decoder.raw_frame().begin_string(), b"FIX.4.2");
+        assert_eq!(decoder.raw_frame().payload(), b"35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|");
     }
 }
