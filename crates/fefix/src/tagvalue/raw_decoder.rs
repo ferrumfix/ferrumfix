@@ -188,6 +188,11 @@ where
         &mut self.buffer
     }
 
+    fn clear(&mut self) {
+        self.buffer().clear();
+        self.state = ParserState::Empty;
+    }
+
     fn num_bytes_required(&self) -> usize {
         match self.state {
             ParserState::Empty => utils::MIN_FIX_MESSAGE_LEN_IN_BYTES,
