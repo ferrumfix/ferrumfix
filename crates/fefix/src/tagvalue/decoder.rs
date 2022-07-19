@@ -546,13 +546,15 @@ impl<'a> MessageBuilder<'a> {
         if associative {
             self.fields.insert(field_locator, (tag, field_value, i));
             if let Some(group_info) = self.state.group_information.last() {
-                if group_info.current_entry_i + 1 == group_info.num_entries && !self.known_tags.contains(&tag) {
+                if group_info.current_entry_i + 1 == group_info.num_entries
+                    && !self.known_tags.contains(&tag)
+                {
                     self.fields.insert(
                         FieldLocator {
                             tag,
                             context: FieldLocatorContext::TopLevel,
                         },
-                        (tag, field_value, i)
+                        (tag, field_value, i),
                     );
                 }
             }
