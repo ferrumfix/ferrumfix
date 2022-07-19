@@ -9,7 +9,7 @@ use crate::{
     StreamingDecoder, TagU32,
 };
 use nohash_hasher::IntMap;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::convert::TryInto;
 use std::fmt::Debug;
 use std::iter::FusedIterator;
@@ -497,6 +497,7 @@ impl DecoderState {
 struct MessageBuilder<'a> {
     state: DecoderState,
     raw: &'a [u8],
+    known_tags: HashSet<TagU32>,
     fields: HashMap<FieldLocator, (TagU32, &'a [u8], usize)>,
     field_locators: Vec<FieldLocator>,
     i_first_cell: usize,
@@ -516,6 +517,7 @@ impl<'a> Default for MessageBuilder<'a> {
                 data_field_length: None,
             },
             raw: b"",
+            known_tags: HashSet::new(),
             field_locators: Vec::new(),
             fields: HashMap::new(),
             i_first_cell: 0,
@@ -543,6 +545,18 @@ impl<'a> MessageBuilder<'a> {
         let i = self.field_locators.len();
         if associative {
             self.fields.insert(field_locator, (tag, field_value, i));
+            if let Some(group_info) = self.state.group_information.last() {
+                if group_info.current_entry_i + 1 == group_info.num_entries && !self.known_tags.contains(&tag) {
+                    self.fields.insert(
+                        FieldLocator {
+                            tag,
+                            context: FieldLocatorContext::TopLevel,
+                        },
+                        (tag, field_value, i)
+                    );
+                }
+            }
+            self.known_tags.insert(tag);
         }
         self.field_locators.push(field_locator);
         Ok(())
@@ -742,6 +756,16 @@ mod test {
         let group = message.group(268).unwrap();
         assert_eq!(group.len(), 0);
         assert_eq!(message.fv_raw(346), Some("1".as_bytes()));
+    }
+
+    #[test]
+    fn top_level_tag_after_group() {
+        let bytes = b"8=FIX.4.4|9=839|35=X|49=ERISX|56=XXXXXXXXX|34=9|52=20220717-16:40:21.631|262=TEST-220717164021-wgvMdYXs2YxQmLvzbNv4Aw|60=20220717-16:40:21.630919512|6006=0|268=10|279=0|269=0|278=b9381|55=BTC/USD|270=21150.3|15=BTC|271=0.435863|346=1|279=0|269=0|278=b9382|55=BTC/USD|270=21150.2|15=BTC|271=0.838906|346=1|279=0|269=0|278=b9383|55=BTC/USD|270=21150.1|15=BTC|271=0.498203|346=1|279=0|269=0|278=b9384|55=BTC/USD|270=21150|15=BTC|271=0.350156|346=1|279=0|269=0|278=b9385|55=BTC/USD|270=21149.9|15=BTC|271=0.652214|346=1|279=0|269=0|278=b9387|55=BTC/USD|270=21104.7|15=BTC|271=0.001|346=1|279=0|269=0|278=b5ae0|55=BTC/USD|270=17000|15=BTC|271=0.0002|346=2|279=0|269=1|278=b9386|55=BTC/USD|270=21156.9|15=BTC|271=0.848244|346=1|279=0|269=1|278=b9388|55=BTC/USD|270=21189.4|15=BTC|271=0.001|346=1|279=0|269=1|278=a|55=BTC/USD|270=50000|15=BTC|271=1|346=1|6001=2|10=024|";
+        let mut decoder = decoder();
+        let message = decoder.decode(&bytes).unwrap();
+        let group = message.group(268).unwrap();
+        assert_eq!(group.len(), 10);
+        assert_eq!(message.fv_raw(6001), Some("2".as_bytes()));
     }
 
     #[test]
