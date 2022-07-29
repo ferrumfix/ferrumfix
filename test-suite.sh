@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
+set -euxo pipefail
+
 git submodule init
 git submodule update
 
-mkdir lib/quickfix/config
+mkdir -p lib/quickfix/config
 cd lib/quickfix/config
 cmake ..
 make
