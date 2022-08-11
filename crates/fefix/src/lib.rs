@@ -299,3 +299,13 @@ impl<E> From<E> for FieldValueError<E> {
         FieldValueError::Invalid(e)
     }
 }
+
+
+/// Hack Display impl to enable impl Error
+impl<E: std::fmt::Debug> std::fmt::Display for FieldValueError<E> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl<E: std::fmt::Debug> std::error::Error for FieldValueError<E> {}
