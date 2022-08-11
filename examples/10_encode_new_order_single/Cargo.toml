@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-chrono = "0.4"
 decimal = "2"
 fefix = { path = "../../crates/fefix", features = ["fix44", "utils-decimal", "utils-rust-decimal"] }
 rust_decimal = "1"
