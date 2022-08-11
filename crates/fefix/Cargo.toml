@@ -26,7 +26,7 @@ name = "fix_decode"
 harness = false
 
 [features]
-default = ["utils-openssl", "utils-tokio", "utils-chrono"]
+default = ["utils-tokio", "utils-chrono"]
 codegen = ["heck", "indoc"]
 derive = []
 json-encoding = []
@@ -43,7 +43,6 @@ fixt11 = []
 utils-bytes = ["bytes"]
 utils-chrono = []
 utils-decimal = ["decimal"]
-utils-openssl = ["openssl"]
 utils-rust-decimal = ["rust_decimal"]
 utils-slog = ["slog"]
 utils-tokio = ["tokio-util", "utils-bytes"]
@@ -63,14 +62,13 @@ full = [
     "utils-bytes",
     "utils-chrono",
     "utils-decimal",
-    "utils-openssl",
     "utils-rust-decimal",
     "utils-slog",
     "utils-tokio",
 ]
 
 [dependencies]
-bitvec = "1"
+
 bytes = { version = "1", optional = true }
 chrono = "0.4"
 decimal = { version = "2", optional = true }
@@ -81,15 +79,12 @@ futures-timer = "3"
 heck = { version = "0.4", optional = true }
 indoc = { version = "1", optional = true }
 nohash-hasher = "0.2"
-lazy_static = "1"
-openssl = { version = "0.10", optional = true }
 # For reading XML.
 roxmltree = "0.14"
 rust_decimal = { version = "1", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
 slog = { version = "2", optional = true }
-sqlx = { version = "0.6", features = ["runtime-tokio-rustls", "postgres"] }
 strum = "0.24"
 strum_macros = "0.24"
 thiserror = "1"

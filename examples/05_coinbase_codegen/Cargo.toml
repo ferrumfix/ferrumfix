@@ -6,7 +6,6 @@ build = "build.rs"
 
 [dependencies]
 fefix = { path = "../../crates/fefix" }
-rust_decimal = "1"
 
 [build-dependencies]
 fefix = { path = "../../crates/fefix", features = ["codegen"] }
