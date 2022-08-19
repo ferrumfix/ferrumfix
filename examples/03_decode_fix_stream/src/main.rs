@@ -1,5 +1,5 @@
+use fefix::prelude::*;
 use fefix::tagvalue::Decoder;
-use fefix::{prelude::*, tagvalue::Config};
 use std::io::{Cursor, Read};
 
 const FIX_MESSAGES: &[&[u8]] = &[
@@ -12,25 +12,25 @@ fn fix_stream() -> Vec<u8> {
 }
 
 /// See [`fix::tagvalue::decoder::test::decoder`]
-fn decoder(fix_dictionary: Dictionary) -> Decoder<Config> {
+fn decoder(fix_dictionary: Dictionary) -> Decoder {
     // Let's create a FIX decoder. This is an expensive operation, and it should
     // only be done once at the beginning of your program and/or FIX session.
-    let mut decoder = Decoder::<Config>::new(fix_dictionary);
+    let mut decoder = <Decoder>::new(fix_dictionary);
     // In this case, the FIX message is specified using "|" rather than SOH
     // (ASCII 0x1) bytes. FerrumFIX supports this.
     decoder.config_mut().set_separator(b'|');
     decoder
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() {
     let fix_dictionary = Dictionary::fix42();
     let mut fix_decoder = decoder(fix_dictionary).streaming(vec![]);
     let mut stream = Cursor::new(fix_stream());
     for _message in 0..FIX_MESSAGES.len() {
         loop {
             // You *must* use `std::io::Read::read_exact`.
-            stream.read_exact(fix_decoder.fillable())?;
-            match fix_decoder.try_parse()? {
+            stream.read_exact(fix_decoder.fillable()).unwrap();
+            match fix_decoder.try_parse().unwrap() {
                 Some(_) => {
                     // we have successfully parsed a message
                     let msg = fix_decoder.message();
@@ -45,11 +45,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    Ok(())
 }
 
 #[cfg(test)]
 #[test]
 fn run() {
-    main().unwrap();
+    main()
 }
