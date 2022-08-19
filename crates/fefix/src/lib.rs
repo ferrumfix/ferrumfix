@@ -268,12 +268,14 @@ pub trait SetField<F> {
 }
 
 /// Either a field that is missing or has an invalid value.
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum FieldValueError<E> {
     /// No such field was found.
+    #[error("Missing field tag")]
     Missing,
     /// The field was found, but can't be parsed.
-    Invalid(E),
+    #[error("Invalid field value: {0}")]
+    Invalid(#[from] E),
 }
 
 impl<E> PartialEq<FieldValueError<E>> for FieldValueError<E> {
@@ -291,11 +293,5 @@ impl<E> From<Option<E>> for FieldValueError<E> {
             Some(e) => FieldValueError::Invalid(e),
             None => FieldValueError::Missing,
         }
-    }
-}
-
-impl<E> From<E> for FieldValueError<E> {
-    fn from(e: E) -> Self {
-        FieldValueError::Invalid(e)
     }
 }
