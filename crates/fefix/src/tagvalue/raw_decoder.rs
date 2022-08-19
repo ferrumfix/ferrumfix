@@ -398,6 +398,9 @@ mod test {
             ready = decoder.try_parse().unwrap().is_some();
         }
         assert_eq!(decoder.raw_frame().begin_string(), b"FIX.4.2");
-        assert_eq!(decoder.raw_frame().payload(), b"35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|");
+        assert_eq!(
+            decoder.raw_frame().payload(),
+            b"35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|"
+        );
     }
 }
