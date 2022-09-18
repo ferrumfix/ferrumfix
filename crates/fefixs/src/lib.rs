@@ -1,11 +1,5 @@
-//! *FIX-over-TLS* ([FIXS](https://www.fixtrading.org/standards/fixs/))
-//! utilities.
-//!
-//! This module is enabled by the `fixs` feature flag. Most additional FIXS
-//! utilities are only available with the `utils-openssl` enabled, which
-//! adds a dependency to OpenSSL. The minimal OpenSSL version required is 1.1.1+,
-//! but **this may change in the future** and all users are advised to update
-//! OpenSSL to avoid any issues.
+//! Presets of standard TLS parameters as specified by *FIX-over-TLS*
+//! ([FIXS](https://www.fixtrading.org/standards/fixs/)).
 
 mod iana_to_openssl;
 
@@ -13,37 +7,18 @@ use iana_to_openssl::IANA_TO_OPENSSL;
 #[cfg(feature = "utils-openssl")]
 use openssl::ssl::*;
 
-/// Which version of FIX-over-TLS (FIXS) to use.
-#[derive(Debug, Copy, Clone)]
-pub enum Version {
-    /// Draft of the FIXS version 1.0 standard.
-    V1Draft,
-}
-
-impl Version {
+/// A release of the FIXS standard with its own recommended settings.
+pub trait FixOverTlsVersion {
     /// Returns a [`Vec`] of the suggested ciphersuites for TLS,
     /// according to `self` version. The ciphersuites are specified in IANA format.
     ///
     /// ```
-    /// use fefixs::Version;
+    /// use fefixs::{FixOverTlsVersion, FixOverTlsV1};
     ///
-    /// let version = Version::V1Draft;
-    /// let ciphersuites_iana = version.recommended_cs_iana(false);
+    /// let ciphersuites_iana = FixOverTlsV1.recommended_cs_iana(false);
     /// assert!(ciphersuites_iana.iter().any(|cs| cs == &"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"));
     /// ```
-    pub fn recommended_cs_iana(&self, psk: bool) -> Vec<String> {
-        match (self, psk) {
-            (Version::V1Draft, false) => V1_DRAFT_RECOMMENDED_CIPHERSUITES
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
-            (Version::V1Draft, true) => V1_DRAFT_RECOMMENDED_CIPHERSUITES
-                .iter()
-                .chain(V1_DRAFT_RECOMMENDED_CIPHERSUITES_PSK_ONLY)
-                .map(|s| s.to_string())
-                .collect(),
-        }
-    }
+    fn recommended_cs_iana(&self, psk: bool) -> Vec<String>;
 
     /// Returns a [`Vec`] of the suggested ciphersuites for TLS,
     /// according to `self` version. The ciphersuites are specified in OpenSSL's
@@ -52,10 +27,9 @@ impl Version {
     /// # Examples:
     ///
     /// ```
-    /// use fefixs::Version;
+    /// use fefixs::{FixOverTlsVersion, FixOverTlsV1};
     ///
-    /// let version = Version::V1Draft;
-    /// let ciphersuites_openssl = version.recommended_cs_openssl(false);
+    /// let ciphersuites_openssl = FixOverTlsV1.recommended_cs_openssl(false);
     /// assert!(ciphersuites_openssl.iter().any(|cs| cs == &"DHE-RSA-AES128-GCM-SHA256"));
     /// ```
     ///
@@ -63,14 +37,79 @@ impl Version {
     /// [`openssl-ciphers`](https://www.openssl.org/docs/manmaster/man1/openssl-ciphers.html).
     ///
     /// ```
-    /// use fefixs::Version;
+    /// use fefixs::{FixOverTlsVersion, FixOverTlsV1};
     ///
-    /// let version = Version::V1Draft;
-    /// let ciphersuites_openssl = version.recommended_cs_openssl(false);
+    /// let ciphersuites_openssl = FixOverTlsV1.recommended_cs_openssl(false);
     /// let cipherlist = ciphersuites_openssl.join(":");
     /// println!("Supported ciphers: {}", cipherlist);
     /// ```
-    pub fn recommended_cs_openssl(&self, psk: bool) -> Vec<String> {
+    fn recommended_cs_openssl(&self, psk: bool) -> Vec<String>;
+
+    /// Creates an [`SslConnectorBuilder`] with fhe FIXS recommended settings.
+    #[cfg(feature = "utils-openssl")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-openssl")))]
+    fn recommended_connector_builder(&self) -> SslConnectorBuilder;
+
+    /// Creates an [`SslAcceptorBuilder`] with fhe FIXS recommended settings.
+    #[cfg(feature = "utils-openssl")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-openssl")))]
+    fn recommended_acceptor_builder(&self) -> SslAcceptorBuilder;
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct FixOverTlsV1;
+
+impl FixOverTlsV1 {
+    const RECOMMENDED_CIPHERSUITES: &'static [&'static str] = &[
+        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+        "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+        "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
+        "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+        "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+        "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+        "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+        "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+        "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+        "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
+        "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+        "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+        "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+        "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+    ];
+
+    const RECOMMENDED_CIPHERSUITES_PSK_ONLY: &'static [&'static str] = &[
+        "TLS_DHE_PSK_WITH_AES_128_GCM_SHA256",
+        "TLS_DHE_PSK_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA",
+        "TLS_DHE_PSK_WITH_AES_128_CBC_SHA",
+        "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA",
+        "TLS_DHE_PSK_WITH_AES_256_CBC_SHA",
+        "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256",
+        "TLS_DHE_PSK_WITH_AES_128_CBC_SHA256",
+        "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384",
+        "TLS_DHE_PSK_WITH_AES_256_CBC_SHA384",
+    ];
+}
+
+impl FixOverTlsVersion for FixOverTlsV1 {
+    fn recommended_cs_iana(&self, psk: bool) -> Vec<String> {
+        let recommented_ciphersuites = if psk {
+            Self::RECOMMENDED_CIPHERSUITES_PSK_ONLY
+        } else {
+            Self::RECOMMENDED_CIPHERSUITES
+        };
+
+        recommented_ciphersuites
+            .iter()
+            .map(ToString::to_string)
+            .collect()
+    }
+
+    fn recommended_cs_openssl(&self, psk: bool) -> Vec<String> {
         self.recommended_cs_iana(psk)
             .iter()
             .map(|s| {
@@ -83,20 +122,15 @@ impl Version {
             .collect()
     }
 
-    /// Creates an [`SslConnectorBuilder`] with fhe FIXS recommended settings.
     #[cfg(feature = "utils-openssl")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-openssl")))]
-    pub fn recommended_connector_builder(&self) -> SslConnectorBuilder {
+    fn recommended_connector_builder(&self) -> SslConnectorBuilder {
         let mut context = SslConnector::builder(SslMethod::tls()).unwrap();
-        match self {
-            Version::V1Draft => {
-                context
-                    .set_min_proto_version(Some(SslVersion::TLS1_2))
-                    .unwrap();
-                context.set_options(SslOptions::NO_COMPRESSION);
-                context.set_options(SslOptions::NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
-            }
-        };
+        context
+            .set_min_proto_version(Some(SslVersion::TLS1_2))
+            .unwrap();
+        context.set_options(SslOptions::NO_COMPRESSION);
+        context.set_options(SslOptions::NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
         context.set_session_cache_mode(SslSessionCacheMode::SERVER);
         context
             .set_cipher_list(self.recommended_cs_openssl(false).join(":").as_str())
@@ -104,22 +138,17 @@ impl Version {
         context
     }
 
-    /// Creates an [`SslAcceptorBuilder`] with fhe FIXS recommended settings.
     #[cfg(feature = "utils-openssl")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-openssl")))]
-    pub fn recommended_acceptor_builder(&self) -> SslAcceptorBuilder {
+    fn recommended_acceptor_builder(&self) -> SslAcceptorBuilder {
         let mut context = SslAcceptor::mozilla_intermediate_v5(SslMethod::tls()).unwrap();
-        match self {
-            Version::V1Draft => {
-                context
-                    .set_min_proto_version(Some(SslVersion::TLS1_2))
-                    .unwrap();
-                context.set_session_cache_mode(SslSessionCacheMode::SERVER);
-                context.set_options(SslOptions::CIPHER_SERVER_PREFERENCE);
-                context.set_options(SslOptions::NO_COMPRESSION);
-                context.set_options(SslOptions::NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
-            }
-        };
+        context
+            .set_min_proto_version(Some(SslVersion::TLS1_2))
+            .unwrap();
+        context.set_session_cache_mode(SslSessionCacheMode::SERVER);
+        context.set_options(SslOptions::CIPHER_SERVER_PREFERENCE);
+        context.set_options(SslOptions::NO_COMPRESSION);
+        context.set_options(SslOptions::NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
         context
             .set_cipher_list(self.recommended_cs_openssl(false).join(":").as_str())
             .unwrap();
@@ -127,52 +156,21 @@ impl Version {
     }
 }
 
-const V1_DRAFT_RECOMMENDED_CIPHERSUITES: &[&str] = &[
-    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-    "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
-    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
-    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
-    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
-    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-    "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
-    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-    "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
-    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
-    "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
-    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
-    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
-    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
-    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
-    "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
-];
-
-const V1_DRAFT_RECOMMENDED_CIPHERSUITES_PSK_ONLY: &[&str] = &[
-    "TLS_DHE_PSK_WITH_AES_128_GCM_SHA256",
-    "TLS_DHE_PSK_WITH_AES_256_GCM_SHA384",
-    "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA",
-    "TLS_DHE_PSK_WITH_AES_128_CBC_SHA",
-    "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA",
-    "TLS_DHE_PSK_WITH_AES_256_CBC_SHA",
-    "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256",
-    "TLS_DHE_PSK_WITH_AES_128_CBC_SHA256",
-    "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384",
-    "TLS_DHE_PSK_WITH_AES_256_CBC_SHA384",
-];
-
 #[cfg(test)]
 mod test {
-
     #[test]
     #[cfg(feature = "utils-openssl")]
-    fn v1draft_acceptor_is_ok() {
-        Version::V1Draft.recommended_acceptor_builder();
+    fn v1_acceptor_is_ok() {
+        use super::*;
+
+        FixOverTlsV1.recommended_acceptor_builder();
     }
 
     #[test]
     #[cfg(feature = "utils-openssl")]
-    fn v1draft_connector_is_ok() {
-        Version::V1Draft.recommended_connector_builder();
+    fn v1_connector_is_ok() {
+        use super::*;
+
+        FixOverTlsV1.recommended_connector_builder();
     }
 }

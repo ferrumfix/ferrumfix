@@ -9,3 +9,9 @@ publish = true
 edition = "2021"
 categories = ["network-programming", "parser-implementations", "encoding"]
 license = "MIT OR Apache-2.0"
+
+[features]
+utils-openssl = ["openssl"]
+
+[dependencies]
+openssl = { version = "0.10", optional = true }
