@@ -58,7 +58,7 @@ where
         };
         state.set(8, begin_string);
         // The second field is supposed to be `BodyLength(9)`, but obviously
-        // the length of the message is unknow until later in the
+        // the length of the message is unknown until later in the
         // serialization phase. This alone would usually require to
         //
         //  1. Serialize the rest of the message into an external buffer.

@@ -51,7 +51,7 @@ pub trait Configure: Clone + Default {
         Some(DEFAULT_MAX_MESSAGE_SIZE)
     }
 
-    /// Determines wheather or not `CheckSum(10)` should be verified.
+    /// Determines whether or not `CheckSum(10)` should be verified.
     ///
     /// This setting has no effect when encoding FIX messages.
     #[inline]
