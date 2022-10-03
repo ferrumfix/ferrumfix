@@ -1,15 +1,16 @@
 [package]
 name = "fefast"
-version = "0.1.0"
-authors = ["Filippo Costa @neysofu"]
-edition = "2021"
-homepage = "https://github.com/ferrumfix/ferrumfix"
-repository = "https://github.com/ferrumfix/ferrumfix"
-publish = true
-keywords = ["fix", "protocol", "finance", "fintech"]
-categories = ["network-programming", "parser-implementations", "encoding"]
-description = "FIX FAST implementation in pure Rust"
-license = "MIT OR Apache-2.0"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description.workspace = true
+publish.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
 
 # https://stackoverflow.com/q/61417452/
 # Test locally using `RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features`.
@@ -22,7 +23,7 @@ name = "fefast"
 
 [dependencies]
 bitvec = "0.18.3"
-decimal = { version="2", optional=true }
+decimal = { version = "2", optional = true }
 heck = "0.3"
 indoc = "1"
 # For reading XML.
@@ -40,10 +41,10 @@ strum = "0.20"
 strum_macros = "0.20"
 
 [dev-dependencies]
-arbitrary = { version="1.0", features=["derive"] }
-criterion = { version="0.3", features=["html_reports"] }
+arbitrary = { version = "1.0", features = ["derive"] }
+criterion = { version = "0.3", features = ["html_reports"] }
 enum-as-inner = "0.3"
 quickcheck = "1"
 quickcheck_derive = "0.3"
 quickcheck_macros = "1"
-syn = { version="1", features=["parsing"] }
+syn = { version = "1", features = ["parsing"] }

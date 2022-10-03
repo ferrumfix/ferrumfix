@@ -435,7 +435,7 @@ dependencies = [
 
 [[package]]
 name = "fefast"
-version = "0.1.0"
+version = "0.7.0"
 dependencies = [
  "arbitrary",
  "bitvec",
@@ -507,18 +507,18 @@ dependencies = [
 
 [[package]]
 name = "fefixp"
-version = "0.1.0"
+version = "0.7.0"
 
 [[package]]
 name = "fefixs"
-version = "0.1.0"
+version = "0.7.0"
 dependencies = [
  "openssl",
 ]
 
 [[package]]
 name = "fesofh"
-version = "0.1.0"
+version = "0.7.0"
 dependencies = [
  "arbitrary",
  "bytes",

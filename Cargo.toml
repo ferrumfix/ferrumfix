@@ -2,8 +2,17 @@
 lto = true
 
 [workspace]
-members = [
-    "crates/*",
-    "examples/*",
-    "tests/*",
-]
+members = ["crates/*", "examples/*", "tests/*"]
+
+[workspace.package]
+version = "0.7.0"
+edition = "2021"
+authors = ["Filippo Costa @neysofu"]
+homepage = "https://github.com/ferrumfix/ferrumfix"
+repository = "https://github.com/ferrumfix/ferrumfix"
+description = "FIX & FAST (FIX Adapted for STreaming) in pure Rust"
+publish = true
+readme = "README.md"
+keywords = ["fix", "fast", "protocol", "finance", "fintech"]
+categories = ["network-programming", "parser-implementations", "encoding"]
+license = "MIT OR Apache-2.0"

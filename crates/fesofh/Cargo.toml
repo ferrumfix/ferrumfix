@@ -1,15 +1,16 @@
 [package]
 name = "fesofh"
-version = "0.1.0"
-authors = ["Filippo Costa @neysofu"]
-edition = "2021"
-homepage = "https://github.com/ferrumfix/ferrumfix"
-repository = "https://github.com/ferrumfix/ferrumfix"
-description = "SOFH support for Rust"
-publish = true
-keywords = ["fix", "protocol", "finance", "fintech"]
-categories = ["network-programming", "parser-implementations", "encoding"]
-license = "MIT OR Apache-2.0"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description.workspace = true
+publish.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
 
 # https://stackoverflow.com/q/61417452/
 # Test locally using `RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features`.
