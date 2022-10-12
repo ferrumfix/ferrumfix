@@ -1,8 +1,8 @@
 use super::{errs, Backend, Config, Configure, LlEvent, LlEventLoop};
-use crate::session::{Environment, SeqNumbers};
+use crate::session::{Environment, MsgSeqNumCounter, SeqNumbers};
+use crate::tagvalue::FieldMap;
 use crate::tagvalue::FvWrite;
 use crate::tagvalue::Message;
-use crate::tagvalue::FieldMap;
 use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
 use crate::Buffer;
 use crate::FieldType;
@@ -62,14 +62,18 @@ pub struct FixConnection<B, C = Config> {
 }
 
 #[allow(dead_code)]
-impl<C, B> FixConnection<B, C>
+impl<B, C> FixConnection<B, C>
 where
-    C: Configure,
     B: Backend,
+    C: Configure,
 {
     /// The entry point for a [`FixConnection`].
-    async fn start<I, O>(&mut self, mut input: I, mut output: O, mut decoder: DecoderStreaming)
-    where
+    async fn start<I, O>(
+        &mut self,
+        mut input: I,
+        mut output: O,
+        mut decoder: DecoderStreaming<Vec<u8>>,
+    ) where
         I: AsyncRead + Unpin,
         O: AsyncWrite + Unpin,
     {
@@ -82,7 +86,7 @@ where
         &mut self,
         mut input: &mut I,
         output: &mut O,
-        decoder: &mut DecoderStreaming,
+        decoder: &mut DecoderStreaming<Vec<u8>>,
     ) where
         I: AsyncRead + Unpin,
         O: AsyncWrite + Unpin,
@@ -123,8 +127,12 @@ where
         self.backend.on_successful_handshake().ok();
     }
 
-    async fn event_loop<I, O>(&mut self, input: I, mut output: O, decoder: DecoderStreaming)
-    where
+    async fn event_loop<I, O>(
+        &mut self,
+        input: I,
+        mut output: O,
+        decoder: DecoderStreaming<Vec<u8>>,
+    ) where
         I: AsyncRead + Unpin,
         O: AsyncWrite + Unpin,
     {
