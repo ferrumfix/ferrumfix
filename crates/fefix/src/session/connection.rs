@@ -1,4 +1,5 @@
 use super::{errs, Backend, Config, Configure, LlEvent, LlEventLoop};
+use crate::field_types::Timestamp;
 use crate::session::{Environment, MsgSeqNumCounter, SeqNumbers};
 use crate::tagvalue::FieldMap;
 use crate::tagvalue::FvWrite;
@@ -6,6 +7,7 @@ use crate::tagvalue::Message;
 use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
 use crate::Buffer;
 use crate::FieldType;
+use crate::{field_types, FieldMap, StreamingDecoder};
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use std::marker::{PhantomData, Unpin};
 use std::pin::Pin;
@@ -91,7 +93,7 @@ where
         I: AsyncRead + Unpin,
         O: AsyncWrite + Unpin,
     {
-        let logon = {
+        let (logon, _) = {
             let begin_string = self.config.begin_string();
             let sender_comp_id = self.config.sender_comp_id();
             let target_comp_id = self.config.target_comp_id();
@@ -102,7 +104,7 @@ where
                 .start_message(begin_string, &mut self.buffer, b"A");
             msg.set_fv_with_key(&SENDER_COMP_ID, sender_comp_id);
             msg.set_fv_with_key(&TARGET_COMP_ID, target_comp_id);
-            msg.set_fv_with_key(&SENDING_TIME, chrono::Utc::now());
+            msg.set_fv_with_key(&SENDING_TIME, field_types::Timestamp::utc_now());
             msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
             msg.set_fv_with_key(&ENCRYPT_METHOD, 0);
             msg.set_fv_with_key(&108, heartbeat);
