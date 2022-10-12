@@ -57,6 +57,8 @@ where
     }
 
     pub async fn next_event<'a>(&'a mut self) -> Option<LlEvent<'a>> {
+        // Clear the  decoder for the next message
+        self.decoder.clear();
         let mut buf_filled_len = 0;
         let mut buf = self.decoder.fillable();
 
