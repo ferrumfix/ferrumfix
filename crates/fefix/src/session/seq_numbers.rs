@@ -17,6 +17,20 @@ impl SeqNumbers {
         }
     }
 
+    /// Returns the expected seq. number of the next inbound message and increments the counter.
+    pub fn get_incr_inbound(&mut self) -> u64 {
+        let next = self.next_inbound;
+        self.next_inbound += 1;
+        next
+    }
+
+    /// Returns the expected seq. number of the next outbound message and increments the counter.
+    pub fn get_incr_outbound(&mut self) -> u64 {
+        let next = self.next_outbound;
+        self.next_outbound += 1;
+        next
+    }
+
     /// Returns the expected seq. number of the next inbound message.
     pub fn next_inbound(&self) -> u64 {
         self.next_inbound

@@ -1,6 +1,6 @@
 use super::{errs, Backend, Config, Configure, LlEvent, LlEventLoop};
 use crate::field_types::Timestamp;
-use crate::session::{Environment, MsgSeqNumCounter, SeqNumbers};
+use crate::session::{Environment, MsgSeqNumCounter, SeqNumberError, SeqNumbers};
 use crate::tagvalue::Message;
 use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
 use crate::FieldType;
@@ -59,8 +59,7 @@ pub struct FixConnection<B, C = Config, V = Verifier<C>> {
     verifier: V,
     encoder: Encoder,
     buffer: Vec<u8>,
-    msg_seq_num_inbound: MsgSeqNumCounter,
-    msg_seq_num_outbound: MsgSeqNumCounter,
+    seq_numbers: SeqNumbers,
 }
 
 #[allow(dead_code)]
@@ -99,7 +98,7 @@ where
             let sender_comp_id = self.config.sender_comp_id();
             let target_comp_id = self.config.target_comp_id();
             let heartbeat = self.config.heartbeat().as_secs();
-            let msg_seq_num = self.msg_seq_num_outbound.next();
+            let msg_seq_num = self.seq_numbers.get_incr_outbound();
             let mut msg = self
                 .encoder
                 .start_message(begin_string, &mut self.buffer, b"A");
@@ -126,7 +125,7 @@ where
         self.on_logon(logon);
         self.backend.on_inbound_message(logon, true).ok();
         decoder.clear();
-        self.msg_seq_num_inbound.next();
+        self.seq_numbers.incr_inbound();
         self.backend.on_successful_handshake().ok();
     }
 
@@ -280,8 +279,16 @@ where
         self.config.heartbeat()
     }
 
-    fn encoder(&self) -> &Encoder {
-        return &self.encoder;
+    fn seq_numbers(&self) -> &SeqNumbers {
+        &self.seq_numbers
+    }
+
+    fn msg_seq_num(&mut self) -> &mut MsgSeqNumCounter {
+        todo!()
+    }
+
+    fn encoder(&mut self) -> &mut Encoder {
+        return &mut self.encoder;
     }
 }
 
@@ -317,7 +324,7 @@ where
 
     fn verifier(&self) -> &Z;
 
-    fn encoder(&self) -> &Encoder;
+    fn encoder(&mut self) -> &mut Encoder;
 
     fn dispatch_by_msg_type(&mut self, msg_type: &[u8], msg: Message<&[u8]>) -> Response {
         return match msg_type {
@@ -349,25 +356,31 @@ where
 
     fn heartbeat(&self) -> Duration;
 
-    fn seq_numbers(&self) -> SeqNumbers;
+    fn seq_numbers(&self) -> &SeqNumbers;
 
     fn msg_seq_num(&mut self) -> &mut MsgSeqNumCounter;
 
-    fn on_inbound_message(
-        &'a mut self,
-        msg: Message<&[u8]>,
-        builder: MessageBuilder,
-    ) -> Response<'a> {
+    fn on_inbound_message(&'a mut self, msg: Message<&[u8]>) -> Response<'a> {
         if self.verifier().verify_test_message_indicator(&msg).is_err() {
             return self.on_wrong_environment(msg);
         }
-        let seq_num = if let Ok(n) = msg.fv::<u64>(&MSG_SEQ_NUM) {
-            let expected = self.msg_seq_num_inbound.expected();
-            if n < expected {
-                return self.on_low_seqnum(msg);
-            } else if n > expected {
-                // Refer to specs. §4.8 for more information.
-                return self.on_high_seqnum(msg);
+        let seq_num = if let Ok(n) = msg.fv::<u64>(MSG_SEQ_NUM) {
+            match self.seq_numbers().validate_inbound(n) {
+                Ok(_) => {}
+                Err(err) => {
+                    match err {
+                        SeqNumberError::Recover => {
+                            // Refer to specs. §4.8 for more information.
+                            return self.on_high_seqnum(msg);
+                        }
+                        SeqNumberError::TooLow => {
+                            return self.on_low_seqnum(msg);
+                        }
+                        SeqNumberError::NoSeqNum => {
+                            panic!("Not possible")
+                        }
+                    }
+                }
             }
             n
         } else {
@@ -376,7 +389,7 @@ where
         };
 
         // Increment immediately.
-        self.msg_seq_num_inbound.next();
+        self.seq_numbers().get_incr_inbound();
 
         if self.verifier().verify_sending_time(&msg).is_err() {
             return self.make_reject_for_inaccurate_sending_time(msg);
@@ -400,11 +413,11 @@ where
 
     fn on_logout(&mut self, input_msg: &Message<&[u8]>) -> &[u8] {
         let (fix_message, _) = {
-            let msg_seq_num = self.next();
             let begin_string = input_msg
                 .fv_raw(BEGIN_STRING)
                 .expect("Message must have a begin string");
             let mut msg = self.encoder().start_message(begin_string, b"5");
+            let msg_seq_num = self.seq_numbers().get_incr_outbound();
             self.set_sender_and_target(&mut msg);
             msg.set(MSG_SEQ_NUM, msg_seq_num);
             msg.set(TEXT, "Logout");
