@@ -71,6 +71,25 @@ where
     C: Configure,
     V: Verify,
 {
+    /// Create a new FIX connection
+    fn new(
+        backend: B,
+        config: C,
+        verifier: V,
+        encoder: Encoder,
+        seq_numbers: Option<SeqNumbers>,
+    ) -> Self {
+        Self {
+            uuid: Uuid::new_v4(),
+            backend,
+            config,
+            encoder,
+            verifier,
+            buffer: vec![],
+            seq_numbers: seq_numbers.unwrap_or(SeqNumbers::default()),
+        }
+    }
+
     /// The entry point for a [`FixConnection`].
     async fn start<I, O>(
         &mut self,
