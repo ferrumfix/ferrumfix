@@ -175,11 +175,69 @@ where
 pub trait Verify {
     type Error;
 
-    fn verify_begin_string(&self, begin_string: &[u8]) -> Result<(), Self::Error>;
+    fn verify_begin_string(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error>;
 
     fn verify_test_message_indicator(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error>;
 
     fn verify_sending_time(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error>;
+}
+
+struct Verifier<C>
+where
+    C: Configure,
+{
+    config: C,
+}
+
+/// Basic verifier
+impl<C> Verify for Verifier<C>
+where
+    C: Configure,
+{
+    type Error = ();
+
+    fn verify_begin_string(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error> {
+        if msg.fv(BEGIN_STRING) == self.config.begin_string() {
+            Ok(())
+        }
+        Err(())
+    }
+
+    /// Verify whether test message indicator is for the correct environment
+    /// If the field is not set than the verification fails
+    fn verify_test_message_indicator(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error> {
+        if !self.config.verify_test_indicator() {
+            return Ok(());
+        }
+        let env = self.config.environment();
+        return match msg.fv_raw(TEST_MESSAGE_INDICATOR) {
+            Some(value) => {
+                if (value == b'Y')
+                    && ((env == Environment::Testing)
+                        || (env == Environment::Production { allow_test: true }))
+                {
+                    return Ok(());
+                };
+                if (value == b'N') && matches!(env, Environment::Production { .. }) {
+                    return Ok(());
+                };
+                Err(())
+            }
+            None => Err(()),
+        };
+    }
+
+    fn verify_sending_time(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error> {
+        if let Ok(timestamp) = msg.fv::<field_types::Timestamp>(SENDING_TIME) {
+            if let Some(time) = timestamp.to_chrono_utc() {
+                let utc_now = chrono::Utc::now();
+                if (utc_now - time) < chrono::Duration::seconds(1) {
+                    Ok(())
+                }
+            }
+        };
+        return Err(());
+    }
 }
 
 impl<'a, B, C, V> FixConnector<'a, B, C, V> for FixConnection<B, C>
@@ -302,7 +360,7 @@ where
         msg: Message<&[u8]>,
         builder: MessageBuilder,
     ) -> Response<'a> {
-        if self.verifier().verify_test_message_indicator(msg).is_err() {
+        if self.verifier().verify_test_message_indicator(&msg).is_err() {
             return self.on_wrong_environment(msg);
         }
         let seq_num = if let Ok(n) = msg.fv::<u64>(&MSG_SEQ_NUM) {
