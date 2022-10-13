@@ -275,6 +275,10 @@ where
     fn heartbeat(&self) -> Duration {
         self.config.heartbeat()
     }
+
+    fn encoder(&self) -> &Encoder {
+        return &self.encoder;
+    }
 }
 
 pub struct MessageBuilder {}
@@ -295,12 +299,6 @@ impl MessageBuilder {
     }
 }
 
-struct ResponseData<'a> {
-    pub begin_stringt: &'a [u8],
-    pub msg_type: &'a [u8],
-    pub msg_seq_num: u32,
-}
-
 pub trait FixConnector<'a, B, C, Z>
 where
     B: Backend,
@@ -315,30 +313,26 @@ where
 
     fn verifier(&self) -> &Z;
 
-    fn dispatch_by_msg_type(&self, msg_type: &[u8], msg: Message<&[u8]>) -> Response {
-        match msg_type {
+    fn encoder(&self) -> &Encoder;
+
+    fn dispatch_by_msg_type(&mut self, msg_type: &[u8], msg: Message<&[u8]>) -> Response {
+        return match msg_type {
             b"A" => {
                 self.on_logon(msg);
-                return Response::None;
+                Response::None
             }
             b"1" => {
                 let msg = self.on_test_request(msg);
-                return Response::OutboundBytes(msg);
+                Response::OutboundBytes(msg)
             }
-            b"2" => {
-                return Response::None;
-            }
-            b"5" => {
-                return Response::OutboundBytes(self.on_logout(&msg));
-            }
+            b"2" => Response::None,
+            b"5" => Response::OutboundBytes(self.on_logout(&msg)),
             b"0" => {
                 self.on_heartbeat(msg);
-                return Response::ResetHeartbeat;
+                Response::ResetHeartbeat
             }
-            _ => {
-                return self.on_application_message(msg);
-            }
-        }
+            _ => self.on_application_message(msg),
+        };
     }
 
     /// Callback for processing incoming FIX application messages.
@@ -393,16 +387,19 @@ where
         self.dispatch_by_msg_type(msg_type, msg)
     }
 
-    fn on_resend_request(&self, msg: &Message<&[u8]>) {
+    fn on_resend_request(&mut self, msg: &Message<&[u8]>) {
         let begin_seq_num = msg.fv(&BEGIN_SEQ_NO).unwrap();
         let end_seq_num = msg.fv(&END_SEQ_NO).unwrap();
-        self.on_resend_request(begin_seq_num..end_seq_num).ok();
+        self.make_resend_request(begin_seq_num, end_seq_num).ok();
     }
 
-    fn on_logout(&mut self, data: ResponseData, _msg: &Message<&[u8]>) -> &[u8] {
-        let fix_message = {
+    fn on_logout(&mut self, input_msg: &Message<&[u8]>) -> &[u8] {
+        let (fix_message, _) = {
             let msg_seq_num = self.next();
-            let mut msg = self.start_message(data.begin_string, b"5");
+            let begin_string = input_msg
+                .fv_raw(BEGIN_STRING)
+                .expect("Message must have a begin string");
+            let mut msg = self.encoder().start_message(begin_string, b"5");
             self.set_sender_and_target(&mut msg);
             msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
             msg.set_fv_with_key(&TEXT, "Logout");
