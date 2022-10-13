@@ -23,6 +23,7 @@ pub use heartbeat_rule::HeartbeatRule;
 pub use resend_request_range::ResendRequestRange;
 pub use seq_numbers::{SeqNumberError, SeqNumbers};
 
+use crate::tagvalue::DecodeError;
 use crate::{tagvalue::Message, FieldType, SetField};
 use std::ops::Range;
 
@@ -115,4 +116,19 @@ impl Iterator for MsgSeqNumCounter {
     fn next(&mut self) -> Option<Self::Item> {
         Some(MsgSeqNumCounter::next(self))
     }
+}
+
+/// The type returned in the event of a connection error
+#[derive(Debug, thiserror::Error)]
+pub enum FixConnectionError {
+    // TODO add payload
+    /// Error when backend processes messages
+    #[error("Message could not be processes.")]
+    BackendProcessingError,
+
+    #[error(transparent)]
+    DecodeError {
+        #[from]
+        source: DecodeError,
+    },
 }

@@ -1,6 +1,8 @@
 use super::{errs, Backend, Config, Configure, LlEvent, LlEventLoop};
 use crate::field_types::Timestamp;
-use crate::session::{Environment, MsgSeqNumCounter, SeqNumberError, SeqNumbers};
+use crate::session::{
+    Environment, FixConnectionError, MsgSeqNumCounter, SeqNumberError, SeqNumbers,
+};
 use crate::tagvalue::Message;
 use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
 use crate::FieldType;
@@ -173,6 +175,302 @@ where
             }
         }
     }
+
+    fn on_inbound_app_message<'a>(
+        &mut self,
+        message: Message<&'a [u8]>,
+    ) -> Result<(), FixConnectionError> {
+        self.backend
+            .on_inbound_app_message(message)
+            .map_err(|_| FixConnectionError::BackendProcessingError)
+    }
+
+    fn on_outbound_message(&mut self, message: &[u8]) -> Result<(), FixConnectionError> {
+        self.backend
+            .on_outbound_message(message)
+            .map_err(|_| FixConnectionError::BackendProcessingError)
+    }
+
+    fn verifier(&self) -> &V {
+        &self.verifier
+    }
+
+    fn environment(&self) -> Environment {
+        self.config.environment()
+    }
+
+    fn sender_comp_id(&self) -> &[u8] {
+        self.config.sender_comp_id()
+    }
+
+    fn target_comp_id(&self) -> &[u8] {
+        self.config.target_comp_id()
+    }
+
+    fn heartbeat(&self) -> Duration {
+        self.config.heartbeat()
+    }
+
+    fn dispatch_by_msg_type<'a>(
+        &'a mut self,
+        msg_type: &[u8],
+        msg: Message<'a, &'a [u8]>,
+    ) -> Response<'a> {
+        return match msg_type {
+            b"A" => {
+                self.on_logon(msg);
+                Response::None
+            }
+            b"1" => {
+                let msg = self.on_test_request(msg);
+                Response::OutboundBytes(msg)
+            }
+            b"2" => Response::None,
+            b"5" => Response::OutboundBytes(self.on_logout(&msg)),
+            b"0" => {
+                self.on_heartbeat(msg);
+                Response::ResetHeartbeat
+            }
+            _ => self.on_application_message(msg),
+        };
+    }
+
+    fn on_inbound_message<'a>(&'a mut self, msg: Message<'a, &'a [u8]>) -> Response<'a> {
+        if self.verifier().verify_test_message_indicator(&msg).is_err() {
+            return self.on_wrong_environment(msg);
+        }
+        let seq_num = if let Ok(n) = msg.fv::<u64>(MSG_SEQ_NUM) {
+            match self.seq_numbers.validate_inbound(n) {
+                Ok(_) => {}
+                Err(err) => {
+                    match err {
+                        SeqNumberError::Recover => {
+                            // Refer to specs. §4.8 for more information.
+                            return self.on_high_seqnum(msg);
+                        }
+                        SeqNumberError::TooLow => {
+                            return self.on_low_seqnum(msg);
+                        }
+                        SeqNumberError::NoSeqNum => {
+                            panic!("Not possible")
+                        }
+                    }
+                }
+            }
+            n
+        } else {
+            // See §4.5.3.
+            return self.on_missing_seqnum(msg);
+        };
+
+        // Increment immediately.
+        self.seq_numbers.get_incr_inbound();
+
+        if self.verifier.verify_sending_time(&msg).is_err() {
+            return self.make_reject_for_inaccurate_sending_time(msg);
+        }
+
+        let msg_type = if let Ok(x) = msg.fv::<&[u8]>(MSG_TYPE) {
+            x
+        } else {
+            self.on_inbound_app_message(msg).ok();
+            return self.on_application_message(msg);
+        };
+        self.dispatch_by_msg_type(msg_type, msg)
+    }
+
+    // TODO
+    // fn on_resend_request(&mut self, msg: &Message<&[u8]>) {
+    //     let begin_seq_num = msg.fv(BEGIN_SEQ_NO).unwrap();
+    //     let end_seq_num = msg.fv(END_SEQ_NO).unwrap();
+    //     self.make_resend_request(begin_seq_num, end_seq_num).ok();
+    // }
+
+    fn on_logout(&mut self, input_msg: &Message<&[u8]>) -> &[u8] {
+        let (fix_message, _) = {
+            let msg_seq_num = self.seq_numbers.get_incr_outbound();
+            let begin_string = self.config.begin_string();
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"5");
+            // TODO self.set_sender_and_target(&mut msg);
+            msg.set(SENDER_COMP_ID, self.config.sender_comp_id());
+            msg.set(TARGET_COMP_ID, self.config.target_comp_id());
+            msg.set(MSG_SEQ_NUM, msg_seq_num);
+            msg.set(TEXT, "Logout");
+            msg.done()
+        };
+        fix_message
+    }
+
+    //    fn add_seqnum(&self, msg: &mut RawEncoderState) {
+    //        msg.add_field(tags::MSG_SEQ_NUM, self.seq_numbers().next_outbound());
+    //        self.seq_numbers_mut().incr_outbound();
+    //    }
+    //
+    //    fn add_sending_time(&self, msg: &mut RawEncoderState) {
+    //        msg.add_field(tags::SENDING_TIME, DtfTimestamp::utc_now());
+    //    }
+    //
+    //    #[must_use]
+    fn on_heartbeat_is_due(&mut self) -> &[u8] {
+        let fix_message = {
+            let begin_string = self.config.begin_string();
+            let msg_seq_num = self.seq_numbers.get_incr_outbound();
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"0");
+            Self::set_sender_and_target(&mut msg, &self.config);
+            msg.set(MSG_SEQ_NUM, msg_seq_num);
+            Self::set_sending_time(&mut msg);
+            msg.done()
+        };
+        fix_message.0
+    }
+
+    fn set_sender_and_target(msg: &mut impl SetField<u32>, config: &C) {
+        msg.set(SENDER_COMP_ID, config.sender_comp_id());
+        msg.set(TARGET_COMP_ID, config.target_comp_id());
+    }
+
+    fn set_sending_time(msg: &mut impl SetField<u32>) {
+        msg.set(SENDING_TIME, Timestamp::utc_now());
+    }
+
+    fn set_header_details(&self, _msg: &mut impl SetField<u32>) {}
+
+    fn on_heartbeat(&mut self, _msg: Message<&[u8]>) {
+        // TODO: verify stuff.
+    }
+
+    fn on_test_request<'a>(&'a mut self, msg: Message<&[u8]>) -> &'a [u8] {
+        let test_req_id = msg.fv::<&[u8]>(TEST_REQ_ID).unwrap();
+        let begin_string = self.config.begin_string();
+        let msg_seq_num = self.seq_numbers.get_incr_outbound();
+        let mut msg = self
+            .encoder
+            .start_message(begin_string, &mut self.buffer, b"1");
+        Self::set_sender_and_target(&mut msg, &self.config);
+        msg.set(MSG_SEQ_NUM, msg_seq_num);
+        Self::set_sending_time(&mut msg);
+        msg.set(TEST_REQ_ID, test_req_id);
+        msg.done().0
+    }
+
+    fn on_wrong_environment(&mut self, _message: Message<&[u8]>) -> Response {
+        self.make_logout(errs::production_env())
+    }
+
+    fn generate_error_seqnum_too_low(&mut self) -> &[u8] {
+        let begin_string = self.config.begin_string();
+        let msg_seq_num = self.seq_numbers.get_incr_outbound();
+        let text = errs::msg_seq_num(self.seq_numbers.next_inbound() + 1);
+        let mut msg = self
+            .encoder
+            .start_message(begin_string, &mut self.buffer, b"FIXME");
+        msg.set(MSG_TYPE, "5");
+        Self::set_sender_and_target(&mut msg, &self.config);
+        msg.set(MSG_SEQ_NUM, msg_seq_num);
+        msg.set(TEXT, text.as_str());
+        msg.done().0
+    }
+
+    fn on_missing_seqnum(&mut self, _message: Message<&[u8]>) -> Response {
+        self.make_logout(errs::missing_field("MsgSeqNum", MSG_SEQ_NUM))
+    }
+
+    fn on_low_seqnum(&mut self, _message: Message<&[u8]>) -> Response {
+        self.make_logout(errs::msg_seq_num(self.seq_numbers.next_inbound() + 1))
+    }
+
+    fn on_reject(
+        &mut self,
+        _ref_seq_num: u64,
+        ref_tag: Option<u32>,
+        ref_msg_type: Option<&[u8]>,
+        reason: u32,
+        err_text: String,
+    ) -> Response {
+        let begin_string = self.config.begin_string();
+        let msg_seq_num = self.seq_numbers.get_incr_outbound();
+        let mut msg = self
+            .encoder
+            .start_message(begin_string, &mut self.buffer, b"3");
+        Self::set_sender_and_target(&mut msg, &self.config);
+        msg.set(MSG_SEQ_NUM, msg_seq_num);
+        if let Some(ref_tag) = ref_tag {
+            msg.set(REF_TAG_ID, ref_tag);
+        }
+        if let Some(ref_msg_type) = ref_msg_type {
+            msg.set(REF_MSG_TYPE, ref_msg_type);
+        }
+        msg.set(SESSION_REJECT_REASON, reason);
+        msg.set(TEXT, err_text.as_str());
+        Response::OutboundBytes(msg.done().0)
+    }
+
+    fn make_reject_for_inaccurate_sending_time<'a>(
+        &'a mut self,
+        offender: Message<&'a [u8]>,
+    ) -> Response<'a> {
+        let ref_seq_num = offender.fv(MSG_SEQ_NUM).unwrap();
+        let ref_msg_type = offender.fv::<&str>(MSG_TYPE).unwrap();
+        self.on_reject(
+            ref_seq_num,
+            Some(SENDING_TIME),
+            Some(ref_msg_type.as_bytes()),
+            SENDING_TIME_ACCURACY_PROBLEM,
+            "Bad SendingTime".to_string(),
+        )
+    }
+
+    fn make_logout(&mut self, text: String) -> Response {
+        let fix_message = {
+            let begin_string = self.config.begin_string();
+            let msg_seq_num = self.seq_numbers.get_incr_outbound();
+            let mut msg = self
+                .encoder
+                .start_message(begin_string, &mut self.buffer, b"5");
+            Self::set_sender_and_target(&mut msg, &self.config);
+            msg.set(MSG_SEQ_NUM, msg_seq_num);
+            msg.set(TEXT, text.as_str());
+            msg.set(SENDING_TIME, Timestamp::utc_now());
+            msg.done()
+        };
+        Response::OutboundBytes(fix_message.0)
+    }
+
+    fn make_resend_request(&mut self, start: u64, end: u64) -> Response {
+        let begin_string = self.config.begin_string();
+        let mut msg = self
+            .encoder
+            .start_message(begin_string, &mut self.buffer, b"2");
+        //Self::add_comp_id(msg);
+        //self.add_sending_time(msg);
+        //self.add_seqnum(msg);
+        msg.set(BEGIN_SEQ_NO, start);
+        msg.set(END_SEQ_NO, end);
+        Response::OutboundBytes(msg.done().0)
+    }
+
+    fn on_high_seqnum(&mut self, msg: Message<&[u8]>) -> Response {
+        let msg_seq_num = msg.fv(MSG_SEQ_NUM).unwrap();
+        let actual_seq_num = self.seq_numbers.get_incr_inbound();
+        return self.make_resend_request(actual_seq_num, msg_seq_num);
+    }
+
+    fn on_logon(&mut self, _logon: Message<&[u8]>) {
+        let mut _msg =
+            self.encoder
+                .start_message(self.config.begin_string(), &mut self.buffer, b"A");
+        //Self::add_comp_id(msg);
+        //self.add_sending_time(msg);
+        //self.add_sending_time(msg);
+    }
+
+    fn on_application_message<'a>(&'a mut self, msg: Message<'a, &'a [u8]>) -> Response<'a> {
+        Response::Application(msg)
+    }
 }
 
 pub trait Verify {
@@ -185,7 +483,7 @@ pub trait Verify {
     fn verify_sending_time(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error>;
 }
 
-struct Verifier<C>
+pub struct Verifier<C>
 where
     C: Configure,
 {
@@ -240,378 +538,6 @@ where
             }
         };
         return Err(());
-    }
-}
-
-impl<'a, B, C, V> FixConnector<'a, B, C, V> for FixConnection<B, C, V>
-where
-    B: Backend,
-    C: Configure,
-    V: Verify,
-{
-    type Error = &'a [u8];
-
-    fn on_inbound_app_message(&mut self, message: Message<&[u8]>) -> Result<(), Self::Error> {
-        self.backend
-            .on_inbound_app_message(message)
-            .map_err(|_| message.as_bytes()) // TODO fix clone
-    }
-
-    fn on_outbound_message(&mut self, message: &[u8]) -> Result<(), Self::Error> {
-        self.backend
-            .on_outbound_message(message)
-            .map_err(|_| message)
-    }
-
-    fn verifier(&self) -> &V {
-        &self.verifier
-    }
-
-    fn environment(&self) -> Environment {
-        self.config.environment()
-    }
-
-    fn sender_comp_id(&self) -> &[u8] {
-        self.config.sender_comp_id()
-    }
-
-    fn target_comp_id(&self) -> &[u8] {
-        self.config.target_comp_id()
-    }
-
-    fn heartbeat(&self) -> Duration {
-        self.config.heartbeat()
-    }
-
-    fn seq_numbers(&self) -> &SeqNumbers {
-        &self.seq_numbers
-    }
-
-    fn msg_seq_num(&mut self) -> &mut MsgSeqNumCounter {
-        todo!()
-    }
-
-    fn encoder(&mut self) -> &mut Encoder {
-        return &mut self.encoder;
-    }
-
-    fn buffer(&mut self) -> Vec<u8> {
-        Vec::new()
-    }
-
-    fn begin_string(&mut self) -> &[u8] {
-        &self.config.begin_string()
-    }
-}
-
-pub struct MessageBuilder {}
-
-pub struct MessageBuiderTuple<'a> {
-    phantom: PhantomData<&'a ()>,
-}
-
-impl<'a> MessageBuiderTuple<'a> {
-    pub fn get(self) -> (EncoderHandle<'a, Vec<u8>>, &'a mut MessageBuilder) {
-        unimplemented!()
-    }
-}
-
-impl MessageBuilder {
-    pub fn start_message(&mut self, begin_string: &[u8], msg_type: &[u8]) -> MessageBuiderTuple {
-        unimplemented!()
-    }
-}
-
-pub trait FixConnector<'a, B, C, Z>
-where
-    B: Backend,
-    C: Configure,
-    Z: Verify,
-{
-    type Error: FieldType<'a>;
-
-    fn target_comp_id(&self) -> &[u8];
-
-    fn sender_comp_id(&self) -> &[u8];
-
-    fn verifier(&self) -> &Z;
-
-    fn encoder(&mut self) -> &mut Encoder;
-
-    fn buffer(&mut self) -> Vec<u8>;
-
-    fn dispatch_by_msg_type(&'a mut self, msg_type: &[u8], msg: Message<&[u8]>) -> Response {
-        return match msg_type {
-            b"A" => {
-                self.on_logon(msg);
-                Response::None
-            }
-            b"1" => {
-                let msg = self.on_test_request(msg);
-                Response::OutboundBytes(msg)
-            }
-            b"2" => Response::None,
-            b"5" => Response::OutboundBytes(self.on_logout(&msg)),
-            b"0" => {
-                self.on_heartbeat(msg);
-                Response::ResetHeartbeat
-            }
-            _ => self.on_application_message(msg),
-        };
-    }
-
-    /// Callback for processing incoming FIX application messages.
-    fn on_inbound_app_message(&mut self, message: Message<&[u8]>) -> Result<(), Self::Error>;
-
-    /// Callback for post-processing outbound FIX messages.
-    fn on_outbound_message(&mut self, message: &[u8]) -> Result<(), Self::Error>;
-
-    fn environment(&self) -> Environment;
-
-    fn heartbeat(&self) -> Duration;
-
-    fn seq_numbers(&self) -> &SeqNumbers;
-
-    fn msg_seq_num(&mut self) -> &mut MsgSeqNumCounter;
-
-    fn begin_string(&mut self) -> &[u8];
-
-    fn on_inbound_message(&'a mut self, msg: Message<&[u8]>) -> Response<'a> {
-        if self.verifier().verify_test_message_indicator(&msg).is_err() {
-            return self.on_wrong_environment(msg);
-        }
-        let seq_num = if let Ok(n) = msg.fv::<u64>(MSG_SEQ_NUM) {
-            match self.seq_numbers().validate_inbound(n) {
-                Ok(_) => {}
-                Err(err) => {
-                    match err {
-                        SeqNumberError::Recover => {
-                            // Refer to specs. §4.8 for more information.
-                            return self.on_high_seqnum(msg);
-                        }
-                        SeqNumberError::TooLow => {
-                            return self.on_low_seqnum(msg);
-                        }
-                        SeqNumberError::NoSeqNum => {
-                            panic!("Not possible")
-                        }
-                    }
-                }
-            }
-            n
-        } else {
-            // See §4.5.3.
-            return self.on_missing_seqnum(msg);
-        };
-
-        // Increment immediately.
-        self.seq_numbers().get_incr_inbound();
-
-        if self.verifier().verify_sending_time(&msg).is_err() {
-            return self.make_reject_for_inaccurate_sending_time(msg);
-        }
-
-        let msg_type = if let Ok(x) = msg.fv::<&[u8]>(MSG_TYPE) {
-            x
-        } else {
-            self.on_inbound_app_message(msg).ok();
-            return self.on_application_message(msg);
-        };
-        self.dispatch_by_msg_type(msg_type, msg)
-    }
-
-    // TODO
-    // fn on_resend_request(&mut self, msg: &Message<&[u8]>) {
-    //     let begin_seq_num = msg.fv(BEGIN_SEQ_NO).unwrap();
-    //     let end_seq_num = msg.fv(END_SEQ_NO).unwrap();
-    //     self.make_resend_request(begin_seq_num, end_seq_num).ok();
-    // }
-
-    fn on_logout(&mut self, input_msg: &Message<&[u8]>) -> &[u8] {
-        let (fix_message, _) = {
-            let msg_seq_num = self.seq_numbers().get_incr_outbound();
-            let begin_string = self.begin_string();
-            let mut msg = self
-                .encoder()
-                .start_message(begin_string, &mut self.buffer(), b"5");
-            self.set_sender_and_target(&mut msg);
-            msg.set(MSG_SEQ_NUM, msg_seq_num);
-            msg.set(TEXT, "Logout");
-            msg.done()
-        };
-        fix_message
-    }
-
-    //    fn add_seqnum(&self, msg: &mut RawEncoderState) {
-    //        msg.add_field(tags::MSG_SEQ_NUM, self.seq_numbers().next_outbound());
-    //        self.seq_numbers_mut().incr_outbound();
-    //    }
-    //
-    //    fn add_sending_time(&self, msg: &mut RawEncoderState) {
-    //        msg.add_field(tags::SENDING_TIME, DtfTimestamp::utc_now());
-    //    }
-    //
-    //    #[must_use]
-    fn on_heartbeat_is_due(&mut self) -> &[u8] {
-        let fix_message = {
-            let begin_string = self.begin_string();
-            let msg_seq_num = self.seq_numbers().get_incr_outbound();
-            let mut msg = self
-                .encoder()
-                .start_message(begin_string, &mut self.buffer(), b"0");
-            self.set_sender_and_target(&mut msg);
-            msg.set(MSG_SEQ_NUM, msg_seq_num);
-            self.set_sending_time(&mut msg);
-            msg.done()
-        };
-        fix_message.0
-    }
-
-    fn set_sender_and_target(&'a self, msg: &mut impl SetField<u32>) {
-        msg.set(SENDER_COMP_ID, self.sender_comp_id());
-        msg.set(TARGET_COMP_ID, self.target_comp_id());
-    }
-
-    fn set_sending_time(&'a self, msg: &mut impl SetField<u32>) {
-        msg.set(SENDING_TIME, Timestamp::utc_now());
-    }
-
-    fn set_header_details(&'a self, _msg: &mut impl SetField<u32>) {}
-
-    fn on_heartbeat(&mut self, _msg: Message<&[u8]>) {
-        // TODO: verify stuff.
-    }
-
-    fn on_test_request(&mut self, msg: Message<&[u8]>) -> &[u8] {
-        let test_req_id = msg.fv::<&[u8]>(TEST_REQ_ID).unwrap();
-        let begin_string = self.begin_string();
-        let msg_seq_num = self.seq_numbers().get_incr_outbound();
-        let mut msg = self
-            .encoder()
-            .start_message(begin_string, &mut self.buffer(), b"1");
-        self.set_sender_and_target(&mut msg);
-        msg.set(MSG_SEQ_NUM, msg_seq_num);
-        self.set_sending_time(&mut msg);
-        msg.set(TEST_REQ_ID, test_req_id);
-        msg.done().0
-    }
-
-    fn on_wrong_environment(&mut self, _message: Message<&[u8]>) -> Response {
-        self.make_logout(errs::production_env())
-    }
-
-    fn generate_error_seqnum_too_low(&mut self) -> &[u8] {
-        let begin_string = self.begin_string();
-        let msg_seq_num = self.seq_numbers().get_incr_outbound();
-        let text = errs::msg_seq_num(self.seq_numbers().next_inbound() + 1);
-        let mut msg = self
-            .encoder()
-            .start_message(begin_string, &mut self.buffer(), b"FIXME");
-        msg.set(MSG_TYPE, "5");
-        self.set_sender_and_target(&mut msg);
-        msg.set(MSG_SEQ_NUM, msg_seq_num);
-        msg.set(TEXT, text.as_str());
-        msg.done().0
-    }
-
-    fn on_missing_seqnum(&mut self, _message: Message<&[u8]>) -> Response {
-        self.make_logout(errs::missing_field("MsgSeqNum", MSG_SEQ_NUM))
-    }
-
-    fn on_low_seqnum(&mut self, _message: Message<&[u8]>) -> Response {
-        self.make_logout(errs::msg_seq_num(self.seq_numbers().next_inbound + 1))
-    }
-
-    fn on_reject(
-        &mut self,
-        _ref_seq_num: u64,
-        ref_tag: Option<u32>,
-        ref_msg_type: Option<&[u8]>,
-        reason: u32,
-        err_text: String,
-    ) -> Response {
-        let begin_string = self.begin_string();
-        let sender_comp_id = self.sender_comp_id();
-        let target_comp_id = self.target_comp_id();
-        let msg_seq_num = self.seq_numbers().get_incr_outbound();
-        let mut msg = self
-            .encoder()
-            .start_message(begin_string, &mut self.buffer(), b"3");
-        self.set_sender_and_target(&mut msg);
-        msg.set(MSG_SEQ_NUM, msg_seq_num);
-        if let Some(ref_tag) = ref_tag {
-            msg.set(REF_TAG_ID, ref_tag);
-        }
-        if let Some(ref_msg_type) = ref_msg_type {
-            msg.set(REF_MSG_TYPE, ref_msg_type);
-        }
-        msg.set(SESSION_REJECT_REASON, reason);
-        msg.set(TEXT, err_text.as_str());
-        Response::OutboundBytes(msg.done().0)
-    }
-
-    fn make_reject_for_inaccurate_sending_time(&mut self, offender: Message<&[u8]>) -> Response {
-        let ref_seq_num = offender.fv(MSG_SEQ_NUM).unwrap();
-        let ref_msg_type = offender.fv::<&str>(MSG_TYPE).unwrap();
-        self.on_reject(
-            ref_seq_num,
-            Some(SENDING_TIME),
-            Some(ref_msg_type.as_bytes()),
-            SENDING_TIME_ACCURACY_PROBLEM,
-            "Bad SendingTime".to_string(),
-        )
-    }
-
-    fn make_logout(&mut self, text: String) -> Response {
-        let fix_message = {
-            let begin_string = self.begin_string();
-            let sender_comp_id = self.sender_comp_id();
-            let target_comp_id = self.target_comp_id();
-            let msg_seq_num = self.seq_numbers().next_outbound;
-            let mut msg = self
-                .encoder()
-                .start_message(begin_string, &mut self.buffer(), b"5");
-            self.set_sender_and_target(&mut msg);
-            msg.set(MSG_SEQ_NUM, msg_seq_num);
-            msg.set(TEXT, text.as_str());
-            self.set_sending_time(&mut msg);
-            msg.done().0
-        };
-        Response::OutboundBytes(fix_message)
-    }
-
-    fn make_resend_request(&mut self, start: u64, end: u64) -> Response {
-        let begin_string = self.begin_string();
-        let mut msg = self
-            .encoder()
-            .start_message(begin_string, &mut self.buffer(), b"2");
-        //Self::add_comp_id(msg);
-        //self.add_sending_time(msg);
-        //self.add_seqnum(msg);
-        msg.set(BEGIN_SEQ_NO, start);
-        msg.set(END_SEQ_NO, end);
-        Response::OutboundBytes(msg.done().0)
-    }
-
-    fn on_high_seqnum(&mut self, msg: Message<&[u8]>) -> Response {
-        let msg_seq_num = msg.fv(MSG_SEQ_NUM).unwrap();
-        self.make_resend_request(self.seq_numbers().get_incr_inbound(), msg_seq_num);
-        todo!()
-    }
-
-    fn on_logon(&mut self, _logon: Message<&[u8]>) {
-        let begin_string = self.begin_string();
-        let mut buffer = self.buffer();
-        let mut _msg = self
-            .encoder()
-            .start_message(begin_string, &mut buffer, b"A");
-        //Self::add_comp_id(msg);
-        //self.add_sending_time(msg);
-        //self.add_sending_time(msg);
-    }
-
-    fn on_application_message(&mut self, msg: Message<'a, &'a [u8]>) -> Response<'a> {
-        Response::Application(msg)
     }
 }
 
