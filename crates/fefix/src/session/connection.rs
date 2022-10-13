@@ -51,10 +51,11 @@ pub enum Response<'a> {
 
 /// A FIX connection message processor.
 #[derive(Debug)]
-pub struct FixConnection<B, C = Config> {
+pub struct FixConnection<B, C = Config, V = Verifier<C>> {
     uuid: Uuid,
     config: C,
     backend: B,
+    verifier: V,
     encoder: Encoder,
     buffer: Vec<u8>,
     msg_seq_num_inbound: MsgSeqNumCounter,
@@ -62,10 +63,11 @@ pub struct FixConnection<B, C = Config> {
 }
 
 #[allow(dead_code)]
-impl<B, C> FixConnection<B, C>
+impl<B, C, V> FixConnection<B, C, V>
 where
     B: Backend,
     C: Configure,
+    V: Verify,
 {
     /// The entry point for a [`FixConnection`].
     async fn start<I, O>(
@@ -197,8 +199,8 @@ where
     type Error = ();
 
     fn verify_begin_string(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error> {
-        if msg.fv(BEGIN_STRING) == self.config.begin_string() {
-            Ok(())
+        if msg.fv(BEGIN_STRING) == Ok(self.config.begin_string()) {
+            return Ok(());
         }
         Err(())
     }
@@ -212,13 +214,13 @@ where
         let env = self.config.environment();
         return match msg.fv_raw(TEST_MESSAGE_INDICATOR) {
             Some(value) => {
-                if (value == b'Y')
+                if (value == b"Y")
                     && ((env == Environment::Testing)
                         || (env == Environment::Production { allow_test: true }))
                 {
                     return Ok(());
                 };
-                if (value == b'N') && matches!(env, Environment::Production { .. }) {
+                if (value == b"N") && matches!(env, Environment::Production { .. }) {
                     return Ok(());
                 };
                 Err(())
@@ -232,7 +234,7 @@ where
             if let Some(time) = timestamp.to_chrono_utc() {
                 let utc_now = chrono::Utc::now();
                 if (utc_now - time) < chrono::Duration::seconds(1) {
-                    Ok(())
+                    return Ok(());
                 }
             }
         };
@@ -240,7 +242,7 @@ where
     }
 }
 
-impl<'a, B, C, V> FixConnector<'a, B, C, V> for FixConnection<B, C>
+impl<'a, B, C, V> FixConnector<'a, B, C, V> for FixConnection<B, C, V>
 where
     B: Backend,
     C: Configure,
@@ -256,8 +258,8 @@ where
         Ok(())
     }
 
-    fn verifier(&self) -> V {
-        unimplemented!()
+    fn verifier(&self) -> &V {
+        &self.verifier
     }
 
     fn environment(&self) -> Environment {
