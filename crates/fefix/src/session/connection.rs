@@ -1,13 +1,11 @@
 use super::{errs, Backend, Config, Configure, LlEvent, LlEventLoop};
 use crate::field_types::Timestamp;
 use crate::session::{Environment, MsgSeqNumCounter, SeqNumbers};
-use crate::tagvalue::FieldMap;
-use crate::tagvalue::FvWrite;
 use crate::tagvalue::Message;
 use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
-use crate::Buffer;
 use crate::FieldType;
 use crate::{field_types, FieldMap, StreamingDecoder};
+use crate::{Buffer, SetField};
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use std::marker::{PhantomData, Unpin};
 use std::pin::Pin;
@@ -179,10 +177,7 @@ pub trait Verify {
 
     fn verify_begin_string(&self, begin_string: &[u8]) -> Result<(), Self::Error>;
 
-    fn verify_test_message_indicator(
-        &self,
-        msg: &impl FieldMap<u32>,
-    ) -> Result<(), Self::Error>;
+    fn verify_test_message_indicator(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error>;
 
     fn verify_sending_time(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error>;
 }
@@ -194,7 +189,6 @@ where
     V: Verify,
 {
     type Error = &'a [u8];
-    type Msg = EncoderHandle<'a, Vec<u8>>;
 
     fn on_inbound_app_message(&mut self, message: Message<&[u8]>) -> Result<(), Self::Error> {
         Ok(())
@@ -256,7 +250,6 @@ where
     Z: Verify,
 {
     type Error: FieldType<'a>;
-    type Msg: FvWrite<'a>;
 
     fn target_comp_id(&self) -> &[u8];
 
@@ -385,16 +378,16 @@ where
         fix_message
     }
 
-    fn set_sender_and_target(&'a self, msg: &mut impl FvWrite<'a, Key = u32>) {
+    fn set_sender_and_target(&'a self, msg: &mut impl SetField<u32>) {
         msg.set_fv_with_key(&SENDER_COMP_ID, self.sender_comp_id());
         msg.set_fv_with_key(&TARGET_COMP_ID, self.target_comp_id());
     }
 
-    fn set_sending_time(&'a self, msg: &mut impl FvWrite<'a, Key = u32>) {
+    fn set_sending_time(&'a self, msg: &mut impl SetField<u32>) {
         msg.set_fv_with_key(&SENDING_TIME, chrono::Utc::now());
     }
 
-    fn set_header_details(&'a self, _msg: &mut impl FvWrite<'a, Key = u32>) {}
+    fn set_header_details(&'a self, _msg: &mut impl SetField<u32>) {}
 
     fn on_heartbeat(&mut self, _msg: Message<&[u8]>) {
         // TODO: verify stuff.
