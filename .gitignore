@@ -1,5 +1,7 @@
 .vscode/
+.idea/
 .envrc
 generated_*.rs
 target/
 **/*.rs.bk
+
