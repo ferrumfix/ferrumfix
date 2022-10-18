@@ -314,6 +314,10 @@ where
             field_locator_context: FieldLocatorContext::TopLevel,
         }
     }
+
+    pub fn is_ready(&self) -> bool {
+        self.is_ready
+    }
 }
 
 impl<B, C> GetConfig for DecoderStreaming<B, C> {
