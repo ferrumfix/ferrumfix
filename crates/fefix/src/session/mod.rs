@@ -126,9 +126,18 @@ pub enum FixConnectionError {
     #[error("Message could not be processes.")]
     BackendProcessingError,
 
+    #[error("Not connected")]
+    NotConnected,
+
     #[error(transparent)]
     DecodeError {
         #[from]
         source: DecodeError,
+    },
+
+    #[error(transparent)]
+    IoError {
+        #[from]
+        source: std::io::Error,
     },
 }

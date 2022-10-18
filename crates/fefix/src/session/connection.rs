@@ -96,21 +96,23 @@ where
         mut input: I,
         mut output: O,
         mut decoder: DecoderStreaming<Vec<u8>>,
-    ) where
+    ) -> Result<(), FixConnectionError>
+    where
         I: AsyncRead + Unpin,
         O: AsyncWrite + Unpin,
     {
         self.establish_connection(&mut input, &mut output, &mut decoder)
-            .await;
-        self.event_loop(input, output, decoder).await;
+            .await?;
+        self.event_loop(input, output, decoder).await
     }
 
     async fn establish_connection<I, O>(
         &mut self,
         mut input: &mut I,
-        output: &mut O,
-        decoder: &mut DecoderStreaming<Vec<u8>>,
-    ) where
+        mut output: &mut O,
+        mut decoder: &mut DecoderStreaming<Vec<u8>>,
+    ) -> Result<(), FixConnectionError>
+    where
         I: AsyncRead + Unpin,
         O: AsyncWrite + Unpin,
     {
@@ -131,7 +133,7 @@ where
             msg.set(HEART_BT_INT, heartbeat);
             msg.done()
         };
-        output.write(logon).await.unwrap();
+        output.write(logon).await?;
         self.backend.on_outbound_message(logon).ok();
         let logon;
         loop {
@@ -147,14 +149,16 @@ where
         decoder.clear();
         self.seq_numbers.incr_inbound();
         self.backend.on_successful_handshake().ok();
+        Ok(())
     }
 
     async fn event_loop<I, O>(
         &mut self,
         input: I,
         mut output: O,
-        decoder: DecoderStreaming<Vec<u8>>,
-    ) where
+        mut decoder: DecoderStreaming<Vec<u8>>,
+    ) -> Result<(), FixConnectionError>
+    where
         I: AsyncRead + Unpin,
         O: AsyncWrite + Unpin,
     {
@@ -164,13 +168,13 @@ where
             let event = event_loop
                 .next_event()
                 .await
-                .expect("The connection died unexpectedly.");
+                .ok_or_else(|| FixConnectionError::NotConnected)?;
             match event {
                 LlEvent::Message(msg) => {
                     let response = self.on_inbound_message(msg);
                     match response {
                         Response::OutboundBytes(bytes) => {
-                            output.write_all(bytes).await.unwrap();
+                            output.write_all(bytes).await?;
                             backend.on_outbound_message(bytes).ok();
                         }
                         Response::ResetHeartbeat => {
@@ -180,8 +184,8 @@ where
                     }
                 }
                 LlEvent::BadMessage(_err) => {}
-                LlEvent::IoError(_) => {
-                    return;
+                LlEvent::IoError(err) => {
+                    return Err(FixConnectionError::IoError { source: err });
                 }
                 LlEvent::Heartbeat => {
                     let heartbeat = self.on_heartbeat_is_due();
