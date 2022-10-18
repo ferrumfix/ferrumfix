@@ -158,6 +158,7 @@ where
         I: AsyncRead + Unpin,
         O: AsyncWrite + Unpin,
     {
+        let mut backend = (&self.backend).clone();
         let event_loop = &mut LlEventLoop::new(decoder, input, self.heartbeat());
         loop {
             let event = event_loop
@@ -170,8 +171,7 @@ where
                     match response {
                         Response::OutboundBytes(bytes) => {
                             output.write_all(bytes).await.unwrap();
-                            // TODO
-                            // self.on_outbound_message(bytes).ok();
+                            backend.on_outbound_message(bytes).ok();
                         }
                         Response::ResetHeartbeat => {
                             event_loop.ping_heartbeat();
@@ -185,7 +185,7 @@ where
                 }
                 LlEvent::Heartbeat => {
                     let heartbeat = self.on_heartbeat_is_due();
-                    // self.backend.on_outbound_message(&heartbeat).ok();
+                    backend.on_outbound_message(heartbeat).ok();
                     output.write_all(heartbeat).await.unwrap();
                 }
                 LlEvent::Logout => {}
