@@ -72,7 +72,7 @@ where
     V: Verify,
 {
     /// Create a new FIX connection
-    fn new(
+    pub fn new(
         backend: B,
         config: C,
         verifier: V,
@@ -91,7 +91,7 @@ where
     }
 
     /// The entry point for a [`FixConnection`].
-    async fn start<I, O>(
+    pub async fn start<I, O>(
         &mut self,
         mut input: I,
         mut output: O,
@@ -505,11 +505,21 @@ pub trait Verify {
     fn verify_sending_time(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error>;
 }
 
+#[derive(Clone, PartialEq, Debug)]
 pub struct Verifier<C>
 where
     C: Configure,
 {
     config: C,
+}
+
+impl<C> Verifier<C>
+where
+    C: Configure,
+{
+    pub fn new(config: C) -> Self {
+        Self { config }
+    }
 }
 
 /// Basic verifier

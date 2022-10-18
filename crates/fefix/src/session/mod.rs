@@ -16,7 +16,7 @@ mod resend_request_range;
 mod seq_numbers;
 
 pub use config::{Config, Configure};
-// pub use connection::*; FIXME
+pub use connection::{FixConnection, Verifier, Verify};
 pub use environment::Environment;
 pub use event_loop::*;
 pub use heartbeat_rule::HeartbeatRule;
