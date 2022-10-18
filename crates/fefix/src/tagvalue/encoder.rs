@@ -49,6 +49,7 @@ where
     where
         B: Buffer,
     {
+        buffer.clear();
         let initial_buffer_len = buffer.len();
         let mut state = EncoderHandle {
             encoder: self,
