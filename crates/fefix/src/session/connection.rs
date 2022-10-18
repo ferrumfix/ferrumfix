@@ -291,7 +291,6 @@ where
         let msg_type = if let Ok(x) = msg.fv::<&[u8]>(MSG_TYPE) {
             x
         } else {
-            self.on_inbound_app_message(msg).ok();
             return self.on_application_message(msg);
         };
         self.dispatch_by_msg_type(msg_type, msg)
@@ -487,6 +486,7 @@ where
     }
 
     fn on_application_message<'a>(&'a mut self, msg: Message<'a, &'a [u8]>) -> Response<'a> {
+        self.on_inbound_app_message(msg).ok();
         Response::Application(msg)
     }
 }
