@@ -31,7 +31,7 @@ use std::ops::Range;
 /// messages, send messages, etc..
 pub trait Backend: Clone {
     /// The type of errors that can arise during a [`FixConnection`].
-    type Error: for<'a> FieldType<'a>;
+    type Error: std::error::Error;
 
     fn sender_comp_id(&self) -> &[u8];
     fn target_comp_id(&self) -> &[u8];
