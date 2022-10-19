@@ -62,7 +62,6 @@ where
             self.decoder.clear();
         }
         let mut buf_filled_len = 0;
-        let mut buf = self.decoder.fillable();
 
         loop {
             if !self.is_alive {
@@ -75,6 +74,8 @@ where
                 Delay::new(now - self.last_reset + self.heartbeat_soft_tolerance).fuse();
             let mut timer_logout =
                 Delay::new(now - self.last_reset + self.heartbeat_hard_tolerance).fuse();
+            let mut buf = self.decoder.fillable();
+            let mut buf_len = buf.len();
             let mut read_result = self.input.read(buf).fuse();
 
             select! {
@@ -85,13 +86,15 @@ where
                         }
                         Ok(num_bytes) => {
                             buf_filled_len += num_bytes;
-                            if buf_filled_len < buf.len() {
+                            self.decoder.add_bytes_read(num_bytes);
+                            if buf_filled_len < buf_len {
                                 continue;
                             }
 
                             let result = self.decoder.try_parse();
                             buf_filled_len = 0;
-                            buf = &mut self.decoder.fillable()[buf_filled_len..];
+                            buf = &mut self.decoder.fillable()[..];
+                            buf_len = buf.len();
 
                             match result {
                                 Ok(Some(())) => {
