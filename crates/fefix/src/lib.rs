@@ -272,7 +272,10 @@ pub trait SetField<F> {
 
 /// Either a field that is missing or has an invalid value.
 #[derive(Debug, thiserror::Error)]
-pub enum FieldValueError<E> {
+pub enum FieldValueError<E>
+where
+    E: std::fmt::Debug,
+{
     /// No such field was found.
     #[error("Missing field tag")]
     Missing,
@@ -281,7 +284,10 @@ pub enum FieldValueError<E> {
     Invalid(#[from] E),
 }
 
-impl<E> PartialEq<FieldValueError<E>> for FieldValueError<E> {
+impl<E> PartialEq<FieldValueError<E>> for FieldValueError<E>
+where
+    E: std::fmt::Debug,
+{
     fn eq(&self, other: &FieldValueError<E>) -> bool {
         match (self, other) {
             (FieldValueError::Missing, FieldValueError::Missing) => true,
@@ -290,7 +296,10 @@ impl<E> PartialEq<FieldValueError<E>> for FieldValueError<E> {
     }
 }
 
-impl<E> From<Option<E>> for FieldValueError<E> {
+impl<E> From<Option<E>> for FieldValueError<E>
+where
+    E: std::fmt::Debug,
+{
     fn from(e: Option<E>) -> Self {
         match e {
             Some(e) => FieldValueError::Invalid(e),

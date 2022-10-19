@@ -66,6 +66,7 @@ pub trait FieldMap<F> {
     fn fv<'a, V>(&'a self, field: F) -> Result<V, FieldValueError<V::Error>>
     where
         V: FieldType<'a>,
+        V::Error: std::fmt::Debug,
     {
         self.fv_opt(field)
             .map_err(FieldValueError::Invalid)
@@ -77,6 +78,7 @@ pub trait FieldMap<F> {
     fn fvl<'a, V>(&'a self, field: F) -> Result<V, FieldValueError<V::Error>>
     where
         V: FieldType<'a>,
+        V::Error: std::fmt::Debug,
     {
         self.fvl_opt(field)
             .map_err(FieldValueError::Invalid)

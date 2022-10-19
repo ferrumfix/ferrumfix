@@ -148,7 +148,7 @@ where
             }
         }
         self.on_logon(logon);
-        self.backend.on_inbound_message(logon, true).ok();
+        self.backend.on_inbound_message(logon, false).ok();
         decoder.clear();
         self.seq_numbers.incr_inbound();
         self.backend.on_successful_handshake().ok();
@@ -191,9 +191,10 @@ where
                     return Err(FixConnectionError::IoError { source: err });
                 }
                 LlEvent::Heartbeat => {
-                    let heartbeat = self.on_heartbeat_is_due();
-                    backend.on_outbound_message(heartbeat).ok();
-                    output.write_all(heartbeat).await.unwrap();
+                    // dbglog!("Sending heartbeat");
+                    // let heartbeat = self.on_heartbeat_is_due();
+                    // backend.on_outbound_message(heartbeat).ok();
+                    // output.write_all(heartbeat).await.unwrap();
                 }
                 LlEvent::Logout => {}
                 LlEvent::TestRequest => {}
@@ -205,6 +206,7 @@ where
         &mut self,
         message: Message<&'a [u8]>,
     ) -> Result<(), FixConnectionError> {
+        dbg!("Calling backend");
         self.backend
             .on_inbound_app_message(message)
             .map_err(|_| FixConnectionError::BackendProcessingError)
@@ -241,6 +243,7 @@ where
         msg_type: &[u8],
         msg: Message<'a, &'a [u8]>,
     ) -> Response<'a> {
+        dbglog!("Dispatching");
         return match msg_type {
             b"A" => {
                 self.on_logon(msg);
@@ -261,6 +264,7 @@ where
     }
 
     fn on_inbound_message<'a>(&'a mut self, msg: Message<'a, &'a [u8]>) -> Response<'a> {
+        dbglog!("Got message");
         if self.verifier().verify_test_message_indicator(&msg).is_err() {
             return self.on_wrong_environment(msg);
         }
@@ -294,6 +298,7 @@ where
         if self.verifier.verify_sending_time(&msg).is_err() {
             return self.make_reject_for_inaccurate_sending_time(msg);
         }
+        dbglog!("Sending time verified");
 
         let msg_type = if let Ok(x) = msg.fv::<&[u8]>(MSG_TYPE) {
             x
@@ -366,7 +371,6 @@ where
 
     fn set_header_details(&self, _msg: &mut impl SetField<u32>) {}
 
-        // TODO: verify stuff.
     fn on_heartbeat(&mut self, msg: Message<&[u8]>) {
         self.backend
             .on_inbound_message(msg, false)
@@ -492,7 +496,10 @@ where
         return self.make_resend_request(actual_seq_num, msg_seq_num);
     }
 
-    fn on_logon(&mut self, _logon: Message<&[u8]>) {
+    fn on_logon(&mut self, logon: Message<&[u8]>) {
+        self.backend
+            .on_inbound_message(logon, false)
+            .unwrap_or_else(|err| dbglog!("Error on logon: {:?}", err));
         let mut _msg =
             self.encoder
                 .start_message(self.config.begin_string(), &mut self.buffer, b"A");
@@ -502,6 +509,7 @@ where
     }
 
     fn on_application_message<'a>(&'a mut self, msg: Message<'a, &'a [u8]>) -> Response<'a> {
+        dbg!("Got an app message");
         self.on_inbound_app_message(msg).ok();
         Response::Application(msg)
     }
@@ -568,7 +576,7 @@ where
                 };
                 Err(())
             }
-            None => Err(()),
+            None => Ok(()),
         };
     }
 
