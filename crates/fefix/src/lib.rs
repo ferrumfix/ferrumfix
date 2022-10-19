@@ -220,6 +220,9 @@ pub trait StreamingDecoder {
     /// The parsing error type.
     type Error;
 
+    /// Returns they bytes read on a decoder
+    fn num_bytes_read(&self) -> usize;
+
     /// Returns a mutable reference to the whole internal [`Buffer`].
     fn buffer(&mut self) -> &mut Self::Buffer;
 
@@ -235,10 +238,10 @@ pub trait StreamingDecoder {
     /// Provides a buffer that must be filled before re-attempting to deserialize
     /// the next message. The slice is *guaranteed* to be non-empty.
     fn fillable(&mut self) -> &mut [u8] {
-        let len = self.buffer().len();
+        let num_bytes_read = self.num_bytes_read();
         let num_bytes_required = self.num_bytes_required();
         self.buffer().resize(num_bytes_required, 0);
-        &mut self.buffer().as_mut_slice()[len..]
+        &mut self.buffer().as_mut_slice()[num_bytes_read..num_bytes_required]
     }
 
     /// Attempts to parse the contents available in the internal [`Buffer`]. The return value gives

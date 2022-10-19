@@ -138,7 +138,10 @@ where
         let logon;
         loop {
             let mut input = Pin::new(&mut input);
-            input.read_exact(decoder.fillable()).await?;
+            let buf = decoder.fillable();
+            let len = buf.len();
+            input.read_exact(buf).await?;
+            decoder.add_bytes_read(len);
             if let Ok(Some(())) = decoder.try_parse() {
                 logon = decoder.message();
                 break;

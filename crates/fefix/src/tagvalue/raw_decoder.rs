@@ -184,6 +184,10 @@ where
     type Buffer = B;
     type Error = DecodeError;
 
+    fn num_bytes_read(&self) -> usize {
+        todo!()
+    }
+
     fn buffer(&mut self) -> &mut B {
         &mut self.buffer
     }
