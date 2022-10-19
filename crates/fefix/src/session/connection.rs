@@ -251,7 +251,7 @@ where
                 Response::OutboundBytes(msg)
             }
             b"2" => Response::None,
-            b"5" => Response::OutboundBytes(self.on_logout(&msg)),
+            b"5" => Response::OutboundBytes(self.on_logout(msg)),
             b"0" => {
                 self.on_heartbeat(msg);
                 Response::ResetHeartbeat
@@ -310,7 +310,10 @@ where
     //     self.make_resend_request(begin_seq_num, end_seq_num).ok();
     // }
 
-    fn on_logout(&mut self, input_msg: &Message<&[u8]>) -> &[u8] {
+    fn on_logout(&mut self, input_msg: Message<&[u8]>) -> &[u8] {
+        self.backend
+            .on_inbound_message(input_msg, false)
+            .unwrap_or_else(|err| dbglog!("Error on logout: {:?}", err));
         let (fix_message, _) = {
             let msg_seq_num = self.seq_numbers.get_incr_outbound();
             let begin_string = self.config.begin_string();
@@ -363,11 +366,17 @@ where
 
     fn set_header_details(&self, _msg: &mut impl SetField<u32>) {}
 
-    fn on_heartbeat(&mut self, _msg: Message<&[u8]>) {
         // TODO: verify stuff.
+    fn on_heartbeat(&mut self, msg: Message<&[u8]>) {
+        self.backend
+            .on_inbound_message(msg, false)
+            .unwrap_or_else(|err| dbglog!("Error on heartbeat: {:?}", err));
     }
 
     fn on_test_request<'a>(&'a mut self, msg: Message<&[u8]>) -> &'a [u8] {
+        self.backend
+            .on_inbound_message(msg, false)
+            .unwrap_or_else(|err| dbglog!("Error on test request: {:?}", err));
         let test_req_id = msg.fv::<&[u8]>(TEST_REQ_ID).unwrap();
         let begin_string = self.config.begin_string();
         let msg_seq_num = self.seq_numbers.get_incr_outbound();
