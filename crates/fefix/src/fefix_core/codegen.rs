@@ -50,6 +50,7 @@ pub fn codegen_field_type_enum(field: dict::Field, settings: &Settings) -> Strin
         indoc!(
             r#"
             /// Field type variants for [`{field_name}`].
+            #[rustfmt::skip]
             #[derive({derives})]
             {attributes}
             pub enum {identifier} {{
@@ -217,14 +218,15 @@ pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) ->
 
             // {top_comment}
 
+            use {fefix_path}::definitions::HardCodedFixFieldDefinition;
             use {fefix_path}::dict::FieldLocation;
             use {fefix_path}::dict::FixDatatype;
-            use {fefix_path}::definitions::HardCodedFixFieldDefinition;
             use {fefix_path}::FieldType;
 
             {enum_definitions}
 
-            {field_defs}"#
+            {field_defs}
+            "#
         ),
         notice = generated_code_notice(),
         top_comment = top_comment,
@@ -305,11 +307,12 @@ fn gen_field_definition_with_hashsets(
         indoc!(
             r#"
                 {doc}
+                #[rustfmt::skip]
                 pub const {identifier}: &HardCodedFixFieldDefinition = &HardCodedFixFieldDefinition {{
-                    name: "{name}",
-                    tag: {tag},
-                    data_type: FixDatatype::{data_type},
-                    location: FieldLocation::{field_location},
+                        name: "{name}",
+                        tag: {tag},
+                        data_type: FixDatatype::{data_type},
+                        location: FieldLocation::{field_location},
                 }};"#
         ),
         doc = doc,
