@@ -191,10 +191,10 @@ where
                     return Err(FixConnectionError::IoError { source: err });
                 }
                 LlEvent::Heartbeat => {
-                    // dbglog!("Sending heartbeat");
-                    // let heartbeat = self.on_heartbeat_is_due();
-                    // backend.on_outbound_message(heartbeat).ok();
-                    // output.write_all(heartbeat).await.unwrap();
+                    dbglog!("Sending heartbeat");
+                    let heartbeat = self.on_heartbeat_is_due();
+                    backend.on_outbound_message(heartbeat).ok();
+                    output.write_all(heartbeat).await?;
                 }
                 LlEvent::Logout => {}
                 LlEvent::TestRequest => {}
