@@ -90,7 +90,6 @@ where
             decoder: self,
             raw_decoder,
             is_ready: false,
-            bytes_read: 0,
         }
     }
 
@@ -262,7 +261,6 @@ pub struct DecoderStreaming<B, C = Config> {
     decoder: Decoder<C>,
     raw_decoder: RawDecoderStreaming<B, C>,
     is_ready: bool,
-    bytes_read: usize,
 }
 
 impl<B, C> StreamingDecoder for DecoderStreaming<B, C>
@@ -274,7 +272,7 @@ where
     type Error = DecodeError;
 
     fn num_bytes_read(&self) -> usize {
-        self.bytes_read
+        self.raw_decoder.num_bytes_read()
     }
 
     fn buffer(&mut self) -> &mut Self::Buffer {
@@ -284,7 +282,6 @@ where
     fn clear(&mut self) {
         self.raw_decoder.clear();
         self.is_ready = false;
-        self.bytes_read = 0;
     }
 
     fn num_bytes_required(&self) -> usize {
@@ -327,7 +324,7 @@ where
     }
 
     pub fn add_bytes_read(&mut self, bytes_read: usize) {
-        self.bytes_read += bytes_read;
+        self.raw_decoder.add_bytes_read(bytes_read)
     }
 }
 

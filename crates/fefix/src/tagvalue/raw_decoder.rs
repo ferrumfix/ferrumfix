@@ -114,6 +114,7 @@ where
             config: self.config,
             buffer,
             state: ParserState::Empty,
+            bytes_read: 0,
         }
     }
 
@@ -174,6 +175,7 @@ pub struct RawDecoderStreaming<B, C = Config> {
     buffer: B,
     config: C,
     state: ParserState,
+    bytes_read: usize,
 }
 
 impl<B, C> StreamingDecoder for RawDecoderStreaming<B, C>
@@ -185,7 +187,7 @@ where
     type Error = DecodeError;
 
     fn num_bytes_read(&self) -> usize {
-        todo!()
+        self.bytes_read
     }
 
     fn buffer(&mut self) -> &mut B {
@@ -195,6 +197,7 @@ where
     fn clear(&mut self) {
         self.buffer().clear();
         self.state = ParserState::Empty;
+        self.bytes_read = 0;
     }
 
     fn num_bytes_required(&self) -> usize {
@@ -249,6 +252,10 @@ where
         } else {
             panic!("The message is not fully decoded. Check `try_parse` return value.");
         }
+    }
+
+    pub fn add_bytes_read(&mut self, bytes_read: usize) {
+        self.bytes_read += bytes_read;
     }
 }
 
@@ -397,9 +404,11 @@ mod test {
         let mut ready = false;
         while !ready || i >= stream.len() {
             let buf = decoder.fillable();
+            let buf_len = buf.len();
             buf.clone_from_slice(&stream[i..i + buf.len()]);
-            i += buf.len();
+            i += buf_len;
             ready = decoder.try_parse().unwrap().is_some();
+            decoder.add_bytes_read(buf_len);
         }
         assert_eq!(decoder.raw_frame().begin_string(), b"FIX.4.2");
         assert_eq!(
