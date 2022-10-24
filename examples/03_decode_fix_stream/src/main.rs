@@ -29,7 +29,9 @@ fn main() {
     for _message in 0..FIX_MESSAGES.len() {
         loop {
             // You *must* use `std::io::Read::read_exact`.
+            let input_length = fix_decoder.fillable().len();
             stream.read_exact(fix_decoder.fillable()).unwrap();
+            fix_decoder.add_bytes_read(input_length);
             match fix_decoder.try_parse().unwrap() {
                 Some(_) => {
                     // we have successfully parsed a message

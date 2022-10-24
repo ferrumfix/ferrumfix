@@ -869,7 +869,9 @@ mod test {
         let mut codec = decoder().streaming(vec![]);
         for msg_type in [b"D", b"X"] {
             loop {
+                let input_len = codec.fillable().len();
                 stream.read_exact(codec.fillable()).unwrap();
+                codec.add_bytes_read(input_len);
                 if codec.try_parse().unwrap().is_some() {
                     assert_eq!(codec.message().fv_raw(35), Some(&msg_type[..]));
                     break;
