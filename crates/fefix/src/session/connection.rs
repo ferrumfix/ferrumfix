@@ -599,7 +599,7 @@ mod test {
     use super::*;
     use crate::tagvalue::Decoder;
     use crate::{Dictionary, GetConfig};
-    use futures::SinkExt;
+    use futures::{SinkExt, StreamExt};
     use std::borrow::BorrowMut;
     use std::ops::Range;
     use std::time::Duration;
@@ -733,6 +733,51 @@ mod test {
 
         // Check no other messages
         receiver.try_next().unwrap_err();
+    }
+
+    /// Test getting and responding to test requests via the event loop
+    #[tokio::test]
+    async fn test_test_requests_event_loop() {
+        let mut encoder = Encoder::<TagConfig>::new();
+        let mut test_request_buffer = Vec::<u8>::new();
+        let mut test_request = encoder.start_message(b"FIX.4.4", &mut test_request_buffer, b"1");
+        test_request.set(SENDER_COMP_ID, "TARGET");
+        test_request.set(TARGET_COMP_ID, "SENDER");
+        test_request.set(MSG_SEQ_NUM, 1);
+        test_request.set(SENDING_TIME, Timestamp::utc_now());
+        test_request.set(TEST_REQ_ID, 100);
+        let _ = test_request.done();
+
+        let (mut conn, mut receiver) = conn();
+        let mut decoder = Decoder::<TagConfig>::new(Dictionary::fix44()).streaming(vec![]);
+        let jh = tokio::spawn(async move {
+            conn.event_loop(
+                &mut test_request_buffer.as_slice(),
+                &mut Vec::new(),
+                decoder,
+            )
+            .await
+            .unwrap();
+        });
+
+        let mut recv_decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
+
+        let test_req = recv_decoder.decode(receiver.next().await.unwrap()).unwrap();
+        assert_eq!(test_req.fv::<&str>(MSG_TYPE).unwrap(), "1");
+        assert_eq!(test_req.fv::<&str>(SENDER_COMP_ID).unwrap(), "TARGET");
+        assert_eq!(test_req.fv::<&str>(TARGET_COMP_ID).unwrap(), "SENDER");
+        assert_eq!(test_req.fv::<u64>(MSG_SEQ_NUM).unwrap(), 1);
+        assert_eq!(test_req.fv::<u32>(TEST_REQ_ID).unwrap(), 100);
+        dbglog!("Here");
+
+        let test_resp = recv_decoder.decode(receiver.next().await.unwrap()).unwrap();
+        assert_eq!(test_resp.fv::<&str>(MSG_TYPE).unwrap(), "1");
+        assert_eq!(test_resp.fv::<&str>(SENDER_COMP_ID).unwrap(), "SENDER");
+        assert_eq!(test_resp.fv::<&str>(TARGET_COMP_ID).unwrap(), "TARGET");
+        assert_eq!(test_resp.fv::<u64>(MSG_SEQ_NUM).unwrap(), 1);
+        assert_eq!(test_resp.fv::<u32>(TEST_REQ_ID).unwrap(), 0);
+
+        jh.abort()
     }
 
     #[test]
