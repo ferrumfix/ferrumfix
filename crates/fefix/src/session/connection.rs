@@ -4,7 +4,9 @@ use crate::session::{
     Environment, FixConnectionError, MsgSeqNumCounter, SeqNumberError, SeqNumbers,
 };
 use crate::tagvalue::Message;
-use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
+use crate::tagvalue::{
+    Config as TagConfig, Configure as TagConfigure, DecoderStreaming, Encoder, EncoderHandle,
+};
 use crate::FieldType;
 use crate::{field_types, FieldMap, StreamingDecoder};
 use crate::{Buffer, SetField};
@@ -54,29 +56,30 @@ pub enum Response<'a> {
 
 /// A FIX connection message processor.
 #[derive(Debug)]
-pub struct FixConnection<B, C = Config, V = Verifier<C>> {
+pub struct FixConnection<B, C = Config, V = Verifier<C>, TC = TagConfig> {
     uuid: Uuid,
     config: C,
     backend: B,
     verifier: V,
-    encoder: Encoder,
+    encoder: Encoder<TC>,
     buffer: Vec<u8>,
     seq_numbers: SeqNumbers,
 }
 
 #[allow(dead_code)]
-impl<B, C, V> FixConnection<B, C, V>
+impl<B, C, V, TC> FixConnection<B, C, V, TC>
 where
     B: Backend,
     C: Configure,
     V: Verify,
+    TC: TagConfigure,
 {
     /// Create a new FIX connection
     pub fn new(
         backend: B,
         config: C,
         verifier: V,
-        encoder: Encoder,
+        encoder: Encoder<TC>,
         seq_numbers: Option<SeqNumbers>,
     ) -> Self {
         Self {
@@ -593,75 +596,131 @@ where
     }
 }
 
-//fn add_time_to_msg(mut msg: EncoderHandle) {
-//    // https://www.onixs.biz/fix-dictionary/4.4/index.html#UTCTimestamp.
-//    let time = chrono::Utc::now();
-//    let timestamp = time.format("%Y%m%d-%H:%M:%S.%.3f");
-//    msg.set_fv_with_key(fix44::SENDING_TIME, timestamp.to_string().as_str());
-//}
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::tagvalue::Decoder;
+    use crate::{Dictionary, GetConfig};
+    use futures::SinkExt;
+    use std::borrow::BorrowMut;
+    use std::ops::Range;
+    use std::time::Duration;
 
-//#[cfg(test)]
-//mod test {
-//    use super::*;
-//    use std::time::Duration;
-//
-//    fn conn() -> FixConnection {
-//        let builder = FixConnectionBuilder {
-//            environment: Environment::ProductionDisallowTest,
-//            heartbeat: Duration::from_secs(30),
-//            seq_numbers: SeqNumbers::default(),
-//            sender_comp_id: "SENDER".to_string(),
-//            target_comp_id: "TARGET".to_string(),
-//        };
-//        builder.build()
-//    }
-//
-//    #[test]
-//    fn on_heartbeat_is_due() {
-//        let conn = &mut conn();
-//        let responses = &mut conn.on_heartbeat_is_due();
-//        let next = responses.next().unwrap();
-//        let msg = next.as_outbound().unwrap();
-//        assert_eq!(msg.field_str(tags::MSG_TYPE), Some("0"));
-//        assert_eq!(msg.field_str(tags::SENDER_COMP_ID), Some("SENDER"));
-//        assert_eq!(msg.field_str(tags::TARGET_COMP_ID), Some("TARGET"));
-//        assert_eq!(msg.field_bool(tags::POSS_DUP_FLAG), None);
-//        assert_eq!(msg.field_i64(tags::TEST_REQ_ID), None);
-//        assert!(responses.next().is_none());
-//    }
-//
-//    #[test]
-//    fn terminate_transport_when_error() {
-//        let conn = &mut conn();
-//        let responses = &mut conn.on_transport_error();
-//        let next = responses.next().unwrap();
-//        assert!(next.as_terminate_transport().is_some());
-//    }
-//
-//    #[test]
-//    fn inaccurate_sending_time() {
-//        let conn = &mut conn();
-//        let mut msg = FixMessage::new();
-//        msg.add_str(tags::MSG_TYPE, "BE");
-//        msg.add_str(tags::SENDER_COMP_ID, "SENDER");
-//        msg.add_str(tags::TARGET_COMP_ID, "TARGET");
-//        msg.add_i64(tags::MSG_SEQ_NUM, 1);
-//        msg.add_str(
-//            tags::USER_REQUEST_ID,
-//            "47b6f4a6-993d-4430-b68f-d9b680a1a772",
-//        );
-//        msg.add_i64(tags::USER_REQUEST_TYPE, 1);
-//        msg.add_str(tags::USERNAME, "john-doe");
-//        let mut responses = conn.on_inbound_message(msg);
-//        let next = responses.next().unwrap();
-//        let msg = next.as_outbound().unwrap();
-//        assert_eq!(msg.field_str(tags::MSG_TYPE), Some("3"));
-//        assert_eq!(msg.field_str(tags::SENDER_COMP_ID), Some("SENDER"));
-//        assert_eq!(msg.field_str(tags::TARGET_COMP_ID), Some("TARGET"));
-//        assert_eq!(msg.field_bool(tags::POSS_DUP_FLAG), None);
-//        assert_eq!(msg.field_i64(tags::TEST_REQ_ID), None);
-//        assert_eq!(msg.field_i64(tags::SESSION_REJECT_REASON), Some(10));
-//        assert_eq!(msg.field_i64(tags::REF_SEQ_NUM), Some(10));
-//        assert!(responses.next().is_none());
-//    }
-//}
+    #[derive(Clone)]
+    struct TestBackend {
+        sender: futures::channel::mpsc::Sender<Vec<u8>>,
+    }
+
+    impl Backend for TestBackend {
+        type Error = FixConnectionError;
+
+        fn sender_comp_id(&self) -> &[u8] {
+            b"SENDER"
+        }
+
+        fn target_comp_id(&self) -> &[u8] {
+            b"TARGET"
+        }
+
+        fn on_inbound_app_message(&mut self, message: Message<&[u8]>) -> Result<(), Self::Error> {
+            self.on_inbound_message(message, true)
+        }
+
+        fn on_outbound_message(&mut self, message: &[u8]) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        fn on_inbound_message(
+            &mut self,
+            message: Message<&[u8]>,
+            _is_app: bool,
+        ) -> Result<(), Self::Error> {
+            Ok(self.sender.try_send(message.as_bytes().to_vec()).unwrap())
+        }
+
+        fn on_resend_request(&mut self, _range: Range<u64>) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        fn on_successful_handshake(&mut self) -> Result<(), Self::Error> {
+            Ok(self.sender.try_send(b"hand shook".to_bytes()).unwrap())
+        }
+
+        fn fetch_messages(&mut self) -> Result<&[&[u8]], Self::Error> {
+            Ok(&[b""])
+        }
+
+        fn pending_message(&mut self) -> Option<&[u8]> {
+            None
+        }
+    }
+
+    fn conn() -> (
+        FixConnection<TestBackend>,
+        futures::channel::mpsc::Receiver<Vec<u8>>,
+    ) {
+        let (sender, receiver) = futures::channel::mpsc::channel::<Vec<u8>>(10);
+        let mut config = Config::default();
+        config.sender_comp_id = "SENDER".to_string();
+        config.target_comp_id = "TARGET".to_string();
+        let mut encoder = Encoder::<TagConfig>::new();
+        let fix_connection = FixConnection::<TestBackend>::new(
+            TestBackend { sender },
+            config.clone(),
+            Verifier::<Config>::new(config),
+            encoder,
+            None, // TODO seq numbers
+        );
+
+        return (fix_connection, receiver);
+    }
+
+    #[test]
+    fn test_on_heartbeat_is_due() {
+        let conn = &mut conn().0;
+        let response = conn.on_heartbeat_is_due();
+        let mut decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
+        let msg = decoder.decode(response).unwrap();
+        assert_eq!(msg.fv::<&str>(MSG_TYPE).unwrap(), "0");
+        assert_eq!(msg.fv::<&str>(SENDER_COMP_ID).unwrap(), "SENDER");
+        assert_eq!(msg.fv::<&str>(TARGET_COMP_ID).unwrap(), "TARGET");
+        assert_eq!(msg.fv::<u64>(MSG_SEQ_NUM).unwrap(), 1);
+    }
+
+    /// Test a rejection is returned on missing sending time
+    #[test]
+    fn test_inaccurate_sending_time() {
+        let conn = &mut conn().0;
+        let mut encoder = Encoder::<TagConfig>::new();
+        let mut buffer = Vec::<u8>::new();
+        let mut input_msg = encoder.start_message(b"FIX.4.4", &mut buffer, b"BE");
+        input_msg.set(SENDER_COMP_ID, "SENDER");
+        input_msg.set(TARGET_COMP_ID, "TARGET");
+        input_msg.set(MSG_SEQ_NUM, 1);
+        let input_bytes = input_msg.done().0;
+
+        let mut input_decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
+        let response = conn.on_inbound_message(input_decoder.decode(input_bytes).unwrap());
+
+        let response_bytes = match response {
+            Response::OutboundBytes(msg_bytes) => msg_bytes,
+            _ => {
+                panic!("Expected outbound bytes");
+            }
+        };
+        let mut output_decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
+        let response_msg = output_decoder.decode(response_bytes).unwrap();
+        assert_eq!(response_msg.fv::<&str>(MSG_TYPE).unwrap(), "3");
+        assert_eq!(response_msg.fv::<&str>(SENDER_COMP_ID).unwrap(), "SENDER");
+        assert_eq!(response_msg.fv::<&str>(TARGET_COMP_ID).unwrap(), "TARGET");
+        assert_eq!(response_msg.fv::<u64>(MSG_SEQ_NUM).unwrap(), 1);
+        assert_eq!(response_msg.fv::<u32>(REF_TAG_ID).unwrap(), SENDING_TIME);
+        assert_eq!(response_msg.fv::<&str>(REF_MSG_TYPE).unwrap(), "BE");
+        assert_eq!(
+            response_msg.fv::<u32>(SESSION_REJECT_REASON).unwrap(),
+            SENDING_TIME_ACCURACY_PROBLEM
+        );
+        assert_eq!(response_msg.fv::<&str>(TEXT).unwrap(), "Bad SendingTime");
+        assert_eq!(response_msg.fv_opt::<&str>(TEST_REQ_ID).unwrap(), None);
+    }
+}
