@@ -151,7 +151,6 @@ where
             }
         }
         self.on_logon(logon);
-        self.backend.on_inbound_message(logon, false).ok();
         decoder.clear();
         self.seq_numbers.incr_inbound();
         self.backend.on_successful_handshake().ok();
@@ -626,7 +625,8 @@ mod test {
         }
 
         fn on_outbound_message(&mut self, message: &[u8]) -> Result<(), Self::Error> {
-            Ok(())
+            dbglog!("TEST FIX send > {}", std::str::from_utf8(message).unwrap());
+            Ok(self.sender.try_send(message.to_vec()).unwrap())
         }
 
         fn on_inbound_message(
@@ -634,6 +634,10 @@ mod test {
             message: Message<&[u8]>,
             _is_app: bool,
         ) -> Result<(), Self::Error> {
+            dbglog!(
+                "TEST FIX recv < {}",
+                std::str::from_utf8(message.as_bytes()).unwrap()
+            );
             Ok(self.sender.try_send(message.as_bytes().to_vec()).unwrap())
         }
 
@@ -642,6 +646,7 @@ mod test {
         }
 
         fn on_successful_handshake(&mut self) -> Result<(), Self::Error> {
+            dbglog!("hand shook");
             Ok(self.sender.try_send(b"hand shook".to_bytes()).unwrap())
         }
 
@@ -673,6 +678,61 @@ mod test {
         );
 
         return (fix_connection, receiver);
+    }
+
+    /// Test message exchange during a login
+    #[tokio::test]
+    async fn test_login() {
+        let mut encoder = Encoder::<TagConfig>::new();
+        let mut login_resp_buffer = Vec::<u8>::new();
+        let mut login_resp = encoder.start_message(b"FIX.4.4", &mut login_resp_buffer, b"A");
+        login_resp.set(SENDER_COMP_ID, "TARGET");
+        login_resp.set(TARGET_COMP_ID, "SENDER");
+        login_resp.set(MSG_SEQ_NUM, 1);
+        login_resp.set(ENCRYPT_METHOD, 0);
+        login_resp.set(HEART_BT_INT, 30);
+        login_resp.set(SENDING_TIME, Timestamp::utc_now());
+        let _ = login_resp.done();
+
+        let (mut conn, mut receiver) = conn();
+        let mut decoder = Decoder::<TagConfig>::new(Dictionary::fix44()).streaming(vec![]);
+        conn.establish_connection(
+            &mut login_resp_buffer.as_slice(),
+            &mut Vec::new(),
+            &mut decoder,
+        )
+        .await
+        .unwrap();
+
+        let mut recv_decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
+
+        let login_sent = recv_decoder
+            .decode(receiver.try_next().unwrap().unwrap())
+            .unwrap();
+        assert_eq!(login_sent.fv::<&str>(MSG_TYPE).unwrap(), "A");
+        assert_eq!(login_sent.fv::<&str>(SENDER_COMP_ID).unwrap(), "SENDER");
+        assert_eq!(login_sent.fv::<&str>(TARGET_COMP_ID).unwrap(), "TARGET");
+        assert_eq!(login_sent.fv::<u64>(MSG_SEQ_NUM).unwrap(), 1);
+        assert_eq!(login_sent.fv::<u32>(ENCRYPT_METHOD).unwrap(), 0);
+        assert_eq!(login_sent.fv::<u32>(HEART_BT_INT).unwrap(), 30);
+
+        let login_recv = recv_decoder
+            .decode(receiver.try_next().unwrap().unwrap())
+            .unwrap();
+        assert_eq!(login_recv.fv::<&str>(MSG_TYPE).unwrap(), "A");
+        assert_eq!(login_recv.fv::<&str>(SENDER_COMP_ID).unwrap(), "TARGET");
+        assert_eq!(login_recv.fv::<&str>(TARGET_COMP_ID).unwrap(), "SENDER");
+        assert_eq!(login_recv.fv::<u64>(MSG_SEQ_NUM).unwrap(), 1);
+        assert_eq!(login_recv.fv::<u32>(ENCRYPT_METHOD).unwrap(), 0);
+        assert_eq!(login_recv.fv::<u32>(HEART_BT_INT).unwrap(), 30);
+
+        assert_eq!(
+            receiver.try_next().unwrap().unwrap().as_slice(),
+            b"hand shook"
+        );
+
+        // Check no other messages
+        receiver.try_next().unwrap_err();
     }
 
     #[test]

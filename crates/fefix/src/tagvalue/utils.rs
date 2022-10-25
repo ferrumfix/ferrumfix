@@ -6,7 +6,7 @@ use std::convert::TryInto;
 // A tag-value message can't possibly be shorter than this.
 //
 //   8=?|9=?|35=?|10=???|
-pub const MIN_FIX_MESSAGE_LEN_IN_BYTES: usize = 20;
+pub const MIN_FIX_MESSAGE_LEN_IN_BYTES: usize = 25;
 
 /// The checksum field is composed of:
 ///  - `10=`       (3 characters)
