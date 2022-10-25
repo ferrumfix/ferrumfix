@@ -663,6 +663,7 @@ mod test {
         let mut config = Config::default();
         config.sender_comp_id = "SENDER".to_string();
         config.target_comp_id = "TARGET".to_string();
+        config.environment = Environment::Production { allow_test: false };
         let mut encoder = Encoder::<TagConfig>::new();
         let fix_connection = FixConnection::<TestBackend>::new(
             TestBackend { sender },
@@ -685,6 +686,42 @@ mod test {
         assert_eq!(msg.fv::<&str>(SENDER_COMP_ID).unwrap(), "SENDER");
         assert_eq!(msg.fv::<&str>(TARGET_COMP_ID).unwrap(), "TARGET");
         assert_eq!(msg.fv::<u64>(MSG_SEQ_NUM).unwrap(), 1);
+    }
+
+    /// Test a logout is returned when receiving a test message when production is expected
+    #[test]
+    fn test_logout_on_test_message_indicator() {
+        let conn = &mut conn().0;
+        let mut encoder = Encoder::<TagConfig>::new();
+        let mut buffer = Vec::<u8>::new();
+        let mut input_msg = encoder.start_message(b"FIX.4.4", &mut buffer, b"BE");
+        input_msg.set(SENDER_COMP_ID, "SENDER");
+        input_msg.set(TARGET_COMP_ID, "TARGET");
+        input_msg.set(MSG_SEQ_NUM, 1);
+        input_msg.set(TEST_MESSAGE_INDICATOR, true);
+        let input_bytes = input_msg.done().0;
+
+        let mut input_decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
+        let response = conn.on_inbound_message(input_decoder.decode(input_bytes).unwrap());
+
+        let response_bytes = match response {
+            Response::OutboundBytes(msg_bytes) => msg_bytes,
+            _ => {
+                panic!("Expected outbound bytes");
+            }
+        };
+        let mut output_decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
+        let response_msg = output_decoder.decode(response_bytes).unwrap();
+        assert_eq!(response_msg.fv::<&str>(MSG_TYPE).unwrap(), "5");
+        assert_eq!(response_msg.fv::<&str>(SENDER_COMP_ID).unwrap(), "SENDER");
+        assert_eq!(response_msg.fv::<&str>(TARGET_COMP_ID).unwrap(), "TARGET");
+        assert_eq!(response_msg.fv::<u64>(MSG_SEQ_NUM).unwrap(), 1);
+        assert_eq!(
+            response_msg.fv::<&str>(TEXT).unwrap(),
+            "TestMessageIndicator(464) was set to 'Y' but the environment \
+                   is a production environment"
+        );
+        assert_eq!(response_msg.fv_opt::<&str>(TEST_REQ_ID).unwrap(), None);
     }
 
     /// Test a rejection is returned on missing sending time
