@@ -420,7 +420,7 @@ where
     }
 
     fn on_low_seqnum(&mut self, _message: Message<&[u8]>) -> Response {
-        self.make_logout(errs::msg_seq_num(self.seq_numbers.next_inbound() + 1))
+        self.make_logout(errs::msg_seq_num(self.seq_numbers.next_inbound()))
     }
 
     fn on_reject(
@@ -485,9 +485,8 @@ where
         let mut msg = self
             .encoder
             .start_message(begin_string, &mut self.buffer, b"2");
-        //Self::add_comp_id(msg);
-        //self.add_sending_time(msg);
-        //self.add_seqnum(msg);
+        Self::set_sender_and_target(&mut msg, &self.config);
+        msg.set(SENDING_TIME, Timestamp::utc_now());
         msg.set(BEGIN_SEQ_NO, start);
         msg.set(END_SEQ_NO, end);
         Response::OutboundBytes(msg.done().0)
@@ -722,6 +721,101 @@ mod test {
                    is a production environment"
         );
         assert_eq!(response_msg.fv_opt::<&str>(TEST_REQ_ID).unwrap(), None);
+    }
+
+    /// Test a logout is returned when missing the seq number
+    #[test]
+    fn test_logout_on_missing_seq_number() {
+        let conn = &mut conn().0;
+        let mut encoder = Encoder::<TagConfig>::new();
+        let mut buffer = Vec::<u8>::new();
+        let mut input_msg = encoder.start_message(b"FIX.4.4", &mut buffer, b"BE");
+        input_msg.set(SENDER_COMP_ID, "SENDER");
+        input_msg.set(TARGET_COMP_ID, "TARGET");
+        let input_bytes = input_msg.done().0;
+
+        let mut input_decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
+        let response = conn.on_inbound_message(input_decoder.decode(input_bytes).unwrap());
+
+        let response_bytes = match response {
+            Response::OutboundBytes(msg_bytes) => msg_bytes,
+            _ => {
+                panic!("Expected outbound bytes");
+            }
+        };
+        let mut output_decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
+        let response_msg = output_decoder.decode(response_bytes).unwrap();
+        assert_eq!(response_msg.fv::<&str>(MSG_TYPE).unwrap(), "5");
+        assert_eq!(response_msg.fv::<&str>(SENDER_COMP_ID).unwrap(), "SENDER");
+        assert_eq!(response_msg.fv::<&str>(TARGET_COMP_ID).unwrap(), "TARGET");
+        assert_eq!(response_msg.fv::<u64>(MSG_SEQ_NUM).unwrap(), 1);
+        assert_eq!(
+            response_msg.fv::<&str>(TEXT).unwrap(),
+            "Missing mandatory field MsgSeqNum(34)"
+        );
+    }
+
+    /// Test a logout is returned when receiving a low the seq number
+    #[test]
+    fn test_logout_on_low_seq_number() {
+        let conn = &mut conn().0;
+        let mut encoder = Encoder::<TagConfig>::new();
+        let mut buffer = Vec::<u8>::new();
+        let mut input_msg = encoder.start_message(b"FIX.4.4", &mut buffer, b"BE");
+        input_msg.set(SENDER_COMP_ID, "SENDER");
+        input_msg.set(TARGET_COMP_ID, "TARGET");
+        input_msg.set(MSG_SEQ_NUM, 0);
+        let input_bytes = input_msg.done().0;
+
+        let mut input_decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
+        let response = conn.on_inbound_message(input_decoder.decode(input_bytes).unwrap());
+
+        let response_bytes = match response {
+            Response::OutboundBytes(msg_bytes) => msg_bytes,
+            _ => {
+                panic!("Expected outbound bytes");
+            }
+        };
+        let mut output_decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
+        let response_msg = output_decoder.decode(response_bytes).unwrap();
+        assert_eq!(response_msg.fv::<&str>(MSG_TYPE).unwrap(), "5");
+        assert_eq!(response_msg.fv::<&str>(SENDER_COMP_ID).unwrap(), "SENDER");
+        assert_eq!(response_msg.fv::<&str>(TARGET_COMP_ID).unwrap(), "TARGET");
+        assert_eq!(response_msg.fv::<u64>(MSG_SEQ_NUM).unwrap(), 1);
+        assert_eq!(
+            response_msg.fv::<&str>(TEXT).unwrap(),
+            "Invalid MsgSeqNum <34>, expected value 1"
+        );
+    }
+
+    /// Test sending a resend request on high seq number
+    #[test]
+    fn test_resend_request_high_seq_number() {
+        let conn = &mut conn().0;
+        let mut encoder = Encoder::<TagConfig>::new();
+        let mut buffer = Vec::<u8>::new();
+        let mut input_msg = encoder.start_message(b"FIX.4.4", &mut buffer, b"BE");
+        input_msg.set(SENDER_COMP_ID, "SENDER");
+        input_msg.set(TARGET_COMP_ID, "TARGET");
+        input_msg.set(MSG_SEQ_NUM, 5);
+        let input_bytes = input_msg.done().0;
+
+        let mut input_decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
+        let response = conn.on_inbound_message(input_decoder.decode(input_bytes).unwrap());
+
+        let response_bytes = match response {
+            Response::OutboundBytes(msg_bytes) => msg_bytes,
+            _ => {
+                panic!("Expected outbound bytes");
+            }
+        };
+        let mut output_decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
+        let response_msg = output_decoder.decode(response_bytes).unwrap();
+        assert_eq!(response_msg.fv::<&str>(MSG_TYPE).unwrap(), "2");
+        assert_eq!(response_msg.fv::<&str>(SENDER_COMP_ID).unwrap(), "SENDER");
+        assert_eq!(response_msg.fv::<&str>(TARGET_COMP_ID).unwrap(), "TARGET");
+        assert_eq!(response_msg.fv::<u64>(BEGIN_SEQ_NO).unwrap(), 1);
+        assert_eq!(response_msg.fv::<u64>(END_SEQ_NO).unwrap(), 5);
     }
 
     /// Test a rejection is returned on missing sending time
