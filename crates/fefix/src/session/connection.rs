@@ -298,6 +298,9 @@ where
         self.seq_numbers.get_incr_inbound();
 
         if self.verifier.verify_sending_time(&msg).is_err() {
+            self.backend
+                .on_inbound_message(msg, false)
+                .unwrap_or_else(|err| dbglog!("Error on wrong sending time: {:?}", err));
             return self.make_reject_for_inaccurate_sending_time(msg);
         }
         dbglog!("Sending time verified");
@@ -396,7 +399,10 @@ where
         msg.done().0
     }
 
-    fn on_wrong_environment(&mut self, _message: Message<&[u8]>) -> Response {
+    fn on_wrong_environment(&mut self, message: Message<&[u8]>) -> Response {
+        self.backend
+            .on_inbound_message(message, false)
+            .unwrap_or_else(|err| dbglog!("Error on wrong environment: {:?}", err));
         self.make_logout(errs::production_env())
     }
 
