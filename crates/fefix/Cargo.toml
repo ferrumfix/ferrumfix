@@ -112,3 +112,4 @@ quickcheck_derive = "0.3"
 quickcheck_macros = "1"
 tokio = { version = "1", features = ["full"] }
 syn = { version = "1", features = ["parsing"] }
+futures = {version="0.3", features = ["thread-pool"]}

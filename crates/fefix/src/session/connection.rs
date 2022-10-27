@@ -756,7 +756,8 @@ mod test {
 
         let (mut conn, mut receiver) = conn();
         let mut decoder = Decoder::<TagConfig>::new(Dictionary::fix44()).streaming(vec![]);
-        let jh = tokio::spawn(async move {
+        let pool = futures::executor::ThreadPool::new().expect("Failed to build pool");
+        pool.spawn_ok(async move {
             conn.event_loop(
                 &mut test_request_buffer.as_slice(),
                 &mut Vec::new(),
@@ -782,8 +783,6 @@ mod test {
         assert_eq!(test_resp.fv::<&str>(TARGET_COMP_ID).unwrap(), "TARGET");
         assert_eq!(test_resp.fv::<u64>(MSG_SEQ_NUM).unwrap(), 1);
         assert_eq!(test_resp.fv::<u32>(TEST_REQ_ID).unwrap(), 0);
-
-        jh.abort()
     }
 
     #[test]
