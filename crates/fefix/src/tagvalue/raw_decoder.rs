@@ -346,9 +346,9 @@ mod test {
     #[test]
     fn message_with_only_msg_type_tag_is_valid() {
         let decoder = new_decoder();
-        let msg = "8=?|9=5|35=?|10=183|".as_bytes();
+        let msg = "8=??????|9=5|35=?|10=183|".as_bytes();
         let frame = decoder.decode(msg).unwrap();
-        assert_eq!(frame.begin_string(), b"?");
+        assert_eq!(frame.begin_string(), b"??????");
         assert_eq!(frame.payload(), b"35=?|");
     }
 
