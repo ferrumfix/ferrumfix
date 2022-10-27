@@ -712,9 +712,8 @@ mod test {
 
         let mut recv_decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
 
-        let login_sent = recv_decoder
-            .decode(receiver.try_next().unwrap().unwrap())
-            .unwrap();
+        let msg1 = receiver.try_next().unwrap().unwrap();
+        let login_sent = recv_decoder.decode(&msg1).unwrap();
         assert_eq!(login_sent.fv::<&str>(MSG_TYPE).unwrap(), "A");
         assert_eq!(login_sent.fv::<&str>(SENDER_COMP_ID).unwrap(), "SENDER");
         assert_eq!(login_sent.fv::<&str>(TARGET_COMP_ID).unwrap(), "TARGET");
@@ -722,9 +721,8 @@ mod test {
         assert_eq!(login_sent.fv::<u32>(ENCRYPT_METHOD).unwrap(), 0);
         assert_eq!(login_sent.fv::<u32>(HEART_BT_INT).unwrap(), 30);
 
-        let login_recv = recv_decoder
-            .decode(receiver.try_next().unwrap().unwrap())
-            .unwrap();
+        let msg2 = receiver.try_next().unwrap().unwrap();
+        let login_recv = recv_decoder.decode(&msg2).unwrap();
         assert_eq!(login_recv.fv::<&str>(MSG_TYPE).unwrap(), "A");
         assert_eq!(login_recv.fv::<&str>(SENDER_COMP_ID).unwrap(), "TARGET");
         assert_eq!(login_recv.fv::<&str>(TARGET_COMP_ID).unwrap(), "SENDER");
@@ -768,8 +766,8 @@ mod test {
         });
 
         let mut recv_decoder = Decoder::<TagConfig>::new(Dictionary::fix44());
-
-        let test_req = recv_decoder.decode(receiver.next().await.unwrap()).unwrap();
+        let msg1 = receiver.next().await.unwrap();
+        let test_req = recv_decoder.decode(&msg1).unwrap();
         assert_eq!(test_req.fv::<&str>(MSG_TYPE).unwrap(), "1");
         assert_eq!(test_req.fv::<&str>(SENDER_COMP_ID).unwrap(), "TARGET");
         assert_eq!(test_req.fv::<&str>(TARGET_COMP_ID).unwrap(), "SENDER");
@@ -777,12 +775,13 @@ mod test {
         assert_eq!(test_req.fv::<u32>(TEST_REQ_ID).unwrap(), 100);
         dbglog!("Here");
 
-        let test_resp = recv_decoder.decode(receiver.next().await.unwrap()).unwrap();
+        let msg2 = receiver.next().await.unwrap();
+        let test_resp = recv_decoder.decode(&msg2).unwrap();
         assert_eq!(test_resp.fv::<&str>(MSG_TYPE).unwrap(), "1");
         assert_eq!(test_resp.fv::<&str>(SENDER_COMP_ID).unwrap(), "SENDER");
         assert_eq!(test_resp.fv::<&str>(TARGET_COMP_ID).unwrap(), "TARGET");
         assert_eq!(test_resp.fv::<u64>(MSG_SEQ_NUM).unwrap(), 1);
-        assert_eq!(test_resp.fv::<u32>(TEST_REQ_ID).unwrap(), 0);
+        assert_eq!(test_resp.fv::<u32>(TEST_REQ_ID).unwrap(), 100);
     }
 
     #[test]
