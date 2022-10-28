@@ -229,7 +229,6 @@ pub trait StreamingDecoder {
     /// Empties all contents of the internal buffer of `self`.
     fn clear(&mut self) {
         self.buffer().clear();
-        self.bytes_read = 0;
     }
 
     /// Provides a lower bound on the number of bytes that are required to reach the end of the

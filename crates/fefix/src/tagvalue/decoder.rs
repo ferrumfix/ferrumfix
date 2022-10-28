@@ -107,6 +107,7 @@ where
     /// decoder.config_mut().set_separator(b'|');
     /// let data = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
     /// let message = decoder.decode(data).unwrap();
+    /// #[cfg(feature = "fix44")]
     /// assert_eq!(message.fv(fix44::SENDER_COMP_ID), Ok("A"));
     /// ```
     #[inline]
