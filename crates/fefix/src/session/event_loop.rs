@@ -61,7 +61,6 @@ where
         if self.decoder.is_ready() {
             self.decoder.clear();
         }
-        let mut buf_filled_len = 0;
 
         loop {
             if !self.is_alive {
@@ -74,8 +73,7 @@ where
                 Delay::new(now - self.last_reset + self.heartbeat_soft_tolerance).fuse();
             let mut timer_logout =
                 Delay::new(now - self.last_reset + self.heartbeat_hard_tolerance).fuse();
-            let mut buf = self.decoder.fillable();
-            let mut buf_len = buf.len();
+            let buf = self.decoder.fillable();
             let mut read_result = self.input.read(buf).fuse();
 
             select! {
@@ -85,16 +83,17 @@ where
                             return Some(LlEvent::IoError(e));
                         }
                         Ok(num_bytes) => {
-                            buf_filled_len += num_bytes;
                             self.decoder.add_bytes_read(num_bytes);
-                            if buf_filled_len < buf_len {
+
+                            // num bytes required is total bytes from the header, num_bytes_read is
+                            // total read so far from (add_bytes_read). once they meet then the
+                            // buffer is done.  NOTE: could just make add_bytes_read return a value
+                            // indicating if there are more bytes to read for this message.
+                            if self.decoder.num_bytes_read() < self.decoder.num_bytes_required() {
                                 continue;
                             }
 
                             let result = self.decoder.try_parse();
-                            buf_filled_len = 0;
-                            buf = &mut self.decoder.fillable()[..];
-                            buf_len = buf.len();
 
                             match result {
                                 Ok(Some(())) => {
