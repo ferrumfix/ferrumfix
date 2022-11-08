@@ -329,6 +329,16 @@ where
     }
 }
 
+impl<B> DecoderStreaming<B, Config>
+    where
+        B: Buffer,
+{
+    pub fn set_separator(&mut self, separator: u8) {
+        self.raw_decoder.config_mut().set_separator(separator);
+        self.decoder.config_mut().set_separator(separator);
+    }
+}
+
 impl<B, C> GetConfig for DecoderStreaming<B, C> {
     type Config = C;
 

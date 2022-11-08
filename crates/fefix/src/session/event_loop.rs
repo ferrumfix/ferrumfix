@@ -156,19 +156,21 @@ pub enum LlEvent<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::tagvalue::{Config, Decoder};
+    use crate::tagvalue::{Config, Decoder, Encoder};
     use tokio::io::AsyncWriteExt;
     use tokio::net::{TcpListener, TcpStream};
     use tokio_util::compat::*;
+    use crate::{GetConfig, SetField};
+    use crate::field_types::Timestamp;
 
-    async fn produce_events(events: Vec<(&'static [u8], Duration)>) -> TcpStream {
+    async fn produce_events(events: Vec<(Vec<u8>, Duration)>) -> TcpStream {
         let tcp_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let local_addr = tcp_listener.local_addr().unwrap();
 
         tokio::spawn(async move {
             let mut stream = TcpStream::connect(local_addr).await.unwrap();
             for (event_bytes, delay) in events.iter() {
-                stream.write(event_bytes).await.unwrap();
+                stream.write(event_bytes.as_slice()).await.unwrap();
                 tokio::time::sleep(*delay).await;
             }
         });
@@ -177,12 +179,13 @@ mod test {
     }
 
     async fn new_event_loop(
-        events: Vec<(&'static [u8], Duration)>,
+        events: Vec<(Vec<u8>, Duration)>,
     ) -> LlEventLoop<Compat<TcpStream>> {
         let input = produce_events(events).await;
+        let mut decoder = Decoder::<Config>::new(crate::Dictionary::fix44()).streaming(vec![]);
 
         LlEventLoop::new(
-            Decoder::<Config>::new(crate::Dictionary::fix44()).streaming(vec![]),
+            decoder,
             input.compat(),
             Duration::from_secs(3),
         )
@@ -190,7 +193,7 @@ mod test {
 
     #[tokio::test]
     async fn dead_input_triggers_logout() {
-        let mut event_loop = new_event_loop(vec![(b"8", Duration::from_secs(10))]).await;
+        let mut event_loop = new_event_loop(vec![(b"8".to_vec(), Duration::from_secs(10))]).await;
         let event = event_loop.next_event().await;
         assert!(matches!(event, Some(LlEvent::Heartbeat)));
         let event = event_loop.next_event().await;
@@ -198,5 +201,55 @@ mod test {
             matches!(event, Some(LlEvent::Heartbeat))
                 || matches!(event, Some(LlEvent::TestRequest))
         );
+    }
+
+    /// Test receiving large messages received over multiple parts
+    #[tokio::test]
+    async fn test_multi_part_messages() {
+        // Simulate a large orderbook
+        let mut encoder = Encoder::<Config>::new();
+        let mut buffer = Vec::<u8>::new();
+        let mut input_msg = encoder.start_message(b"FIX.4.4", &mut buffer, b"W");
+        input_msg.set(35, "W");
+        input_msg.set(56, "SENDER");
+        input_msg.set(49, "TARGET");
+        input_msg.set(34, 1);
+        input_msg.set(52, Timestamp::utc_now());
+        input_msg.set(262, "test");
+        input_msg.set(155, "ETHUSDT");
+        input_msg.set(268, 8000);
+        // Offers
+        for i in 0..2000 {
+            input_msg.set(269, "1");
+            input_msg.set(270, 1500.0 + i as f64 * 0.01);
+            input_msg.set(271, 1.0 + i as f64 * 0.01);
+        }
+        // Bids
+        for i in 0..6000 {
+            input_msg.set(269, "0");
+            input_msg.set(270, 1499.0 - i as f64 * 0.01);
+            input_msg.set(271, 1.0 + i as f64 * 0.01);
+        }
+        let (msg, _) = input_msg.done();
+
+        let mut parts = vec![];
+        let mut used = 0;
+        let step = 10000;
+        while used < msg.len() {
+            if (used + step) > msg.len() {
+                parts.push((msg[used..msg.len()].to_vec(), Duration::from_secs(0)));
+                break;
+            }
+            parts.push((msg[used..used+step].to_vec(), Duration::from_secs(0)));
+            used += step;
+        }
+        let mut event_loop = new_event_loop(parts).await;
+        let event = event_loop.next_event().await.unwrap();
+        match  event {
+            LlEvent::Message(received_msg) => {
+                assert_eq!(received_msg.as_bytes(), msg, "Partial message received")
+            }
+            _ => panic!("Expected message")
+        }
     }
 }
