@@ -17,9 +17,21 @@ pub struct Message<'a> {
 
 impl<'a> Message<'a> {
     /// Creates an [`Iterator`] over all FIX fields in `self`.
-    pub fn iter_fields(&self) -> MessageFieldsIter<'a> {
+    pub fn iter_header_fields(&self) -> MessageFieldsIter<'a> {
         MessageFieldsIter {
             fields: self.internal.std_header.iter(),
+        }
+    }
+
+    pub fn iter_body_fields(&self) -> MessageFieldsIter<'a> {
+        MessageFieldsIter {
+            fields: self.internal.body.iter(),
+        }
+    }
+
+    pub fn iter_trailer_fields(&self) -> MessageFieldsIter<'a> {
+        MessageFieldsIter {
+            fields: self.internal.std_trailer.iter(),
         }
     }
 
