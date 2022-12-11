@@ -5,6 +5,6 @@ edition = "2021"
 
 [dependencies]
 decimal = "2"
-fefix = { path = "../../crates/fefix", features = ["fix44", "utils-decimal", "utils-rust-decimal"] }
+fefix = { path = "../../crates/fefix", features = ["utils-decimal", "utils-rust-decimal"] }
 rust_decimal = "1"
 rust_decimal_macros = "1"

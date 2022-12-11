@@ -27,18 +27,17 @@ harness = false
 
 [features]
 default = ["utils-tokio", "utils-chrono"]
-codegen = ["heck", "indoc"]
+codegen = ["heck", "indoc", "fefix-codegen"]
 derive = []
 json-encoding = []
-fix40 = []
-fix41 = []
-fix42 = []
-fix43 = []
-fix44 = []
-fix50 = []
-fix50sp1 = []
-fix50sp2 = []
-fixt11 = []
+fix40 = ["fefix-dictionary/fix40"]
+fix41 = ["fefix-dictionary/fix41"]
+fix42 = ["fefix-dictionary/fix42"]
+fix43 = ["fefix-dictionary/fix43"]
+fix50 = ["fefix-dictionary/fix50"]
+fix50sp1 = ["fefix-dictionary/fix50sp1"]
+fix50sp2 = ["fefix-dictionary/fix50sp2"]
+fixt11 = ["fefix-dictionary/fixt11"]
 # Third-party crate integration.
 utils-bytes = ["bytes"]
 utils-chrono = []
@@ -68,19 +67,18 @@ full = [
 ]
 
 [dependencies]
-
 bytes = { version = "1", optional = true }
 chrono = "0.4"
 decimal = { version = "2", optional = true }
-fefix_derive = { version = "0.7", path = "../fefix_derive" }
+fefix-codegen = { version = "0.7", path = "../fefix-codegen", optional = true }
+fefix-derive = { version = "0.7", path = "../fefix-derive" }
+fefix-dictionary = { version = "0.7", path = "../fefix-dictionary" }
 fnv = "1"
 futures = "0.3"
 futures-timer = "3"
 heck = { version = "0.4", optional = true }
 indoc = { version = "1", optional = true }
 nohash-hasher = "0.2"
-# For reading XML.
-roxmltree = "0.14"
 rust_decimal = { version = "1", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
@@ -93,6 +91,8 @@ uuid = { version = "1", features = ["v4"] }
 
 [build-dependencies]
 chrono = "0.4"
+fefix-codegen = { version = "0.7", path = "../fefix-codegen" }
+fefix-dictionary = { version = "0.7", path = "../fefix-dictionary" }
 fnv = "1"
 heck = "0.4"
 indoc = "1"

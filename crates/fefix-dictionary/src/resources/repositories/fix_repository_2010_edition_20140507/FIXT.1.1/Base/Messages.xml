@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+DISCLAIMER
+
+THE INFORMATION CONTAINED HEREIN AND THE FINANCIAL INFORMATION EXCHANGE PROTOCOL (COLLECTIVELY, THE "FIX PROTOCOL") ARE PROVIDED "AS IS" AND NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL MAKES ANY REPRESENTATION OR WARRANTY, EXPRESS OR IMPLIED, AS TO THE FIX PROTOCOL (OR THE RESULTS TO BE OBTAINED BY THE USE THEREOF) OR ANY OTHER MATTER AND EACH SUCH PERSON AND ENTITY SPECIFICALLY DISCLAIMS ANY WARRANTY OF ORIGINALITY, ACCURACY, COMPLETENESS, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SUCH PERSONS AND ENTITIES DO NOT WARRANT THAT THE FIX PROTOCOL WILL CONFORM TO ANY DESCRIPTION THEREOF OR BE FREE OF ERRORS. THE ENTIRE RISK OF ANY USE OF THE FIX PROTOCOL IS ASSUMED BY THE USER.
+
+NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL SHALL HAVE ANY LIABILITY FOR DAMAGES OF ANY KIND ARISING IN ANY MANNER OUT OF OR IN CONNECTION WITH ANY USER'S USE OF (OR ANY INABILITY TO USE) THE FIX PROTOCOL, WHETHER DIRECT, INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL (INCLUDING, WITHOUT LIMITATION, LOSS OF DATA, LOSS OF USE, CLAIMS OF THIRD PARTIES OR LOST PROFITS OR REVENUES OR OTHER ECONOMIC LOSS), WHETHER IN TORT (INCLUDING NEGLIGENCE AND STRICT LIABILITY), CONTRACT OR OTHERWISE, WHETHER OR NOT ANY SUCH PERSON OR ENTITY HAS BEEN ADVISED OF, OR OTHERWISE MIGHT HAVE ANTICIPATED THE POSSIBILITY OF, SUCH DAMAGES.
+
+No proprietary or ownership interest of any kind is granted with respect to the FIX Protocol (or any rights therein).
+
+Copyright 2003-2009 FIX Protocol Limited, all rights reserved
+
+REPRODUCTION
+
+FIX Protocol Limited grants permission to print in hard copy form or reproduce the FIX Protocol specification in its entirety provided that the duplicated pages retain the "Copyright FIX Protocol Limited" statement at the bottom of the page.
+
+Portions of the FIX Protocol specification may be extracted or cited in other documents (such as a document which describes one's implementation of the FIX Protocol) provided that one reference the origin of the FIX Protocol specification (HTUhttp://www.fixprotocol.orgUTH) and that the specification itself is "Copyright FIX Protocol Limited".
+FIX Protocol Limited claims no intellectual property over one's implementation (programming code) of an application which implements the behavior and details from the FIX Protocol specification. 	
+--><Messages xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" copyright="Copyright (c) FIX Protocol Ltd. All Rights Reserved." edition="2010" version="FIXT.1.1" xsi:noNamespaceSchemaLocation="../../schema/Messages.xsd" generated="2010-03-10T08:47:23-05:00">
+	<Message added="FIX.2.7">
+		<ComponentID>1</ComponentID>
+		<MsgType>0</MsgType>
+		<Name>Heartbeat</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<AbbrName>Heartbeat</AbbrName>
+		<NotReqXML>1</NotReqXML>
+	    <Description>The Heartbeat monitors the status of the communication link and identifies when the last of a string of messages was not received.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>2</ComponentID>
+		<MsgType>1</MsgType>
+		<Name>TestRequest</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<AbbrName>TestRequest</AbbrName>
+		<NotReqXML>1</NotReqXML>
+	    <Description>The test request message forces a heartbeat from the opposing application. The test request message checks sequence numbers or verifies communication line status. The opposite application responds to the Test Request with a Heartbeat containing the TestReqID.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>3</ComponentID>
+		<MsgType>2</MsgType>
+		<Name>ResendRequest</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<AbbrName>ResendRequest</AbbrName>
+		<NotReqXML>1</NotReqXML>
+	    <Description>The resend request is sent by the receiving application to initiate the retransmission of messages. This function is utilized if a sequence number gap is detected, if the receiving application lost a message, or as a function of the initialization process.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>4</ComponentID>
+		<MsgType>3</MsgType>
+		<Name>Reject</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<AbbrName>Reject</AbbrName>
+		<NotReqXML>1</NotReqXML>
+	    <Description>The reject message should be issued when a message is received but cannot be properly processed due to a session-level rule violation. An example of when a reject may be appropriate would be the receipt of a message with invalid basic data which successfully passes de-encryption, CheckSum and BodyLength checks.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>5</ComponentID>
+		<MsgType>4</MsgType>
+		<Name>SequenceReset</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<AbbrName>SequenceReset</AbbrName>
+		<NotReqXML>1</NotReqXML>
+	    <Description>The sequence reset message is used by the sending application to reset the incoming sequence number on the opposing side.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>6</ComponentID>
+		<MsgType>5</MsgType>
+		<Name>Logout</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<AbbrName>Logout</AbbrName>
+		<NotReqXML>1</NotReqXML>
+	    <Description>The logout message initiates or confirms the termination of a FIX session. Disconnection without the exchange of logout messages should be interpreted as an abnormal condition.</Description>
+	</Message>
+	<Message added="FIX.2.7">
+		<ComponentID>11</ComponentID>
+		<MsgType>A</MsgType>
+		<Name>Logon</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<AbbrName>Logon</AbbrName>
+		<NotReqXML>1</NotReqXML>
+	    <Description>The logon message authenticates a user establishing a connection to a remote system. The logon message must be the first message sent by the application requesting to initiate a FIX session.</Description>
+	</Message>
+	<Message added="FIX.4.3">
+		<ComponentID>47</ComponentID>
+		<MsgType>n</MsgType>
+		<Name>XMLnonFIX</Name>
+		<CategoryID>Session</CategoryID>
+		<SectionID>Session</SectionID>
+		<AbbrName>XMLnonFIX</AbbrName>
+		<NotReqXML>1</NotReqXML>
+		<Description/>
+	</Message>
+</Messages>

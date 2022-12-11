@@ -20,8 +20,6 @@ pub use crate::definitions::fix42;
 #[cfg(feature = "fix43")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fix43")))]
 pub use crate::definitions::fix43;
-#[cfg(feature = "fix44")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "fix44")))]
 pub use crate::definitions::fix44;
 #[cfg(feature = "fix50")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fix50")))]

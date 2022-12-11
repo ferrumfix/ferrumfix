@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Datatypes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           copyright="Copyright (c) FIX Protocol Ltd. All Rights Reserved."
+           edition="2010"
+           version="FIX.5.0SP2"
+           xsi:noNamespaceSchemaLocation="../../schema/Datatypes.xsd"
+           generated="2019-01-29T16:28:51.846Z"
+           latestEP="247">
+   <Datatype added="FIX.2.7" issue="SPEC-370" updated="FIX.5.0SP2" updatedEP="206">
+      <Name>int</Name>
+      <Description>Sequence of digits without commas or decimals and optional sign character (ASCII characters "-" and "0" - "9" ). The sign character utilizes one byte (i.e. positive int is "99999" while negative int is "-99999"). Note that int values may contain leading zeros (e.g. "00023" = "23").</Description>
+      <Example>723 in field 21 would be mapped int as |21=723|. -723 in field 12 would be mapped int as |12=-723|.</Example>
+      <XML>
+         <BuiltIn>1</BuiltIn>
+         <Base>xs:integer</Base>
+         <Description>Sequence of digits without commas or decimals and optional sign character (ASCII characters "-" and "0" - "9" ). The sign character utilizes one byte (i.e. positive int is "99999" while negative int is "-99999"). Note that int values may contain leading zeros (e.g. "00023" = "23").</Description>
+         <Example>723 in field 21 would be mapped int as |21=723|. -723 in field 12 would be mapped int as |12=-723|.</Example>
+      </XML>
+   </Datatype>
+   <Datatype added="FIX.4.3">
+		    <Name>Length</Name>
+		    <BaseType>int</BaseType>
+		    <Description>int field representing the length in bytes. Value must be positive.</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:nonNegativeInteger</Base>
+					    <Description>int field representing the length in bytes. Value must be positive.</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.3" updated="FIX.5.0SP2" updatedEP="99">
+      <Name>TagNum</Name>
+      <BaseType>int</BaseType>
+      <Description>int field representing a field's tag number when using FIX "Tag=Value" syntax. Value must be positive and may not contain leading zeros.</Description>
+      <XML>
+         <BuiltIn>0</BuiltIn>
+         <Base>xs:nonNegativeInteger</Base>
+      </XML>
+   </Datatype>
+   <Datatype added="FIX.4.3">
+		    <Name>SeqNum</Name>
+		    <BaseType>int</BaseType>
+		    <Description>int field representing a message sequence number. Value must be positive.</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:positiveInteger</Base>
+					    <Description>int field representing a message sequence number. Value must be positive.</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.3">
+		    <Name>NumInGroup</Name>
+		    <BaseType>int</BaseType>
+		    <Description>int field representing the number of entries in a repeating group. Value must be positive.</Description>
+	  </Datatype>
+   <Datatype added="FIX.4.1">
+		    <Name>DayOfMonth</Name>
+		    <BaseType>int</BaseType>
+		    <Description>int field representing a day during a particular monthy (values 1 to 31).</Description>
+	  </Datatype>
+   <Datatype added="FIX.2.7" updated="FIX.5.0SP2" updatedEP="206">
+      <Name>float</Name>
+      <Description>Sequence of digits with optional decimal point and sign character (ASCII characters "-", "0" - "9" and "."); the absence of the decimal point within the string will be interpreted as the float representation of an integer value. All float fields must accommodate up to fifteen significant digits. The number of decimal places used should be a factor of business/market needs and mutual agreement between counterparties. Note that float values may contain leading zeros (e.g. "00023.23" = "23.23") and may contain or omit trailing zeros after the decimal point (e.g. "23.0" = "23.0000" = "23" = "23."). Note that fields which are derived from float may contain negative values unless explicitly specified otherwise.</Description>
+      <XML>
+         <BuiltIn>1</BuiltIn>
+         <Base>xs:decimal</Base>
+         <Description>Sequence of digits with optional decimal point and sign character (ASCII characters "-", "0" - "9" and "."); the absence of the decimal point within the string will be interpreted as the float representation of an integer value. All float fields must accommodate up to fifteen significant digits. The number of decimal places used should be a factor of business/market needs and mutual agreement between counterparties. Note that float values may contain leading zeros (e.g. "00023.23" = "23.23") and may contain or omit trailing zeros after the decimal point (e.g. "23.0" = "23.0000" = "23" = "23."). Note that fields which are derived from float may contain negative values unless explicitly specified otherwise.</Description>
+      </XML>
+   </Datatype>
+   <Datatype added="FIX.4.2">
+		    <Name>Qty</Name>
+		    <BaseType>float</BaseType>
+		    <Description>float field capable of storing either a whole number (no decimal places) of "shares" (securities denominated in whole units) or a decimal value containing decimal places for non-share quantity asset classes (securities denominated in fractional units).</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:decimal</Base>
+					    <Description>float field capable of storing either a whole number (no decimal places) of "shares" (securities denominated in whole units) or a decimal value containing decimal places for non-share quantity asset classes (securities denominated in fractional units).</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.2">
+		    <Name>Price</Name>
+		    <BaseType>float</BaseType>
+		    <Description>float field representing a price. Note the number of decimal places may vary. For certain asset classes prices may be negative values. For example, prices for options strategies can be negative under certain market conditions. Refer to Volume 7: FIX Usage by Product for asset classes that support negative price values.</Description>
+		    <Example>Strk="47.50"</Example>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:decimal</Base>
+					    <Description>float field representing a price. Note the number of decimal places may vary. For certain asset classes prices may be negative values. For example, prices for options strategies can be negative under certain market conditions. Refer to Volume 7: FIX Usage by Product for asset classes that support negative price values.</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.2">
+		    <Name>PriceOffset</Name>
+		    <BaseType>float</BaseType>
+		    <Description>float field representing a price offset, which can be mathematically added to a "Price". Note the number of decimal places may vary and some fields such as LastForwardPoints may be negative.</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:decimal</Base>
+					    <Description>float field representing a price offset, which can be mathematically added to a "Price". Note the number of decimal places may vary and some fields such as LastForwardPoints may be negative.</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.2">
+		    <Name>Amt</Name>
+		    <BaseType>float</BaseType>
+		    <Description>float field typically representing a Price times a Qty</Description>
+		    <Example>Amt="6847.00"</Example>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:decimal</Base>
+					    <Description>float field typically representing a Price times a Qty</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.3">
+		    <Name>Percentage</Name>
+		    <BaseType>float</BaseType>
+		    <Description>float field representing a percentage (e.g. 0.05 represents 5% and 0.9525 represents 95.25%). Note the number of decimal places may vary.</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:decimal</Base>
+					    <Description>float field representing a percentage (e.g. 0.05 represents 5% and 0.9525 represents 95.25%). Note the number of decimal places may vary.</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.2.7" updated="FIX.5.0SP2" updatedEP="206">
+      <Name>char</Name>
+      <Description>Single character value, can include any alphanumeric character or punctuation except the delimiter. All char fields are case sensitive (i.e. m != M).</Description>
+      <XML>
+         <BuiltIn>0</BuiltIn>
+         <Base>xs:string</Base>
+         <Description>Single character value, can include any alphanumeric character or punctuation except the delimiter. All char fields are case sensitive (i.e. m != M).</Description>
+      </XML>
+   </Datatype>
+   <Datatype added="FIX.4.2">
+		    <Name>Boolean</Name>
+		    <BaseType>char</BaseType>
+		    <Description>char field containing one of two values:
+'Y' = True/Yes
+'N' = False/No</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:string</Base>
+			      <Pattern>[YN]{1}</Pattern>
+					    <Description>char field containing one of two values:
+'Y' = True/Yes
+'N' = False/No</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.2">
+		    <Name>String</Name>
+		    <Description>Alpha-numeric free format strings, can include any character or punctuation except the delimiter. All String fields are case sensitive (i.e. morstatt != Morstatt).</Description>
+		    <XML>
+			      <BuiltIn>1</BuiltIn>
+			      <Base>xs:string</Base>
+					    <Description>Alpha-numeric free format strings, can include any character or punctuation except the delimiter. All String fields are case sensitive (i.e. morstatt != Morstatt).</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.4">
+		    <Name>MultipleCharValue</Name>
+		    <BaseType>String</BaseType>
+		    <Description>string field containing one or more space delimited single character values (e.g. |18=2 A F| ).</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:string</Base>
+			      <Pattern>[A-Za-z0-9](\s[A-Za-z0-9])*</Pattern>
+					    <Description>string field containing one or more space delimited single character values (e.g. |18=2 A F| ).</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.2">
+		    <Name>MultipleStringValue</Name>
+		    <BaseType>String</BaseType>
+		    <Description>string field containing one or more space delimited multiple character values (e.g. |277=AV AN A| ).</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:string</Base>
+			      <Pattern>.+(\s.+)*</Pattern>
+					    <Description>string field containing one or more space delimited multiple character values (e.g. |277=AV AN A| ).</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.4">
+		    <Name>Country</Name>
+		    <BaseType>String</BaseType>
+		    <Description>string field representing a country using ISO 3166 Country code (2 character) values (see Appendix 6-B).</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:string</Base>
+			      <Pattern>.{2}</Pattern>
+					    <Description>string field representing a country using ISO 3166 Country code (2 character) values (see Appendix 6-B).</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.2">
+		    <Name>Currency</Name>
+		    <BaseType>String</BaseType>
+		    <Description>string field representing a currency type using ISO 4217 Currency code (3 character) values (see Appendix 6-A).</Description>
+		    <Example>StrkCcy="USD"</Example>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:string</Base>
+			      <Pattern>.{3}</Pattern>
+					    <Description>string field representing a currency type using ISO 4217 Currency code (3 character) values (see Appendix 6-A).</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.2">
+		    <Name>Exchange</Name>
+		    <BaseType>String</BaseType>
+		    <Description>string field representing a market or exchange using ISO 10383 Market Identifier Code (MIC) values (see"Appendix 6-C).</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:string</Base>
+			      <Pattern>.*</Pattern>
+					    <Description>string field representing a market or exchange using ISO 10383 Market Identifier Code (MIC) values (see"Appendix 6-C).</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.1">
+		    <Name>MonthYear</Name>
+		    <BaseType>String</BaseType>
+		    <Description>string field representing month of a year. An optional day of the month can be appended or an optional week code.
+Valid formats:
+YYYYMM
+YYYYMMDD
+YYYYMMWW
+Valid values:
+YYYY = 0000-9999; MM = 01-12; DD = 01-31; WW = w1, w2, w3, w4, w5.</Description>
+		    <Example>MonthYear="200303",  MonthYear="20030320", MonthYear="200303w2"</Example>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:string</Base>
+			      <Pattern>\d{4}(0|1)\d([0-3wW]\d)?</Pattern>
+		       <Description>string field representing month of a year. An optional day of the month can be appended or an optional week code.
+Valid formats:
+YYYYMM
+YYYYMMDD
+YYYYMMWW
+Valid values:
+YYYY = 0000-9999; MM = 01-12; DD = 01-31; WW = w1, w2, w3, w4, w5.</Description>
+		       <Example>MonthYear="200303",  MonthYear="20030320", MonthYear="200303w2"</Example>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.2" updated="FIX.5.0SP2" updatedEP="247">
+      <Name>UTCTimestamp</Name>
+      <BaseType>String</BaseType>
+      <Description>string field representing time/date combination represented in UTC (Universal Time Coordinated, also known as "GMT") in either YYYYMMDD-HH:MM:SS (whole seconds) or YYYYMMDD-HH:MM:SS.sss* format, colons, dash, and period required.
+
+Valid values:
+YYYY = 0000-9999, MM = 01-12, DD = 01-31, HH = 00-23, MM = 00-59, SS = 00-60 (60 only if UTC leap second), sss* fractions of seconds.
+The fractions of seconds may be empty when no fractions of seconds are conveyed (in such a case the period is not conveyed), it may include 3 digits to convey milliseconds, 6 digits to convey microseconds, 9 digits to convey nanoseconds, 12 digits to convey picoseconds; Other number of digits may be used with bilateral agreement.
+
+Leap Seconds: Note that UTC includes corrections for leap seconds, which are inserted to account for slowing of the rotation of the earth. Leap second insertion is declared by the International Earth Rotation Service (IERS) and has, since 1972, only occurred on the night of Dec. 31 or Jun 30. The IERS considers March 31 and September 30 as secondary dates for leap second insertion, but has never utilized these dates. During a leap second insertion, a UTCTimestamp field may read "19981231-23:59:59", "19981231-23:59:60", "19990101-00:00:00". (see http://tycho.usno.navy.mil/leapsec.html)</Description>
+      <Example>TransactTime(60)="20011217-09:30:47.123" millisecond
+TransactTime(60)="20011217-09:30:47.123456" microseconds
+TransactTime(60)="20011217-09:30:47.123456789" nanoseconds
+TransactTime(60)="20011217-09:30:47.123456789123" picoseconds
+</Example>
+      <XML>
+         <BuiltIn>0</BuiltIn>
+         <Base>xs:dateTime</Base>
+         <Description>	
+string field representing date and time combination Universal Time Coordinated (UTC), also known as Greenwich Mean Time (GMT).
+
+Its value space is described as the combination of date and time of day in the Chapter 5.4 of ISO 8601.
+
+Valid values are in the format YYYY-MM-DDTHH:MM:SS.s where YYYY = 0000-9999 year, MM = 01-12 month, DD = 01-31 day, HH = 00-23 hour, MM = 00-59 minute, SS = 00-60 second (60 only if UTC leap second), and optionally one or more digits representing a decimal fraction of a second.
+
+The punctuation of "-", ":" and the string value of "T" to separate the date and time are required. The "." is only required when sub-second time precision is specified.
+
+Leap Seconds: Note that UTC includes corrections for leap seconds, which are inserted to account for slowing of the rotation of the earth. Leap second insertion is declared by the International Earth Rotation Service (IERS) and has, since 1972, only occurred on the night of Dec. 31 or Jun 30. The IERS considers March 31 and September 30 as secondary dates for leap second insertion, but has never utilized these dates. During a leap second insertion, a UTCTimestamp field may read "1998-12-31T23:59:59", "1998-12-31T23:59:60", "1999-01-01T00:00:00". (see http://tycho.usno.navy.mil/leapsec.html)</Description>
+         <Example>TxnTm="2001-12-17T09:30:47" seconds
+TxnTm="2001-12-17-09:30:47.123" millisecond
+TxnTm="2001-12-17-09:30:47.123456" microseconds
+TxnTm="2001-12-17-09:30:47.123456789" nanoseconds
+TxnTm="2001-12-17-09:30:47.123456789123" picoseconds</Example>
+      </XML>
+   </Datatype>
+   <Datatype added="FIX.4.2" updated="FIX.5.0SP2" updatedEP="206">
+      <Name>UTCTimeOnly</Name>
+      <BaseType>String</BaseType>
+      <Description>string field representing time-only represented in UTC (Universal Time Coordinated, also known as "GMT") in either HH:MM:SS (whole seconds) or HH:MM:SS.sss* (milliseconds) format, colons, and period required. This special-purpose field is paired with UTCDateOnly to form a proper UTCTimestamp for bandwidth-sensitive messages.
+Valid values:
+HH = 00-23, MM = 00-59, SS = 00-60 (60 only if UTC leap second), sss* fractions of seconds. The fractions of seconds may be empty when no fractions of seconds are conveyed (in such a case the period is not conveyed), it may include 3 digits to convey milliseconds, 6 digits to convey microseconds, 9 digits to convey nanoseconds, 12 digits to convey picoseconds; Other number of digits may be used with bilateral agreement.</Description>
+      <Example>MDEntryTime(273)="13:20:00.123"milliseconds
+MDEntryTime(273)="13:20:00.123456" microseconds
+MDEntryTime(273)="13:20:00.123456789" nanoseconds
+MDEntryTime(273)="13:20:00.123456789123" picoseconds
+</Example>
+      <XML>
+         <BuiltIn>0</BuiltIn>
+         <Base>xs:time</Base>
+         <Description>string field representing time-only in Universal Time Coordinated (UTC), also known as Greenwich Mean Time (GMT). 
+Its value space is described as the time of day in the Chapter 5.4 of ISO 8601.
+Valid values are in the format HH:MM:SS.s where HH = 00-23 hours, MM = 00-59 minutes, SS = 00-60 seconds (60 only if UTC leap second), and optionally s (one or more digits representing a decimal fraction of a second).
+The punctuation of ":" between hours minutes and seconds are required. The "." is only required when sub-second time precision is specified.
+This special-purpose field is paired with UTCDateOnly to form a proper UTCTimestamp for bandwidth-sensitive messages.</Description>
+         <Example>Tm="13:20:00.000" seconds
+Tm="13:20:00.123"milliseconds
+Tm="13:20:00.123456" microseconds
+Tm="13:20:00.123456789" nanoseconds
+Tm="13:20:00.123456789123" picoseconds</Example>
+      </XML>
+   </Datatype>
+   <Datatype added="FIX.4.4">
+		    <Name>UTCDateOnly</Name>
+		    <BaseType>String</BaseType>
+		    <Description>string field representing Date represented in UTC (Universal Time Coordinated, also known as "GMT") in YYYYMMDD format. This special-purpose field is paired with UTCTimeOnly to form a proper UTCTimestamp for bandwidth-sensitive messages.
+Valid values:
+YYYY = 0000-9999, MM = 01-12, DD = 01-31.</Description>
+		    <Example>MDEntryDate="20030910"</Example>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:date</Base>
+		       <Description>string field representing Date represented in UTC (Universal Time Coordinated, also known as "GMT") in YYYY-MM-DD format specifed in ISO 8601. This special-purpose field is paired with UTCTimeOnly to form a proper UTCTimestamp for bandwidth-sensitive messages.
+Valid values:
+YYYY = 0000-9999, MM = 01-12, DD = 01-31.</Description>
+		       <Example>MDEntryDate="2003-09-10"</Example>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.2" updated="FIX.5.0SP2" updatedEP="206">
+      <Name>LocalMktDate</Name>
+      <BaseType>String</BaseType>
+      <Description>string field representing a Date of Local Market (as opposed to UTC) in YYYYMMDD format. This is the "normal" date field used by the FIX Protocol.
+
+Valid values:
+YYYY = 0000-9999, MM = 01-12, DD = 01-31
+</Description>
+      <Example>MaturityDate(541)="20150724"</Example>
+      <XML>
+         <BuiltIn>0</BuiltIn>
+         <Base>xs:date</Base>
+         <Description>string field representing a Date of Local Market (as opposed to UTC) in YYYY-MM-DD format. This is the "normal" date field used by the FIX Protocol.
+
+Valid values:
+YYYY = 0000-9999, MM = 01-12, DD = 01-31.
+</Description>
+         <Example>MaturityDate(541)=”2015-07-24"</Example>
+      </XML>
+   </Datatype>
+   <Datatype added="FIX.4.4" addedEP="-1" updated="FIX.5.0SP2" updatedEP="206">
+      <Name>TZTimeOnly</Name>
+      <BaseType>String</BaseType>
+      <Description>string field representing the time represented based on ISO 8601. This is the time with a UTC offset to allow identification of local time and timezone of that time.
+Format is HH:MM[:SS][Z | [ + | - hh[:mm]]] where HH = 00-23 hours, MM = 00-59 minutes, SS = 00-59 seconds, hh = 01-12 offset hours, mm = 00-59 offset minutes.</Description>
+      <Example>"07:39Z" is 07:39 UTC
+"02:39-05" is five hours behind UTC, thus Eastern Time
+"15:39+08" is eight hours ahead of UTC, Hong Kong/Singapore time
+"13:09+05:30" is 5.5 hours ahead of UTC, India time</Example>
+      <XML>
+         <BuiltIn>1</BuiltIn>
+         <Base>xs:time</Base>
+         <Description>string field representing the time based on ISO 8601. This is the time with a Universal Time Coordinated(UTC) offset to allow identification of local time and timezone.
+Its value space is described as the combination of date and time of day in the Chapter 5.4 of ISO 8601.
+Valid values are in the format HH:MM[:SS][Z | [ + | - hh[:mm]]] where HH = 00-23 hours, MM = 00-59 minutes, SS = 00-59 seconds, hh = 01-12 offset hours, mm = 00-59 offset minutes.
+The punctuation of ":" are required.  The "Z" or "+" or "-" are optional to denote a time zone offset.</Description>
+         <Example>MatTm="07:39Z" is 07:39 UTC
+MatTm="02:39-05" is five hours behind UTC, Eastern Time
+MatTm="15:39+08" is eight hours ahead of UTC, Hong Kong/Singapore time
+MatTm="13:09+05:30" is 5.5 hours ahead of UTC, India time</Example>
+      </XML>
+   </Datatype>
+   <Datatype added="FIX.4.4" addedEP="-1" updated="FIX.5.0SP2" updatedEP="206">
+      <Name>TZTimestamp</Name>
+      <BaseType>String</BaseType>
+      <Description>string field representing a time/date combination representing local time with an offset to UTC to allow identification of local time and timezone offset of that time. The representation is based on ISO 8601.
+Format is YYYYMMDD-HH:MM:SS.sss*[Z | [ + | - hh[:mm]]] where YYYY = 0000 to 9999, MM = 01-12, DD = 01-31 HH = 00-23 hours, MM = 00-59 minutes, SS = 00-59 seconds, hh = 01-12 offset hours, mm = 00-59 offset minutes, sss* fractions of seconds. The fractions of seconds may be empty when no fractions of seconds are conveyed (in such a case the period is not conveyed), it may include 3 digits to convey milliseconds, 6 digits to convey microseconds, 9 digits to convey nanoseconds, 12 digits to convey picoseconds; Other number of digits may be used with bilateral agreement
+</Description>
+      <Example>"20060901-07:39Z" is 07:39 UTC on 1st of September 2006
+"20060901-02:39-05" is five hours behind UTC, thus Eastern Time on 1st of September 2006
+"20060901-15:39+08" is eight hours ahead of UTC, Hong Kong/Singapore time on 1st of September 2006
+"20060901-13:09+05:30" is 5.5 hours ahead of UTC, India time on 1st of September 2006
+Using decimal seconds:
+"20060901-13:09.123+05:30" milliseconds
+"20060901-13:09.123456+05:30" microseconds
+"20060901-13:09.123456789+05:30" nanoseconds
+"20060901-13:09.123456789123+05:30" picoseconds
+"20060901-13:09.123456789Z" nanoseconds UTC timezone
+</Example>
+      <XML>
+         <BuiltIn>1</BuiltIn>
+         <Base>xs:dateTime</Base>
+         <Description>string field representing a date and time combination in local time with an optional offset to Univeral Time Coordinated (UTC). Its vaue space is described as the combination of date and time of day in the Chapter 5.4 of based on ISO 8601.
+
+Valid values are in the fFormat is YYYY-MM-DD-THH:MM:SS.s*[Z | [ + | - hh[:mm]]] where YYYY = 0000 to 9999 year, MM = 01-12 month, DD = 01-31 day, HH = 00-23 hours, MM = 00-59 minutes, SS = 00-59 seconds, hh = 01-12 offset hours, mm = 00-59 offset minutes, and optionally sss (one or more digits representing a decimal fraction of a second), hh = 01-12 offset hours, mm = 00-59 offset minutes.
+The punctuation of "-", ":" and the string value of "T" to separate the date and time are required. The "." is only required when sub-second time precision is specified.  The "Z" or "+" or "-" are optional to denote an optional time zone offset.</Description>
+         <Example>"2006-09-01-T07:39Z" is 07:39 UTC on 1st of September 2006
+"2006-09-01-T02:39-05" is five hours behind UTC, Eastern Time on 1st of September 2006
+"2006-09-01-T15:39+08" is eight hours ahead of UTC, Hong Kong/Singapore time on 1st of September 2006
+"2006-09-01-T13:09+05:30" is 5.5 hours ahead of UTC, India time on 1st of September 2006
+Using decimal seconds:
+"2006-09-01T13:09.123+05:30" milliseconds
+"2006-09-01T13:09.123456+05:30" microseconds
+"2006-09-01T13:09.123456789+05:30" nanoseconds
+"2006-09-01T13:09.123456789123+05:30" picoseconds
+"2006-09-01T13:09.123456789Z" nanoseconds UTC timezone</Example>
+      </XML>
+   </Datatype>
+   <Datatype added="FIX.2.7" updated="FIX.5.0SP2" updatedEP="208">
+      <Name>data</Name>
+      <BaseType>String</BaseType>
+      <Description>string field containing raw data with no format or content restrictions. Data fields are always immediately preceded by a length field. The length field should specify the number of bytes of the value of the data field (up to but not including the terminating SOH).
+Caution: the value of one of these fields may contain the delimiter (SOH) character. Note that the value specified for this field should be followed by the delimiter (SOH) character as all fields are terminated with an "SOH".</Description>
+      <XML>
+         <BuiltIn>1</BuiltIn>
+         <Base>xs:base64Binary</Base>
+         <Description>In FIXML, all data type fields are using base64Binary encoding.</Description>
+      </XML>
+   </Datatype>
+   <Datatype added="FIX.4.4" addedEP="-1">
+		    <Name>Pattern</Name>
+		    <Description>Used to build on and provide some restrictions on what is allowed as valid values in fields that uses a base FIX data type and a pattern data type. The universe of allowable valid values for the field would then be the union of the base set of valid values and what is defined by the pattern data type. The pattern data type used by the field will retain its base FIX data type (e.g. String, int, char).</Description>
+	  </Datatype>
+   <Datatype added="FIX.4.4" addedEP="-1">
+		    <Name>Tenor</Name>
+		    <BaseType>Pattern</BaseType>
+		    <Description>used to allow the expression of FX standard tenors in addition to the base valid enumerations defined for the field that uses this pattern data type. This pattern data type is defined as follows:
+Dx = tenor expression for "days", e.g. "D5", where "x" is any integer &gt; 0
+Mx = tenor expression for "months", e.g. "M3", where "x" is any integer &gt; 0
+Wx = tenor expression for "weeks", e.g. "W13", where "x" is any integer &gt; 0
+Yx = tenor expression for "years", e.g. "Y1", where "x" is any integer &gt; 0</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:string</Base>
+			      <Pattern>[DMWY](\d)+</Pattern>
+					    <Description>used to allow the expression of FX standard tenors in addition to the base valid enumerations defined for the field that uses this pattern data type. This pattern data type is defined as follows:
+Dx = tenor expression for "days", e.g. "D5", where "x" is any integer &gt; 0
+Mx = tenor expression for "months", e.g. "M3", where "x" is any integer &gt; 0
+Wx = tenor expression for "weeks", e.g. "W13", where "x" is any integer &gt; 0
+Yx = tenor expression for "years", e.g. "Y1", where "x" is any integer &gt; 0</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.4" addedEP="-1">
+		    <Name>Reserved100Plus</Name>
+		    <BaseType>Pattern</BaseType>
+		    <Description>Values "100" and above are reserved for bilaterally agreed upon user defined enumerations.</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:integer</Base>
+			      <MinInclusive>100</MinInclusive>
+					    <Description>Values "100" and above are reserved for bilaterally agreed upon user defined enumerations.</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.4" addedEP="-1">
+		    <Name>Reserved1000Plus</Name>
+		    <BaseType>Pattern</BaseType>
+		    <Description>Values "1000" and above are reserved for bilaterally agreed upon user defined enumerations.</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:integer</Base>
+			      <MinInclusive>1000</MinInclusive>
+					    <Description>Values "1000" and above are reserved for bilaterally agreed upon user defined enumerations.</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.4.4" addedEP="-1">
+		    <Name>Reserved4000Plus</Name>
+		    <BaseType>Pattern</BaseType>
+		    <Description>Values "4000" and above are reserved for bilaterally agreed upon user defined enumerations.</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:integer</Base>
+			      <MinInclusive>4000</MinInclusive>
+					    <Description>Values "4000" and above are reserved for bilaterally agreed upon user defined enumerations.</Description>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.5.0" addedEP="-1">
+		    <Name>XMLData</Name>
+		    <BaseType>String</BaseType>
+		    <Description>Contains an XML document raw data with no format or content restrictions. XMLData fields are always immediately preceded by a length field. The length field should specify the number of bytes of the value of the data field (up to but not including the terminating SOH).</Description>
+		    <XML>
+			      <BuiltIn>0</BuiltIn>
+			      <Base>xs:string</Base>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.5.0SP1" addedEP="90">
+		    <Name>Language</Name>
+		    <BaseType>String</BaseType>
+		    <Description>Identifier for a national language - uses ISO 639-1 standard</Description>
+		    <Example>en (English), es (spanish), etc.</Example>
+		    <XML>
+			      <BuiltIn>1</BuiltIn>
+			      <Base>xs:language</Base>
+		    </XML>
+	  </Datatype>
+   <Datatype added="FIX.5.0SP2" addedEP="161">
+      <Name>LocalMktTime</Name>
+      <BaseType>String</BaseType>
+      <Description>string field representing the time local to a particular market center. Used where offset to UTC varies throughout the year and the defining market center is identified in a corresponding field.  
+					
+					Format is HH:MM:SS where HH = 00-23 hours, MM = 00-59 minutes, SS = 00-59 seconds. In general only the hour token is non-zero. </Description>
+      <Example>Example: 07:00:00</Example>
+      <XML>
+         <BuiltIn>1</BuiltIn>
+         <Base>xs:time</Base>
+         <Description>string field representing the time local to a particular market center. Used where offset to UTC varies throughout the year and the defining market center is identified in a corresponding field.  
+					
+Format is HH:MM:SS where HH = 00-23 hours, MM = 00-59 minutes, SS = 00-59 seconds. In general only the hour token is non-zero. </Description>
+         <Example>07:00:00</Example>
+      </XML>
+   </Datatype>
+   <Datatype added="FIX.5.0SP2" addedEP="161">
+      <Name>XID</Name>
+      <BaseType>String</BaseType>
+      <Description>The purpose of the XID datatype is to define a unique identifier that is global to a FIX message. An identifier defined using this datatype uniquely identifies its containing element, whatever its type and name is. The constraint added by this datatype is that the values of all the fields that have an ID datatype in a FIX message must be unique. </Description>
+      <XML>
+         <BuiltIn>1</BuiltIn>
+         <Base>xs:ID</Base>
+         <Description>The purpose of the XID datatype is to define a unique identifier that is global to a FIX message. An identifier defined using this datatype uniquely identifies its containing element, whatever its type and name is. The constraint added by this datatype is that the values of all the fields that have an ID datatype in a FIX message must be unique. </Description>
+      </XML>
+   </Datatype>
+   <Datatype added="FIX.5.0SP2" addedEP="161">
+      <Name>XIDREF</Name>
+      <BaseType>String</BaseType>
+      <Description>The XIDREF datatype defines a reference to an identifier defined by the XID datatype.</Description>
+      <XML>
+         <BuiltIn>1</BuiltIn>
+         <Base>xs:IDREF</Base>
+         <Description>The XIDREF datatype defines a reference to an identifier defined by the XID datatype.</Description>
+      </XML>
+   </Datatype>
+</Datatypes>

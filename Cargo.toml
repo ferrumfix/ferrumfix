@@ -1,8 +1,8 @@
-[profile.release]
-lto = true
-
 [workspace]
 members = ["crates/*", "examples/*", "tests/*"]
+
+[profile.release]
+lto = true
 
 [workspace.package]
 version = "0.7.0"

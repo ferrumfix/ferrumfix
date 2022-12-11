@@ -1,0 +1,5058 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+DISCLAIMER
+
+THE INFORMATION CONTAINED HEREIN AND THE FINANCIAL INFORMATION EXCHANGE PROTOCOL (COLLECTIVELY, THE "FIX PROTOCOL") ARE PROVIDED "AS IS" AND NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL MAKES ANY REPRESENTATION OR WARRANTY, EXPRESS OR IMPLIED, AS TO THE FIX PROTOCOL (OR THE RESULTS TO BE OBTAINED BY THE USE THEREOF) OR ANY OTHER MATTER AND EACH SUCH PERSON AND ENTITY SPECIFICALLY DISCLAIMS ANY WARRANTY OF ORIGINALITY, ACCURACY, COMPLETENESS, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SUCH PERSONS AND ENTITIES DO NOT WARRANT THAT THE FIX PROTOCOL WILL CONFORM TO ANY DESCRIPTION THEREOF OR BE FREE OF ERRORS. THE ENTIRE RISK OF ANY USE OF THE FIX PROTOCOL IS ASSUMED BY THE USER.
+
+NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL SHALL HAVE ANY LIABILITY FOR DAMAGES OF ANY KIND ARISING IN ANY MANNER OUT OF OR IN CONNECTION WITH ANY USER'S USE OF (OR ANY INABILITY TO USE) THE FIX PROTOCOL, WHETHER DIRECT, INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL (INCLUDING, WITHOUT LIMITATION, LOSS OF DATA, LOSS OF USE, CLAIMS OF THIRD PARTIES OR LOST PROFITS OR REVENUES OR OTHER ECONOMIC LOSS), WHETHER IN TORT (INCLUDING NEGLIGENCE AND STRICT LIABILITY), CONTRACT OR OTHERWISE, WHETHER OR NOT ANY SUCH PERSON OR ENTITY HAS BEEN ADVISED OF, OR OTHERWISE MIGHT HAVE ANTICIPATED THE POSSIBILITY OF, SUCH DAMAGES.
+
+No proprietary or ownership interest of any kind is granted with respect to the FIX Protocol (or any rights therein).
+
+Copyright 2003-2009 FIX Protocol Limited, all rights reserved
+
+REPRODUCTION
+
+FIX Protocol Limited grants permission to print in hard copy form or reproduce the FIX Protocol specification in its entirety provided that the duplicated pages retain the "Copyright FIX Protocol Limited" statement at the bottom of the page.
+
+Portions of the FIX Protocol specification may be extracted or cited in other documents (such as a document which describes one's implementation of the FIX Protocol) provided that one reference the origin of the FIX Protocol specification (HTUhttp://www.fixprotocol.orgUTH) and that the specification itself is "Copyright FIX Protocol Limited".
+FIX Protocol Limited claims no intellectual property over one's implementation (programming code) of an application which implements the behavior and details from the FIX Protocol specification. 	
+--><MsgContents xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" copyright="Copyright (c) FIX Protocol Ltd. All Rights Reserved." edition="2010" version="FIX.4.1" xsi:noNamespaceSchemaLocation="../../schema/MsgContents.xsd">
+	<MsgContent added="FIX.2.7">
+		<ComponentID>1</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 0</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1</ComponentID>
+		<TagText>112</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+		<Description>Required when the heartbeat is the result of a Test Request message.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>1</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>2</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 1</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>2</ComponentID>
+		<TagText>112</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>2</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>3</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 2</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>3</ComponentID>
+		<TagText>7</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>3</ComponentID>
+		<TagText>16</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>3</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>4</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 3</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>4</ComponentID>
+		<TagText>45</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgSeqNum of rejected message</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>4</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+		<Description>Where possible, message to explain reason for rejection</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>4</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>5</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 4</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>5</ComponentID>
+		<TagText>123</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>5</ComponentID>
+		<TagText>36</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>5</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>6</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 5</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>6</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>6</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 6</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>23</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>28</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>26</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for Cancel and Replace IOITransType messages</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>55</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>65</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>48</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>22</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>7</ComponentID>
+		<TagText>167</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be specified if a Future or Option. If a Future: Symbol, SecurityType, and MaturityMonthYear are required. If an Option: Symbol, SecurityType, MaturityMonthYear, PutOrCall, and StrikePrice are required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>7</ComponentID>
+		<TagText>200</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures to specify the month and year of maturity.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>7</ComponentID>
+		<TagText>205</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures and can be used in conjunction with MaturityMonthYear to specify a particular maturity date.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>7</ComponentID>
+		<TagText>201</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>7</ComponentID>
+		<TagText>202</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>7</ComponentID>
+		<TagText>206</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>7</ComponentID>
+		<TagText>207</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to identify the security.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>7</ComponentID>
+		<TagText>106</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>7</ComponentID>
+		<TagText>107</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>54</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>1</Reqd>
+		<Description>Side of Indication
+Valid values:
+1 = Buy
+2 = Sell
+7 = Undisclosed (for IOIs)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>27</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>44</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>15</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>62</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>25</TagText>
+		<Indent>0</Indent>
+		<Position>23</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>24</TagText>
+		<Indent>0</Indent>
+		<Position>24</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable only if advertised on public IOI service.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>7</ComponentID>
+		<TagText>130</TagText>
+		<Indent>0</Indent>
+		<Position>25</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>7</ComponentID>
+		<TagText>199</TagText>
+		<Indent>0</Indent>
+		<Position>26</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if any IOIQualifiers are specified. Indicates the number of repeating IOIQualifiers.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>7</ComponentID>
+		<TagText>104</TagText>
+		<Indent>1</Indent>
+		<Position>27</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if NoIOIQualifiers &gt; 0</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>28</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>7</ComponentID>
+		<TagText>60</TagText>
+		<Indent>0</Indent>
+		<Position>29</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>7</ComponentID>
+		<TagText>149</TagText>
+		<Indent>0</Indent>
+		<Position>30</Position>
+		<Reqd>0</Reqd>
+		<Description>A URL (Uniform Resource Locator) link to additional information (i.e. http://www.XYZ.com/research.html)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>7</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>31</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 7</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>2</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>5</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>3</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for Cancel and Replace AdvTransType messages</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>55</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>65</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>48</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>22</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>8</ComponentID>
+		<TagText>167</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be specified if a Future or Option. If a Future: Symbol, SecurityType, and MaturityMonthYear are required. If an Option: Symbol, SecurityType, MaturityMonthYear, PutOrCall, and StrikePrice are required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>8</ComponentID>
+		<TagText>200</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures to specify the month and year of maturity.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>8</ComponentID>
+		<TagText>205</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures and can be used in conjunction with MaturityMonthYear to specify a particular maturity date.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>8</ComponentID>
+		<TagText>201</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>8</ComponentID>
+		<TagText>202</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>8</ComponentID>
+		<TagText>206</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>8</ComponentID>
+		<TagText>207</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to identify the security.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>8</ComponentID>
+		<TagText>106</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>8</ComponentID>
+		<TagText>107</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>4</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>53</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>44</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>15</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>8</ComponentID>
+		<TagText>75</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>60</TagText>
+		<Indent>0</Indent>
+		<Position>23</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>24</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>8</ComponentID>
+		<TagText>149</TagText>
+		<Indent>0</Indent>
+		<Position>25</Position>
+		<Reqd>0</Reqd>
+		<Description>A URL (Uniform Resource Locator) link to additional information (i.e. http://www.XYZ.com/research.html)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>8</ComponentID>
+		<TagText>30</TagText>
+		<Indent>0</Indent>
+		<Position>26</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>8</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>27</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 8</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>37</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+		<Description>OrderID is required to be unique for each chain of orders.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>198</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to provide order id used by exchange or executing system.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>11</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for executions against electronically submitted orders which were assigned an ID by the institution. Not required for orders manually entered by the broker.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>41</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>0</Reqd>
+		<Description>Conditionally required for PendingCancel, Replaced, Canceled ExecType values. ClOrdID of the previous order (NOT the initial order of the day) when canceling or replacing an order.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>9</ComponentID>
+		<TagText>109</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>76</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>66</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for executions against orders which were submitted as part of a list.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>17</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>20</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>19</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for Cancel and Correct ExecTransType messages</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>150</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>1</Reqd>
+		<Description>Describes the type of execution report. Same possible values as OrdStatus.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>39</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>1</Reqd>
+		<Description>Describes the current state of a CHAIN of orders, same scope as OrderQty, CumQty, LeavesQty, and AvgPx</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>103</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+		<Description>For optional use with ExecType = 8 (Rejected)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>1</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for executions against electronically submitted orders which were assigned an account by the institution</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>63</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+		<Description>Absence of this field is interpreted as Regular.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>64</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+		<Description>Required when SettlmntTyp = 6 (Future) or SettlmntTyp = 8 (Sellers Option)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>55</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>65</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>48</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>22</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>167</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be specified if a Future or Option. If a Future: Symbol, SecurityType, and MaturityMonthYear are required. If an Option: Symbol, SecurityType, MaturityMonthYear, PutOrCall, and StrikePrice are required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>200</TagText>
+		<Indent>0</Indent>
+		<Position>23</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures to specify the month and year of maturity.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>205</TagText>
+		<Indent>0</Indent>
+		<Position>24</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures and can be used in conjunction with MaturityMonthYear to specify a particular maturity date.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>201</TagText>
+		<Indent>0</Indent>
+		<Position>25</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>202</TagText>
+		<Indent>0</Indent>
+		<Position>26</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>206</TagText>
+		<Indent>0</Indent>
+		<Position>27</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>207</TagText>
+		<Indent>0</Indent>
+		<Position>28</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to identify the security.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>9</ComponentID>
+		<TagText>106</TagText>
+		<Indent>0</Indent>
+		<Position>29</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>9</ComponentID>
+		<TagText>107</TagText>
+		<Indent>0</Indent>
+		<Position>30</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>54</TagText>
+		<Indent>0</Indent>
+		<Position>31</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>38</TagText>
+		<Indent>0</Indent>
+		<Position>32</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>40</TagText>
+		<Indent>0</Indent>
+		<Position>33</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>44</TagText>
+		<Indent>0</Indent>
+		<Position>34</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if specified on the order</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>99</TagText>
+		<Indent>0</Indent>
+		<Position>35</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if specified on the order</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>211</TagText>
+		<Indent>0</Indent>
+		<Position>36</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if specified on the order</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>15</TagText>
+		<Indent>0</Indent>
+		<Position>37</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>59</TagText>
+		<Indent>0</Indent>
+		<Position>38</Position>
+		<Reqd>0</Reqd>
+		<Description>Absence of this field indicates Day order</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>9</ComponentID>
+		<TagText>126</TagText>
+		<Indent>0</Indent>
+		<Position>39</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if TimeInForce = GTD</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>18</TagText>
+		<Indent>0</Indent>
+		<Position>40</Position>
+		<Reqd>0</Reqd>
+		<Description>Can contain multiple instructions, space delimited.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>47</TagText>
+		<Indent>0</Indent>
+		<Position>41</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>32</TagText>
+		<Indent>0</Indent>
+		<Position>42</Position>
+		<Reqd>1</Reqd>
+		<Description>Quantity of shares bought/sold on this (last) fill. Not required ExecTransType = 3 (Status).</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>31</TagText>
+		<Indent>0</Indent>
+		<Position>43</Position>
+		<Reqd>1</Reqd>
+		<Description>Price of this (last) fill. Not required for ExecTransType = 3 (Status), Should represent the "all-in" (LastSpotRate + LastForwardPoints) rate for F/X orders.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>194</TagText>
+		<Indent>0</Indent>
+		<Position>44</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable for F/X orders</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>195</TagText>
+		<Indent>0</Indent>
+		<Position>45</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable for F/X orders</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>30</TagText>
+		<Indent>0</Indent>
+		<Position>46</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>29</TagText>
+		<Indent>0</Indent>
+		<Position>47</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>151</TagText>
+		<Indent>0</Indent>
+		<Position>48</Position>
+		<Reqd>1</Reqd>
+		<Description>Amount of shares open for further execution. If the OrdStatus is Canceled, DoneForTheDay, Expired, Calculated, or Rejected (in which case the order is no longer active) then LeavesQty could be 0, otherwise LeavesQty = OrderQty - CumQty.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>14</TagText>
+		<Indent>0</Indent>
+		<Position>49</Position>
+		<Reqd>1</Reqd>
+		<Description>Currently executed shares for chain of orders.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>6</TagText>
+		<Indent>0</Indent>
+		<Position>50</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>75</TagText>
+		<Indent>0</Indent>
+		<Position>51</Position>
+		<Reqd>0</Reqd>
+		<Description>Used when reporting other than current day trades.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>60</TagText>
+		<Indent>0</Indent>
+		<Position>52</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>9</ComponentID>
+		<TagText>113</TagText>
+		<Indent>0</Indent>
+		<Position>53</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>12</TagText>
+		<Indent>0</Indent>
+		<Position>54</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>13</TagText>
+		<Indent>0</Indent>
+		<Position>55</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>9</ComponentID>
+		<TagText>119</TagText>
+		<Indent>0</Indent>
+		<Position>56</Position>
+		<Reqd>0</Reqd>
+		<Description>Used to report results of forex accommodation trade</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>9</ComponentID>
+		<TagText>120</TagText>
+		<Indent>0</Indent>
+		<Position>57</Position>
+		<Reqd>0</Reqd>
+		<Description>Used to report results of forex accommodation trade</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>155</TagText>
+		<Indent>0</Indent>
+		<Position>58</Position>
+		<Reqd>0</Reqd>
+		<Description>Foreign exchange rate used to compute SettlCurrAmount from Currency to SettlCurrency</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>9</ComponentID>
+		<TagText>156</TagText>
+		<Indent>0</Indent>
+		<Position>59</Position>
+		<Reqd>0</Reqd>
+		<Description>Specifies whether the SettlCurrFxRate should be multiplied or divided</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>60</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>9</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>61</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>10</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = 9</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>10</ComponentID>
+		<TagText>37</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>10</ComponentID>
+		<TagText>198</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to provide order id used by exchange or executing system.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>10</ComponentID>
+		<TagText>11</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+		<Description>Unique order id assigned by institution to the cancel request or to the replacement order.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>10</ComponentID>
+		<TagText>41</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+		<Description>ClOrdID which could not be canceled/replaced. ClOrdID of the previous order (NOT the initial order of the day) when canceling or replacing an order.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>10</ComponentID>
+		<TagText>39</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>1</Reqd>
+		<Description>OrdStatus value after this cancel reject is applied.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>10</ComponentID>
+		<TagText>109</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>10</ComponentID>
+		<TagText>76</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>10</ComponentID>
+		<TagText>66</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for rejects against orders which were submitted as part of a list.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>10</ComponentID>
+		<TagText>102</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>10</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>10</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>11</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = A</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>11</ComponentID>
+		<TagText>98</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+		<Description>(Always unencrypted)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>11</ComponentID>
+		<TagText>108</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>11</ComponentID>
+		<TagText>95</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for some authentication methods</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>11</ComponentID>
+		<TagText>96</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for some authentication methods</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>11</ComponentID>
+		<TagText>141</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+		<Description>Indicates both sides of a FIX session should reset sequence numbers</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>11</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>12</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = B</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>12</ComponentID>
+		<TagText>42</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>12</ComponentID>
+		<TagText>61</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>148</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+		<Description>Specifies the headline text</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>146</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>0</Reqd>
+		<Description>Specifies the number of repeating symbols specified</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>12</ComponentID>
+		<TagText>46</TagText>
+		<Indent>1</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be repeated multiple times if message is related to multiple symbols.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>65</TagText>
+		<Indent>1</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be repeated multiple times if message is related to multiple symbols.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>48</TagText>
+		<Indent>1</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be repeated multiple times if message is related to multiple symbols.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>22</TagText>
+		<Indent>1</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be repeated multiple times if message is related to multiple symbols.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>167</TagText>
+		<Indent>1</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be specified if a Future or Option. If a Future: RelatedSym, SecurityType, and MaturityMonthYear are required. If an Option: RelatedSym, SecurityType, MaturityMonthYear, PutOrCall, and StrikePrice are required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>200</TagText>
+		<Indent>1</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures to specify the month and year of maturity.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>205</TagText>
+		<Indent>1</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures and can be used in conjunction with MaturityMonthYear to specify a particular maturity date.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>201</TagText>
+		<Indent>1</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>202</TagText>
+		<Indent>1</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>206</TagText>
+		<Indent>1</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>207</TagText>
+		<Indent>1</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to identify the security.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>106</TagText>
+		<Indent>1</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be repeated multiple times if message is related to multiple symbols.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>107</TagText>
+		<Indent>1</Indent>
+		<Position>18</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be repeated multiple times if message is related to multiple symbols.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>33</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>1</Reqd>
+		<Description>Specifies the number of repeating lines of text specified</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>12</ComponentID>
+		<TagText>58</TagText>
+		<Indent>1</Indent>
+		<Position>20</Position>
+		<Reqd>1</Reqd>
+		<Description>Repeating field, number of instances defined in LinesOfText</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>12</ComponentID>
+		<TagText>149</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>0</Reqd>
+		<Description>A URL (Uniform Resource Locator) link to additional information (i.e. http://www.XYZ.com/research.html)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>12</ComponentID>
+		<TagText>95</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>12</ComponentID>
+		<TagText>96</TagText>
+		<Indent>0</Indent>
+		<Position>23</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>12</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>24</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>13</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = C</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>164</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+		<Description>Unique identifier for the email message thread</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>13</ComponentID>
+		<TagText>94</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>13</ComponentID>
+		<TagText>42</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>147</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+		<Description>Specifies the Subject text</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>146</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+		<Description>Specifies the number of repeating symbols specified</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>13</ComponentID>
+		<TagText>46</TagText>
+		<Indent>1</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be repeated multiple times if message is related to multiple symbols.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>65</TagText>
+		<Indent>1</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be repeated multiple times if message is related to multiple symbols.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>48</TagText>
+		<Indent>1</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be repeated multiple times if message is related to multiple symbols.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>22</TagText>
+		<Indent>1</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be repeated multiple times if message is related to multiple symbols.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>167</TagText>
+		<Indent>1</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be specified if a Future or Option. If a Future: RelatedSym, SecurityType, and MaturityMonthYear are required. If an Option: RelatedSym, SecurityType, MaturityMonthYear, PutOrCall, and StrikePrice are required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>200</TagText>
+		<Indent>1</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures to specify the month and year of maturity.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>205</TagText>
+		<Indent>1</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures and can be used in conjunction with MaturityMonthYear to specify a particular maturity date.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>201</TagText>
+		<Indent>1</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>202</TagText>
+		<Indent>1</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>206</TagText>
+		<Indent>1</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>207</TagText>
+		<Indent>1</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to identify the security.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>106</TagText>
+		<Indent>1</Indent>
+		<Position>18</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be repeated multiple times if message is related to multiple symbols.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>107</TagText>
+		<Indent>1</Indent>
+		<Position>19</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be repeated multiple times if message is related to multiple symbols.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>13</ComponentID>
+		<TagText>37</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>13</ComponentID>
+		<TagText>11</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>13</ComponentID>
+		<TagText>33</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>1</Reqd>
+		<Description>Specifies the number of repeating lines of text specified</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>13</ComponentID>
+		<TagText>58</TagText>
+		<Indent>1</Indent>
+		<Position>23</Position>
+		<Reqd>1</Reqd>
+		<Description>Repeating field, number of instances defined in LinesOfText</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>13</ComponentID>
+		<TagText>95</TagText>
+		<Indent>0</Indent>
+		<Position>24</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>13</ComponentID>
+		<TagText>96</TagText>
+		<Indent>0</Indent>
+		<Position>25</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>13</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>26</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = D</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>11</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+		<Description>Unique identifier of the order as assigned by institution.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>14</ComponentID>
+		<TagText>109</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>76</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>1</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>63</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+		<Description>Absence of this field is interpreted as Regular.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>64</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+		<Description>Required when SettlmntTyp = 6 (Future) or SettlmntTyp = 8 (Sellers Option)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>21</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>18</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>Can contain multiple instructions, space delimited.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>110</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>111</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>100</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>81</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+		<Description>Used to identify soft trades at order entry.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>55</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>65</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>48</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>22</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>167</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be specified if a Future or Option. If a Future: Symbol, SecurityType, and MaturityMonthYear are required. If an Option: Symbol, SecurityType, MaturityMonthYear, PutOrCall, and StrikePrice are required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>200</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures to specify the month and year of maturity.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>205</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures and can be used in conjunction with MaturityMonthYear to specify a particular maturity date.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>201</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>202</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>206</TagText>
+		<Indent>0</Indent>
+		<Position>23</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>207</TagText>
+		<Indent>0</Indent>
+		<Position>24</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to identify the security.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>14</ComponentID>
+		<TagText>106</TagText>
+		<Indent>0</Indent>
+		<Position>25</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>14</ComponentID>
+		<TagText>107</TagText>
+		<Indent>0</Indent>
+		<Position>26</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>14</ComponentID>
+		<TagText>140</TagText>
+		<Indent>0</Indent>
+		<Position>27</Position>
+		<Reqd>0</Reqd>
+		<Description>Useful for verifying security identification</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>54</TagText>
+		<Indent>0</Indent>
+		<Position>28</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>14</ComponentID>
+		<TagText>114</TagText>
+		<Indent>0</Indent>
+		<Position>29</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for short sell orders</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>38</TagText>
+		<Indent>0</Indent>
+		<Position>30</Position>
+		<Reqd>0</Reqd>
+		<Description>Either CashOrderQty or OrderQty is required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>152</TagText>
+		<Indent>0</Indent>
+		<Position>31</Position>
+		<Reqd>0</Reqd>
+		<Description>Either CashOrderQty or OrderQty is required. Specifies the approximate "dollar quantity" for the order. Broker is responsible for converting and calculating OrderQty in shares for subsequent messages.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>40</TagText>
+		<Indent>0</Indent>
+		<Position>32</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>44</TagText>
+		<Indent>0</Indent>
+		<Position>33</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for limit OrdTypes. For F/X orders, should be the "all-in" rate (spot rate adjusted for forward points). Can be used to specify a limit price for a pegged order, previously indicated, etc.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>99</TagText>
+		<Indent>0</Indent>
+		<Position>34</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for OrdType = "Stop" or OrdType = "Stop limit".</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>15</TagText>
+		<Indent>0</Indent>
+		<Position>35</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>23</TagText>
+		<Indent>0</Indent>
+		<Position>36</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for Previously Indicated Orders (OrdType=E)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>14</ComponentID>
+		<TagText>117</TagText>
+		<Indent>0</Indent>
+		<Position>37</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for Previously Quoted Orders (OrdType=D)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>59</TagText>
+		<Indent>0</Indent>
+		<Position>38</Position>
+		<Reqd>0</Reqd>
+		<Description>Absence of this field indicates Day order</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>14</ComponentID>
+		<TagText>126</TagText>
+		<Indent>0</Indent>
+		<Position>39</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if TimeInForce = GTD</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>12</TagText>
+		<Indent>0</Indent>
+		<Position>40</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>13</TagText>
+		<Indent>0</Indent>
+		<Position>41</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>47</TagText>
+		<Indent>0</Indent>
+		<Position>42</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>14</ComponentID>
+		<TagText>121</TagText>
+		<Indent>0</Indent>
+		<Position>43</Position>
+		<Reqd>0</Reqd>
+		<Description>Indicates that broker is requested to execute a Forex accommodation trade in conjunction with the security trade.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>14</ComponentID>
+		<TagText>120</TagText>
+		<Indent>0</Indent>
+		<Position>44</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if ForexReq = Y.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>45</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>193</TagText>
+		<Indent>0</Indent>
+		<Position>46</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used with OrdType = "Forex - Swap" to specify the "value date" for the future portion of a F/X swap.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>192</TagText>
+		<Indent>0</Indent>
+		<Position>47</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used with OrdType = "Forex - Swap" to specify the order quantity for the future portion of a F/X swap.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>77</TagText>
+		<Indent>0</Indent>
+		<Position>48</Position>
+		<Reqd>0</Reqd>
+		<Description>For options</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>203</TagText>
+		<Indent>0</Indent>
+		<Position>49</Position>
+		<Reqd>0</Reqd>
+		<Description>For options</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>204</TagText>
+		<Indent>0</Indent>
+		<Position>50</Position>
+		<Reqd>0</Reqd>
+		<Description>For options when delivering the order to execution system/exchange.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>210</TagText>
+		<Indent>0</Indent>
+		<Position>51</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>14</ComponentID>
+		<TagText>211</TagText>
+		<Indent>0</Indent>
+		<Position>52</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>14</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>53</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = E</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>66</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+		<Description>Must be unique, by customer, for the day</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>15</ComponentID>
+		<TagText>105</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>67</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>68</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>69</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+		<Description>Include only in ListSeqNo = 1 message</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>11</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>1</Reqd>
+		<Description>Unique identifier of the order as assigned by institution.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>15</ComponentID>
+		<TagText>109</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for third-party transactions</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>76</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for third-party transactions</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>1</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>63</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+		<Description>Absence of this field is interpreted as Regular.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>64</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>Required when SettlmntTyp = 6 (Future) or SettlmntTyp = 8 (Sellers Option)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>21</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>18</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+		<Description>Can contain multiple instructions, space delimited.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>15</ComponentID>
+		<TagText>110</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>15</ComponentID>
+		<TagText>111</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>15</ComponentID>
+		<TagText>100</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>81</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>55</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>65</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>48</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>22</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>15</ComponentID>
+		<TagText>167</TagText>
+		<Indent>0</Indent>
+		<Position>23</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be specified if a Future or Option. If a Future: Symbol, SecurityType, and MaturityMonthYear are required. If an Option: Symbol, SecurityType, MaturityMonthYear, PutOrCall, and StrikePrice are required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>15</ComponentID>
+		<TagText>200</TagText>
+		<Indent>0</Indent>
+		<Position>24</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures to specify the month and year of maturity.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>15</ComponentID>
+		<TagText>205</TagText>
+		<Indent>0</Indent>
+		<Position>25</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures and can be used in conjunction with MaturityMonthYear to specify a particular maturity date.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>15</ComponentID>
+		<TagText>201</TagText>
+		<Indent>0</Indent>
+		<Position>26</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>15</ComponentID>
+		<TagText>202</TagText>
+		<Indent>0</Indent>
+		<Position>27</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>15</ComponentID>
+		<TagText>206</TagText>
+		<Indent>0</Indent>
+		<Position>28</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>15</ComponentID>
+		<TagText>207</TagText>
+		<Indent>0</Indent>
+		<Position>29</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to identify the security.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>15</ComponentID>
+		<TagText>106</TagText>
+		<Indent>0</Indent>
+		<Position>30</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>15</ComponentID>
+		<TagText>107</TagText>
+		<Indent>0</Indent>
+		<Position>31</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>15</ComponentID>
+		<TagText>140</TagText>
+		<Indent>0</Indent>
+		<Position>32</Position>
+		<Reqd>0</Reqd>
+		<Description>Useful for verifying security identification</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>54</TagText>
+		<Indent>0</Indent>
+		<Position>33</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>15</ComponentID>
+		<TagText>114</TagText>
+		<Indent>0</Indent>
+		<Position>34</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for short sell orders</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>38</TagText>
+		<Indent>0</Indent>
+		<Position>35</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>40</TagText>
+		<Indent>0</Indent>
+		<Position>36</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>44</TagText>
+		<Indent>0</Indent>
+		<Position>37</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for limit OrdTypes. For F/X orders, should be the "all-in" rate (spot rate adjusted for forward points). Can be used to specify a limit price for a pegged order, previously indicated, etc.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>99</TagText>
+		<Indent>0</Indent>
+		<Position>38</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for OrdType = "Stop" or OrdType = "Stop limit".</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>15</ComponentID>
+		<TagText>211</TagText>
+		<Indent>0</Indent>
+		<Position>39</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>15</TagText>
+		<Indent>0</Indent>
+		<Position>40</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>59</TagText>
+		<Indent>0</Indent>
+		<Position>41</Position>
+		<Reqd>0</Reqd>
+		<Description>Absence of this field indicates Day order</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>15</ComponentID>
+		<TagText>126</TagText>
+		<Indent>0</Indent>
+		<Position>42</Position>
+		<Reqd>0</Reqd>
+		<Description>Required in TimeInForce = GTD</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>12</TagText>
+		<Indent>0</Indent>
+		<Position>43</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>13</TagText>
+		<Indent>0</Indent>
+		<Position>44</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>47</TagText>
+		<Indent>0</Indent>
+		<Position>45</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>15</ComponentID>
+		<TagText>121</TagText>
+		<Indent>0</Indent>
+		<Position>46</Position>
+		<Reqd>0</Reqd>
+		<Description>Indicates that broker is requested to execute a Forex accommodation trade in conjunction with the security trade.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>15</ComponentID>
+		<TagText>120</TagText>
+		<Indent>0</Indent>
+		<Position>47</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if ForexReq = Y.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>48</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>15</ComponentID>
+		<TagText>193</TagText>
+		<Indent>0</Indent>
+		<Position>49</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used with OrdType = "Forex - Swap" to specify the "value date" for the future portion of a F/X swap.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>15</ComponentID>
+		<TagText>192</TagText>
+		<Indent>0</Indent>
+		<Position>50</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used with OrdType = "Forex - Swap" to specify the order quantity for the future portion of a F/X swap.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>15</ComponentID>
+		<TagText>77</TagText>
+		<Indent>0</Indent>
+		<Position>51</Position>
+		<Reqd>0</Reqd>
+		<Description>For options</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>15</ComponentID>
+		<TagText>203</TagText>
+		<Indent>0</Indent>
+		<Position>52</Position>
+		<Reqd>0</Reqd>
+		<Description>For options</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>15</ComponentID>
+		<TagText>204</TagText>
+		<Indent>0</Indent>
+		<Position>53</Position>
+		<Reqd>0</Reqd>
+		<Description>For options when delivering the order to execution system/exchange.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>15</ComponentID>
+		<TagText>210</TagText>
+		<Indent>0</Indent>
+		<Position>54</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>15</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>55</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = F</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<TagText>41</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+		<Description>ClOrdID of the previous order (NOT the initial order of the day) when canceling or replacing an order.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<TagText>37</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+		<Description>Unique identifier of most recent order as assigned by broker.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<TagText>11</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+		<Description>Unique ID of cancel request as assigned by the institution.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<TagText>66</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for List Orders</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>16</ComponentID>
+		<TagText>109</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<TagText>76</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<TagText>55</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<TagText>65</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<TagText>48</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<TagText>22</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>16</ComponentID>
+		<TagText>167</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be specified if a Future or Option. If a Future: Symbol, SecurityType, and MaturityMonthYear are required. If an Option: Symbol, SecurityType, MaturityMonthYear, PutOrCall, and StrikePrice are required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>16</ComponentID>
+		<TagText>200</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures to specify the month and year of maturity.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>16</ComponentID>
+		<TagText>205</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures and can be used in conjunction with MaturityMonthYear to specify a particular maturity date.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>16</ComponentID>
+		<TagText>201</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>16</ComponentID>
+		<TagText>202</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>16</ComponentID>
+		<TagText>206</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>16</ComponentID>
+		<TagText>207</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to identify the security.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>16</ComponentID>
+		<TagText>106</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>16</ComponentID>
+		<TagText>107</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<TagText>54</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<TagText>38</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+		<Description>Either CashOrderQty or OrderQty is required. OrderQty = CumQty + LeavesQty (see exceptions above)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>16</ComponentID>
+		<TagText>152</TagText>
+		<Indent>0</Indent>
+		<Position>23</Position>
+		<Reqd>0</Reqd>
+		<Description>Either CashOrderQty or OrderQty is required. Specifies the approximate "dollar quantity" for the order. Broker is responsible for converting and calculating OrderQty in shares for subsequent messages.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>24</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>16</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>25</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = G</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>37</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+		<Description>Unique identifier of most recent order as assigned by broker.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>17</ComponentID>
+		<TagText>109</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>76</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>41</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+		<Description>ClOrdID of the previous order (NOT the initial order of the day) when canceling or replacing an order.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>11</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>1</Reqd>
+		<Description>Unique identifier of replacement order as assigned by institution. Note that this identifier will be used in ClOrdID field of the Cancel Reject Message if the replacement request is rejected.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>66</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for List Orders</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>1</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>63</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>Absence of this field is interpreted as Regular.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>64</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+		<Description>Required when SettlmntTyp = 6 (Future) or SettlmntTyp = 8 (Sellers Option)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>21</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>18</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>Can contain multiple instructions, space delimited. Replacement order must be created with new parameters (i.e. original order values will not be brought forward to replacement order unless redefined within this message).</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>17</ComponentID>
+		<TagText>110</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>17</ComponentID>
+		<TagText>111</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>17</ComponentID>
+		<TagText>100</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>55</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>1</Reqd>
+		<Description>Must match original order</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>65</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>48</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>0</Reqd>
+		<Description>Must match original order</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>22</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>0</Reqd>
+		<Description>Must match original order</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>167</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be specified if a Future or Option. If a Future: Symbol, SecurityType, and MaturityMonthYear are required. If an Option: Symbol, SecurityType, MaturityMonthYear, PutOrCall, and StrikePrice are required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>200</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures to specify the month and year of maturity.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>205</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures and can be used in conjunction with MaturityMonthYear to specify a particular maturity date.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>201</TagText>
+		<Indent>0</Indent>
+		<Position>23</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>202</TagText>
+		<Indent>0</Indent>
+		<Position>24</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>206</TagText>
+		<Indent>0</Indent>
+		<Position>25</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>207</TagText>
+		<Indent>0</Indent>
+		<Position>26</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to identify the security.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>17</ComponentID>
+		<TagText>106</TagText>
+		<Indent>0</Indent>
+		<Position>27</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>17</ComponentID>
+		<TagText>107</TagText>
+		<Indent>0</Indent>
+		<Position>28</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>54</TagText>
+		<Indent>0</Indent>
+		<Position>29</Position>
+		<Reqd>1</Reqd>
+		<Description>Must match original side, however, Buy and Buy Minus can be interchanged as well as Sell and Sell Plus</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>38</TagText>
+		<Indent>0</Indent>
+		<Position>30</Position>
+		<Reqd>0</Reqd>
+		<Description>Either CashOrderQty or OrderQty is required. Should be the "Total Intended Order Quantity" (including the amount already executed for this chain of orders)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>152</TagText>
+		<Indent>0</Indent>
+		<Position>31</Position>
+		<Reqd>0</Reqd>
+		<Description>Either CashOrderQty or OrderQty is required. Specifies the approximate "dollar quantity" for the order. Broker is responsible for converting and calculating OrderQty in shares for subsequent messages.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>40</TagText>
+		<Indent>0</Indent>
+		<Position>32</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>44</TagText>
+		<Indent>0</Indent>
+		<Position>33</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for limit OrdTypes. For F/X orders, should be the "all-in" rate (spot rate adjusted for forward points). Can be used to specify a limit price for a pegged order, previously indicated, etc.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>99</TagText>
+		<Indent>0</Indent>
+		<Position>34</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for OrdType = "Stop" or OrdType = "Stop limit".</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>211</TagText>
+		<Indent>0</Indent>
+		<Position>35</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>15</TagText>
+		<Indent>0</Indent>
+		<Position>36</Position>
+		<Reqd>0</Reqd>
+		<Description>Must match original order.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>59</TagText>
+		<Indent>0</Indent>
+		<Position>37</Position>
+		<Reqd>0</Reqd>
+		<Description>Absence of this field indicates Day order</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>17</ComponentID>
+		<TagText>126</TagText>
+		<Indent>0</Indent>
+		<Position>38</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if TimeInForce = GTD</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>12</TagText>
+		<Indent>0</Indent>
+		<Position>39</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>13</TagText>
+		<Indent>0</Indent>
+		<Position>40</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>47</TagText>
+		<Indent>0</Indent>
+		<Position>41</Position>
+		<Reqd>0</Reqd>
+		<Description>Must match original order</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>17</ComponentID>
+		<TagText>121</TagText>
+		<Indent>0</Indent>
+		<Position>42</Position>
+		<Reqd>0</Reqd>
+		<Description>Indicates that broker is requested to execute a Forex accommodation trade in conjunction with the security trade.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>17</ComponentID>
+		<TagText>120</TagText>
+		<Indent>0</Indent>
+		<Position>43</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if ForexReq = Y.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>44</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>193</TagText>
+		<Indent>0</Indent>
+		<Position>45</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used with OrdType = "Forex - Swap" to specify the "value date" for the future portion of a F/X swap.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>192</TagText>
+		<Indent>0</Indent>
+		<Position>46</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used with OrdType = "Forex - Swap" to specify the order quantity for the future portion of a F/X swap.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>77</TagText>
+		<Indent>0</Indent>
+		<Position>47</Position>
+		<Reqd>0</Reqd>
+		<Description>For options</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>203</TagText>
+		<Indent>0</Indent>
+		<Position>48</Position>
+		<Reqd>0</Reqd>
+		<Description>For options</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>204</TagText>
+		<Indent>0</Indent>
+		<Position>49</Position>
+		<Reqd>0</Reqd>
+		<Description>For options when delivering the order to execution system/exchange.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>210</TagText>
+		<Indent>0</Indent>
+		<Position>50</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>17</ComponentID>
+		<TagText>114</TagText>
+		<Indent>0</Indent>
+		<Position>51</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>17</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>52</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>18</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = H</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>18</ComponentID>
+		<TagText>37</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>18</ComponentID>
+		<TagText>11</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>18</ComponentID>
+		<TagText>109</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>18</ComponentID>
+		<TagText>76</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>18</ComponentID>
+		<TagText>55</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>18</ComponentID>
+		<TagText>65</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>18</ComponentID>
+		<TagText>48</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>18</ComponentID>
+		<TagText>22</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>18</ComponentID>
+		<TagText>167</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be specified if a Future or Option. If a Future: Symbol, SecurityType, and MaturityMonthYear are required. If an Option: Symbol, SecurityType, MaturityMonthYear, PutOrCall, and StrikePrice are required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>18</ComponentID>
+		<TagText>200</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures to specify the month and year of maturity.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>18</ComponentID>
+		<TagText>205</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures and can be used in conjunction with MaturityMonthYear to specify a particular maturity date.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>18</ComponentID>
+		<TagText>201</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>18</ComponentID>
+		<TagText>202</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>18</ComponentID>
+		<TagText>206</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>18</ComponentID>
+		<TagText>207</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to identify the security.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>18</ComponentID>
+		<TagText>106</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>18</ComponentID>
+		<TagText>107</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>18</ComponentID>
+		<TagText>54</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>18</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = J</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>70</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>71</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>72</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for AllocTransType = Calculated, Replace, or Cancel</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>196</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to link two different Allocation messages (each with unique AllocID) together, i.e. for F/X "Netting" or "Swaps"</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>197</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to link two different Allocation messages and identifies the type of link. Required if AllocLinkID is specified.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>73</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+		<Description>Indicates number of orders to be combined for allocation. If order(s) were manually delivered set to 1 (one).</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>11</TagText>
+		<Indent>1</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+		<Description>Order ID assigned by client if order(s) were electronically delivered and executed. If order(s) were manually delivered this field should contain string "MANUAL".</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>37</TagText>
+		<Indent>1</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>198</TagText>
+		<Indent>1</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to provide order id used by exchange or executing system.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>66</TagText>
+		<Indent>1</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for List Orders.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>105</TagText>
+		<Indent>1</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>124</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+		<Description>Indicates number of individual execution record groups to follow. Absence of this field indicates that no individual execution records are included. Primarily used to support step-outs.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>32</TagText>
+		<Indent>1</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+		<Description>Number of shares in individual execution. Required if NoExecs &gt; 0</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>17</TagText>
+		<Indent>1</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>31</TagText>
+		<Indent>1</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+		<Description>Price of individual execution. Required if NoExecs &gt; 0</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>29</TagText>
+		<Indent>1</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be specified by broker for AllocTransTyp=Calculated</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>54</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>55</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>65</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>48</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>22</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>167</TagText>
+		<Indent>0</Indent>
+		<Position>23</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be specified if a Future or Option. If a Future: Symbol, SecurityType, and MaturityMonthYear are required. If an Option: Symbol, SecurityType, MaturityMonthYear, PutOrCall, and StrikePrice are required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>200</TagText>
+		<Indent>0</Indent>
+		<Position>24</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures to specify the month and year of maturity.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>205</TagText>
+		<Indent>0</Indent>
+		<Position>25</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures and can be used in conjunction with MaturityMonthYear to specify a particular maturity date.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>201</TagText>
+		<Indent>0</Indent>
+		<Position>26</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>202</TagText>
+		<Indent>0</Indent>
+		<Position>27</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>206</TagText>
+		<Indent>0</Indent>
+		<Position>28</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>207</TagText>
+		<Indent>0</Indent>
+		<Position>29</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to identify the security.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>19</ComponentID>
+		<TagText>106</TagText>
+		<Indent>0</Indent>
+		<Position>30</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>19</ComponentID>
+		<TagText>107</TagText>
+		<Indent>0</Indent>
+		<Position>31</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>53</TagText>
+		<Indent>0</Indent>
+		<Position>32</Position>
+		<Reqd>1</Reqd>
+		<Description>Total number of shares allocated to all accounts</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>30</TagText>
+		<Indent>0</Indent>
+		<Position>33</Position>
+		<Reqd>0</Reqd>
+		<Description>Market of the executions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>6</TagText>
+		<Indent>0</Indent>
+		<Position>34</Position>
+		<Reqd>1</Reqd>
+		<Description>For F/X orders, should be the "all-in" rate (spot rate adjusted for forward points).</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>15</TagText>
+		<Indent>0</Indent>
+		<Position>35</Position>
+		<Reqd>0</Reqd>
+		<Description>Currency of AvgPx. Should be the currency of the local market or exchange where the trade was conducted.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>74</TagText>
+		<Indent>0</Indent>
+		<Position>36</Position>
+		<Reqd>0</Reqd>
+		<Description>Absence of this field indicates that default precision arranged by the broker/institution is to be used</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>75</TagText>
+		<Indent>0</Indent>
+		<Position>37</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>60</TagText>
+		<Indent>0</Indent>
+		<Position>38</Position>
+		<Reqd>0</Reqd>
+		<Description>Date/time when allocation is generated</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>63</TagText>
+		<Indent>0</Indent>
+		<Position>39</Position>
+		<Reqd>0</Reqd>
+		<Description>Absence of this field is interpreted as Regular</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>64</TagText>
+		<Indent>0</Indent>
+		<Position>40</Position>
+		<Reqd>0</Reqd>
+		<Description>Required with SettlmntTyp other than regular</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>118</TagText>
+		<Indent>0</Indent>
+		<Position>41</Position>
+		<Reqd>0</Reqd>
+		<Description>Expressed in same currency as AvgPx. Sum of AllocNetMoney.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>77</TagText>
+		<Indent>0</Indent>
+		<Position>42</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>43</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>157</TagText>
+		<Indent>0</Indent>
+		<Position>44</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable for Convertible Bonds and fixed income</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>158</TagText>
+		<Indent>0</Indent>
+		<Position>45</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable for Convertible Bonds and fixed income</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>78</TagText>
+		<Indent>0</Indent>
+		<Position>46</Position>
+		<Reqd>0</Reqd>
+		<Description>Indicates number of allocation groups to follow.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>79</TagText>
+		<Indent>1</Indent>
+		<Position>47</Position>
+		<Reqd>0</Reqd>
+		<Description>May be the same value as BrokerOfCredit if ProcessCode is step-out or soft-dollar step-out and Institution does not wish to disclose individual account breakdowns to the ExecBroker</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>80</TagText>
+		<Indent>1</Indent>
+		<Position>48</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>81</TagText>
+		<Indent>1</Indent>
+		<Position>49</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>92</TagText>
+		<Indent>1</Indent>
+		<Position>50</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if ProcessCode is step-out or soft-dollar step-out</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>208</TagText>
+		<Indent>1</Indent>
+		<Position>51</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>209</TagText>
+		<Indent>1</Indent>
+		<Position>52</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>161</TagText>
+		<Indent>1</Indent>
+		<Position>53</Position>
+		<Reqd>0</Reqd>
+		<Description>Free format text field related to this AllocAccount</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>76</TagText>
+		<Indent>1</Indent>
+		<Position>54</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for step-in and step-out trades</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>109</TagText>
+		<Indent>1</Indent>
+		<Position>55</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>12</TagText>
+		<Indent>1</Indent>
+		<Position>56</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>13</TagText>
+		<Indent>1</Indent>
+		<Position>57</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>153</TagText>
+		<Indent>1</Indent>
+		<Position>58</Position>
+		<Reqd>0</Reqd>
+		<Description>AvgPx for this AllocAccount. For F/X orders, should be the "all-in" rate (spot rate adjusted for forward points) for this allocation.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>154</TagText>
+		<Indent>1</Indent>
+		<Position>59</Position>
+		<Reqd>0</Reqd>
+		<Description>NetMoney for this AllocAccount
+((AllocShares * AllocAvgPx) - Commission - sum of MiscFeeAmt - AccruedInterestAmt) if a Sell
+((AllocShares * AllocAvgPx) + Commission + sum of MiscFeeAmt + AccruedInterestAmt) if a Buy</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>119</TagText>
+		<Indent>1</Indent>
+		<Position>60</Position>
+		<Reqd>0</Reqd>
+		<Description>AllocNetMoney in SettlCurrency for this AllocAccount if SettlCurrency is different from "overall" Currency</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>120</TagText>
+		<Indent>1</Indent>
+		<Position>61</Position>
+		<Reqd>0</Reqd>
+		<Description>SettlCurrency for this AllocAccount if different from "overall" Currency. Required if SettlCurrAmount is specified.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>155</TagText>
+		<Indent>1</Indent>
+		<Position>62</Position>
+		<Reqd>0</Reqd>
+		<Description>Foreign exchange rate used to compute SettlCurrAmount from Currency to SettlCurrency</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>156</TagText>
+		<Indent>1</Indent>
+		<Position>63</Position>
+		<Reqd>0</Reqd>
+		<Description>Specifies whether the SettlCurrFxRate should be multiplied or divided</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>159</TagText>
+		<Indent>1</Indent>
+		<Position>64</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable for Convertible Bonds and fixed income</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>19</ComponentID>
+		<TagText>160</TagText>
+		<Indent>1</Indent>
+		<Position>65</Position>
+		<Reqd>0</Reqd>
+		<Description>Type of Settlement Instructions which will be provided via Settlement Instructions message (1=Standing Instructions, 2=Specific Allocation Account Overriding, 3=Specific Allocation Account Standing)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>136</TagText>
+		<Indent>1</Indent>
+		<Position>66</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if any miscellaneous fees are reported. Indicates number of repeating entries. Repeating group within Alloc repeating group.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>137</TagText>
+		<Indent>2</Indent>
+		<Position>67</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if NoMiscFees &gt; 0</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>138</TagText>
+		<Indent>2</Indent>
+		<Position>68</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if NoMiscFees &gt; 0</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>19</ComponentID>
+		<TagText>139</TagText>
+		<Indent>2</Indent>
+		<Position>69</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if NoMiscFees &gt; 0 (can only occur once within a MiscFee group)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>19</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>70</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>20</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = K</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>20</ComponentID>
+		<TagText>66</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>20</ComponentID>
+		<TagText>105</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>20</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>20</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>21</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = L</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>21</ComponentID>
+		<TagText>66</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+		<Description>Must be unique, by customer, for the day</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>21</ComponentID>
+		<TagText>105</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>21</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>21</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>22</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = M</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>22</ComponentID>
+		<TagText>66</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>22</ComponentID>
+		<TagText>105</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>22</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>22</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>23</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = N</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>23</ComponentID>
+		<TagText>66</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>23</ComponentID>
+		<TagText>105</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>23</ComponentID>
+		<TagText>82</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+		<Description>Total number of messages required to status complete list.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>23</ComponentID>
+		<TagText>83</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+		<Description>Sequence number of this report message.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>23</ComponentID>
+		<TagText>73</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>1</Reqd>
+		<Description>Number of orders statused in this message, i.e. number of repeating groups to follow.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>23</ComponentID>
+		<TagText>11</TagText>
+		<Indent>1</Indent>
+		<Position>7</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>23</ComponentID>
+		<TagText>14</TagText>
+		<Indent>1</Indent>
+		<Position>8</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>23</ComponentID>
+		<TagText>151</TagText>
+		<Indent>1</Indent>
+		<Position>9</Position>
+		<Reqd>1</Reqd>
+		<Description>Amount of shares open for further execution. LeavesQty = OrderQty - CumQty.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>23</ComponentID>
+		<TagText>84</TagText>
+		<Indent>1</Indent>
+		<Position>10</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>23</ComponentID>
+		<TagText>6</TagText>
+		<Indent>1</Indent>
+		<Position>11</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>23</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>24</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = P</Description>
+	</MsgContent>
+	<MsgContent added="FIX.3.0">
+		<ComponentID>24</ComponentID>
+		<TagText>109</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>24</ComponentID>
+		<TagText>76</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>24</ComponentID>
+		<TagText>70</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>24</ComponentID>
+		<TagText>75</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>24</ComponentID>
+		<TagText>60</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+		<Description>Date/Time AllocationACK generated</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>24</ComponentID>
+		<TagText>87</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>24</ComponentID>
+		<TagText>88</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for AllocStatus = 1 (rejected)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>24</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>Can include explanation for AllocRejCode = 7 (other)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.2.7">
+		<ComponentID>24</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>25</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = Q</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>25</ComponentID>
+		<TagText>37</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+		<Description>Broker Order ID as identified on problem execution</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>25</ComponentID>
+		<TagText>17</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>0</Reqd>
+		<Description>Execution ID of problem execution</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>25</ComponentID>
+		<TagText>127</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>25</ComponentID>
+		<TagText>55</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>25</ComponentID>
+		<TagText>65</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>25</ComponentID>
+		<TagText>48</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>25</ComponentID>
+		<TagText>22</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>25</ComponentID>
+		<TagText>167</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be specified if a Future or Option. If a Future: Symbol, SecurityType, and MaturityMonthYear are required. If an Option: Symbol, SecurityType, MaturityMonthYear, PutOrCall, and StrikePrice are required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>25</ComponentID>
+		<TagText>200</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures to specify the month and year of maturity.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>25</ComponentID>
+		<TagText>205</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures and can be used in conjunction with MaturityMonthYear to specify a particular maturity date.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>25</ComponentID>
+		<TagText>201</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>25</ComponentID>
+		<TagText>202</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>25</ComponentID>
+		<TagText>206</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>25</ComponentID>
+		<TagText>207</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to identify the security.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>25</ComponentID>
+		<TagText>106</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>25</ComponentID>
+		<TagText>107</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>25</ComponentID>
+		<TagText>54</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>25</ComponentID>
+		<TagText>38</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>0</Reqd>
+		<Description>Either CashOrderQty or OrderQty is required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>25</ComponentID>
+		<TagText>152</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+		<Description>Either CashOrderQty or OrderQty is required. Specifies the approximate "dollar quantity" for the order. Broker is responsible for converting and calculating OrderQty in shares for subsequent messages.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>25</ComponentID>
+		<TagText>32</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if specified on the ExecutionRpt</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>25</ComponentID>
+		<TagText>31</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+		<Description>Required if specified on the ExecutionRpt</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>25</ComponentID>
+		<TagText>58</TagText>
+		<Indent>0</Indent>
+		<Position>23</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>25</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>24</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>26</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = R</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>26</ComponentID>
+		<TagText>131</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>26</ComponentID>
+		<TagText>55</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>26</ComponentID>
+		<TagText>65</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>26</ComponentID>
+		<TagText>48</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>26</ComponentID>
+		<TagText>22</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>26</ComponentID>
+		<TagText>167</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be specified if a Future or Option. If a Future: Symbol, SecurityType, and MaturityMonthYear are required. If an Option: Symbol, SecurityType, MaturityMonthYear, PutOrCall, and StrikePrice are required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>26</ComponentID>
+		<TagText>200</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures to specify the month and year of maturity.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>26</ComponentID>
+		<TagText>205</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures and can be used in conjunction with MaturityMonthYear to specify a particular maturity date.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>26</ComponentID>
+		<TagText>201</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>26</ComponentID>
+		<TagText>202</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>26</ComponentID>
+		<TagText>206</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>26</ComponentID>
+		<TagText>207</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to identify the security.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>26</ComponentID>
+		<TagText>106</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>26</ComponentID>
+		<TagText>107</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>26</ComponentID>
+		<TagText>140</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+		<Description>Useful for verifying security identification</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>26</ComponentID>
+		<TagText>54</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+		<Description>If OrdType = "Forex - Swap", should be the side of the future portion of a F/X swap</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>26</ComponentID>
+		<TagText>38</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>26</ComponentID>
+		<TagText>64</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used with forex quotes to specify the desired "value date"</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>26</ComponentID>
+		<TagText>40</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to specify the type of order the quote request is for</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>26</ComponentID>
+		<TagText>193</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used with OrdType = "Forex - Swap" to specify the "value date" for the future portion of a F/X swap.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>26</ComponentID>
+		<TagText>192</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used with OrdType = "Forex - Swap" to specify the order quantity for the future portion of a F/X swap.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>26</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>23</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = S</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>131</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+		<Description>Required when quote is in response to a Quote Request message</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>117</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>55</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>65</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>48</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>22</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>167</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+		<Description>Must be specified if a Future or Option. If a Future: Symbol, SecurityType, and MaturityMonthYear are required. If an Option: Symbol, SecurityType, MaturityMonthYear, PutOrCall, and StrikePrice are required.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>200</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures to specify the month and year of maturity.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>205</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options or Futures and can be used in conjunction with MaturityMonthYear to specify a particular maturity date.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>201</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>202</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>206</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+		<Description>For Options.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>207</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to identify the security.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>106</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>107</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>132</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+		<Description>If F/X quote, should be the "all-in" rate (spot rate adjusted for forward points). Note that either BidPx, OfferPx or both must be specified.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>133</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>0</Reqd>
+		<Description>If F/X quote, should be the "all-in" rate (spot rate adjusted for forward points). Note that either BidPx, OfferPx or both must be specified.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>134</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>135</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>62</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>188</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+		<Description>May be applicable for F/X quotes</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>190</TagText>
+		<Indent>0</Indent>
+		<Position>23</Position>
+		<Reqd>0</Reqd>
+		<Description>May be applicable for F/X quotes</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>189</TagText>
+		<Indent>0</Indent>
+		<Position>24</Position>
+		<Reqd>0</Reqd>
+		<Description>May be applicable for F/X quotes</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>191</TagText>
+		<Indent>0</Indent>
+		<Position>25</Position>
+		<Reqd>0</Reqd>
+		<Description>May be applicable for F/X quotes</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>60</TagText>
+		<Indent>0</Indent>
+		<Position>26</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>64</TagText>
+		<Indent>0</Indent>
+		<Position>27</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used with forex quotes to specify a specific "value date"</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>40</TagText>
+		<Indent>0</Indent>
+		<Position>28</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used to specify the type of order the quote is for</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>193</TagText>
+		<Indent>0</Indent>
+		<Position>29</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used with OrdType = "Forex - Swap" to specify the "value date" for the future portion of a F/X swap.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>27</ComponentID>
+		<TagText>192</TagText>
+		<Indent>0</Indent>
+		<Position>30</Position>
+		<Reqd>0</Reqd>
+		<Description>Can be used with OrdType = "Forex - Swap" to specify the order quantity for the future portion of a F/X swap.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>27</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>31</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>StandardHeader</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>MsgType = T</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>162</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+		<Description>Unique message ID regardless of SettlInstMode</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>163</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+		<Description>New, Replace, or Cancel</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>160</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+		<Description>1=Standing Instructions, 2=Specific Allocation Account Overriding, 3=Specific Allocation Account Standing</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>165</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+		<Description>1=Broker’s Settlement Instructions, 2=Institution’s Settlement Instructions</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>79</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>1</Reqd>
+		<Description>Required for SettlInstMode=1, 2, or 3</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>166</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for SettlInstMode=2 or 3, may be required for SettlInstMode=1 (i.e. may not be required if StandInstDbType and StandInstDbID are used)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>75</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for SettlInstMode=2 or 3</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>70</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for SettlInstMode=2 or 3</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>30</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for SettlInstMode=2 or 3, May be required for SettlInstMode=1</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>54</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for SettlInstMode=2 or 3, May be required for SettlInstMode=1</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>167</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>May be required for SettlInstMode=1</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>168</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+		<Description>May be required for SettlInstMode=1 (timestamp when it goes in to effect)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>60</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>1</Reqd>
+		<Description>Date/Time Settlement Instructions were generated</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>109</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>76</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+		<Description>Used for firm identification in third-party transactions.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>169</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+		<Description>1=DTC SID, 2=Thomson ALERT, 3=Global Custodian’s, etc.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>170</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>0</Reqd>
+		<Description>Name of StandInstDbType (i.e. DTC, Global Custodian’s name)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>171</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>0</Reqd>
+		<Description>Identifier used within the StandInstDbType</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>172</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>173</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable when SettlLocation is a depository</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>174</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>175</TagText>
+		<Indent>0</Indent>
+		<Position>23</Position>
+		<Reqd>0</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>176</TagText>
+		<Indent>0</Indent>
+		<Position>24</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable when settlement is being performed at a country vs. a depository</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>177</TagText>
+		<Indent>0</Indent>
+		<Position>25</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable when settlement is being performed at a country vs. a depository</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>178</TagText>
+		<Indent>0</Indent>
+		<Position>26</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable when settlement is being performed at a country vs. a depository</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>179</TagText>
+		<Indent>0</Indent>
+		<Position>27</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable when settlement is being performed at a country vs. a depository</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>180</TagText>
+		<Indent>0</Indent>
+		<Position>28</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable when settlement is being performed at a country vs. a depository</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>181</TagText>
+		<Indent>0</Indent>
+		<Position>29</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable when settlement is being performed at a country vs. a depository</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>182</TagText>
+		<Indent>0</Indent>
+		<Position>30</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable when SettlDeliveryType=Free</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>183</TagText>
+		<Indent>0</Indent>
+		<Position>31</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable when SettlDeliveryType=Free</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>184</TagText>
+		<Indent>0</Indent>
+		<Position>32</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable when SettlDeliveryType=Free</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>185</TagText>
+		<Indent>0</Indent>
+		<Position>33</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable when SettlDeliveryType=Free</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>186</TagText>
+		<Indent>0</Indent>
+		<Position>34</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable when SettlDeliveryType=Free</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>187</TagText>
+		<Indent>0</Indent>
+		<Position>35</Position>
+		<Reqd>0</Reqd>
+		<Description>Applicable when SettlDeliveryType=Free</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>28</ComponentID>
+		<TagText>StandardTrailer</TagText>
+		<Indent>0</Indent>
+		<Position>36</Position>
+		<Reqd>1</Reqd>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>8</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>1</Reqd>
+		<Description>FIX.4.1 (Always unencrypted, must be first field in message)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>9</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>1</Reqd>
+		<Description>(Always unencrypted, must be second field in message)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>35</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+		<Description>(Always unencrypted, must be third field in message)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>49</TagText>
+		<Indent>0</Indent>
+		<Position>4</Position>
+		<Reqd>1</Reqd>
+		<Description>(Always unencrypted)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>56</TagText>
+		<Indent>0</Indent>
+		<Position>5</Position>
+		<Reqd>1</Reqd>
+		<Description>(Always unencrypted)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>115</TagText>
+		<Indent>0</Indent>
+		<Position>6</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner company ID used when sending messages via a third party (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>128</TagText>
+		<Indent>0</Indent>
+		<Position>7</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner company ID used when sending messages via a third party (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>90</TagText>
+		<Indent>0</Indent>
+		<Position>8</Position>
+		<Reqd>0</Reqd>
+		<Description>Required to identify length of encrypted section of message. (Always unencrypted)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>91</TagText>
+		<Indent>0</Indent>
+		<Position>9</Position>
+		<Reqd>0</Reqd>
+		<Description>Required when message body is encrypted. Always immediately follows SecureDataLen field.</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>34</TagText>
+		<Indent>0</Indent>
+		<Position>10</Position>
+		<Reqd>1</Reqd>
+		<Description>(Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>50</TagText>
+		<Indent>0</Indent>
+		<Position>11</Position>
+		<Reqd>0</Reqd>
+		<Description>(Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>1001</ComponentID>
+		<TagText>142</TagText>
+		<Indent>0</Indent>
+		<Position>12</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner LocationID (i.e. geographic location and/or desk) (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>57</TagText>
+		<Indent>0</Indent>
+		<Position>13</Position>
+		<Reqd>0</Reqd>
+		<Description>"ADMIN" reserved for administrative messages not intended for a specific user. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>1001</ComponentID>
+		<TagText>143</TagText>
+		<Indent>0</Indent>
+		<Position>14</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner LocationID (i.e. geographic location and/or desk) (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>116</TagText>
+		<Indent>0</Indent>
+		<Position>15</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner SubID used when delivering messages via a third party. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>1001</ComponentID>
+		<TagText>144</TagText>
+		<Indent>0</Indent>
+		<Position>16</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner LocationID (i.e. geographic location and/or desk) used when delivering messages via a third party. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>129</TagText>
+		<Indent>0</Indent>
+		<Position>17</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner SubID used when delivering messages via a third party. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.1">
+		<ComponentID>1001</ComponentID>
+		<TagText>145</TagText>
+		<Indent>0</Indent>
+		<Position>18</Position>
+		<Reqd>0</Reqd>
+		<Description>Trading partner LocationID (i.e. geographic location and/or desk) used when delivering messages via a third party. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>43</TagText>
+		<Indent>0</Indent>
+		<Position>19</Position>
+		<Reqd>0</Reqd>
+		<Description>Always required for retransmitted messages, whether prompted by the sending system or as the result of a resend request. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>97</TagText>
+		<Indent>0</Indent>
+		<Position>20</Position>
+		<Reqd>0</Reqd>
+		<Description>Required when message may be duplicate of another message sent under a different sequence number. (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>52</TagText>
+		<Indent>0</Indent>
+		<Position>21</Position>
+		<Reqd>1</Reqd>
+		<Description>(Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1001</ComponentID>
+		<TagText>122</TagText>
+		<Indent>0</Indent>
+		<Position>22</Position>
+		<Reqd>0</Reqd>
+		<Description>Required for message resends. If data is not available set to same value as SendingTime (Can be embedded within encrypted data section.)</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1002</ComponentID>
+		<TagText>93</TagText>
+		<Indent>0</Indent>
+		<Position>1</Position>
+		<Reqd>0</Reqd>
+		<Description>Required when trailer contains signature. Note: Not to be included within SecureData field</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1002</ComponentID>
+		<TagText>89</TagText>
+		<Indent>0</Indent>
+		<Position>2</Position>
+		<Reqd>0</Reqd>
+		<Description>Note: Not to be included within SecureData field</Description>
+	</MsgContent>
+	<MsgContent added="FIX.4.0">
+		<ComponentID>1002</ComponentID>
+		<TagText>10</TagText>
+		<Indent>0</Indent>
+		<Position>3</Position>
+		<Reqd>1</Reqd>
+		<Description>(Always unencrypted, always last field in message)</Description>
+	</MsgContent>
+</MsgContents>

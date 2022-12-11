@@ -1,11 +1,7 @@
-// `fefix_core` is part of the FerrumFIX codebase, so all warnings will get
-// caught anyway during compilation. Enabling compiler diagnostics would thus
-// have the undesirable effect of showing two identical warnings.
-#[allow(warnings)]
-#[path = "src/fefix_core/build_rs_mod.rs"]
-mod fefix_core;
+#![allow(dead_code)]
 
-use fefix_core::{codegen, dict::Dictionary};
+use fefix_codegen as codegen;
+use fefix_dictionary::Dictionary;
 use std::env::var;
 use std::fs::File;
 use std::io;
@@ -13,7 +9,6 @@ use std::io::Write;
 use std::path::PathBuf;
 
 fn main() -> io::Result<()> {
-    println!("cargo:rerun-if-changed=src/fefix_core");
     #[cfg(feature = "fix40")]
     codegen(Dictionary::fix40(), "fix40.rs")?;
     #[cfg(feature = "fix41")]
@@ -22,7 +17,7 @@ fn main() -> io::Result<()> {
     codegen(Dictionary::fix42(), "fix42.rs")?;
     #[cfg(feature = "fix43")]
     codegen(Dictionary::fix43(), "fix43.rs")?;
-    // FIX 4.4 is always available.
+    // FIX 4.4 is always enabled.
     codegen(Dictionary::fix44(), "fix44.rs")?;
     #[cfg(feature = "fix50")]
     codegen(Dictionary::fix50(), "fix50.rs")?;

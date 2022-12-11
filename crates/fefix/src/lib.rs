@@ -103,7 +103,6 @@
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 
 mod buffer;
-mod fefix_core;
 mod field_access;
 mod utils;
 
@@ -117,14 +116,12 @@ pub mod tagvalue;
 #[cfg(feature = "json-encoding")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "json-encoding")))]
 pub mod json;
-#[cfg(feature = "codegen")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "codegen")))]
-pub use fefix_core::codegen;
 
 pub use buffer::{Buffer, BufferWriter};
-pub use dict::Dictionary;
-pub use fefix_core::dict;
-pub use fefix_core::TagU32;
+#[cfg(feature = "codegen")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "codegen")))]
+pub use fefix_codegen as codegen;
+pub use fefix_dictionary::{self as dict, Dictionary, TagU32};
 
 // We don't show derive macros to pollute the docs.
 #[doc(hidden)]

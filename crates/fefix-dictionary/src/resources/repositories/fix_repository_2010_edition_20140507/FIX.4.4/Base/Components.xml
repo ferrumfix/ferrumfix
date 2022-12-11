@@ -1,0 +1,973 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+DISCLAIMER
+
+THE INFORMATION CONTAINED HEREIN AND THE FINANCIAL INFORMATION EXCHANGE PROTOCOL (COLLECTIVELY, THE "FIX PROTOCOL") ARE PROVIDED "AS IS" AND NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL MAKES ANY REPRESENTATION OR WARRANTY, EXPRESS OR IMPLIED, AS TO THE FIX PROTOCOL (OR THE RESULTS TO BE OBTAINED BY THE USE THEREOF) OR ANY OTHER MATTER AND EACH SUCH PERSON AND ENTITY SPECIFICALLY DISCLAIMS ANY WARRANTY OF ORIGINALITY, ACCURACY, COMPLETENESS, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SUCH PERSONS AND ENTITIES DO NOT WARRANT THAT THE FIX PROTOCOL WILL CONFORM TO ANY DESCRIPTION THEREOF OR BE FREE OF ERRORS. THE ENTIRE RISK OF ANY USE OF THE FIX PROTOCOL IS ASSUMED BY THE USER.
+
+NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL SHALL HAVE ANY LIABILITY FOR DAMAGES OF ANY KIND ARISING IN ANY MANNER OUT OF OR IN CONNECTION WITH ANY USER'S USE OF (OR ANY INABILITY TO USE) THE FIX PROTOCOL, WHETHER DIRECT, INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL (INCLUDING, WITHOUT LIMITATION, LOSS OF DATA, LOSS OF USE, CLAIMS OF THIRD PARTIES OR LOST PROFITS OR REVENUES OR OTHER ECONOMIC LOSS), WHETHER IN TORT (INCLUDING NEGLIGENCE AND STRICT LIABILITY), CONTRACT OR OTHERWISE, WHETHER OR NOT ANY SUCH PERSON OR ENTITY HAS BEEN ADVISED OF, OR OTHERWISE MIGHT HAVE ANTICIPATED THE POSSIBILITY OF, SUCH DAMAGES.
+
+No proprietary or ownership interest of any kind is granted with respect to the FIX Protocol (or any rights therein).
+
+Copyright 2003-2009 FIX Protocol Limited, all rights reserved
+
+REPRODUCTION
+
+FIX Protocol Limited grants permission to print in hard copy form or reproduce the FIX Protocol specification in its entirety provided that the duplicated pages retain the "Copyright FIX Protocol Limited" statement at the bottom of the page.
+
+Portions of the FIX Protocol specification may be extracted or cited in other documents (such as a document which describes one's implementation of the FIX Protocol) provided that one reference the origin of the FIX Protocol specification (HTUhttp://www.fixprotocol.orgUTH) and that the specification itself is "Copyright FIX Protocol Limited".
+FIX Protocol Limited claims no intellectual property over one's implementation (programming code) of an application which implements the behavior and details from the FIX Protocol specification. 	
+--><Components xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" copyright="Copyright (c) FIX Protocol Ltd. All Rights Reserved." edition="2010" version="FIX.4.4" xsi:noNamespaceSchemaLocation="../../schema/Components.xsd" generated="2010-03-13T14:54:02-05:00">
+	<Component added="FIX.4.3">
+		<ComponentID>1000</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>CommissionData</Name>
+		<AbbrName>Comm</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The CommissionDate component block is used to carry commission information such as the type of commission and the rate.</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>1001</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>DiscretionInstructions</Name>
+		<AbbrName>DiscInstr</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The presence of DiscretionInstructions component block on an order indicates that the trader wishes to display one price but will accept trades at another price.</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>1002</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>FinancingDetails</Name>
+		<AbbrName>FinDetls</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>Component block is optionally used only for financing deals to identify the legal agreement under which the deal was made and other unique characteristics of the transaction. The AgreementDesc field refers to base standard documents such as MRA 1996 Repurchase Agreement, GMRA 2000 Bills Transaction (U.K.), MSLA 1993 Securities Loan – Amended 1998, for example.</Description>
+	</Component>
+	<Component added="FIX.4.3">
+		<ComponentID>1003</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>Instrument</Name>
+		<AbbrName>Instrmt</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The Instrument component block contains all the fields commonly used to describe a security or instrument. Typically the data elements in this component block are considered the static data of a security, data that may be commonly found in a security master database. The Instrument component block can be used to describe any asset type supported by FIX.</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>1004</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>InstrumentExtension</Name>
+		<AbbrName>InstrmtExt</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The InstrumentExtension component block identifies additional security attributes that are more commonly found for Fixed Income securities.</Description>
+	</Component>
+	<Component added="FIX.4.3">
+		<ComponentID>1005</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>InstrumentLeg</Name>
+		<AbbrName>Leg</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The InstrumentLeg component block, like the Instrument component block, contains all the fields commonly used to describe a security or instrument. In the case of the InstrumentLeg component block it describes a security used in multileg-oriented messages.</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>1006</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>LegBenchmarkCurveData</Name>
+		<AbbrName>BnchmkCurve</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The LegBenchmarkCurveData is used to convey the benchmark information used for pricing in a multi-legged Fixed Income security.</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>1007</ComponentID>
+		<ComponentType>BlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>LegStipulations</Name>
+		<AbbrName>Stip</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The LegStipulations component block has the same usage as the Stipulations component block, but for a leg instrument in a multi-legged security.</Description>
+	</Component>
+	<Component added="FIX.4.3">
+		<ComponentID>1008</ComponentID>
+		<ComponentType>BlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>NestedParties</Name>
+		<AbbrName>Pty</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The NestedParties component block is identical to the Parties Block. It is used in other component blocks and repeating groups when nesting will take place resulting in multiple occurrences of the Parties block within a single FIX message.. Use of NestedParties under these conditions avoids multiple references to the Parties block within the same message which is not allowed in FIX tag/value syntax.</Description>
+	</Component>
+	<Component added="FIX.4.3">
+		<ComponentID>1011</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>OrderQtyData</Name>
+		<AbbrName>OrdQty</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The OrderQtyData component block contains the fields commonly used for indicating the amount or quantity of an order. Note that when this component block is marked as "required" in a message either one of these three fields must be used to identify the amount: OrderQty, CashOrderQty or OrderPercent (in the case of CIV).</Description>
+	</Component>
+	<Component added="FIX.4.3">
+		<ComponentID>1012</ComponentID>
+		<ComponentType>BlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>Parties</Name>
+		<AbbrName>Pty</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The Parties component block is used to identify and convey information on the entities both central and peripheral to the financial transaction represented by the FIX message containing the Parties Block. The Parties block allows many different types of entites to be expressed through use of the PartyRole field and identifies the source of the PartyID through the the PartyIDSource.</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>1013</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>PegInstructions</Name>
+		<AbbrName>PegInstr</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The Peg Instructions component block is used to tie the price of a security to a market event such as opening price, mid-price, best price. The Peg Instructions block may also be used to tie the price to the behavior of a related security.</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>1014</ComponentID>
+		<ComponentType>BlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>PositionAmountData</Name>
+		<AbbrName>Amt</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The PositionAmountData component block is used to report netted amounts associated with position quantities. In the listed derivatives market the amount is generally expressing a type of futures variation or option premium. In the equities market this may be the net pay or collect on a given position.</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>1015</ComponentID>
+		<ComponentType>BlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>PositionQty</Name>
+		<AbbrName>Qty</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The PositionQty component block specifies the various types of position quantity in the position life-cycle including start-of-day, intraday, trade, adjustments, and end-of-day position quantities. Quantities are expressed in terms of long and short quantities.</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>1016</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>SettlInstructionsData</Name>
+		<AbbrName>SetInstr</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The SettlInstructionsData component block is used to convey key information regarding standing settlement and delivery instructions. It also provides a reference to standing settlement details regarding the source, delivery instructions, and settlement parties</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>1017</ComponentID>
+		<ComponentType>BlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>SettlParties</Name>
+		<AbbrName>Pty</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The SettlParties component block is used in a similar manner as Parties Block within the context of settlement instruction messages to distinguish between parties involved in the settlement and parties who are expected to execute the settlement process.</Description>
+	</Component>
+	<Component added="FIX.4.3">
+		<ComponentID>1018</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>SpreadOrBenchmarkCurveData</Name>
+		<AbbrName>SprdBnchmkCurve</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The SpreadOrBenchmarkCurveData component block is primarily used for Fixed Income to convey spread to a benchmark security or curve.</Description>
+	</Component>
+	<Component added="FIX.4.3">
+		<ComponentID>1019</ComponentID>
+		<ComponentType>BlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>Stipulations</Name>
+		<AbbrName>Stip</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The Stipulations component block is used in Fixed Income to provide additional information on a given security. These additional information are usually not considered static data information.</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>1020</ComponentID>
+		<ComponentType>BlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>TrdRegTimestamps</Name>
+		<AbbrName>TrdRegTS</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The TrdRegTimestamps component block is used to express timestamps for an order or trade that are required by regulatory agencies These timesteamps are used to identify the timeframes for when an order or trade is received on the floor, received and executed by the broker, etc.</Description>
+	</Component>
+	<Component added="FIX.4.3">
+		<ComponentID>1021</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>UnderlyingInstrument</Name>
+		<AbbrName>Undly</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The UnderlyingInstrument component block, like the Instrument component block, contains all the fields commonly used to describe a security or instrument. In the case of the UnderlyingInstrument component block it describes an instrument which underlies the primary instrument Refer to the Instrument component block comments as this component block mirrors Instrument, except for the noted fields.</Description>
+	</Component>
+	<Component added="FIX.4.3">
+		<ComponentID>1022</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>YieldData</Name>
+		<AbbrName>Yield</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The YieldData component block conveys yield information for a given Fixed Income security.</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>1023</ComponentID>
+		<ComponentType>BlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>UnderlyingStipulations</Name>
+		<AbbrName>Stip</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The UnderlyingStipulations component block has the same usage as the Stipulations component block, but for an underlying security.</Description>
+	</Component>
+	<Component added="FIX.4.0">
+		<ComponentID>1024</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Session</CategoryID>
+		<Name>StandardHeader</Name>
+		<AbbrName>Hdr</AbbrName>
+		<NotReqXML>1</NotReqXML>
+		<Description>The standard FIX message header</Description>
+	</Component>
+	<Component added="FIX.4.0">
+		<ComponentID>1025</ComponentID>
+		<ComponentType>Block</ComponentType>
+		<CategoryID>Session</CategoryID>
+		<Name>StandardTrailer</Name>
+		<AbbrName>Trlr</AbbrName>
+		<NotReqXML>1</NotReqXML>
+		<Description>The standard FIX message trailer</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>1009</ComponentID>
+		<ComponentType>BlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>NestedParties2</Name>
+		<AbbrName>Pty</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The NestedParties2 component block is identical to the Parties Block. It is used in other component blocks and repeating groups when nesting will take place resulting in multiple occurrences of the Parties block within a single FIX message.. Use of NestedParties2 under these conditions avoids multiple references to the Parties block within the same message which is not allowed in FIX tag/value syntax.</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>1010</ComponentID>
+		<ComponentType>BlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>NestedParties3</Name>
+		<AbbrName>Pty</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description>The NestedParties3 component block is identical to the Parties Block. It is used in other component blocks and repeating groups when nesting will take place resulting in multiple occurrences of the Parties block within a single FIX message.. Use of NestedParties3 under these conditions avoids multiple references to the Parties block within the same message which is not allowed in FIX tag/value syntax.</Description>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2001</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>SingleGeneralOrderHandling</CategoryID>
+		<Name>AffectedOrdGrp</Name>
+		<AbbrName>AffectOrd</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2002</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Allocation</CategoryID>
+		<Name>AllocAckGrp</Name>
+		<AbbrName>AllocAck</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2003</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Allocation</CategoryID>
+		<Name>AllocGrp</Name>
+		<AbbrName>Alloc</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2004</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>ProgramTrading</CategoryID>
+		<Name>BidCompReqGrp</Name>
+		<AbbrName>CompReq</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2005</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>ProgramTrading</CategoryID>
+		<Name>BidCompRspGrp</Name>
+		<AbbrName>CompRsp</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2006</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>ProgramTrading</CategoryID>
+		<Name>BidDescReqGrp</Name>
+		<AbbrName>DescReq</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2007</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>ClrInstGrp</Name>
+		<AbbrName>ClrInst</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2008</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>CollateralManagement</CategoryID>
+		<Name>CollInqQualGrp</Name>
+		<AbbrName>Qual</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2009</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>CompIDReqGrp</Name>
+		<AbbrName>CIDReq</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2010</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>CompIDStatGrp</Name>
+		<AbbrName>CIDStat</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2011</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>ContAmtGrp</Name>
+		<AbbrName>ContAmt</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2012</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>ContraGrp</Name>
+		<AbbrName>Contra</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2013</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>CpctyConfGrp</Name>
+		<AbbrName>Cpcty</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2014</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Allocation</CategoryID>
+		<Name>ExecAllocGrp</Name>
+		<AbbrName>AllExc</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2015</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>CollateralManagement</CategoryID>
+		<Name>ExecCollGrp</Name>
+		<AbbrName>CollExc</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2016</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>ExecsGrp</Name>
+		<AbbrName>Exec</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2017</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>InstrmtGrp</Name>
+		<AbbrName>Inst</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2018</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>InstrmtLegExecGrp</Name>
+		<AbbrName>Exec</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2019</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>InstrmtLegGrp</Name>
+		<AbbrName>Leg</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2020</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>InstrmtLegIOIGrp</Name>
+		<AbbrName>IOI</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2021</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>InstrmtLegSecListGrp</Name>
+		<AbbrName>SecL</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2022</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>InstrmtMDReqGrp</Name>
+		<AbbrName>InstReq</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2023</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>ProgramTrading</CategoryID>
+		<Name>InstrmtStrkPxGrp</Name>
+		<AbbrName>StrkPX</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2024</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Indication</CategoryID>
+		<Name>IOIQualGrp</Name>
+		<AbbrName>Qual</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2025</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>MultilegOrders</CategoryID>
+		<Name>LegOrdGrp</Name>
+		<AbbrName>Ord</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2026</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>MultilegOrders</CategoryID>
+		<Name>LegPreAllocGrp</Name>
+		<AbbrName>PreAll</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2027</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<Name>LegQuotGrp</Name>
+		<AbbrName>Quot</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2028</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<Name>LegQuotStatGrp</Name>
+		<AbbrName>QuoteStat</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2029</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>LinesOfTextGrp</Name>
+		<AbbrName>TxtLn</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2030</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>ProgramTrading</CategoryID>
+		<Name>ListOrdGrp</Name>
+		<AbbrName>Ord</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2031</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>MarketData</CategoryID>
+		<Name>MDFullGrp</Name>
+		<AbbrName>Full</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2032</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>MarketData</CategoryID>
+		<Name>MDIncGrp</Name>
+		<AbbrName>Inc</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2033</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>MarketData</CategoryID>
+		<Name>MDReqGrp</Name>
+		<AbbrName>Req</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2034</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>MarketData</CategoryID>
+		<Name>MDRjctGrp</Name>
+		<AbbrName>Rjct</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2035</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>MiscFeesGrp</Name>
+		<AbbrName>MiscFees</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2036</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>OrdAllocGrp</Name>
+		<AbbrName>OrdAlloc</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2037</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>ProgramTrading</CategoryID>
+		<Name>OrdListStatGrp</Name>
+		<AbbrName>ListStat</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2038</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>PositionMaintenance</CategoryID>
+		<Name>PosUndInstrmtGrp</Name>
+		<AbbrName>PosUnd</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2039</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>PreAllocGrp</Name>
+		<AbbrName>PreAll</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2040</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>PreAllocMlegGrp</Name>
+		<AbbrName>PreAllocMleg</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2041</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<Name>QuotCxlEntriesGrp</Name>
+		<AbbrName>QuotCxlEntry</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2042</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<Name>QuotEntryAckGrp</Name>
+		<AbbrName>QuotEntryAck</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2043</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<Name>QuotEntryGrp</Name>
+		<AbbrName>QuotEntry</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2044</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<Name>QuotQualGrp</Name>
+		<AbbrName>QuotQual</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2045</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<Name>QuotReqGrp</Name>
+		<AbbrName>QuotReq</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2046</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<Name>QuotReqLegsGrp</Name>
+		<AbbrName>Leg</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2047</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<Name>QuotReqRjctGrp</Name>
+		<AbbrName>QuotReqRej</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2048</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<Name>QuotSetAckGrp</Name>
+		<AbbrName>QuotSetAck</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2049</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<Name>QuotSetGrp</Name>
+		<AbbrName>QuotSet</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2050</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<Name>RelSymDerivSecGrp</Name>
+		<AbbrName>RelSym</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2051</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>QuotationNegotiation</CategoryID>
+		<Name>RFQReqGrp</Name>
+		<AbbrName>RFQReq</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2052</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>RegistrationInstruction</CategoryID>
+		<Name>RgstDistInstGrp</Name>
+		<AbbrName>RgDtlInst</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2053</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>RegistrationInstruction</CategoryID>
+		<Name>RgstDtlsGrp</Name>
+		<AbbrName>RgDtl</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2054</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>RoutingGrp</Name>
+		<AbbrName>Rtg</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2055</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<Name>SecListGrp</Name>
+		<AbbrName>SecL</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2056</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>SecurityAndTradingSessionDefinitionOrStatus</CategoryID>
+		<Name>SecTypesGrp</Name>
+		<AbbrName>SecT</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2057</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>SettlementInstruction</CategoryID>
+		<Name>SettlInstGrp</Name>
+		<AbbrName>SetInst</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2058</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>CrossOrders</CategoryID>
+		<Name>SideCrossOrdCxlGrp</Name>
+		<AbbrName>SideCrossCxl</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2059</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>CrossOrders</CategoryID>
+		<Name>SideCrossOrdModGrp</Name>
+		<AbbrName>SideCrossMod</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2060</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>TrdAllocGrp</Name>
+		<AbbrName>Alloc</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2061</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>TradeCapture</CategoryID>
+		<Name>TrdCapRptSideGrp</Name>
+		<AbbrName>RptSide</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2062</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>TrdCollGrp</Name>
+		<AbbrName>TrdColl</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2063</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>TradeCapture</CategoryID>
+		<Name>TrdInstrmtLegGrp</Name>
+		<AbbrName>TrdLeg</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2064</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>TrdgSesGrp</Name>
+		<AbbrName>TrdSes</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2065</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>CollateralManagement</CategoryID>
+		<Name>UndInstrmtCollGrp</Name>
+		<AbbrName>UndColl</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2066</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>UndInstrmtGrp</Name>
+		<AbbrName>Undly</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2067</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>ProgramTrading</CategoryID>
+		<Name>UndInstrmtStrkPxGrp</Name>
+		<AbbrName>UndStrkPx</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2069</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>TradeCapture</CategoryID>
+		<Name>TrdCapDtGrp</Name>
+		<AbbrName>TrdCapDt</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2070</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>EvntGrp</Name>
+		<AbbrName>Evnt</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2071</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>SecAltIDGrp</Name>
+		<AbbrName>AID</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2072</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>LegSecAltIDGrp</Name>
+		<AbbrName>LegAID</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2073</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>UndSecAltIDGrp</Name>
+		<AbbrName>UndAID</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2074</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>AttrbGrp</Name>
+		<AbbrName>Attrb</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2075</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>DlvyInstGrp</Name>
+		<AbbrName>DlvInst</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2076</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>SettlPtysSubGrp</Name>
+		<AbbrName>Sub</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2077</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>PtysSubGrp</Name>
+		<AbbrName>Sub</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2078</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>NstdPtysSubGrp</Name>
+		<AbbrName>Sub</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2085</ComponentID>
+		<ComponentType>ImplicitBlock</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>Hop</Name>
+		<AbbrName>Hop</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2079</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>NstdPtys2SubGrp</Name>
+		<AbbrName>Sub</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+	<Component added="FIX.4.4">
+		<ComponentID>2080</ComponentID>
+		<ComponentType>ImplicitBlockRepeating</ComponentType>
+		<CategoryID>Common</CategoryID>
+		<Name>NstdPtys3SubGrp</Name>
+		<AbbrName>Sub</AbbrName>
+		<NotReqXML>0</NotReqXML>
+		<Description/>
+	</Component>
+</Components>

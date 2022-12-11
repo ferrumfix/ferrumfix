@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?><!-- edited with XMLSpy v2011 rel. 2 sp1 (http://www.altova.com) by Jim Northey (FIX Protocol Ltd. (FPL)) --><xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:od="urn:schemas-microsoft-com:officedata" xmlns:ep="urn:schemas-fpl-org:ep"><xs:annotation xmlns:local="http://dummy.org"><xs:documentation>
+DISCLAIMER
+
+THE INFORMATION CONTAINED HEREIN AND THE FINANCIAL INFORMATION EXCHANGE PROTOCOL (COLLECTIVELY, THE "FIX PROTOCOL") ARE PROVIDED "AS IS" AND NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL MAKES ANY REPRESENTATION OR WARRANTY, EXPRESS OR IMPLIED, AS TO THE FIX PROTOCOL (OR THE RESULTS TO BE OBTAINED BY THE USE THEREOF) OR ANY OTHER MATTER AND EACH SUCH PERSON AND ENTITY SPECIFICALLY DISCLAIMS ANY WARRANTY OF ORIGINALITY, ACCURACY, COMPLETENESS, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SUCH PERSONS AND ENTITIES DO NOT WARRANT THAT THE FIX PROTOCOL WILL CONFORM TO ANY DESCRIPTION THEREOF OR BE FREE OF ERRORS. THE ENTIRE RISK OF ANY USE OF THE FIX PROTOCOL IS ASSUMED BY THE USER.
+
+NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL SHALL HAVE ANY LIABILITY FOR DAMAGES OF ANY KIND ARISING IN ANY MANNER OUT OF OR IN CONNECTION WITH ANY USER'S USE OF (OR ANY INABILITY TO USE) THE FIX PROTOCOL, WHETHER DIRECT, INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL (INCLUDING, WITHOUT LIMITATION, LOSS OF DATA, LOSS OF USE, CLAIMS OF THIRD PARTIES OR LOST PROFITS OR REVENUES OR OTHER ECONOMIC LOSS), WHETHER IN TORT (INCLUDING NEGLIGENCE AND STRICT LIABILITY), CONTRACT OR OTHERWISE, WHETHER OR NOT ANY SUCH PERSON OR ENTITY HAS BEEN ADVISED OF, OR OTHERWISE MIGHT HAVE ANTICIPATED THE POSSIBILITY OF, SUCH DAMAGES.
+
+No proprietary or ownership interest of any kind is granted with respect to the FIX Protocol (or any rights therein).
+
+Copyright 2003-2009 FIX Protocol Limited, all rights reserved
+
+REPRODUCTION
+
+FIX Protocol Limited grants permission to print in hard copy form or reproduce the FIX Protocol specification in its entirety provided that the duplicated pages retain the "Copyright FIX Protocol Limited" statement at the bottom of the page.
+
+Portions of the FIX Protocol specification may be extracted or cited in other documents (such as a document which describes one's implementation of the FIX Protocol) provided that one reference the origin of the FIX Protocol specification (HTUhttp://www.fixprotocol.orgUTH) and that the specification itself is "Copyright FIX Protocol Limited".
+FIX Protocol Limited claims no intellectual property over one's implementation (programming code) of an application which implements the behavior and details from the FIX Protocol specification. 	
+</xs:documentation></xs:annotation>
+	<xs:include schemaLocation="repositorytypes.xsd"/>
+	<!--
+     Note that ep:PK is a non-schema attribute used to automatically generate the extensionpack.xsd schema for EP.sps.
+    @ep:PK="1" signifies that the element is an analog to a "primary key" identifier
+-->
+	<xs:attributeGroup name="ContainerLevelRevisionAttribGrp">
+		<xs:attribute name="version" type="Version_t"/>
+		<xs:attribute name="latestEP" type="EP_t"/>
+		<xs:attribute name="generated" type="xs:dateTime"/>
+		<xs:attribute name="copyright" type="xs:string"/>
+		<xs:attribute name="edition" type="Edition_t"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="EntityLevelRevisionAttribGrp">
+		<xs:attribute name="added" type="Version_t"/>
+		<xs:attribute name="addedEP" type="EP_t"/>
+		<xs:attribute name="deprecated" type="Version_t"/>
+		<xs:attribute name="deprecatedEP" type="EP_t"/>
+		<xs:attribute name="issue" type="xs:string"/>
+		<xs:attribute name="updated" type="Version_t"/>
+		<xs:attribute name="updatedEP" type="EP_t"/>
+	</xs:attributeGroup>
+	<xs:complexType name="Abbreviation_cs_t">
+		<xs:sequence>
+			<xs:element name="Term" type="Term_t" od:jetType="text" od:sqlSType="nvarchar" ep:PK="1">
+				<xs:annotation>
+					<xs:documentation>Full-length, unabbreviated term</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="AbbrTerm" type="Abbreviation_t" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>Abbreviated version of 'Term'</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Usage" type="Usage_t" minOccurs="0" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>Description of usage of Term</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attributeGroup ref="EntityLevelRevisionAttribGrp"/>
+	</xs:complexType>
+	<xs:complexType name="Category_cs_t">
+		<xs:sequence>
+			<xs:element name="CategoryID" type="CategoryID_t" od:jetType="text" od:sqlSType="nvarchar" ep:PK="1">
+				<xs:annotation>
+					<xs:documentation>A string uniquely identifying this category</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="FIXMLFileName" type="Name_t" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>The FIXML file name for a Category</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="NotReqXML" type="BOOL_t" od:jetType="yesno" od:sqlSType="bit">
+				<xs:annotation>
+					<xs:documentation>A boolean to indicate if the Category of messages and components is not required in FIXML</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="GenerateImplFile" type="BOOL_t" od:jetType="yesno" od:sqlSType="bit">
+				<xs:annotation>
+					<xs:documentation>A boolean used to indicate if an implementation schema file is to be produced for FIXML</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ComponentType" type="CatComponentType_t" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>A string specifying the component type associated with this category</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="SectionID" type="SectionID_t" minOccurs="0" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>A string specifying the section associated with this category</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Volume" type="Volume_t" minOccurs="0" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>A string specifying the document volume where this category is described</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="IncludeFile" type="CatIncludeFile_t" minOccurs="0" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>A string that specifies if the Fields file or components file is to be included within this categories schema file</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Description" type="Description_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="EntityLevelRevisionAttribGrp"/>
+	</xs:complexType>
+	<xs:complexType name="Component_cs_t">
+		<xs:sequence>
+			<xs:element name="ComponentID" type="CompID_t" od:jetType="text" od:sqlSType="nvarchar" ep:PK="1">
+				<xs:annotation>
+					<xs:documentation>The unique integer identifier of this component type</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ComponentType" type="ComponentType_t" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>A string specifying the type of the component</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="CategoryID" type="CategoryID_t" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>A string specifying the category of the component</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Name" type="ComponentName_t" od:jetType="longinteger" od:sqlSType="int">
+				<xs:annotation>
+					<xs:documentation>The human readable name of the component</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="AbbrName" type="Name_t" minOccurs="0" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>The name for this component when used in an XML context</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="NotReqXML" type="BOOL_t" od:jetType="yesno" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>Whether this component must be used in an XML context</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Description" type="Description_t" minOccurs="0" od:jetType="memo" od:sqlSType="ntext"/>
+			<xs:element name="Elaboration" type="Elaboration_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="EntityLevelRevisionAttribGrp"/>
+	</xs:complexType>
+	<xs:complexType name="Datatype_cs_t">
+		<xs:sequence>
+			<xs:element name="Name" type="xs:string" ep:PK="1">
+				<xs:annotation>
+					<xs:documentation>PK: Identifier of the datatype</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="BaseType" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Base type from which this type is derived</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Description" type="Description_t">
+				<xs:annotation>
+					<xs:documentation>Human readable description of this Datatype</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Example" type="Example_t" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>A string that contains examples values for a datatype</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="XML" type="DatatypeXML_t" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>FIXML datatype definition for the datatypes</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attributeGroup ref="EntityLevelRevisionAttribGrp"/>
+	</xs:complexType>
+	<xs:complexType name="Enum_cs_t">
+		<xs:sequence>
+			<xs:element name="Tag" type="Tag_t" od:jetType="longinteger" od:sqlSType="int" ep:PK="1">
+				<xs:annotation>
+					<xs:documentation>Identifies the field containing this enumeration</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Value" type="Enumeration_t" od:jetType="text" od:sqlSType="nvarchar" ep:PK="1">
+				<xs:annotation>
+					<xs:documentation>The actual data value</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="SymbolicName" type="SymbolicName_t" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>A unique (within the same tag) identifier for this enumeration, suitable for use as a human-readable identifier in computer programs</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Group" type="Group_t" minOccurs="0" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>A string designatiing a group identifier for this enumeration</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Sort" type="xs:int" minOccurs="0" od:jetType="longinteger" od:sqlSType="int">
+				<xs:annotation>
+					<xs:documentation>An integer indicating the sort position of this enumeration within the set of all enumerations for a given tag</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Description" type="Description_t" minOccurs="0" od:jetType="memo" od:sqlSType="ntext"/>
+			<xs:element name="Elaboration" type="Elaboration_t" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>An extended human readable description of this enumeration</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attributeGroup ref="EntityLevelRevisionAttribGrp"/>
+	</xs:complexType>
+	<xs:complexType name="Field_cs_t">
+		<xs:sequence>
+			<xs:element name="Tag" type="Tag_t" od:jetType="longinteger" od:sqlSType="int" ep:PK="1">
+				<xs:annotation>
+					<xs:documentation>A positive integer representing the unique identifier for this field type</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Name" type="SymbolicName_t" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>A human readable string representing the name of the field</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Type" type="Datatype_t" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>The datatype of the field</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="AssociatedDataTag" type="xs:int" minOccurs="0" od:jetType="longinteger" od:sqlSType="int">
+				<xs:annotation>
+					<xs:documentation>The associated data field. If given, this field represents the length of the referenced data field</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="AbbrName" type="SymbolicName_t" minOccurs="0" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>Abbreviated form of the Name, typically to specify the element name when the field is used in an XML message. Can be overridden by BaseCategory / BaseCategoryAbbrName</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="BaseCategory" type="CategoryID_t" minOccurs="0" od:jetType="longinteger" od:sqlSType="int">
+				<xs:annotation>
+					<xs:documentation>Specifies the base message category when field is used in an XML message</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="BaseCategoryAbbrName" type="Name_t" minOccurs="0" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>If BaseCategory is specified, this is the XML element identifier to use for this field, overriding AbbrName</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="NotReqXML" type="BOOL_t" od:jetType="yesno" od:sqlSType="bit">
+				<xs:annotation>
+					<xs:documentation>Indicates whether the field is required in an XML message</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="EnumDatatype" type="Tag_t" minOccurs="0" od:jetType="longinteger" od:sqlSType="int">
+				<xs:annotation>
+					<xs:documentation>When specified, the value is the tag of the field to use to supply enumeration values for this field</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="UnionDataType" type="UnionDataType_t" minOccurs="0" od:jetType="text" od:sqlSType="nvarchar"/>
+			<xs:element name="Description" type="Description_t" od:jetType="memo" od:sqlSType="ntext"/>
+			<xs:element name="Elaboration" type="Elaboration_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="replaced" type="Version_t"/>
+		<xs:attribute name="replacedEP" type="EP_t"/>
+		<xs:attribute name="replacedByField" type="xs:int"/>
+		<xs:attribute name="notUsed" type="BOOL_t"/>
+		<xs:attributeGroup ref="EntityLevelRevisionAttribGrp"/>
+	</xs:complexType>
+	<xs:complexType name="Message_cs_t">
+		<xs:sequence>
+			<xs:element name="ComponentID" type="MsgID_t" od:jetType="longinteger" od:sqlSType="int">
+				<xs:annotation>
+					<xs:documentation>The unique integer identifier of this message type</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="MsgType" type="MsgType_t" od:jetType="text" od:sqlSType="nvarchar" ep:PK="1">
+				<xs:annotation>
+					<xs:documentation>The unique character identiifer of this message type; used literally in FIX messages</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Name" type="Name_t" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>The name of this message type</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="CategoryID" type="CategoryID_t" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>Identifier of the category to which this message belongs</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="SectionID" type="SectionID_t" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>Identifier of the section to which this message belongs</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="AbbrName" type="Name_t" minOccurs="0" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>The abbreviated name of this message, when used in an XML context</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="NotReqXML" type="BOOL_t" od:jetType="yesno" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>A boolean used to indicate if the message is to be generated as part of FIXML</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Description" type="Description_t" od:jetType="memo" od:sqlSType="ntext"/>
+			<xs:element name="Elaboration" type="Elaboration_t" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="EntityLevelRevisionAttribGrp"/>
+	</xs:complexType>
+	<xs:complexType name="MsgContent_cs_t">
+		<xs:sequence>
+			<xs:element name="ComponentID" type="MsgOrCompID_t" od:jetType="longinteger" od:sqlSType="int" ep:PK="1">
+				<xs:annotation>
+					<xs:documentation>The unique integer identifier of the message</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="TagText" type="TagText_t" od:jetType="text" od:sqlSType="nvarchar" ep:PK="1">
+				<xs:annotation>
+					<xs:documentation>A string identifying either a tag number or a ComponentID</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Indent" type="xs:nonNegativeInteger" od:jetType="longinteger" od:sqlSType="int">
+				<xs:annotation>
+					<xs:documentation>The indentation value for display, used by Fiximate 2.0</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Position" type="xs:decimal" od:jetType="decimal" od:sqlSType="decimal">
+				<xs:annotation>
+					<xs:documentation>A decimal number representing the position of this tag or component within the message</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Reqd" type="BOOL_t" od:jetType="yesno" od:sqlSType="bit" od:nonNullable="yes">
+				<xs:annotation>
+					<xs:documentation>An effectively boolean value indicating whether the tag or component is required in the message</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Inlined" type="BOOL_t" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Indicates whether a component is inlined</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Description" type="Description_t" minOccurs="0" od:jetType="memo" od:sqlSType="ntext"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="EntityLevelRevisionAttribGrp"/>
+	</xs:complexType>
+	<xs:complexType name="Section_cs_t">
+		<xs:sequence>
+			<xs:element name="SectionID" type="SectionID_t" od:jetType="text" od:sqlSType="nvarchar" ep:PK="1">
+				<xs:annotation>
+					<xs:documentation>A string uniquely identifying this section </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Name" type="Name_t" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>The human readable name of this section</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="DisplayOrder" type="xs:int" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>An integer specifying the sort order of this section when displayed within a list of all sections</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Volume" type="Volume_t" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>A string specifying the document volume describing this section</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="NotReqXML" type="BOOL_t" od:jetType="yesno" od:sqlSType="bit">
+				<xs:annotation>
+					<xs:documentation>A boolean used to indicate if the section of messages is to be included as part of FIXML</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="FIXMLFileName" type="Name_t" minOccurs="0" od:jetType="text" od:sqlSType="nvarchar">
+				<xs:annotation>
+					<xs:documentation>The name of the FIXML file name for the section</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Description" type="Description_t" minOccurs="0" od:jetType="text" od:sqlSType="nvarchar"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="EntityLevelRevisionAttribGrp"/>
+	</xs:complexType>
+</xs:schema>

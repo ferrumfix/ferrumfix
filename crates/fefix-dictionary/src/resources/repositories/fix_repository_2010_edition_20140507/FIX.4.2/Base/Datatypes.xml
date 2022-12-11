@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+DISCLAIMER
+
+THE INFORMATION CONTAINED HEREIN AND THE FINANCIAL INFORMATION EXCHANGE PROTOCOL (COLLECTIVELY, THE "FIX PROTOCOL") ARE PROVIDED "AS IS" AND NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL MAKES ANY REPRESENTATION OR WARRANTY, EXPRESS OR IMPLIED, AS TO THE FIX PROTOCOL (OR THE RESULTS TO BE OBTAINED BY THE USE THEREOF) OR ANY OTHER MATTER AND EACH SUCH PERSON AND ENTITY SPECIFICALLY DISCLAIMS ANY WARRANTY OF ORIGINALITY, ACCURACY, COMPLETENESS, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SUCH PERSONS AND ENTITIES DO NOT WARRANT THAT THE FIX PROTOCOL WILL CONFORM TO ANY DESCRIPTION THEREOF OR BE FREE OF ERRORS. THE ENTIRE RISK OF ANY USE OF THE FIX PROTOCOL IS ASSUMED BY THE USER.
+
+NO PERSON OR ENTITY ASSOCIATED WITH THE FIX PROTOCOL SHALL HAVE ANY LIABILITY FOR DAMAGES OF ANY KIND ARISING IN ANY MANNER OUT OF OR IN CONNECTION WITH ANY USER'S USE OF (OR ANY INABILITY TO USE) THE FIX PROTOCOL, WHETHER DIRECT, INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL (INCLUDING, WITHOUT LIMITATION, LOSS OF DATA, LOSS OF USE, CLAIMS OF THIRD PARTIES OR LOST PROFITS OR REVENUES OR OTHER ECONOMIC LOSS), WHETHER IN TORT (INCLUDING NEGLIGENCE AND STRICT LIABILITY), CONTRACT OR OTHERWISE, WHETHER OR NOT ANY SUCH PERSON OR ENTITY HAS BEEN ADVISED OF, OR OTHERWISE MIGHT HAVE ANTICIPATED THE POSSIBILITY OF, SUCH DAMAGES.
+
+No proprietary or ownership interest of any kind is granted with respect to the FIX Protocol (or any rights therein).
+
+Copyright 2003-2009 FIX Protocol Limited, all rights reserved
+
+REPRODUCTION
+
+FIX Protocol Limited grants permission to print in hard copy form or reproduce the FIX Protocol specification in its entirety provided that the duplicated pages retain the "Copyright FIX Protocol Limited" statement at the bottom of the page.
+
+Portions of the FIX Protocol specification may be extracted or cited in other documents (such as a document which describes one's implementation of the FIX Protocol) provided that one reference the origin of the FIX Protocol specification (HTUhttp://www.fixprotocol.orgUTH) and that the specification itself is "Copyright FIX Protocol Limited".
+FIX Protocol Limited claims no intellectual property over one's implementation (programming code) of an application which implements the behavior and details from the FIX Protocol specification. 	
+--><Datatypes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" copyright="Copyright (c) FIX Protocol Ltd. All Rights Reserved." edition="2010" version="FIX.4.2" xsi:noNamespaceSchemaLocation="../../schema/Datatypes.xsd" generated="2010-03-13T14:54:02-05:00">
+	<Datatype added="FIX.2.7">
+		<Name>int</Name>
+		<Description>Sequence of digits without commas or decimals and optional sign character (ASCII characters "-" and "0" - "9" ). The sign character utilizes one byte (i.e. positive int is "99999" while negative int is "-99999"). Note that int values may contain leading zeros (e.g. "00023" = "23").
+Examples:
+723 in field 21 would be mapped int as |21=723|.
+-723 in field 12 would be mapped int as |12=-723|
+The following data types are based on int.</Description>
+	</Datatype>
+	<Datatype added="FIX.2.7">
+		<Name>float</Name>
+		<Description>Sequence of digits with optional decimal point and sign character (ASCII characters "-", "0" - "9" and "."); the absence of the decimal point within the string will be interpreted as the float representation of an integer value. All float fields must accommodate up to fifteen significant digits. The number of decimal places used should be a factor of business/market needs and mutual agreement between counterparties.</Description>
+	</Datatype>
+	<Datatype added="FIX.4.2">
+		<Name>Qty</Name>
+		<BaseType>float</BaseType>
+		<Description>float field (see definition of "float" above) capable of storing either a whole number (no decimal places) of "shares" or a decimal value containing decimal places for non-share quantity asset classes.</Description>
+	</Datatype>
+	<Datatype added="FIX.4.2">
+		<Name>Price</Name>
+		<BaseType>float</BaseType>
+		<Description>float field (see definition of "float" above) representing a price. Note the number of decimal places may vary.</Description>
+	</Datatype>
+	<Datatype added="FIX.4.2">
+		<Name>PriceOffset</Name>
+		<BaseType>float</BaseType>
+		<Description>float field (see definition of "float" above) representing a price offset, which can be mathematically added to a "Price". Note the number of decimal places may vary and some fields such as LastForwardPoints may be negative.</Description>
+	</Datatype>
+	<Datatype added="FIX.4.2">
+		<Name>Amt</Name>
+		<BaseType>float</BaseType>
+		<Description>float field typically representing a Price times a Qty</Description>
+	</Datatype>
+	<Datatype added="FIX.2.7">
+		<Name>char</Name>
+		<Description>Single character value, can include any alphanumeric character or punctuation except the delimiter. All char fields are case sensitive</Description>
+	</Datatype>
+	<Datatype added="FIX.4.2">
+		<Name>Boolean</Name>
+		<BaseType>char</BaseType>
+		<Description>char field containing one of two values:
+'Y' = True/Yes
+'N' = False/No</Description>
+	</Datatype>
+	<Datatype added="FIX.4.2">
+		<Name>String</Name>
+		<Description>Alpha-numeric free format strings, can include any character or punctuation except the delimiter. All String fields are case sensitive.</Description>
+	</Datatype>
+	<Datatype added="FIX.4.2">
+		<Name>MultipleStringValue</Name>
+		<BaseType>String</BaseType>
+		<Description>String field containing one or more space delimited multiple character values.</Description>
+	</Datatype>
+	<Datatype added="FIX.4.2">
+		<Name>Currency</Name>
+		<BaseType>String</BaseType>
+		<Description>String field (see definition of "String" above) representing a currency type (see Appendix A-Valid Currency Codes).</Description>
+	</Datatype>
+	<Datatype added="FIX.4.2">
+		<Name>Exchange</Name>
+		<BaseType>String</BaseType>
+		<Description>String field (see definition of "String" above) representing a market or exchange. (see Appendix C-Reuters Exchange Mnemonics).</Description>
+	</Datatype>
+	<Datatype added="FIX.4.2">
+		<Name>UTCTimestamp</Name>
+		<BaseType>String</BaseType>
+		<Description>Time/date combination represented in UTC (Universal Time Coordinated, also known as "GMT") in either YYYYMMDD-HH:MM:SS (whole seconds) or YYYYMMDD-HH:MM:SS.sss (milliseconds) format, colons, dash, and period required.
+Valid values:
+* YYYY = 0000-9999, MM = 01-12, DD = 01-31, HH = 00-23, MM = 00-59, SS = 00-59 (without milliseconds).
+* YYYY = 0000-9999, MM = 01-12, DD = 01-31, HH = 00-23, MM = 00-59, SS = 00-59. sss=000-999 (indicating milliseconds).</Description>
+	</Datatype>
+	<Datatype added="FIX.4.2">
+		<Name>UTCTimeOnly</Name>
+		<BaseType>String</BaseType>
+		<Description>Time-only represented in UTC (Universal Time Coordinated, also known as "GMT") in either HH:MM:SS (whole seconds) or HH:MM:SS.sss (milliseconds) format, colons, and period required.
+Valid values:
+* HH = 00-23, MM = 00-59, SS = 00-59. (without milliseconds)
+* HH = 00-23, MM = 00-59, SS = 00-59. sss=000-999 (indicating milliseconds).</Description>
+	</Datatype>
+	<Datatype added="FIX.4.2">
+		<Name>LocalMktDate</Name>
+		<BaseType>String</BaseType>
+		<Description>Date of Local Market (vs. UTC) in YYYYMMDD format. Valid values: YYYY = 0000-9999, MM = 01-12, DD = 01-31.</Description>
+	</Datatype>
+	<Datatype added="FIX.4.2">
+		<Name>UTCDate</Name>
+		<BaseType>String</BaseType>
+		<Description>Date represented in UTC (Universal Time Coordinated, also known as "GMT") in YYYYMMDD format. Valid values: YYYY = 0000-9999, MM = 01-12, DD = 01-31.</Description>
+	</Datatype>
+	<Datatype added="FIX.2.7">
+		<Name>data</Name>
+		<Description>Raw data with no format or content restrictions. Data fields are always immediately preceded by a length field. The length field should specify the number of bytes of the value of the data field (up to but not including the terminating SOH). Caution: the value of one of these fields may contain the delimiter (SOH) character. Note that the value specified for this field should be followed by the delimiter (SOH) character as all fields are terminated with an "SOH".</Description>
+	</Datatype>
+	<Datatype added="FIX.4.1">
+		<Name>MonthYear</Name>
+		<BaseType>String</BaseType>
+		<Description>char field representing month of a year in YYYYMM format. Valid values: YYYY = 0000-9999, MM = 01-12.</Description>
+	</Datatype>
+	<Datatype added="FIX.4.1">
+		<Name>DayOfMonth</Name>
+		<BaseType>int</BaseType>
+		<Description>int field representing a day during a particular monthy (values 1 to 31).</Description>
+	</Datatype>
+</Datatypes>

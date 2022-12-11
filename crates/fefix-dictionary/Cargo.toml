@@ -1,0 +1,52 @@
+[package]
+name = "fefix-dictionary"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description.workspace = true
+publish.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+
+# https://stackoverflow.com/q/61417452/
+# Test locally using `RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features`.
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "doc_cfg"]
+
+[features]
+fix40 = []
+fix41 = []
+fix42 = []
+fix43 = []
+# FIX 4.4 is always enabled.
+fix50 = []
+fix50sp1 = []
+fix50sp2 = []
+fixt11 = []
+
+[dependencies]
+chrono = "0.4"
+fnv = "1"
+heck = "0.4"
+indoc = "1"
+lazy_static = "1"
+quick-xml = "0.23"
+roxmltree = "0.14"
+rayon = "1"
+strum = "0.24"
+strum_macros = "0.24"
+
+[dev-dependencies]
+arbitrary = { version = "1.0", features = ["derive"] }
+criterion = { version = "0.3", features = ["html_reports"] }
+enum-as-inner = "0.5"
+quickcheck = "1"
+quickcheck_derive = "0.3"
+quickcheck_macros = "1"
+tokio = { version = "1", features = ["full"] }
+syn = { version = "1", features = ["parsing"] }

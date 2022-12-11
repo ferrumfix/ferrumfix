@@ -1,0 +1,2370 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Abbreviations xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               copyright="Copyright (c) FIX Protocol Ltd. All Rights Reserved."
+               edition="2010"
+               version="FIX.5.0SP2"
+               xsi:noNamespaceSchemaLocation="../../schema/Abbreviations.xsd"
+               generated="2020-01-22T01:30:12.253Z"
+               latestEP="254">
+   <Abbreviation added="FIX.4.4">
+		    <Term>Account</Term>
+		    <AbbrTerm>Acct</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Accrual</Term>
+		    <AbbrTerm>Acrl</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Accrued</Term>
+		    <AbbrTerm>Acrd</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Acknowledgement</Term>
+		    <AbbrTerm>Ack</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Action</Term>
+		    <AbbrTerm>Actn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Adjust</Term>
+		    <AbbrTerm>Adj</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Adjustment</Term>
+		    <AbbrTerm>Adjmt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Advertisement</Term>
+		    <AbbrTerm>Adv</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="41">
+		    <Term>Affected</Term>
+		    <AbbrTerm>Afctd</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="42">
+		    <Term>Algorithm</Term>
+		    <AbbrTerm>Algo</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Allocation</Term>
+		    <AbbrTerm>Alloc</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>AllowableOneSidedness</Term>
+		    <AbbrTerm>AOS</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Amount</Term>
+		    <AbbrTerm>Amt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="63">
+		    <Term>Application</Term>
+		    <AbbrTerm>Appl</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Assignment</Term>
+		    <AbbrTerm>Asgn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="83" updated="FIX.5.0SP2" updatedEP="167">
+      <Term>Attachment</Term>
+      <AbbrTerm>Attchmnt</AbbrTerm>
+      <Usage>Attachment</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="41">
+		    <Term>Attribute</Term>
+		    <AbbrTerm>Attrb</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="52">
+		    <Term>Base</Term>
+		    <AbbrTerm>Base</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Behalf</Term>
+		    <AbbrTerm>Bhf</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Benchmark</Term>
+		    <AbbrTerm>Bnchmk</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Booking</Term>
+		    <AbbrTerm>Bkng</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4" issue="SPEC-371">
+		    <Term>Broker</Term>
+		    <AbbrTerm>Brkr</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Brokers</Term>
+		    <AbbrTerm>Brkrs</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Business</Term>
+		    <AbbrTerm>Biz</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Calculation</Term>
+		    <AbbrTerm>Calc</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Cancel</Term>
+		    <AbbrTerm>Cxl</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Capacity</Term>
+		    <AbbrTerm>Cpcty</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Capture</Term>
+		    <AbbrTerm>Capt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Cash</Term>
+		    <AbbrTerm>Csh</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="90">
+		    <Term>Category</Term>
+		    <AbbrTerm>Catgy</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Client</Term>
+		    <AbbrTerm>Cl</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Close</Term>
+		    <AbbrTerm>Cls</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Code</Term>
+		    <AbbrTerm>Cd</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Collateral</Term>
+		    <AbbrTerm>Coll</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Commission</Term>
+		    <AbbrTerm>Comm</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Common</Term>
+		    <AbbrTerm>Cmn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Company</Term>
+		    <AbbrTerm>Comp</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="92">
+		    <Term>Complex</Term>
+		    <AbbrTerm>Cmplx</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="92">
+		    <Term>Condition</Term>
+		    <AbbrTerm>Cond</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Confirmation</Term>
+		    <AbbrTerm>Cnfm</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Confirmation</Term>
+		    <AbbrTerm>Confirm</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="96" issue="SPEC-371">
+		    <Term>Context</Term>
+		    <AbbrTerm>Cntxt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Contra</Term>
+		    <AbbrTerm>Cntra</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="63">
+		    <Term>Control</Term>
+		    <AbbrTerm>Ctrl</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Corporate</Term>
+		    <AbbrTerm>Corp</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Country</Term>
+		    <AbbrTerm>Ctry</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Coupon</Term>
+		    <AbbrTerm>Cpn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Cross</Term>
+		    <AbbrTerm>Crss</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Cumulative</Term>
+		    <AbbrTerm>Cum</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Currency</Term>
+		    <AbbrTerm>Ccy</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Curve</Term>
+		    <AbbrTerm>Crv</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Data</Term>
+		    <AbbrTerm>Data</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Database</Term>
+		    <AbbrTerm>Db</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Date</Term>
+		    <AbbrTerm>Dt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Definition</Term>
+		    <AbbrTerm>Def</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Delete</Term>
+		    <AbbrTerm>Del</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Deliver</Term>
+		    <AbbrTerm>Dlvr</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="52">
+		    <Term>Derivative</Term>
+		    <AbbrTerm>Deriv</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Description</Term>
+		    <AbbrTerm>Desc</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Destination</Term>
+		    <AbbrTerm>Dest</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="77">
+		    <Term>Detail</Term>
+		    <AbbrTerm>Detl</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="92">
+		    <Term>Determination</Term>
+		    <AbbrTerm>Dtrmn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Device</Term>
+		    <AbbrTerm>Dev</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Discount</Term>
+		    <AbbrTerm>Disc</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Discretion</Term>
+		    <AbbrTerm>Dsctn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Discretionary</Term>
+		    <AbbrTerm>Dsctnry</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Don't Know</Term>
+		    <AbbrTerm>DK</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Duplicate</Term>
+		    <AbbrTerm>Dup</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Effective</Term>
+		    <AbbrTerm>Efctv</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Encoded</Term>
+		    <AbbrTerm>Enc</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Error</Term>
+		    <AbbrTerm>Err</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="92">
+		    <Term>Event</Term>
+		    <AbbrTerm>Evnt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Exchange</Term>
+		    <AbbrTerm>Exch</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>ExchangeForPhysical</Term>
+		    <AbbrTerm>EFP</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Execute</Term>
+		    <AbbrTerm>Exct</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Execution</Term>
+		    <AbbrTerm>Exctn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Exercise</Term>
+		    <AbbrTerm>Exr</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Factor</Term>
+		    <AbbrTerm>Fctr</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="42">
+		    <Term>Feed</Term>
+		    <AbbrTerm>Feed</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Foreign Currency</Term>
+		    <AbbrTerm>FX</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Forward</Term>
+		    <AbbrTerm>Fwd</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="52">
+		    <Term>Force</Term>
+		    <AbbrTerm>Force</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Future</Term>
+		    <AbbrTerm>Fut</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Good Till Date</Term>
+		    <AbbrTerm>GTD</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Group</Term>
+		    <AbbrTerm>Grp</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Handling</Term>
+		    <AbbrTerm>Hndl</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Identifier</Term>
+		    <AbbrTerm>ID</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Implicit</Term>
+		    <AbbrTerm>Implct</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="22">
+		    <Term>Increment</Term>
+		    <AbbrTerm>Incr</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Index</Term>
+		    <AbbrTerm>Ndx</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Indication of Interest</Term>
+		    <AbbrTerm>IOI</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Indicator</Term>
+		    <AbbrTerm>Ind</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Information</Term>
+		    <AbbrTerm>Info</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Input</Term>
+		    <AbbrTerm>Inpt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Inquiry</Term>
+		    <AbbrTerm>Inq</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Institution</Term>
+		    <AbbrTerm>Instn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="44">
+		    <Term>Instruction</Term>
+		    <AbbrTerm>Inst</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Instrument</Term>
+		    <AbbrTerm>Instrmt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Interest</Term>
+		    <AbbrTerm>Int</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Issue</Term>
+		    <AbbrTerm>Iss</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Issuer</Term>
+		    <AbbrTerm>Issr</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="90">
+		    <Term>Language</Term>
+		    <AbbrTerm>Lang</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Level</Term>
+		    <AbbrTerm>Lvl</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Liquidity</Term>
+		    <AbbrTerm>Lqdty</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="52">
+		    <Term>Limit</Term>
+		    <AbbrTerm>Lmt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="20">
+		    <Term>List</Term>
+		    <AbbrTerm>List</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Locate</Term>
+		    <AbbrTerm>Loc</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Location</Term>
+		    <AbbrTerm>Lctn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="52">
+		    <Term>Lot</Term>
+		    <AbbrTerm>Lot</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Maintenance</Term>
+		    <AbbrTerm>Mnt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Margin</Term>
+		    <AbbrTerm>Mgn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Market</Term>
+		    <AbbrTerm>Mkt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="58">
+		    <Term>Mass</Term>
+		    <AbbrTerm>Mass</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Match</Term>
+		    <AbbrTerm>Mtch</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Maturity</Term>
+		    <AbbrTerm>Mat</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Maximum</Term>
+		    <AbbrTerm>Max</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Message</Term>
+		    <AbbrTerm>Msg</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="52">
+		    <Term>Method</Term>
+		    <AbbrTerm>Meth</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Minimum</Term>
+		    <AbbrTerm>Min</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Miscellaneous</Term>
+		    <AbbrTerm>Misc</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="59">
+		    <Term>Model</Term>
+		    <AbbrTerm>Model</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Modification</Term>
+		    <AbbrTerm>Mod</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Money</Term>
+		    <AbbrTerm>Mny</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Month</Term>
+		    <AbbrTerm>Mo</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Multileg</Term>
+		    <AbbrTerm>Mleg</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Multiplier</Term>
+		    <AbbrTerm>Mult</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="96">
+		    <Term>Name</Term>
+		    <AbbrTerm>Nme</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Nested</Term>
+		    <AbbrTerm>Nst</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Network</Term>
+		    <AbbrTerm>Ntwk</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="90">
+		    <Term>News</Term>
+		    <AbbrTerm>News</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="56">
+		    <Term>Notification</Term>
+		    <AbbrTerm>Notifctn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="83">
+		    <Term>Notional</Term>
+		    <AbbrTerm>Notl</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Number</Term>
+		    <AbbrTerm>Num</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Number</Term>
+		    <AbbrTerm>No</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="44">
+		    <Term>Obligation</Term>
+		    <AbbrTerm>Oblig</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Offer</Term>
+		    <AbbrTerm>Ofr</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="96">
+		    <Term>Operator</Term>
+		    <AbbrTerm>Oper</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Option</Term>
+		    <AbbrTerm>Opt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Order</Term>
+		    <AbbrTerm>Ord</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Original</Term>
+		    <AbbrTerm>Orig</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4" updated="FIX.5.0SP2" updatedEP="254">
+      <Term>Other</Term>
+      <AbbrTerm>Other</AbbrTerm>
+      <Usage>PaymentStreamOtherDayCount(43106)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="83">
+		    <Term>Outstanding</Term>
+		    <AbbrTerm>Out</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0">
+		    <Term>Parameter</Term>
+		    <AbbrTerm>Prm</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Party</Term>
+		    <AbbrTerm>Pty</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Payment</Term>
+		    <AbbrTerm>Pmt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Percent</Term>
+		    <AbbrTerm>Pct</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4" updated="FIX.5.0SP2" updatedEP="169">
+      <Term>Percentage</Term>
+      <AbbrTerm>Pctage</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="96">
+		    <Term>Platform</Term>
+		    <AbbrTerm>Pltfm</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="83">
+		    <Term>Point</Term>
+		    <AbbrTerm>Pnt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Position</Term>
+		    <AbbrTerm>Pos</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Possible</Term>
+		    <AbbrTerm>Psbl</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Preliminary</Term>
+		    <AbbrTerm>Prlm</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="92">
+		    <Term>Precision</Term>
+		    <AbbrTerm>Prcsn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Previous</Term>
+		    <AbbrTerm>Prev</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Price</Term>
+		    <AbbrTerm>Px</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Priority</Term>
+		    <AbbrTerm>Pri</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Priotization</Term>
+		    <AbbrTerm>Prtztn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Product</Term>
+		    <AbbrTerm>Prod</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Publish</Term>
+		    <AbbrTerm>Pub</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Qualifier</Term>
+		    <AbbrTerm>Qual</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Quality</Term>
+		    <AbbrTerm>Qlty</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Quantity</Term>
+		    <AbbrTerm>Qty</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4" updated="FIX.5.0SP2" updatedEP="208">
+      <Term>Quote</Term>
+      <AbbrTerm>Qte</AbbrTerm>
+      <Usage>StrikeIndexQuote</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0">
+		    <Term>Range</Term>
+		    <AbbrTerm>Rng</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Rate</Term>
+		    <AbbrTerm>Rt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Rating</Term>
+		    <AbbrTerm>Rtng</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Reason</Term>
+		    <AbbrTerm>Rsn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Redemption</Term>
+		    <AbbrTerm>Red</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Reference</Term>
+		    <AbbrTerm>Ref</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Registration</Term>
+		    <AbbrTerm>Rgst</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Registry</Term>
+		    <AbbrTerm>Rgstry</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Reject</Term>
+		    <AbbrTerm>Rej</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Related</Term>
+		    <AbbrTerm>Reltd</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="96">
+		    <Term>Relationship</Term>
+		    <AbbrTerm>Rltnshp</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Report</Term>
+		    <AbbrTerm>Rpt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Reports</Term>
+		    <AbbrTerm>Rpts</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Repurchase</Term>
+		    <AbbrTerm>Repo</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Request</Term>
+		    <AbbrTerm>Req</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="20">
+		    <Term>Reset</Term>
+		    <AbbrTerm>Reset</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Response</Term>
+		    <AbbrTerm>Rsp</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Restatement</Term>
+		    <AbbrTerm>Rstmt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Restrict</Term>
+		    <AbbrTerm>Rstct</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Restriction</Term>
+		    <AbbrTerm>Rstctn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Restrictions</Term>
+		    <AbbrTerm>Rstctns</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="83">
+		    <Term>Restructuring</Term>
+		    <AbbrTerm>Rstrct</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Result</Term>
+		    <AbbrTerm>Rslt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="96">
+		    <Term>Risk</Term>
+		    <AbbrTerm>Risk</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Roles</Term>
+		    <AbbrTerm>R</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Round</Term>
+		    <AbbrTerm>Rnd</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="52">
+		    <Term>Rules</Term>
+		    <AbbrTerm>Rules</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="96">
+		    <Term>Scope</Term>
+		    <AbbrTerm>Scope</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Secondary</Term>
+		    <AbbrTerm>2</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Security</Term>
+		    <AbbrTerm>Sec</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="52">
+		    <Term>Segment</Term>
+		    <AbbrTerm>Seg</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Sender</Term>
+		    <AbbrTerm>Snd</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Sending</Term>
+		    <AbbrTerm>Sndg</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="83">
+		    <Term>Seniority</Term>
+		    <AbbrTerm>Snrty</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Sequence</Term>
+		    <AbbrTerm>Seq</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Service</Term>
+		    <AbbrTerm>Svc</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Session</Term>
+		    <AbbrTerm>Ses</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Settlement</Term>
+		    <AbbrTerm>Settl</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Short</Term>
+		    <AbbrTerm>Shrt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Size</Term>
+		    <AbbrTerm>Sz</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Source</Term>
+		    <AbbrTerm>Src</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Standing</Term>
+		    <AbbrTerm>Stand</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="52">
+		    <Term>Start</Term>
+		    <AbbrTerm>Start</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>State</Term>
+		    <AbbrTerm>St</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Status</Term>
+		    <AbbrTerm>Stat</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Stipulation</Term>
+		    <AbbrTerm>Stip</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0">
+		    <Term>Strategy</Term>
+		    <AbbrTerm>Strt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="93">
+		    <Term>Stream</Term>
+		    <AbbrTerm>Strm</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Strike</Term>
+		    <AbbrTerm>Strk</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Subscription</Term>
+		    <AbbrTerm>Sub</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Subsidiary</Term>
+		    <AbbrTerm>Subsid</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Suffix</Term>
+		    <AbbrTerm>Sfx</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Symbol</Term>
+		    <AbbrTerm>Sym</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>System</Term>
+		    <AbbrTerm>Sys</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Target</Term>
+		    <AbbrTerm>Tgt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Term</Term>
+		    <AbbrTerm>Trm</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="52">
+		    <Term>Tick</Term>
+		    <AbbrTerm>Tick</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Ticket</Term>
+		    <AbbrTerm>Tkt</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Time</Term>
+		    <AbbrTerm>Tm</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Timestamp</Term>
+		    <AbbrTerm>TS</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Total</Term>
+		    <AbbrTerm>Tot</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Tracking</Term>
+		    <AbbrTerm>Trkng</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Trade</Term>
+		    <AbbrTerm>Trd</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="52">
+		    <Term>Trading</Term>
+		    <AbbrTerm>Trdg</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Transaction</Term>
+		    <AbbrTerm>Txn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Type</Term>
+		    <AbbrTerm>Typ</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Underlying</Term>
+		    <AbbrTerm>Und</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="52">
+		    <Term>Update</Term>
+		    <AbbrTerm>Upd</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Value</Term>
+		    <AbbrTerm>Valu</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0" addedEP="52">
+		    <Term>Valuation</Term>
+		    <AbbrTerm>Val</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="77">
+		    <Term>Venue</Term>
+		    <AbbrTerm>Venu</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Volume</Term>
+		    <AbbrTerm>Vol</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP1" addedEP="96">
+		    <Term>Warning</Term>
+		    <AbbrTerm>Warn</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Year</Term>
+		    <AbbrTerm>Yr</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.4.4">
+		    <Term>Yield</Term>
+		    <AbbrTerm>Yld</AbbrTerm>
+	  </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="100">
+      <Term>Remaining</Term>
+      <AbbrTerm>Rem</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="100">
+      <Term>Exposure</Term>
+      <AbbrTerm>Expsre</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="102">
+      <Term>Class</Term>
+      <AbbrTerm>Clss</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="102">
+      <Term>Requirement</Term>
+      <AbbrTerm>Reqmt</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="103">
+      <Term>Covered</Term>
+      <AbbrTerm>Cvrd</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="104">
+      <Term>Activity</Term>
+      <AbbrTerm>Actvty</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="104">
+      <Term>Maker</Term>
+      <AbbrTerm>Mkr</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="107">
+      <Term>Classification</Term>
+      <AbbrTerm>Clsfn</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="107">
+      <Term>Differential</Term>
+      <AbbrTerm>Diff</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="107">
+      <Term>Interval</Term>
+      <AbbrTerm>Intvl</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="107">
+      <Term>Parent</Term>
+      <AbbrTerm>Parent</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="109">
+      <Term>Contingent</Term>
+      <AbbrTerm>Cntg</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="114">
+      <Term>Simple</Term>
+      <AbbrTerm>Simpl</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="115">
+      <Term>Initial</Term>
+      <AbbrTerm>Init</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="115">
+      <Term>Display</Term>
+      <AbbrTerm>Dsply</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="115">
+      <Term>When</Term>
+      <AbbrTerm>Whn</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="116">
+      <Term>Throttle</Term>
+      <AbbrTerm>Thrttl</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="116">
+      <Term>Count</Term>
+      <AbbrTerm>Cnt</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="117">
+      <Term>Collect</Term>
+      <AbbrTerm>Col</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="117">
+      <Term>Sum</Term>
+      <AbbrTerm>Summary</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="118">
+      <Term>Mnemonic</Term>
+      <AbbrTerm>Mnem</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="119">
+      <Term>Negotiation</Term>
+      <AbbrTerm>Neg</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="127">
+      <Term>Custodial</Term>
+      <AbbrTerm>Cstdl</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="127">
+      <Term>Current</Term>
+      <AbbrTerm>Cur</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="127">
+      <Term>Cost</Term>
+      <AbbrTerm>Cost</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="127">
+      <Term>VersusPurchase</Term>
+      <AbbrTerm>VSP</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="129">
+      <Term>Datatype</Term>
+      <AbbrTerm>Datatyp</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="129">
+      <Term>Entitlement</Term>
+      <AbbrTerm>Entlmnt</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="129">
+      <Term>Representation</Term>
+      <AbbrTerm>Rpstn</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="130">
+      <Term>Table</Term>
+      <AbbrTerm>Tbl</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="131">
+      <Term>Affect</Term>
+      <AbbrTerm>Afct</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="131">
+      <Term>Auction</Term>
+      <AbbrTerm>Auct</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="131">
+      <Term>Disclosure</Term>
+      <AbbrTerm>Disclsr</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="131">
+      <Term>Lock</Term>
+      <AbbrTerm>Lck</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="131">
+      <Term>Release</Term>
+      <AbbrTerm>Rls</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="131">
+      <Term>Triggered</Term>
+      <AbbrTerm>Trgrd</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="132">
+      <Term>Variance</Term>
+      <AbbrTerm>Varnc</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="135" updated="FIX.5.0SP2" updatedEP="208">
+      <Term>Origination</Term>
+      <AbbrTerm>Origntn</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="135" updated="FIX.5.0SP2" updatedEP="208">
+      <Term>Originating</Term>
+      <AbbrTerm>Origntg</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="135">
+      <Term>Barrier</Term>
+      <AbbrTerm>Brr</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="135">
+      <Term>Department</Term>
+      <AbbrTerm>Dept</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="141">
+      <Term>Offset</Term>
+      <AbbrTerm>Ofst</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="157">
+      <Term>Haircut</Term>
+      <AbbrTerm>Hrct</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="159">
+      <Term>Competitors</Term>
+      <AbbrTerm>Cmptors</AbbrTerm>
+      <Usage>NumOfCompeitors</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="159">
+      <Term>Duration</Term>
+      <AbbrTerm>Dur</AbbrTerm>
+      <Usage>ExpsreDur and ExpsreDurUnit</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="160">
+      <Term>Movement</Term>
+      <AbbrTerm>Mvmnt</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="160">
+      <Term>Move</Term>
+      <AbbrTerm>Move</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Additional</Term>
+      <AbbrTerm>Addtnl</AbbrTerm>
+      <Usage>PaymentGrp, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Annex</Term>
+      <AbbrTerm>Anx</AbbrTerm>
+      <Usage>UnderlyingIndexAnnexVersion, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Asset</Term>
+      <AbbrTerm>Asst</AbbrTerm>
+      <Usage>AssetClass, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Averaging</Term>
+      <AbbrTerm>Avgng</AbbrTerm>
+      <Usage>LegPaymentScheduleAveragingMeth, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Backloaded</Term>
+      <AbbrTerm>Back</AbbrTerm>
+      <Usage>BackloadedTradeIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Block</Term>
+      <AbbrTerm>Blck</AbbrTerm>
+      <Usage>BlockTrdAllocIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Bond</Term>
+      <AbbrTerm>Bond</AbbrTerm>
+      <Usage>LegPaymentStreamInflationFallbackBondApplicableIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Buyer</Term>
+      <AbbrTerm>Buyer</AbbrTerm>
+      <Usage>ProvOptionSinglePartyBuyerSide, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Center</Term>
+      <AbbrTerm>Ctr</AbbrTerm>
+      <Usage>ProvCashSettlValueTimeBusinessCenter, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Centers</Term>
+      <AbbrTerm>Ctrs</AbbrTerm>
+      <Usage>PaymentStreamCalculationPeriodBusinessCenters, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Cleared</Term>
+      <AbbrTerm>Clrd</AbbrTerm>
+      <Usage>ClearedIndicator (FIX 5.0 / EP 140)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Collateralization</Term>
+      <AbbrTerm>Collztn</AbbrTerm>
+      <Usage>TrdCollateralization</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Constituent</Term>
+      <AbbrTerm>Constuent</AbbrTerm>
+      <Usage>UnderlyingConstituentWeight, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Convention</Term>
+      <AbbrTerm>Cnvtn</AbbrTerm>
+      <Usage>PaymentStreamCalculationPeriodBusinessDayConvention, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Compounding</Term>
+      <AbbrTerm>Cmpndg</AbbrTerm>
+      <Usage>PaymentStreamCompoundingMethod, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Continuation</Term>
+      <AbbrTerm>Contntn</AbbrTerm>
+      <Usage>TrdContinuation</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Contract</Term>
+      <AbbrTerm>Con</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Contractual</Term>
+      <AbbrTerm>Ctrctl</AbbrTerm>
+      <Usage>ContractualMatrixGrp</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Credit</Term>
+      <AbbrTerm>Crd</AbbrTerm>
+      <Usage>CreditSupportAgreementDesc, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Day</Term>
+      <AbbrTerm>Day</AbbrTerm>
+      <Usage>PaymentStreamCalculationPeriodBusinessDayConvention, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Dates</Term>
+      <AbbrTerm>Dts</AbbrTerm>
+      <Usage>LegPaymentStreamCalculationDates</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Dealer</Term>
+      <AbbrTerm>Dlr</AbbrTerm>
+      <Usage>CashSettlDealers, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Deliverable</Term>
+      <AbbrTerm>Dlvrbl</AbbrTerm>
+      <Usage>PaymentStreamNonDeliverableFixingDatesOffsetPeriod, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Direction</Term>
+      <AbbrTerm>Dirctn</AbbrTerm>
+      <Usage>IRSDirection, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Discrepancy</Term>
+      <AbbrTerm>Dscrpncy</AbbrTerm>
+      <Usage>AdditionalTermDiscrepancyClause</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Earliest</Term>
+      <AbbrTerm>Erlst</AbbrTerm>
+      <Usage>ProvOptionExerciseEarliestTimeBusinessCenter, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161" updated="FIX.5.0SP2" updatedEP="224">
+      <Term>Eligibility</Term>
+      <AbbrTerm>Elig</AbbrTerm>
+      <Usage>UnderlyingFlexProductEligibilityIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Entity</Term>
+      <AbbrTerm>Entity</AbbrTerm>
+      <Usage>EntityDesc</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Equity</Term>
+      <AbbrTerm>Eqty</AbbrTerm>
+      <Usage>UnderlyingEquityID, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Exception</Term>
+      <AbbrTerm>Excptn</AbbrTerm>
+      <Usage>ClearingRequirementException</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Expiration</Term>
+      <AbbrTerm>Exp</AbbrTerm>
+      <Usage>ProvisionOptionExpirationDate, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Facility</Term>
+      <AbbrTerm>Fclty</AbbrTerm>
+      <Usage>UnderlyingLoanFacility</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Fallback</Term>
+      <AbbrTerm>Fallbck</AbbrTerm>
+      <Usage>LegPaymenStreamInflationFallbackBondApplicableIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Final</Term>
+      <AbbrTerm>Fnl</AbbrTerm>
+      <Usage>ScheduleFinalRateRoundingDirection, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>First</Term>
+      <AbbrTerm>First</AbbrTerm>
+      <Usage>PaymentStreamFirstCompoundingPeriodEndDateUnadjusted, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Fixing</Term>
+      <AbbrTerm>Fixng</AbbrTerm>
+      <Usage>PaymentStreamFixingDateBusinessCenters, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Float Rate Agreement</Term>
+      <AbbrTerm>FRA</AbbrTerm>
+      <Usage>PaymentStreamFRADiscounting</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Frequency</Term>
+      <AbbrTerm>Freq</AbbrTerm>
+      <Usage>ProvOptionExerciseFrequencyUnit, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Interest Rate Swap</Term>
+      <AbbrTerm>IRS</AbbrTerm>
+      <Usage>IRSDirection</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Interpolation</Term>
+      <AbbrTerm>Intrpltn</AbbrTerm>
+      <Usage>PaymentStreamInflationInterpolationMethod</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Interim</Term>
+      <AbbrTerm>Intrm</AbbrTerm>
+      <Usage>LegPaymentScheduleInterimExchangeDatesBusinessCenters, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Issued</Term>
+      <AbbrTerm>Issued</AbbrTerm>
+      <Usage>TotalIssuedAmount</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Lag</Term>
+      <AbbrTerm>Lag</AbbrTerm>
+      <Usage>PaymentStreamInflationLagPeriod</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Latest</Term>
+      <AbbrTerm>Ltst</AbbrTerm>
+      <Usage> ProvCashSettlPaymentDateRangeLast, ProvOptionExerciseLatestTime, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Lien</Term>
+      <AbbrTerm>Lien</AbbrTerm>
+      <Usage>UnderlyingLienSeniority</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Length</Term>
+      <AbbrTerm>Lngth</AbbrTerm>
+      <Usage>StubLength, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Loan</Term>
+      <AbbrTerm>Loan</AbbrTerm>
+      <Usage>UnderlyingLoanFacility</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Mandatory</Term>
+      <AbbrTerm>Mndtry</AbbrTerm>
+      <Usage>MandatoryClearingIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Matrix</Term>
+      <AbbrTerm>Mtrx</AbbrTerm>
+      <Usage>ContractMatrixDesc, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Mixed</Term>
+      <AbbrTerm>Mixed</AbbrTerm>
+      <Usage>MixedSwapIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Multiple</Term>
+      <AbbrTerm>Multpl</AbbrTerm>
+      <Usage>ProvOptionExerciseMultipleNotional, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Negative</Term>
+      <AbbrTerm>Negtv</AbbrTerm>
+      <Usage>SchedNegativeRateTreatment, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Off</Term>
+      <AbbrTerm>Off</AbbrTerm>
+      <Usage>OffMarketPriceIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Page</Term>
+      <AbbrTerm>Pg</AbbrTerm>
+      <Usage>SchedReferencePage, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Precedent</Term>
+      <AbbrTerm>Prcdnt</AbbrTerm>
+      <Usage>AdditionalTermConditionPrecedentBond</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Present Value</Term>
+      <AbbrTerm>PV</AbbrTerm>
+      <Usage>PaymentPresentValueAmount, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Principal</Term>
+      <AbbrTerm>Prncpl</AbbrTerm>
+      <Usage>PaymentStreamInitialPrincipalExchange, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Protection</Term>
+      <AbbrTerm>Protctn</AbbrTerm>
+      <Usage>ProtectionTermNotional, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Publication</Term>
+      <AbbrTerm>Publctn</AbbrTerm>
+      <Usage>PaymentStreamInflationPublicationSource</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Receive</Term>
+      <AbbrTerm>Rcv</AbbrTerm>
+      <Usage>PaymentStreamReceiveSide, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Recovery</Term>
+      <AbbrTerm>Rcvry</AbbrTerm>
+      <Usage>CashSettlRecoveryFactor, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Regular</Term>
+      <AbbrTerm>Reglr</AbbrTerm>
+      <Usage>PaymentStreamFirstRegularPeriodStartDateUnadjusted, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Regulatory</Term>
+      <AbbrTerm>Reg</AbbrTerm>
+      <Usage>RegulatoryReportType, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Relevant</Term>
+      <AbbrTerm>Relvnt</AbbrTerm>
+      <Usage>LegProvisionOptionRelevantUnderlyingDate</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Relative</Term>
+      <AbbrTerm>Reltv</AbbrTerm>
+      <Usage>PaymentStreamEfctvDateRelativeTo, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Roll</Term>
+      <AbbrTerm>Roll</AbbrTerm>
+      <Usage>PaymentStreamCalculationRollConvention, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Schedule</Term>
+      <AbbrTerm>Sched</AbbrTerm>
+      <Usage>SwapScheduleGrp, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Seller</Term>
+      <AbbrTerm>Seller</AbbrTerm>
+      <Usage>ProvOptionSinglePartySellerSide, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Series</Term>
+      <AbbrTerm>Series</AbbrTerm>
+      <Usage>UnderlyingIndexSeries</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Settled</Term>
+      <AbbrTerm>Settld</AbbrTerm>
+      <Usage>SettledEntityMatrixSource</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Spread</Term>
+      <AbbrTerm>Spread</AbbrTerm>
+      <Usage>PaymentStreamRateSpread, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Standard</Term>
+      <AbbrTerm>Std</AbbrTerm>
+      <Usage>ProtectionTermEventStandardSources</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Stub</Term>
+      <AbbrTerm>Stub</AbbrTerm>
+      <Usage>StubGrp, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Style</Term>
+      <AbbrTerm>Style</AbbrTerm>
+      <Usage>PaymentSettlStyle, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Subsequent</Term>
+      <AbbrTerm>Sbsqnt</AbbrTerm>
+      <Usage>CashSettlValuationSubsequentBusinessDaysOffset, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Supplement</Term>
+      <AbbrTerm>Spplmnt</AbbrTerm>
+      <Usage>FinancingTermsSupplementGrp, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Support</Term>
+      <AbbrTerm>Suprt</AbbrTerm>
+      <Usage>CreditSupportAgreementDesc, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Swap</Term>
+      <AbbrTerm>Swap</AbbrTerm>
+      <Usage>MixedSwapIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Terms</Term>
+      <AbbrTerm>Trms</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Termination</Term>
+      <AbbrTerm>Tmntn</AbbrTerm>
+      <Usage>PaymentStreamTerminationDateBusinessCenters, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Text</Term>
+      <AbbrTerm>Txt</AbbrTerm>
+      <Usage>EventText, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Treatment</Term>
+      <AbbrTerm>Trtmt</AbbrTerm>
+      <Usage>SchedNegativeRateTreatment, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Unadjusted</Term>
+      <AbbrTerm>Unadj</AbbrTerm>
+      <Usage>PaymentDateUnadjusted, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Unit</Term>
+      <AbbrTerm>Unit</AbbrTerm>
+      <Usage>EventTimeUnit, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Unit of Measure</Term>
+      <AbbrTerm>UOM</AbbrTerm>
+      <Usage>(FIX 4.4 / EP5)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Verification</Term>
+      <AbbrTerm>Verfctn</AbbrTerm>
+      <Usage>VerificationMethod</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Version</Term>
+      <AbbrTerm>Ver</AbbrTerm>
+      <Usage>AgreementVersion</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Voluntary</Term>
+      <AbbrTerm>Volnty</AbbrTerm>
+      <Usage>VoluntaryRegulationReport</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Weekly</Term>
+      <AbbrTerm>Wkly</AbbrTerm>
+      <Usage>PaymentStreamResetWeeklyRollCOnvention, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="161">
+      <Term>Weight</Term>
+      <AbbrTerm>Wt</AbbrTerm>
+      <Usage>SchedWeight, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="167">
+      <Term>Keyword</Term>
+      <AbbrTerm>Keywd</AbbrTerm>
+      <Usage>AttachmentKeyword</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="167">
+      <Term>Media</Term>
+      <AbbrTerm>Media</AbbrTerm>
+      <Usage>AttachmentMediaType</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="167">
+      <Term>Unencoded</Term>
+      <AbbrTerm>Unenc</AbbrTerm>
+      <Usage>UnencodedAttachmentLen</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="168">
+      <Term>Next</Term>
+      <AbbrTerm>Nxt</AbbrTerm>
+      <Usage>NextAuctionTime(2116)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Automatic</Term>
+      <AbbrTerm>Auto</AbbrTerm>
+      <Usage>AutomaticExerciseIndicator, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Apportionment</Term>
+      <AbbrTerm>Apprtnmt</AbbrTerm>
+      <Usage>DeliveryStreamRiskApportionment, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Balance</Term>
+      <AbbrTerm>Bal</AbbrTerm>
+      <Usage>StreamCalculationBalanceOfFirstPeriod, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Calendar</Term>
+      <AbbrTerm>Clndr</AbbrTerm>
+      <Usage>PaymentStreamPricingBusinessCalendar, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Changed</Term>
+      <AbbrTerm>Chngd</AbbrTerm>
+      <Usage>LastQtyChanged</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Commodity</Term>
+      <AbbrTerm>Cmdty</AbbrTerm>
+      <Usage>DeliveryScheduleNotionalCommodityFreqquency, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Contingency</Term>
+      <AbbrTerm>Cntgncy</AbbrTerm>
+      <Usage>DeliveryStreamDeliveryContingency, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Contracts</Term>
+      <AbbrTerm>Ctrcts</AbbrTerm>
+      <Usage>MarketDisruptionMinimumFuturesContracts</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Conversion</Term>
+      <AbbrTerm>Cnvrsn</AbbrTerm>
+      <Usage>DeliveryStreamNotionalConversionFactor</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Correction</Term>
+      <AbbrTerm>Crrctn</AbbrTerm>
+      <Usage>StreamCalculationCorrectionPeriod, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Deadline</Term>
+      <AbbrTerm>Ddln</AbbrTerm>
+      <Usage>OptionExerciseNominationDeadline, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Disruption</Term>
+      <AbbrTerm>Dsrptn</AbbrTerm>
+      <Usage>MarketDisruption</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Distribution</Term>
+      <AbbrTerm>Distrib</AbbrTerm>
+      <Usage>PaymentScheduleFxFixingDayDistribution, DisribPercentage, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Divisor</Term>
+      <AbbrTerm>Dvsr</AbbrTerm>
+      <Usage>MarketDisruptionFallbackBasketDivisor</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Documentation</Term>
+      <AbbrTerm>Dcmntn</AbbrTerm>
+      <Usage>Documentation</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Electing</Term>
+      <AbbrTerm>Elctng</AbbrTerm>
+      <Usage>DeliveryStreamElectingPartySide, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>End</Term>
+      <AbbrTerm>End</AbbrTerm>
+      <Usage>ComplexEventScheduleEndDate, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Entry</Term>
+      <AbbrTerm>Entry</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Equipment</Term>
+      <AbbrTerm>Eqpmt</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Exercise</Term>
+      <AbbrTerm>Exer</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Fixed</Term>
+      <AbbrTerm>Fixed</AbbrTerm>
+      <Usage>PaymentStreamTotalFixedAmount, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Flat</Term>
+      <AbbrTerm>Flat</AbbrTerm>
+      <Usage>PaymentStreamFlatRateIndicator, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Flow</Term>
+      <AbbrTerm>Flow</AbbrTerm>
+      <Usage>DeliveryScheduleSettle</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Heading</Term>
+      <AbbrTerm>Hdng</AbbrTerm>
+      <Usage>ComplexEventReferencePageHeading</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Historical</Term>
+      <AbbrTerm>Histrcl</AbbrTerm>
+      <Usage>HistoricalReportIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Hour</Term>
+      <AbbrTerm>Hr</AbbrTerm>
+      <Usage>DeliveryScheduleSettlementTotalHours, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Importer</Term>
+      <AbbrTerm>Imprtr</AbbrTerm>
+      <Usage>DeliveryStreamImporterOfRecord, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Limited</Term>
+      <AbbrTerm>Ltd</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Manual</Term>
+      <AbbrTerm>Man</AbbrTerm>
+      <Usage>ManualNoticeBusinessCenter</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>MasterAgreement</Term>
+      <AbbrTerm>MA</AbbrTerm>
+      <Usage>PaymentStreamMasterAgreementPaymentDatesIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Materiality</Term>
+      <AbbrTerm>Mtrlty</AbbrTerm>
+      <Usage>MarketDisruptionMaterialityPercentage</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Nomination</Term>
+      <AbbrTerm>Nomntn</AbbrTerm>
+      <Usage>OptionExerciseNominationDeadline, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Notice</Term>
+      <AbbrTerm>Ntc</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Notifying</Term>
+      <AbbrTerm>Notifyg</AbbrTerm>
+      <Usage>ComplexEventCreditEventNotifyingParty</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Observation</Term>
+      <AbbrTerm>Obsvtn</AbbrTerm>
+      <Usage>PaymentScheduleFxFixingFirstObservationOffsetPeriod, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Open</Term>
+      <AbbrTerm>Opn</AbbrTerm>
+      <Usage>MarketDisruptionFallbackOpenUnits, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Period</Term>
+      <AbbrTerm>Period</AbbrTerm>
+      <Usage>ComplexEventScheduleFrequencyPeriod</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Pipeline</Term>
+      <AbbrTerm>Ppln</AbbrTerm>
+      <Usage>DeliveryStreamPipeline, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Positive</Term>
+      <AbbrTerm>Postv</AbbrTerm>
+      <Usage>DeliverySchedulePositiveTolerance</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Pricing</Term>
+      <AbbrTerm>Pxng</AbbrTerm>
+      <Usage>CommonPricingIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Provider</Term>
+      <AbbrTerm>Prvdr</AbbrTerm>
+      <Usage>StreamDataProvider, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Provision</Term>
+      <AbbrTerm>Prov</AbbrTerm>
+      <Usage>SettlementDisruptionProvision</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Right</Term>
+      <AbbrTerm>Right</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Split</Term>
+      <AbbrTerm>Split</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Timezone</Term>
+      <AbbrTerm>TZ</AbbrTerm>
+      <Usage>DeliveryScheduleSettlementTimeZone, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Title</Term>
+      <AbbrTerm>Ttl</AbbrTerm>
+      <Usage>DeliveryStreamTitleTransferLocation, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Tolerance</Term>
+      <AbbrTerm>Tlrnc</AbbrTerm>
+      <Usage>DeliverySchedulePositiveTolerance, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Transfer</Term>
+      <AbbrTerm>Xfer</AbbrTerm>
+      <Usage>DeliveryStreamTitleTransferLocation, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Underlier</Term>
+      <AbbrTerm>Undlr</AbbrTerm>
+      <Usage>ComplexOptPayoutUnderlier, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Withdrawal</Term>
+      <AbbrTerm>Wthdrwl</AbbrTerm>
+      <Usage>DeliveryStreamWithdrawalPoint, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="169">
+      <Term>Written</Term>
+      <AbbrTerm>Wrttn</AbbrTerm>
+      <Usage>WrittenConfirmationIndicator, etc.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="171">
+      <Term>Approved</Term>
+      <AbbrTerm>Aprvd</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="171">
+      <Term>Check</Term>
+      <AbbrTerm>Chk</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="171">
+      <Term>Expire</Term>
+      <AbbrTerm>Expire</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="171">
+      <Term>Test</Term>
+      <AbbrTerm>Tst</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="171">
+      <Term>Velocity</Term>
+      <AbbrTerm>Velcty</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="178">
+      <Term>Process</Term>
+      <AbbrTerm>Proc</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="179">
+      <Term>Multiplied</Term>
+      <AbbrTerm>Multd</AbbrTerm>
+      <Usage>LastMultipliedQty</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="179">
+      <Term>Portfolio </Term>
+      <AbbrTerm>Prtflio </AbbrTerm>
+      <Usage>CollateralPortfolioID </Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="179">
+      <Term>Taxonomy </Term>
+      <AbbrTerm>Txnmy </AbbrTerm>
+      <Usage>TaxonomyType</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="179">
+      <Term>Utilization</Term>
+      <AbbrTerm>Utilztn</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="179">
+      <Term>Alternate</Term>
+      <AbbrTerm>Alt</AbbrTerm>
+      <Usage>SecurityAltID</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="186">
+      <Term>Execution</Term>
+      <AbbrTerm>Exec</AbbrTerm>
+      <Usage>ExecMethod</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="187">
+      <Term>Physical</Term>
+      <AbbrTerm>Phys</AbbrTerm>
+      <Usage>PhysSettlTrmComponent.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="187">
+      <Term>Dividend</Term>
+      <AbbrTerm>Dividend</AbbrTerm>
+      <Usage>ReltdToDividendID</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="190">
+      <Term>Linkage</Term>
+      <AbbrTerm>Lnkg</AbbrTerm>
+      <Usage>LinkageHandlingIndicator(2448)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="190">
+      <Term>Aggressor</Term>
+      <AbbrTerm>Agrsr</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="191">
+      <Term>Statistics</Term>
+      <AbbrTerm>Stats</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="192">
+      <Term>Wire</Term>
+      <AbbrTerm>Wre</AbbrTerm>
+      <Usage>CollateralAssignment:WireReference(2486)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="192">
+      <Term>Package</Term>
+      <AbbrTerm>Package</AbbrTerm>
+      <Usage>TradeCaptureReport:Package(2489)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="192">
+      <Term>Ratio</Term>
+      <AbbrTerm>Ratio</AbbrTerm>
+      <Usage>LegMarginRatio(2508)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="192">
+      <Term>Firm</Term>
+      <AbbrTerm>Firm</AbbrTerm>
+      <Usage>FirmTransaction(2484)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="193">
+      <Term>Affiliated</Term>
+      <AbbrTerm>Affltd</AbbrTerm>
+      <Usage>AffiliatedFirmsTradeIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="193">
+      <Term>Region</Term>
+      <AbbrTerm>Rgn</AbbrTerm>
+      <Usage>StreamCommodityDeliveryPricingRegion</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="193">
+      <Term>Calculated</Term>
+      <AbbrTerm>Calc</AbbrTerm>
+      <Usage>AllocCalculatedCcyQty</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="193">
+      <Term>Link</Term>
+      <AbbrTerm>Link</AbbrTerm>
+      <Usage>CollateralLinkRequestID</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="195">
+      <Term>Annual</Term>
+      <AbbrTerm>Annl</AbbrTerm>
+      <Usage>AnnualTradingBusinessDays</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="195">
+      <Term>Clearing</Term>
+      <AbbrTerm>Clr</AbbrTerm>
+      <Usage>ClearingPriceOffset</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="195">
+      <Term>Overnight</Term>
+      <AbbrTerm>OvrNite</AbbrTerm>
+      <Usage>OvernightInterestRate</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="199">
+      <Term>EP199</Term>
+      <AbbrTerm>EP199 Dummy term</AbbrTerm>
+      <Usage>Please remove me when you code this EP.  Thank you.</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="200">
+      <Term>EP200</Term>
+      <AbbrTerm>EP200 Dummy Abbreviation</AbbrTerm>
+      <Usage>Please remove me when you code the EP.  Thanks!</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="201">
+      <Term>EP201</Term>
+      <AbbrTerm>EP201 dummy abbreviation.</AbbrTerm>
+      <Usage>Please delete me when coding EP201.  Thanks!</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="202">
+      <Term>EP202</Term>
+      <AbbrTerm>EP202 dummy abbreviation.</AbbrTerm>
+      <Usage>Please delete me when coding EP202.  Thanks!</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="203">
+      <Term>EP203</Term>
+      <AbbrTerm>EP203 Dummy abbreviation.</AbbrTerm>
+      <Usage>Please delete me when coding EP203.  Thanks!</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="204">
+      <Term>Basis</Term>
+      <AbbrTerm>Basis</AbbrTerm>
+      <Usage>CommissionBasis</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="204">
+      <Term>Shared</Term>
+      <AbbrTerm>Shared</AbbrTerm>
+      <Usage>CommissionSharedIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="206">
+      <Term>Dummy1</Term>
+      <AbbrTerm>Dummy1</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="206">
+      <Term>Dummy</Term>
+      <AbbrTerm>Dummy</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Average</Term>
+      <AbbrTerm>Avg</AbbrTerm>
+      <Usage>UnderlyingAverageVolumeLimitationPercentage</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Basket</Term>
+      <AbbrTerm>Bskt</AbbrTerm>
+      <Usage>BasketDivisor</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Boundary</Term>
+      <AbbrTerm>Bndry</AbbrTerm>
+      <Usage>PaymentStreamLinkMinimumBoundary</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Break</Term>
+      <AbbrTerm>Brk</AbbrTerm>
+      <Usage>ProvisionBreakFeeElection</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Cap</Term>
+      <AbbrTerm>Cap</AbbrTerm>
+      <Usage>PaymentStreamVarian ceUnadjustedCap</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Change</Term>
+      <AbbrTerm>Chng</AbbrTerm>
+      <Usage>ExtraordinaryEventType: Change in Law</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Closing</Term>
+      <AbbrTerm>Clsng</AbbrTerm>
+      <Usage>PaymentStreamLinkClosingLevelIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Composition</Term>
+      <AbbrTerm>Cmpstn</AbbrTerm>
+      <Usage>UnderlyingDividendComposition</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Crossed</Term>
+      <AbbrTerm>Crssd</AbbrTerm>
+      <Usage>DeltaCrossed</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Default</Term>
+      <AbbrTerm>Dflt</AbbrTerm>
+      <Usage>CashSettlPriceDefault</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Delta</Term>
+      <AbbrTerm>Delta</AbbrTerm>
+      <Usage>DeltaCrossed</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Depository</Term>
+      <AbbrTerm>Dpstry</AbbrTerm>
+      <Usage>UnderlyingDepositoryReceiptIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Election</Term>
+      <AbbrTerm>Elctn</AbbrTerm>
+      <Usage>ProvisionBreakFeeElection</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Equivalent</Term>
+      <AbbrTerm>Eqvlnt</AbbrTerm>
+      <Usage>UnderlyingDividendCashEquivalentPercentage</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Estimated</Term>
+      <AbbrTerm>Estd</AbbrTerm>
+      <Usage>PaymentStreamLinkEstimatedTradingDays</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Expiring</Term>
+      <AbbrTerm>Expng</AbbrTerm>
+      <Usage>PaymentStreamLinkExpiringLevelIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Extraordinary</Term>
+      <AbbrTerm>Extrord</AbbrTerm>
+      <Usage>ExtraordinaryEventType</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Fee</Term>
+      <AbbrTerm>Fee</AbbrTerm>
+      <Usage>BrokerFeeElection</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Floating</Term>
+      <AbbrTerm>Float</AbbrTerm>
+      <Usage>FloatingRate</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Floor</Term>
+      <AbbrTerm>Flr</AbbrTerm>
+      <Usage>FloorRate</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Form</Term>
+      <AbbrTerm>Form</AbbrTerm>
+      <Usage>ReturnRatePriceForm</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Formula</Term>
+      <AbbrTerm>Frmla</AbbrTerm>
+      <Usage>PaymentStreamFormula</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Image</Term>
+      <AbbrTerm>Img</AbbrTerm>
+      <Usage>&lt;PaymentStreamFormulaImage&gt;</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Last</Term>
+      <AbbrTerm>Last</AbbrTerm>
+      <Usage>LegaymentStreamBoundsLastDateUnadjusted</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Material</Term>
+      <AbbrTerm>Mtrl</AbbrTerm>
+      <Usage>MaterialDividendsIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Mode</Term>
+      <AbbrTerm>Mode</AbbrTerm>
+      <Usage>ReturnRateDateMode</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Name</Term>
+      <AbbrTerm>Name</AbbrTerm>
+      <Usage>BenchmarkCurveName</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Pair</Term>
+      <AbbrTerm>Pair</AbbrTerm>
+      <Usage>ReturnRateFXCurrencyPair</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Payout</Term>
+      <AbbrTerm>Pay</AbbrTerm>
+      <Usage>UnderlyingDividendPayout</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Point</Term>
+      <AbbrTerm>Point</AbbrTerm>
+      <Usage>BenchmarkCurvePoint</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Realized</Term>
+      <AbbrTerm>Rlzd</AbbrTerm>
+      <Usage>PaymentStreamRealizedVarianceMethod</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Receipt</Term>
+      <AbbrTerm>Rcpt</AbbrTerm>
+      <Usage>UnderlyingDepositoryReceiptIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Reinvestment</Term>
+      <AbbrTerm>Rnvstmnt</AbbrTerm>
+      <Usage>UnderlyingDividendReinvestmentIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Return</Term>
+      <AbbrTerm>Rtn</AbbrTerm>
+      <Usage>&lt;ReturnRateGrp&gt;</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Rounding</Term>
+      <AbbrTerm>Rndg</AbbrTerm>
+      <Usage>RoundingDirection</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Routing</Term>
+      <AbbrTerm>Rtg</AbbrTerm>
+      <Usage>RoutingID</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Side</Term>
+      <AbbrTerm>Side</AbbrTerm>
+      <Usage>DividendSide</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Skip</Term>
+      <AbbrTerm>Skip</AbbrTerm>
+      <Usage>ComppoundingPeriodSkip</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Special</Term>
+      <AbbrTerm>Specl</AbbrTerm>
+      <Usage>SpecialDividendsIndicator</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Trigger</Term>
+      <AbbrTerm>Trgr</AbbrTerm>
+      <Usage>DividendFTriggerDate</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="208">
+      <Term>Vega</Term>
+      <AbbrTerm>Vega</AbbrTerm>
+      <Usage>PaymentStreamVegaNotionalAmount</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="209">
+      <Term>Remuneration</Term>
+      <AbbrTerm>Rmntn</AbbrTerm>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="211">
+      <Term>Compression</Term>
+      <AbbrTerm>Cmprsn</AbbrTerm>
+      <Usage>CompressionGroupID</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="211">
+      <Term>Self</Term>
+      <AbbrTerm>Slf</AbbrTerm>
+      <Usage>SelfMatchPreventionID</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="211">
+      <Term>Prevention</Term>
+      <AbbrTerm>Prvntn</AbbrTerm>
+      <Usage>SelfMatchPreventionID</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="222">
+      <Term>Reporting</Term>
+      <AbbrTerm>Rptng</AbbrTerm>
+      <Usage>TradeReportingIndicator
+SideTradeReportingIndicator
+</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="224">
+      <Term>Contrary</Term>
+      <AbbrTerm>Cntrary</AbbrTerm>
+      <Usage>ContraryInstructionEligibilityIndicator(2685)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="224">
+      <Term>In-the-money</Term>
+      <AbbrTerm>ITM</AbbrTerm>
+      <Usage>InTheMoneyCondition(2681)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="227">
+      <Term>Overage</Term>
+      <AbbrTerm>Ovrg</AbbrTerm>
+      <Usage>CollateralPercentOverage(2690)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="235">
+      <Term>Charter</Term>
+      <AbbrTerm>Chrtr</AbbrTerm>
+      <Usage>DeliveryStreamRouteOrCharter(2757)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="238">
+      <Term>Route</Term>
+      <AbbrTerm>Rte</AbbrTerm>
+      <Usage>DeliveryRouteOrCharter(2752)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="240">
+      <Term>Markup</Term>
+      <AbbrTerm>Mrkup</AbbrTerm>
+      <Usage>PriceMarkup(2762)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="247">
+      <Term>Aggregation</Term>
+      <AbbrTerm>Aggrtn</AbbrTerm>
+      <Usage>TradeAggregationRequest(35=DW)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="247">
+      <Term>Aggregated</Term>
+      <AbbrTerm>Agg</AbbrTerm>
+      <Usage>AggregatedQty(2789)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="247">
+      <Term>Offshore</Term>
+      <AbbrTerm>Offshr</AbbrTerm>
+      <Usage>OffshoreIndicator(2795)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="249">
+      <Term>Post</Term>
+      <AbbrTerm>Post</AbbrTerm>
+      <Usage>PostTradePayment component</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="249">
+      <Term>Debit</Term>
+      <AbbrTerm>Dbt</AbbrTerm>
+      <Usage>PostTradePaymentDebitOrCredit(2819)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="249">
+      <Term>Dispute</Term>
+      <AbbrTerm>Dspt</AbbrTerm>
+      <Usage>PayDisputeReason(2800)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="249">
+      <Term>Management</Term>
+      <AbbrTerm>Mgmt</AbbrTerm>
+      <Usage>PayManagementRequest(35=DY) PayManagementReport(35=EA)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="249">
+      <Term>Replace</Term>
+      <AbbrTerm>Rplc</AbbrTerm>
+      <Usage>ReplaceText(2805)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="253">
+      <Term>Initiator</Term>
+      <AbbrTerm>Initr</AbbrTerm>
+      <Usage>EventInitiatorType(2830)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="253">
+      <Term>NBBO</Term>
+      <AbbrTerm>NBBO</AbbrTerm>
+      <Usage>NBBOEntryType(2831), NBBOPrice(2832), NBBOQty(2833), NBBOSource(2834)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="253">
+      <Term>Single</Term>
+      <AbbrTerm>Sngl</AbbrTerm>
+      <Usage>SingleQuoteIndicator(2837)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="253">
+      <Term>Working</Term>
+      <AbbrTerm>Wrkng</AbbrTerm>
+      <Usage>WorkingPrice(2838)</Usage>
+   </Abbreviation>
+   <Abbreviation added="FIX.5.0SP2" addedEP="254">
+      <Term>Funding</Term>
+      <AbbrTerm>Fndng</AbbrTerm>
+      <Usage>FundingSource component</Usage>
+   </Abbreviation>
+</Abbreviations>

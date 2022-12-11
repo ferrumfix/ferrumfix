@@ -1,0 +1,3893 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phrases version="FIX.4.0" langId="en">
+-
+				<phrase textId="DT_int">
+      <text purpose="SYNOPSIS">
+         <para>Sequence of digits without commas or decimals and optional sign character (ASCII characters "-" and "0" - "9" ). The sign character utilizes one byte (i.e. positive int is "99999" while negative int is "-99999"). Note that int values may contain leading zeros (e.g. "00023" = "23").</para>
+         <para>Examples:</para>
+         <para>723 in field 21 would be mapped int as |21=723|.</para>
+         <para>-723 in field 12 would be mapped int as |12=-723|</para>
+         <para>The following data types are based on int.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_float">
+      <text purpose="SYNOPSIS">
+         <para>Sequence of digits with optional decimal point and sign character (ASCII characters "-", "0" - "9" and "."); the absence of the decimal point within the string will be interpreted as the float representation of an integer value. All float fields must accommodate up to fifteen significant digits.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_char">
+      <text purpose="SYNOPSIS">
+         <para>Alpha-numeric free format strings, can include any character or punctuation except the delimiter. All char fields are case sensitive.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_time">
+      <text purpose="SYNOPSIS">
+         <para>Time/date combination in YYYYMMDD-HH:MM:SS format, colons and dash required. Valid values: YYYY = 0000-9999, MM = 01-12, DD = 01-31, HH = 00-23, MM = 00-59, SS = 00-59.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_date">
+      <text purpose="SYNOPSIS">
+         <para>Date in YYYYMMDD format. Valid values: YYYY = 0000-9999, MM = 01-12, DD = 01-31.</para>
+      </text>
+   </phrase>
+   <phrase textId="DT_data">
+      <text purpose="SYNOPSIS">
+         <para>Raw data with no format or content restrictions. Data fields are always immediately preceded by a length field. Caution: may contain the delimiter (SOH) character.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_1">
+      <text purpose="SYNOPSIS">
+         <para>Account mnemonic as agreed between broker and institution.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_2">
+      <text purpose="SYNOPSIS">
+         <para>Unique identifier of advertisement message</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_3">
+      <text purpose="SYNOPSIS">
+         <para>Reference identifier used with CANCEL and REPLACE transaction types.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_4">
+      <text purpose="SYNOPSIS">
+         <para>Broker's side of advertised trade</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_4_B">
+      <text purpose="SYNOPSIS">
+         <para>Buy</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_4_S">
+      <text purpose="SYNOPSIS">
+         <para>Sell</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_4_T">
+      <text purpose="SYNOPSIS">
+         <para>Trade</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_4_X">
+      <text purpose="SYNOPSIS">
+         <para>Cross</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_5">
+      <text purpose="SYNOPSIS">
+         <para>Identifies advertisement message transaction type</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_5_C">
+      <text purpose="SYNOPSIS">
+         <para>Cancel</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_5_N">
+      <text purpose="SYNOPSIS">
+         <para>New</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_5_R">
+      <text purpose="SYNOPSIS">
+         <para>Replace</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_6">
+      <text purpose="SYNOPSIS">
+         <para>Calculated average price of all fills on this order.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_7">
+      <text purpose="SYNOPSIS">
+         <para>Message sequence number of first record in range to be resent</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_8">
+      <text purpose="SYNOPSIS">
+         <para>Identifies beginning of new message and protocol version. ALWAYS FIRST FIELD IN MESSAGE. (Always unencrypted)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_9">
+      <text purpose="SYNOPSIS">
+         <para>Message length, in bytes, forward to the CheckSum field. ALWAYS SECOND FIELD IN MESSAGE. (Always unencrypted)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_10">
+      <text purpose="SYNOPSIS">
+         <para>Three byte, simple checksum (see Appendix B for description). ALWAYS LAST FIELD IN RECORD; i.e. serves, with the trailing &lt;SOH&gt;, as the end-of-record delimiter. Always defined as three characters. (Always unencrypted)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_11">
+      <text purpose="SYNOPSIS">
+         <para>Unique identifier for Order as assigned by institution. Uniqueness must be guaranteed within a single trading day. Firms which electronically submit multi-day orders should consider embedding a date within the ClOrderID field to assure uniqueness across days.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_12">
+      <text purpose="SYNOPSIS">
+         <para>Commission</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_13">
+      <text purpose="SYNOPSIS">
+         <para>Commission type</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_13_1">
+      <text purpose="SYNOPSIS">
+         <para>per share</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_13_2">
+      <text purpose="SYNOPSIS">
+         <para>percentage</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_13_3">
+      <text purpose="SYNOPSIS">
+         <para>absolute</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_14">
+      <text purpose="SYNOPSIS">
+         <para>Total number of shares filled.</para>
+         <para>Valid values:</para>
+         <para>(0 - 1000000000)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_15">
+      <text purpose="SYNOPSIS">
+         <para>Identifies currency used for price, Absence of this field in a message is interpreted as US dollars. See Appendix A for information on obtaining valid values.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_16">
+      <text purpose="SYNOPSIS">
+         <para>Message sequence number of last record in range to be resent. If request is for a single record BeginSeqNo = EndSeqNo. If request is for all messages subsequent to a particular message, EndSeqNo = "999999"</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_17">
+      <text purpose="SYNOPSIS">
+         <para>Unique identifier of execution message as assigned by broker (will be 0 (zero) for ExecTransType=3 (Status)).</para>
+         <para>Uniqueness must be guaranteed within a single trading day. Firms which accept multi-day orders should consider embedding a date within the ExecID field to assure uniqueness across days.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_18">
+      <text purpose="SYNOPSIS">
+         <para>Instructions for order handling on exchange trading floor. If more than one instruction is applicable to an order, this field can contain multiple instructions separated by space.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_0">
+      <text purpose="SYNOPSIS">
+         <para>Stay on offerside</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_1">
+      <text purpose="SYNOPSIS">
+         <para>Not held</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_2">
+      <text purpose="SYNOPSIS">
+         <para>Work</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_3">
+      <text purpose="SYNOPSIS">
+         <para>Go along</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_4">
+      <text purpose="SYNOPSIS">
+         <para>Over the day</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_5">
+      <text purpose="SYNOPSIS">
+         <para>Held</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_6">
+      <text purpose="SYNOPSIS">
+         <para>Participate don't initiate</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_7">
+      <text purpose="SYNOPSIS">
+         <para>Strict scale</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_8">
+      <text purpose="SYNOPSIS">
+         <para>Try to scale</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_9">
+      <text purpose="SYNOPSIS">
+         <para>Stay on bidside</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_A">
+      <text purpose="SYNOPSIS">
+         <para>No cross</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_B">
+      <text purpose="SYNOPSIS">
+         <para>OK to cross</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_C">
+      <text purpose="SYNOPSIS">
+         <para>Call first</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_D">
+      <text purpose="SYNOPSIS">
+         <para>Percent of volume</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_E">
+      <text purpose="SYNOPSIS">
+         <para>Do not increase - DNI</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_F">
+      <text purpose="SYNOPSIS">
+         <para>Do not reduce - DNR</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_G">
+      <text purpose="SYNOPSIS">
+         <para>All or none - AON</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_I">
+      <text purpose="SYNOPSIS">
+         <para>Institutions only</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_L">
+      <text purpose="SYNOPSIS">
+         <para>Last peg (last sale)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_M">
+      <text purpose="SYNOPSIS">
+         <para>Mid-price peg (midprice of inside quote)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_N">
+      <text purpose="SYNOPSIS">
+         <para>Non-negotiable</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_O">
+      <text purpose="SYNOPSIS">
+         <para>Opening peg</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_P">
+      <text purpose="SYNOPSIS">
+         <para>Market peg</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_R">
+      <text purpose="SYNOPSIS">
+         <para>Primary peg (primary market - buy at bid/sell at offer)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_18_S">
+      <text purpose="SYNOPSIS">
+         <para>Suspend</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_19">
+      <text purpose="SYNOPSIS">
+         <para>Reference identifier used with Cancel and Correct transaction types.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_20">
+      <text purpose="SYNOPSIS">
+         <para>Identifies transaction type</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_20_0">
+      <text purpose="SYNOPSIS">
+         <para>New</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_20_1">
+      <text purpose="SYNOPSIS">
+         <para>Cancel</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_20_2">
+      <text purpose="SYNOPSIS">
+         <para>Correct</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_20_3">
+      <text purpose="SYNOPSIS">
+         <para>Status</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_21">
+      <text purpose="SYNOPSIS">
+         <para>Instructions for order handling on Broker trading floor</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_21_1">
+      <text purpose="SYNOPSIS">
+         <para>Automated execution order, private, no Broker intervention</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_21_2">
+      <text purpose="SYNOPSIS">
+         <para>Automated execution order, public, Broker intervention OK</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_21_3">
+      <text purpose="SYNOPSIS">
+         <para>Manual order, best execution</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_22">
+      <text purpose="SYNOPSIS">
+         <para>Identifies class of alternative SecurityID</para>
+         <para>100+ are reserved for private security identifications</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_22_1">
+      <text purpose="SYNOPSIS">
+         <para>CUSIP</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_22_2">
+      <text purpose="SYNOPSIS">
+         <para>SEDOL</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_22_3">
+      <text purpose="SYNOPSIS">
+         <para>QUIK</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_22_4">
+      <text purpose="SYNOPSIS">
+         <para>ISIN number</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_22_5">
+      <text purpose="SYNOPSIS">
+         <para>RIC code</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_23">
+      <text purpose="SYNOPSIS">
+         <para>Unique identifier of IOI message.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_24">
+      <text purpose="SYNOPSIS">
+         <para>Indicates if, and on which other services, the indication has been advertised. Each character represents an additional service (e.g. if on Bridge and Autex, field = BA, if only on Autex, field = A)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_24_A">
+      <text purpose="SYNOPSIS">
+         <para>Autex</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_24_B">
+      <text purpose="SYNOPSIS">
+         <para>Bridge</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_25">
+      <text purpose="SYNOPSIS">
+         <para>Relative quality of indication</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_25_H">
+      <text purpose="SYNOPSIS">
+         <para>High</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_25_L">
+      <text purpose="SYNOPSIS">
+         <para>Low</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_25_M">
+      <text purpose="SYNOPSIS">
+         <para>Medium</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_26">
+      <text purpose="SYNOPSIS">
+         <para>Reference identifier used with CANCEL and REPLACE, transaction types.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_27">
+      <text purpose="SYNOPSIS">
+         <para>Number of shares in numeric or relative size.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_27_L">
+      <text purpose="SYNOPSIS">
+         <para>Large</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_27_M">
+      <text purpose="SYNOPSIS">
+         <para>Medium</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_27_S">
+      <text purpose="SYNOPSIS">
+         <para>Small</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_28">
+      <text purpose="SYNOPSIS">
+         <para>Identifies IOI message transaction type</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_28_C">
+      <text purpose="SYNOPSIS">
+         <para>Cancel</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_28_N">
+      <text purpose="SYNOPSIS">
+         <para>New</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_28_R">
+      <text purpose="SYNOPSIS">
+         <para>Replace</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_29">
+      <text purpose="SYNOPSIS">
+         <para>Broker capacity in order execution</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_29_1">
+      <text purpose="SYNOPSIS">
+         <para>Agent</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_29_2">
+      <text purpose="SYNOPSIS">
+         <para>Cross as agent</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_29_3">
+      <text purpose="SYNOPSIS">
+         <para>Cross as principal</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_29_4">
+      <text purpose="SYNOPSIS">
+         <para>Principal</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_30">
+      <text purpose="SYNOPSIS">
+         <para>Market of execution for last fill</para>
+         <para>Valid values:</para>
+         <para>See Appendix C</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_31">
+      <text purpose="SYNOPSIS">
+         <para>Price of last fill. Field not required for ExecTransType = 3 (Status)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_32">
+      <text purpose="SYNOPSIS">
+         <para>Quantity of shares bought/sold on this fill. Field not required for ExecTransType = 3 (Status)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_33">
+      <text purpose="SYNOPSIS">
+         <para>Identifies number of lines of text body</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_34">
+      <text purpose="SYNOPSIS">
+         <para>Integer message sequence number.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_35">
+      <text purpose="SYNOPSIS">
+         <para>Defines message type. ALWAYS THIRD FIELD IN MESSAGE. (Always unencrypted)</para>
+         <para>Note: A "U" as the first character in the MsgType field indicates that the message format is privately defined between the sender and receiver.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_0">
+      <text purpose="SYNOPSIS">
+         <para>Heartbeat</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_1">
+      <text purpose="SYNOPSIS">
+         <para>Test Request</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_2">
+      <text purpose="SYNOPSIS">
+         <para>Resend Request</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_3">
+      <text purpose="SYNOPSIS">
+         <para>Reject</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_4">
+      <text purpose="SYNOPSIS">
+         <para>Sequence Reset</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_5">
+      <text purpose="SYNOPSIS">
+         <para>Logout</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_6">
+      <text purpose="SYNOPSIS">
+         <para>Indication of Interest</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_7">
+      <text purpose="SYNOPSIS">
+         <para>Advertisement</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_8">
+      <text purpose="SYNOPSIS">
+         <para>Execution Report</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_9">
+      <text purpose="SYNOPSIS">
+         <para>Order Cancel Reject</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_A">
+      <text purpose="SYNOPSIS">
+         <para>Logon</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_B">
+      <text purpose="SYNOPSIS">
+         <para>News</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_C">
+      <text purpose="SYNOPSIS">
+         <para>Email</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_D">
+      <text purpose="SYNOPSIS">
+         <para>Order - Single</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_E">
+      <text purpose="SYNOPSIS">
+         <para>Order - List</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_F">
+      <text purpose="SYNOPSIS">
+         <para>Order Cancel Request</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_G">
+      <text purpose="SYNOPSIS">
+         <para>Order Cancel/Replace Request</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_H">
+      <text purpose="SYNOPSIS">
+         <para>Order Status Request</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_J">
+      <text purpose="SYNOPSIS">
+         <para>Allocation</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_K">
+      <text purpose="SYNOPSIS">
+         <para>List Cancel Request</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_L">
+      <text purpose="SYNOPSIS">
+         <para>List Execute</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_M">
+      <text purpose="SYNOPSIS">
+         <para>List Status Request</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_N">
+      <text purpose="SYNOPSIS">
+         <para>List Status</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_P">
+      <text purpose="SYNOPSIS">
+         <para>Allocation ACK</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_Q">
+      <text purpose="SYNOPSIS">
+         <para>Dont Know Trade (DK)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_R">
+      <text purpose="SYNOPSIS">
+         <para>Quote Request</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_35_S">
+      <text purpose="SYNOPSIS">
+         <para>Quote</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_36">
+      <text purpose="SYNOPSIS">
+         <para>New sequence number</para>
+         <para>Valid values:</para>
+         <para>0 - 999999</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_37">
+      <text purpose="SYNOPSIS">
+         <para>Unique identifier for Order as assigned by broker. Uniqueness must be guaranteed within a single trading day. Firms which accept multi-day orders should consider embedding a date within the OrderID field to assure uniqueness across days.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_38">
+      <text purpose="SYNOPSIS">
+         <para>Number of shares ordered</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_39">
+      <text purpose="SYNOPSIS">
+         <para>Identifies current status of order.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_39_0">
+      <text purpose="SYNOPSIS">
+         <para>New</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_39_1">
+      <text purpose="SYNOPSIS">
+         <para>Partially filled</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_39_2">
+      <text purpose="SYNOPSIS">
+         <para>Filled</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_39_3">
+      <text purpose="SYNOPSIS">
+         <para>Done for day</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_39_4">
+      <text purpose="SYNOPSIS">
+         <para>Canceled</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_39_5">
+      <text purpose="SYNOPSIS">
+         <para>Replaced</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_39_6">
+      <text purpose="SYNOPSIS">
+         <para>Pending Cancel/Replace</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_39_7">
+      <text purpose="SYNOPSIS">
+         <para>Stopped</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_39_8">
+      <text purpose="SYNOPSIS">
+         <para>Rejected</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_39_9">
+      <text purpose="SYNOPSIS">
+         <para>Suspended</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_39_A">
+      <text purpose="SYNOPSIS">
+         <para>Pending New</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_39_B">
+      <text purpose="SYNOPSIS">
+         <para>Calculated</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_39_C">
+      <text purpose="SYNOPSIS">
+         <para>Expired</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_40">
+      <text purpose="SYNOPSIS">
+         <para>Order type.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_1">
+      <text purpose="SYNOPSIS">
+         <para>Market</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_2">
+      <text purpose="SYNOPSIS">
+         <para>Limit</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_3">
+      <text purpose="SYNOPSIS">
+         <para>Stop</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_4">
+      <text purpose="SYNOPSIS">
+         <para>Stop limit</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_5">
+      <text purpose="SYNOPSIS">
+         <para>Market on close</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_6">
+      <text purpose="SYNOPSIS">
+         <para>With or without</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_7">
+      <text purpose="SYNOPSIS">
+         <para>Limit or better</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_8">
+      <text purpose="SYNOPSIS">
+         <para>Limit with or without</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_9">
+      <text purpose="SYNOPSIS">
+         <para>On basis</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_A">
+      <text purpose="SYNOPSIS">
+         <para>On close</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_B">
+      <text purpose="SYNOPSIS">
+         <para>Limit on close</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_C">
+      <text purpose="SYNOPSIS">
+         <para>Forex</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_D">
+      <text purpose="SYNOPSIS">
+         <para>Previously quoted</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_E">
+      <text purpose="SYNOPSIS">
+         <para>Previously indicated</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_40_P">
+      <text purpose="SYNOPSIS">
+         <para>Pegged (requires ExecInst = L, R, M, P or O)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_41">
+      <text purpose="SYNOPSIS">
+         <para>Original order id as assigned by the institution, used to identify original order in cancel and cancel/replace requests.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_42">
+      <text purpose="SYNOPSIS">
+         <para>Time of message origination (always expressed in GMT)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_43">
+      <text purpose="SYNOPSIS">
+         <para>Indicates possible retransmission of message with this sequence number</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_43_N">
+      <text purpose="SYNOPSIS">
+         <para>Original transmission</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_43_Y">
+      <text purpose="SYNOPSIS">
+         <para>Possible duplicate</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_44">
+      <text purpose="SYNOPSIS">
+         <para>Price per share</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_45">
+      <text purpose="SYNOPSIS">
+         <para>Reference message sequence number</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_46">
+      <text purpose="SYNOPSIS">
+         <para>Symbol of issue related to story. Can be repeated within message to identify multiple companies.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_47">
+      <text purpose="SYNOPSIS">
+         <para>Indicates order type upon which exchange Rule 80A is applied.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_47_A">
+      <text purpose="SYNOPSIS">
+         <para>Agency single order</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_47_C">
+      <text purpose="SYNOPSIS">
+         <para>Program Order, non-index arb, for Member firm/org</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_47_D">
+      <text purpose="SYNOPSIS">
+         <para>Program Order, index arb, for Member firm/org</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_47_I">
+      <text purpose="SYNOPSIS">
+         <para>Individual Investor, single order</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_47_J">
+      <text purpose="SYNOPSIS">
+         <para>Program Order, index arb, for individual customer</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_47_K">
+      <text purpose="SYNOPSIS">
+         <para>Program Order, non-index arb, for individual customer</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_47_M">
+      <text purpose="SYNOPSIS">
+         <para>Program Order, index arb, for other member</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_47_N">
+      <text purpose="SYNOPSIS">
+         <para>Program Order, non-index arb, for other member</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_47_U">
+      <text purpose="SYNOPSIS">
+         <para>Program Order, index arb, for other agency</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_47_W">
+      <text purpose="SYNOPSIS">
+         <para>All other orders as agent for other member</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_47_Y">
+      <text purpose="SYNOPSIS">
+         <para>Program Order, non-index arb, for other agency</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_48">
+      <text purpose="SYNOPSIS">
+         <para>CUSIP or other alternate security identifier</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_49">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify firm sending message.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_50">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify specific message originator (desk, trader, etc.)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_52">
+      <text purpose="SYNOPSIS">
+         <para>Time of message transmission (always expressed in GMT)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_53">
+      <text purpose="SYNOPSIS">
+         <para>Number of shares</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_54">
+      <text purpose="SYNOPSIS">
+         <para>Side of order</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_54_1">
+      <text purpose="SYNOPSIS">
+         <para>Buy</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_54_2">
+      <text purpose="SYNOPSIS">
+         <para>Sell</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_54_3">
+      <text purpose="SYNOPSIS">
+         <para>Buy minus</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_54_4">
+      <text purpose="SYNOPSIS">
+         <para>Sell plus</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_54_5">
+      <text purpose="SYNOPSIS">
+         <para>Sell short</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_54_6">
+      <text purpose="SYNOPSIS">
+         <para>Sell short exempt</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_55">
+      <text purpose="SYNOPSIS">
+         <para>Ticker symbol</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_56">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify receiving firm.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_57">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify specific individual or unit intended to receive message. "ADMIN" reserved for administrative messages not intended for a specific user.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_58">
+      <text purpose="SYNOPSIS">
+         <para>Free format text string</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_59">
+      <text purpose="SYNOPSIS">
+         <para>Specifies how long the order remains in effect. Absence of this field is interpreted as DAY.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_59_0">
+      <text purpose="SYNOPSIS">
+         <para>Day</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_59_1">
+      <text purpose="SYNOPSIS">
+         <para>Good Till Cancel (GTC)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_59_2">
+      <text purpose="SYNOPSIS">
+         <para>At the Opening (OPG)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_59_3">
+      <text purpose="SYNOPSIS">
+         <para>Immediate or Cancel (OC)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_59_4">
+      <text purpose="SYNOPSIS">
+         <para>Fill or Kill (FOK)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_59_5">
+      <text purpose="SYNOPSIS">
+         <para>Good Till Crossing (GTX)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_59_6">
+      <text purpose="SYNOPSIS">
+         <para>Good Till Date</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_60">
+      <text purpose="SYNOPSIS">
+         <para>Time of execution/order creation (expressed in GMT)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_61">
+      <text purpose="SYNOPSIS">
+         <para>Urgency flag</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_61_0">
+      <text purpose="SYNOPSIS">
+         <para>Normal</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_61_1">
+      <text purpose="SYNOPSIS">
+         <para>Flash</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_61_2">
+      <text purpose="SYNOPSIS">
+         <para>Background</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_62">
+      <text purpose="SYNOPSIS">
+         <para>Indicates expiration time of indication message (always expressed in GMT)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_63">
+      <text purpose="SYNOPSIS">
+         <para>Indicates order settlement period. Absence of this field is interpreted as Regular. Regular is defined as the default settlement period for the particular security on the exchange of execution.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_63_0">
+      <text purpose="SYNOPSIS">
+         <para>Regular</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_63_1">
+      <text purpose="SYNOPSIS">
+         <para>Cash</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_63_2">
+      <text purpose="SYNOPSIS">
+         <para>Next Day</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_63_3">
+      <text purpose="SYNOPSIS">
+         <para>T+2</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_63_4">
+      <text purpose="SYNOPSIS">
+         <para>T+3</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_63_5">
+      <text purpose="SYNOPSIS">
+         <para>T+4</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_63_6">
+      <text purpose="SYNOPSIS">
+         <para>Future</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_63_7">
+      <text purpose="SYNOPSIS">
+         <para>When Issued</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_63_8">
+      <text purpose="SYNOPSIS">
+         <para>Sellers Option</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_63_9">
+      <text purpose="SYNOPSIS">
+         <para>T+ 5</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_64">
+      <text purpose="SYNOPSIS">
+         <para>Specific date of trade settlement in YYYYMMDD format. Required when SettlmntTyp = 6 (Future) or SettlmntTyp = 8 (Sellers Option). (expressed in local time at place of settlement)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_65">
+      <text purpose="SYNOPSIS">
+         <para>Additional information about the security (e.g. preferred, warrants, etc.). Absence of this field indicates common.</para>
+         <para>Valid values:</para>
+         <para>As defined in the NYSE Stock and bond Symbol Directory and in the AMEX Fitch Directory</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_66">
+      <text purpose="SYNOPSIS">
+         <para>Customer assigned listUnique identifier for list as assigned by institution, used to associate multiple individual orders. Uniqueness must be guaranteed within a single trading day. Firms which generate multi-day orders should consider embedding a date within the ListID field to assure uniqueness across days.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_67">
+      <text purpose="SYNOPSIS">
+         <para>Sequence of individual order within list (i.e. ListSeqNo of ListNoOrds, 2 of 25, 3 of 25, . . . )</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_68">
+      <text purpose="SYNOPSIS">
+         <para>Total number of orders within list (i.e. ListSeqNo of ListNoOrds, e.g. 2 of 25, 3 of 25, . . . )</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_69">
+      <text purpose="SYNOPSIS">
+         <para>Free format text message containing list handling and execution instructions.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_70">
+      <text purpose="SYNOPSIS">
+         <para>Unique identifier for allocation record.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_71">
+      <text purpose="SYNOPSIS">
+         <para>Identifies allocation transaction type</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_71_0">
+      <text purpose="SYNOPSIS">
+         <para>New</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_71_1">
+      <text purpose="SYNOPSIS">
+         <para>Replace</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_71_2">
+      <text purpose="SYNOPSIS">
+         <para>Cancel</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_72">
+      <text purpose="SYNOPSIS">
+         <para>Reference identifier to be used with Replace and Cancel AllocTransType records.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_73">
+      <text purpose="SYNOPSIS">
+         <para>Indicates number of orders to be combined for average pricing and allocation.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_74">
+      <text purpose="SYNOPSIS">
+         <para>Indicates number of decimal places to be used for average pricing. Absence of this field indicates that default precision arranged by the broker/institution is to be used.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_75">
+      <text purpose="SYNOPSIS">
+         <para>Indicates date of trade referenced in this record in YYYYMMDD format. Absence of this field indicates current day (expressed in local time at place of trade).</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_76">
+      <text purpose="SYNOPSIS">
+         <para>Identifies executing / give-up broker. Standard NASD market-maker mnemonic is preferred.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_77">
+      <text purpose="SYNOPSIS">
+         <para>For options only.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_78">
+      <text purpose="SYNOPSIS">
+         <para>Number of AllocAccount/AllocShares/ProcessCode instances included in allocation record.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_79">
+      <text purpose="SYNOPSIS">
+         <para>Sub-account mnemonic</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_80">
+      <text purpose="SYNOPSIS">
+         <para>Number of shares to be allocated to specific sub-account</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_81">
+      <text purpose="SYNOPSIS">
+         <para>Processing code for sub-account. Absence of this field in AllocAccount / AllocShares / ProcessCode instance indicates regular trade.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_81_0">
+      <text purpose="SYNOPSIS">
+         <para>regular</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_81_1">
+      <text purpose="SYNOPSIS">
+         <para>soft dollar</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_81_2">
+      <text purpose="SYNOPSIS">
+         <para>step-in</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_81_3">
+      <text purpose="SYNOPSIS">
+         <para>step-out</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_81_4">
+      <text purpose="SYNOPSIS">
+         <para>soft-dollar step-in</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_81_5">
+      <text purpose="SYNOPSIS">
+         <para>soft-dollar step-out</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_81_6">
+      <text purpose="SYNOPSIS">
+         <para>plan sponsor</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_82">
+      <text purpose="SYNOPSIS">
+         <para>Total number of reports within series.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_83">
+      <text purpose="SYNOPSIS">
+         <para>Sequence number of message within report series.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_84">
+      <text purpose="SYNOPSIS">
+         <para>Total number of shares canceled for this order.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_85">
+      <text purpose="SYNOPSIS">
+         <para>Number of delivery instruction fields to follow</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_86">
+      <text purpose="SYNOPSIS">
+         <para>Free format text field to indicate delivery instructions</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_87">
+      <text purpose="SYNOPSIS">
+         <para>Identifies status of allocation.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_87_0">
+      <text purpose="SYNOPSIS">
+         <para>accepted (successfully processed)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_87_1">
+      <text purpose="SYNOPSIS">
+         <para>rejected</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_87_2">
+      <text purpose="SYNOPSIS">
+         <para>partial accept</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_87_3">
+      <text purpose="SYNOPSIS">
+         <para>received (received, not yet processed)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_88">
+      <text purpose="SYNOPSIS">
+         <para>Identifies reason for rejection.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_88_0">
+      <text purpose="SYNOPSIS">
+         <para>unknown account(s)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_88_1">
+      <text purpose="SYNOPSIS">
+         <para>incorrect quantity</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_88_2">
+      <text purpose="SYNOPSIS">
+         <para>incorrect average price</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_88_3">
+      <text purpose="SYNOPSIS">
+         <para>unknown executing broker mnemonic</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_88_4">
+      <text purpose="SYNOPSIS">
+         <para>commission difference</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_88_5">
+      <text purpose="SYNOPSIS">
+         <para>unknown OrderID</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_88_6">
+      <text purpose="SYNOPSIS">
+         <para>unknown ListID</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_88_7">
+      <text purpose="SYNOPSIS">
+         <para>other</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_89">
+      <text purpose="SYNOPSIS">
+         <para>Electronic signature</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_90">
+      <text purpose="SYNOPSIS">
+         <para>Length of encrypted message</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_91">
+      <text purpose="SYNOPSIS">
+         <para>Actual encrypted data stream</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_92">
+      <text purpose="SYNOPSIS">
+         <para>Broker to receive trade credit</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_93">
+      <text purpose="SYNOPSIS">
+         <para>Number of bytes in signature field.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_94">
+      <text purpose="SYNOPSIS">
+         <para>Email message type.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_94_0">
+      <text purpose="SYNOPSIS">
+         <para>New</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_94_1">
+      <text purpose="SYNOPSIS">
+         <para>Reply</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_94_2">
+      <text purpose="SYNOPSIS">
+         <para>Admin Reply</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_95">
+      <text purpose="SYNOPSIS">
+         <para>Number of bytes in raw data field.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_96">
+      <text purpose="SYNOPSIS">
+         <para>Unformatted raw data, can include bitmaps, word processor documents, etc.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_97">
+      <text purpose="SYNOPSIS">
+         <para>Indicates that message may contain information that has been sent under another sequence number.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_98">
+      <text purpose="SYNOPSIS">
+         <para>Method of encryption.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_98_0">
+      <text purpose="SYNOPSIS">
+         <para>None / other</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_98_1">
+      <text purpose="SYNOPSIS">
+         <para>PKCS (proprietary)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_98_2">
+      <text purpose="SYNOPSIS">
+         <para>DES (EBC mode)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_98_3">
+      <text purpose="SYNOPSIS">
+         <para>PKCS/DES (proprietary)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_98_4">
+      <text purpose="SYNOPSIS">
+         <para>PGP/DES (defunct)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_98_5">
+      <text purpose="SYNOPSIS">
+         <para>PGP/DES-MD5 (see app note on FIX home page)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_98_6">
+      <text purpose="SYNOPSIS">
+         <para>PEM/DES-MD5 (see app note on FIX home page)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_99">
+      <text purpose="SYNOPSIS">
+         <para>Price per share</para>
+         <para>Valid values:</para>
+         <para>0 - 99999999.9999</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_100">
+      <text purpose="SYNOPSIS">
+         <para>Execution destination as defined by institution when order is entered.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_100_0">
+      <text purpose="SYNOPSIS">
+         <para>none</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_100_4">
+      <text purpose="SYNOPSIS">
+         <para>POSIT</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_102">
+      <text purpose="SYNOPSIS">
+         <para>Code to identify reason for cancel rejection.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_102_0">
+      <text purpose="SYNOPSIS">
+         <para>Too late to cancel</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_102_1">
+      <text purpose="SYNOPSIS">
+         <para>Unknown order</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_103">
+      <text purpose="SYNOPSIS">
+         <para>Code to identify reason for order rejection.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_103_0">
+      <text purpose="SYNOPSIS">
+         <para>Broker option</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_103_1">
+      <text purpose="SYNOPSIS">
+         <para>Unknown symbol</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_103_2">
+      <text purpose="SYNOPSIS">
+         <para>Exchange closed</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_103_3">
+      <text purpose="SYNOPSIS">
+         <para>Order exceeds limit</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_103_4">
+      <text purpose="SYNOPSIS">
+         <para>Too late to enter</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_104">
+      <text purpose="SYNOPSIS">
+         <para>Code to qualify IOI use.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_104_A">
+      <text purpose="SYNOPSIS">
+         <para>All or none</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_104_C">
+      <text purpose="SYNOPSIS">
+         <para>At the close</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_104_I">
+      <text purpose="SYNOPSIS">
+         <para>In touch with</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_104_L">
+      <text purpose="SYNOPSIS">
+         <para>Limit</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_104_M">
+      <text purpose="SYNOPSIS">
+         <para>More behind</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_104_O">
+      <text purpose="SYNOPSIS">
+         <para>At the open</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_104_P">
+      <text purpose="SYNOPSIS">
+         <para>Taking a position</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_104_Q">
+      <text purpose="SYNOPSIS">
+         <para>Current quote</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_104_S">
+      <text purpose="SYNOPSIS">
+         <para>Portfolio show-n</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_104_T">
+      <text purpose="SYNOPSIS">
+         <para>Through the day</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_104_V">
+      <text purpose="SYNOPSIS">
+         <para>Versus</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_104_W">
+      <text purpose="SYNOPSIS">
+         <para>Indication - Working away</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_104_X">
+      <text purpose="SYNOPSIS">
+         <para>Crossing opportunity</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_105">
+      <text purpose="SYNOPSIS">
+         <para>Identifier to aid in the management of multiple lists derived from a single, master list.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_106">
+      <text purpose="SYNOPSIS">
+         <para>Company name of security issuer (e.g. International Business Machines)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_107">
+      <text purpose="SYNOPSIS">
+         <para>Security description.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_108">
+      <text purpose="SYNOPSIS">
+         <para>Heartbeat interval (seconds)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_109">
+      <text purpose="SYNOPSIS">
+         <para>Firm identifier used in third party-transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_110">
+      <text purpose="SYNOPSIS">
+         <para>Minimum quantity of an order to be executed.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_111">
+      <text purpose="SYNOPSIS">
+         <para>Maximum number of shares within an order to be shown on the exchange floor at any given time.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_112">
+      <text purpose="SYNOPSIS">
+         <para>Identifier included in Test Request message to be returned in resulting Heartbeat</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_113">
+      <text purpose="SYNOPSIS">
+         <para>Identifies party of trade responsible for exchange reporting.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_113_N">
+      <text purpose="SYNOPSIS">
+         <para>Indicates that party sending message will report trade</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_113_Y">
+      <text purpose="SYNOPSIS">
+         <para>Indicates that party receiving message must report trade</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_114">
+      <text purpose="SYNOPSIS">
+         <para>Indicates whether the broker is to locate the stock in conjuction with a short sell order.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_114_N">
+      <text purpose="SYNOPSIS">
+         <para>Indicates the broker is not required to locate</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_114_Y">
+      <text purpose="SYNOPSIS">
+         <para>Indicates the broker is responsible for locating the stock</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_115">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify firm originating message</para>
+         <para>if the message was delivered by a third party i.e. the third party firm identifier would be delivered in the SenderCompID field and the firm originating the message in this field.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_116">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify specific message originator (desk, trader, etc.) if the message was delivered by a third party</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_117">
+      <text purpose="SYNOPSIS">
+         <para>Unique identifier for quote</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_118">
+      <text purpose="SYNOPSIS">
+         <para>Total amount due as the result of the transaction (e.g. for Buy order - principal + commission + fees) reported in currency of execution.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_119">
+      <text purpose="SYNOPSIS">
+         <para>Total amount due expressed in settlement currency (includes the effect of the forex transaction)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_120">
+      <text purpose="SYNOPSIS">
+         <para>Currency code of settlement denomination.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_121">
+      <text purpose="SYNOPSIS">
+         <para>Indicates request for forex accommodation trade to be executed along with security transaction.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_121_N">
+      <text purpose="SYNOPSIS">
+         <para>Do not execute Forex after security trade</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_121_Y">
+      <text purpose="SYNOPSIS">
+         <para>Execute Forex after security trade</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_122">
+      <text purpose="SYNOPSIS">
+         <para>Original time of message transmission (always expressed in GMT) when transmitting orders as the result of a resend request.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_123">
+      <text purpose="SYNOPSIS">
+         <para>Indicates that the Sequence Reset message is replacing administrative or application messages which will not be resent.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_123_N">
+      <text purpose="SYNOPSIS">
+         <para>Sequence Reset, ignore MsgSeqNum</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_123_Y">
+      <text purpose="SYNOPSIS">
+         <para>Gap Fill message, MsgSeqNum field valid</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_124">
+      <text purpose="SYNOPSIS">
+         <para>No of execution record groups to follow.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_125">
+      <text purpose="SYNOPSIS">
+         <para>Defines if cancel is for part or all of the remaining quantity of an order.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_125_F">
+      <text purpose="SYNOPSIS">
+         <para>full remaining quantity</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_125_P">
+      <text purpose="SYNOPSIS">
+         <para>partial cancel (reduce quantity)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_126">
+      <text purpose="SYNOPSIS">
+         <para>Time/Date of order expiration (always expressed in GMT)</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_127">
+      <text purpose="SYNOPSIS">
+         <para>Reason for execution rejection.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_127_A">
+      <text purpose="SYNOPSIS">
+         <para>Unknown symbol</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_127_B">
+      <text purpose="SYNOPSIS">
+         <para>Wrong side</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_127_C">
+      <text purpose="SYNOPSIS">
+         <para>Quantity exceeds order</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_127_D">
+      <text purpose="SYNOPSIS">
+         <para>No matching order</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_127_E">
+      <text purpose="SYNOPSIS">
+         <para>Price exceeds limit</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_127_Z">
+      <text purpose="SYNOPSIS">
+         <para>Other</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_128">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify the firm targeted to receive the message if the message is delivered by a third party i.e. the third party firm identifier would be delivered in the TargetCompID field and the ultimate receiver firm ID in this field.</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_129">
+      <text purpose="SYNOPSIS">
+         <para>Assigned value used to identify specific message recipient (desk, trader, etc.) if the message is delivered by a third party</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_130">
+      <text purpose="SYNOPSIS">
+         <para>Indicates that IOI is the result of an existing agency order or a facilitation position resulting from an agency order, not from principal trading or order solicitation activity.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_130_N">
+      <text purpose="SYNOPSIS">
+         <para>Not natural</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_130_Y">
+      <text purpose="SYNOPSIS">
+         <para>Natural</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_131">
+      <text purpose="SYNOPSIS">
+         <para>Unique identifier for quote request</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_132">
+      <text purpose="SYNOPSIS">
+         <para>Bid price/rate</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_133">
+      <text purpose="SYNOPSIS">
+         <para>Offer price/rate</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_134">
+      <text purpose="SYNOPSIS">
+         <para>Quantity of bid</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_135">
+      <text purpose="SYNOPSIS">
+         <para>Quantity of offer</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_136">
+      <text purpose="SYNOPSIS">
+         <para>Number of repeating groups of miscellaneous fees</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_137">
+      <text purpose="SYNOPSIS">
+         <para>Miscellaneous fee value</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_138">
+      <text purpose="SYNOPSIS">
+         <para>Currency of miscellaneous fee</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_139">
+      <text purpose="SYNOPSIS">
+         <para>Indicates type of miscellaneous fee.</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_139_1">
+      <text purpose="SYNOPSIS">
+         <para>Regulatory (e.g. SEC)</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_139_2">
+      <text purpose="SYNOPSIS">
+         <para>Tax</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_139_3">
+      <text purpose="SYNOPSIS">
+         <para>Local Commission</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_139_4">
+      <text purpose="SYNOPSIS">
+         <para>Exchange Fees</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_139_5">
+      <text purpose="SYNOPSIS">
+         <para>Stamp</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_139_6">
+      <text purpose="SYNOPSIS">
+         <para>Levy</para>
+      </text>
+   </phrase>
+   <phrase textId="ENUM_139_7">
+      <text purpose="SYNOPSIS">
+         <para>Other</para>
+      </text>
+   </phrase>
+   <phrase textId="FIELD_140">
+      <text purpose="SYNOPSIS">
+         <para>Previous closing price of security.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_1_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The Heartbeat monitors the status of the communication link and identifies when the last of a string of messages was not received.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_1_REF_StandardHeader">
+      <text>
+         <para>MsgType = 0</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_1_REF_112">
+      <text>
+         <para>Required when the heartbeat is the result of a Test Request message.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_1_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_2_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The test request message forces a heartbeat from the opposing application. The test request message checks sequence numbers or verifies communication line status. The opposite application responds to the Test Request with a Heartbeat containing the TestReqID.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_2_REF_StandardHeader">
+      <text>
+         <para>MsgType = 1</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_2_REF_112">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_2_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_3_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The resend request is sent by the receiving application to initiate the retransmission of messages. This function is utilized if a sequence number gap is detected, if the receiving application lost a message, or as a function of the initialization process.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_3_REF_StandardHeader">
+      <text>
+         <para>MsgType = 2</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_3_REF_7">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_3_REF_16">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_3_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_4_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The reject message should be issued when a message is received but cannot be properly processed due to a session-level rule violation. An example of when a reject may be appropriate would be the receipt of a message with invalid basic data which successfully passes de-encryption, CheckSum and BodyLength checks.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_4_REF_StandardHeader">
+      <text>
+         <para>MsgType = 3</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_4_REF_45">
+      <text>
+         <para>MsgSeqNum of rejected message</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_4_REF_58">
+      <text>
+         <para>Where possible, message to explain reason for rejection</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_4_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_5_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The sequence reset message is used by the sending application to reset the incoming sequence number on the opposing side.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_5_REF_StandardHeader">
+      <text>
+         <para>MsgType = 4</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_5_REF_123">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_5_REF_36">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_5_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_6_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The logout message initiates or confirms the termination of a FIX session. Disconnection without the exchange of logout messages should be interpreted as an abnormal condition.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_6_REF_StandardHeader">
+      <text>
+         <para>MsgType = 5</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_6_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_6_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>Indication of interest messages are used to market merchandise which the broker is buying or selling in either a proprietary or agency capacity.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_7_REF_StandardHeader">
+      <text>
+         <para>MsgType = 6</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_7_REF_23">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_28">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_26">
+      <text>
+         <para>Required for Cancel and Replace IOITransType messages</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_7_REF_55">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_65">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_48">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_22">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_106">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_107">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_54">
+      <text>
+         <para>Side of Indication</para>
+         <para>Valid values:</para>
+         <para>1 = Buy</para>
+         <para>2 = Sell</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_7_REF_27">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_44">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_15">
+      <text>
+         <para>Indication without currency field is interpreted as US dollars.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_7_REF_62">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_25">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_24">
+      <text>
+         <para>Applicable only if advertised on public IOI service.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_7_REF_130">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_104">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_7_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_8_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>Advertisement messages are used to announce completed transactions.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_8_REF_StandardHeader">
+      <text>
+         <para>MsgType = 7</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_8_REF_2">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_8_REF_5">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_8_REF_3">
+      <text>
+         <para>Required for Cancel and Replace AdvTransType messages</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_8_REF_55">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_8_REF_65">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_8_REF_48">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_8_REF_22">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_8_REF_106">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_8_REF_107">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_8_REF_4">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_8_REF_53">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_8_REF_44">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_8_REF_15">
+      <text>
+         <para>Indication without currency field is interpreted as US dollars.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_8_REF_60">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_8_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_8_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The execution report message is used to:</para>
+         <para>1. Confirm the receipt of an order</para>
+         <para>2. Confirm changes to an existing order (i.e. accept cancel and replace requests)</para>
+         <para>3. Relay order status information</para>
+         <para>4. Relay fill information as orders are worked</para>
+         <para>5. Reject orders</para>
+         <para>6. Report miscellaneous fees calculations associated with a trade</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_9_REF_StandardHeader">
+      <text>
+         <para>MsgType = 8</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_37">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_11">
+      <text>
+         <para>Required for executions against electronically submitted orders which were assigned an ID by the institution. Not required for orders manually entered by the broker.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_109">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_76">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_66">
+      <text>
+         <para>Required for executions against orders which were submitted as part of a list.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_17">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_20">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_19">
+      <text>
+         <para>Required for Cancel and Correct ExecTransType messages</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_39">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_103">
+      <text>
+         <para>For optional use with OrdStatus = 8 (Rejected)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_1">
+      <text>
+         <para>Required for executions against electronically submitted orders which were assigned an account by the institution</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_63">
+      <text>
+         <para>Absence of this field is interpreted as Regular.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_64">
+      <text>
+         <para>Required when SettlmntTyp = 6 (Future) or SettlmntTyp = 8 (Sellers Option)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_55">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_65">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_48">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_22">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_106">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_107">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_54">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_38">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_40">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_44">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_99">
+      <text>
+         <para>Required for OrdType = 4 (Stop Limit).</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_15">
+      <text>
+         <para>Message without currency field is interpreted as US dollars</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_59">
+      <text>
+         <para>Absence of this field indicates Day order</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_126">
+      <text>
+         <para>Required if TimeInForce = GTD</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_18">
+      <text>
+         <para>Can contain multiple instructions, space delimited.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_47">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_32">
+      <text>
+         <para>Not required ExecTransType = 3 (Status)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_31">
+      <text>
+         <para>Not required for ExecTransType = 3 (Status)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_30">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_29">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_14">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_6">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_75">
+      <text>
+         <para>Used when reporting other than current day trades.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_60">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_113">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_12">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_13">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_136">
+      <text>
+         <para>Required if any miscellaneous fees are reported. Indicates number of repeating entries.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_137">
+      <text>
+         <para>Required if NoMiscFees &gt; 0</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_138">
+      <text>
+         <para>Required if NoMiscFees &gt; 0</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_139">
+      <text>
+         <para>Required if NoMiscFees &gt; 0</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_118">
+      <text>
+         <para>Required if miscellaneous fees are reported, in currency of execution</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_119">
+      <text>
+         <para>Used to report results of forex accommodation trade</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_120">
+      <text>
+         <para>Used to report results of forex accommodation trade</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_9_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_9_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_10_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The order cancel reject message is issued by the broker upon receipt of a cancel request or cancel/replace request message which cannot be honored.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_10_REF_StandardHeader">
+      <text>
+         <para>MsgType = 9</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_10_REF_37">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_10_REF_11">
+      <text>
+         <para>Unique order id assigned by institution to the cancel request or to the replacement order.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_10_REF_109">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_10_REF_76">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_10_REF_66">
+      <text>
+         <para>Required for rejects against orders which were submitted as part of a list.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_10_REF_102">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_10_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_10_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_11_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The logon message authenticates a user establishing a connection to a remote system. The logon message must be the first message sent by the application requesting to initiate a FIX session.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_11_REF_StandardHeader">
+      <text>
+         <para>MsgType = A</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_98">
+      <text>
+         <para>(Always unencrypted)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_108">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_11_REF_95">
+      <text>
+         <para>Required for some authentication methods</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_96">
+      <text>
+         <para>Required for some authentication methods</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_11_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_12_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The news message is intended for use as a general free format message between the broker and institution.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_12_REF_StandardHeader">
+      <text>
+         <para>MsgType = B</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_12_REF_42">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_12_REF_61">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_12_REF_46">
+      <text>
+         <para>Can be repeated multiple times if message is related to multiple symbols.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_12_REF_33">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_12_REF_58">
+      <text>
+         <para>Repeating field, number of instances defined in LinesOfText</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_12_REF_95">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_12_REF_96">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_12_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_13_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>Format and purpose similar to News message, however, intended for private use between two parties.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_13_REF_StandardHeader">
+      <text>
+         <para>MsgType = C</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_13_REF_94">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_13_REF_42">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_13_REF_46">
+      <text>
+         <para>Can be repeated multiple times if message is related to multiple symbols..</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_13_REF_37">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_13_REF_11">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_13_REF_33">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_13_REF_58">
+      <text>
+         <para>Repeating field, number of instances defined in LinesOfText</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_13_REF_95">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_13_REF_96">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_13_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The new order message type is used by institutions wishing to electronically submit securities and forex orders to a broker for execution.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_14_REF_StandardHeader">
+      <text>
+         <para>MsgType = D</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_11">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_109">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_76">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_1">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_63">
+      <text>
+         <para>Absence of this field is interpreted as Regular.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_64">
+      <text>
+         <para>Required when SettlmntTyp = 6 (Future) or SettlmntTyp = 8 (Sellers Option)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_21">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_18">
+      <text>
+         <para>Can contain multiple instructions, space delimited.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_110">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_111">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_100">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_81">
+      <text>
+         <para>Used to identify soft trades at order entry.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_55">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_65">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_48">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_22">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_106">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_107">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_140">
+      <text>
+         <para>Useful for verifying security identification</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_54">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_114">
+      <text>
+         <para>Required for short sell orders</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_38">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_40">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_44">
+      <text>
+         <para>Required for limit OrdTypes</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_99">
+      <text>
+         <para>Required for stop OrdTypes</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_15">
+      <text>
+         <para>Message without currency field is interpreted as US dollars</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_23">
+      <text>
+         <para>Required for Previously Indicated Orders (OrdType=E)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_117">
+      <text>
+         <para>Required for Previously Quoted Orders (OrdType=D)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_59">
+      <text>
+         <para>Absence of this field indicates Day order</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_126">
+      <text>
+         <para>Required if TimeInForce = GTD</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_12">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_13">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_47">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_121">
+      <text>
+         <para>Indicates that broker is requested to execute a Forex accommodation trade in conjunction with the security trade.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_120">
+      <text>
+         <para>Required if ForexReq = Y.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_14_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_14_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The new order list message type is used by institutions wishing to electronically submit lists of related orders to a broker for execution.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_15_REF_StandardHeader">
+      <text>
+         <para>MsgType = E</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_66">
+      <text>
+         <para>Must be unique, by customer, for the day</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_105">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_67">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_68">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_69">
+      <text>
+         <para>Include only in ListSeqNo = 1 message</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_11">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_109">
+      <text>
+         <para>Used for third-party transactions</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_76">
+      <text>
+         <para>Used for third-party transactions</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_1">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_63">
+      <text>
+         <para>Absence of this field is interpreted as Regular.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_64">
+      <text>
+         <para>Required when SettlmntTyp = 6 (Future) or SettlmntTyp = 8 (Sellers Option)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_21">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_18">
+      <text>
+         <para>Can contain multiple instructions, space delimited.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_110">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_111">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_100">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_81">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_55">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_65">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_48">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_22">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_106">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_107">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_140">
+      <text>
+         <para>Useful for verifying security identification</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_54">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_114">
+      <text>
+         <para>Required for short sell orders</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_38">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_40">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_44">
+      <text>
+         <para>Required for limit OrdTypes</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_99">
+      <text>
+         <para>Required for stop OrdTypes</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_15">
+      <text>
+         <para>Message without currency field is interpreted as US dollars</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_59">
+      <text>
+         <para>Absence of this field indicates Day order</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_126">
+      <text>
+         <para>Required in TimeInForce = GTD</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_12">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_13">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_47">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_121">
+      <text>
+         <para>Indicates that broker is requested to execute a Forex accommodation trade in conjunction with the security trade.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_120">
+      <text>
+         <para>Required if ForexReq = Y.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_15_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_15_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_16_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The order cancel request message is used to request the cancellation of all or part of the remaining quantity of an existing order.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_16_REF_StandardHeader">
+      <text>
+         <para>MsgType = F</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_16_REF_41">
+      <text>
+         <para>Unique ID of original order as assigned by institution</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_16_REF_37">
+      <text>
+         <para>Broker ID of original order</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_16_REF_11">
+      <text>
+         <para>Unique ID of cancel request as assigned by the institution.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_16_REF_66">
+      <text>
+         <para>Required for List Orders</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_16_REF_125">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_16_REF_109">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_16_REF_76">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_16_REF_55">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_16_REF_65">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_16_REF_48">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_16_REF_22">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_16_REF_106">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_16_REF_107">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_16_REF_54">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_16_REF_38">
+      <text>
+         <para>Original OrderQty for CxlType=F or new OrderQty for CxlType=P.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_16_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_16_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_17_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The order cancel/replace request is used to change the parameters of an existing order.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_17_REF_StandardHeader">
+      <text>
+         <para>MsgType = G</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_37">
+      <text>
+         <para>Unique identifier of original order as assigned by broker</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_109">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_76">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_41">
+      <text>
+         <para>Unique identifier of original order as assigned by institution.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_11">
+      <text>
+         <para>Unique identifier of replacement order as assigned by institution. Note that this identifier will be used in ClOrdID field of the Cancel Reject Message if the replacement request is rejected.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_66">
+      <text>
+         <para>Required for List Orders</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_1">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_17_REF_63">
+      <text>
+         <para>Absence of this field is interpreted as Regular.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_64">
+      <text>
+         <para>Required when SettlmntTyp = 6 (Future) or SettlmntTyp = 8 (Sellers Option)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_21">
+      <text>
+         <para>Must match original order</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_18">
+      <text>
+         <para>Can contain multiple instructions, space delimited. Replacement order must be created with new parameters (i.e. original order values will not be brought forward to replacement order unless redefined within this message).</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_110">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_17_REF_111">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_17_REF_100">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_17_REF_55">
+      <text>
+         <para>Must match original order</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_65">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_17_REF_48">
+      <text>
+         <para>Must match original order</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_22">
+      <text>
+         <para>Must match original order</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_106">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_17_REF_107">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_17_REF_54">
+      <text>
+         <para>Must match original side, however, Buy and Buy Minus can be interchanged as well as Sell and Sell Plus</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_38">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_17_REF_40">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_17_REF_44">
+      <text>
+         <para>Required for limit OrdTypes</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_99">
+      <text>
+         <para>Required for stop OrdTypes</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_15">
+      <text>
+         <para>Message without currency field is interpreted as US dollars. Must match original order.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_59">
+      <text>
+         <para>Absence of this field indicates Day order</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_126">
+      <text>
+         <para>Required if TimeInForce = GTD</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_12">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_17_REF_13">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_17_REF_47">
+      <text>
+         <para>Must match original order</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_121">
+      <text>
+         <para>Indicates that broker is requested to execute a Forex accommodation trade in conjunction with the security trade.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_120">
+      <text>
+         <para>Required if ForexReq = Y.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_17_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_17_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_18_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The order status request message is used by the institution to generate an order status message back from the broker.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_18_REF_StandardHeader">
+      <text>
+         <para>MsgType = H</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_18_REF_37">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_18_REF_11">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_18_REF_109">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_18_REF_76">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_18_REF_55">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_18_REF_65">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_18_REF_106">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_18_REF_107">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_18_REF_54">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_18_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The allocation record is used to instruct a broker on how to allocate executed shares to sub-accounts. The allocation record can also be used as a confirmation message through which third parties can communicate execution and settlement instructions between trading partners.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_19_REF_StandardHeader">
+      <text>
+         <para>MsgType = J</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_70">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_71">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_72">
+      <text>
+         <para>Required for AllocTransType = R (Replace) or C (Cancel)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_73">
+      <text>
+         <para>Indicates number of orders to be combined for allocation. If order(s) were manually delivered set to 1 (one).</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_11">
+      <text>
+         <para>Order ID assigned by client if order(s) were electronically delivered and executed. If order(s) were manually delivered this field should contain string "MANUAL".</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_37">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_66">
+      <text>
+         <para>Required for List Orders.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_105">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_124">
+      <text>
+         <para>Indicates number of individual execution record groups to follow. Absence of this field indicates that no individual execution records are included.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_17">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_32">
+      <text>
+         <para>Number of shares in individual execution. Required if NoExecs &gt; 0</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_31">
+      <text>
+         <para>Price of individual execution. Required if NoExecs &gt; 0</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_30">
+      <text>
+         <para>Market of individual execution.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_54">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_55">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_65">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_48">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_22">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_106">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_107">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_53">
+      <text>
+         <para>Total number of shares allocated to all accounts</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_6">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_15">
+      <text>
+         <para>Currency of AvgPx, absence of this field indicates US dollars</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_74">
+      <text>
+         <para>Absence of this field indicates that default precision arranged by the broker/institution is to be used</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_75">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_60">
+      <text>
+         <para>Date/time when allocation is generated</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_63">
+      <text>
+         <para>Absence of this field is interpreted as Regular</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_64">
+      <text>
+         <para>Required with SettlmntTyp other than regular</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_118">
+      <text>
+         <para>Expressed in same currency as AvgPx</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_136">
+      <text>
+         <para>Required if any miscellaneous fees are reported. Indicates number of repeating entries</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_137">
+      <text>
+         <para>Required if NoMiscFees &gt; 0</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_138">
+      <text>
+         <para>Required if NoMiscFees &gt; 0</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_139">
+      <text>
+         <para>Required if NoMiscFees &gt; 0</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_119">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_120">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_77">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_78">
+      <text>
+         <para>Indicates number of allocation groups to follow.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_79">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_80">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_81">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_76">
+      <text>
+         <para>Required for step-in and step-out trades</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_109">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_12">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_13">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_85">
+      <text>
+         <para>Repeating group within allocation group</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_92">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_19_REF_86">
+      <text>
+         <para>Required if NoDlvyInst &gt; 0</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_19_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_20_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The list cancel request message type is used by institutions wishing to cancel previously submitted lists either before or during execution.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_20_REF_StandardHeader">
+      <text>
+         <para>MsgType = K</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_20_REF_66">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_20_REF_105">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_20_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_20_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_21_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The list execute message type is used by institutions to instruct the broker to begin execution of a previously submitted list.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_21_REF_StandardHeader">
+      <text>
+         <para>MsgType = L</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_21_REF_66">
+      <text>
+         <para>Must be unique, by customer, for the day</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_21_REF_105">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_21_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_21_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_22_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The list status request message type is used by institutions to instruct the broker to generate status messages for a list.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_22_REF_StandardHeader">
+      <text>
+         <para>MsgType = M</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_22_REF_66">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_22_REF_105">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_22_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_22_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_23_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The list status message is issued as the response to a List Status Request message and indicates the current state of the orders within the list as they exists at the broker's site.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_23_REF_StandardHeader">
+      <text>
+         <para>MsgType = N</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_23_REF_66">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_23_REF_105">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_23_REF_82">
+      <text>
+         <para>Total number of messages required to status complete list.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_23_REF_83">
+      <text>
+         <para>Sequence number of this report message.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_23_REF_73">
+      <text>
+         <para>Number of orders statused in this message, i.e. number of repeating groups to follow.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_23_REF_11">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_23_REF_14">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_23_REF_84">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_23_REF_6">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_23_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_24_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The allocation ACK record is used by the broker to acknowledge the receipt and status of an allocation record received from the institution.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_24_REF_StandardHeader">
+      <text>
+         <para>MsgType = P</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_24_REF_109">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_24_REF_76">
+      <text>
+         <para>Used for firm identification in third-party transactions.</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_24_REF_70">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_24_REF_75">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_24_REF_60">
+      <text>
+         <para>Date/Time allocation Ack generated</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_24_REF_87">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_24_REF_88">
+      <text>
+         <para>Required for AllocStatus = 1 (rejected)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_24_REF_58">
+      <text>
+         <para>Can include explanation for AllocRejCode = 7 (other)</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_24_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_25_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The Don’t Know Trade (DK) message is used to notify a trading partner that an electronically received execution has been rejected. This message can be thought of as an execution reject message.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_25_REF_StandardHeader">
+      <text>
+         <para>MsgType = Q</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_25_REF_37">
+      <text>
+         <para>Broker Order Id as identified on problem execution</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_25_REF_17">
+      <text>
+         <para>Execution Id of problem execution</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_25_REF_127">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_25_REF_55">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_25_REF_54">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_25_REF_38">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_25_REF_32">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_25_REF_31">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_25_REF_58">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_25_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_26_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>In some markets it is the practice to request quotes from brokers prior to placement of an order. The quote request message is used for this purpose.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_26_REF_StandardHeader">
+      <text>
+         <para>MsgType = R</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_26_REF_131">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_26_REF_55">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_26_REF_65">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_26_REF_48">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_26_REF_22">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_26_REF_106">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_26_REF_107">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_26_REF_140">
+      <text>
+         <para>Useful for verifying security identification</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_26_REF_54">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_26_REF_38">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_26_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_27_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The quote message is used as the response to a quote request message and can be used to publish unsolicited quotes.</para>
+      </text>
+   </phrase>
+   <!--TEST IN gen_i18n-map--><phrase textId="TEST">
+      <text purpose="TEST">
+							BEFORE CALL MSGCOMP_FIELDS_DESCS in gen_i18n FOR MESSAGES
+						</text>
+   </phrase>
+   <phrase textId="MSG_27_REF_StandardHeader">
+      <text>
+         <para>MsgType = S</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_27_REF_131">
+      <text>
+         <para>Required when quote is in response to a Quote Request message</para>
+      </text>
+   </phrase>
+   <phrase textId="MSG_27_REF_117">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_27_REF_55">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_27_REF_65">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_27_REF_48">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_27_REF_22">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_27_REF_106">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_27_REF_107">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_27_REF_132">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_27_REF_133">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_27_REF_134">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_27_REF_135">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_27_REF_62">
+      <text/>
+   </phrase>
+   <phrase textId="MSG_27_REF_StandardTrailer">
+      <text/>
+   </phrase>
+   <phrase textId="COMP_StandardHeader_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The standard FIX message header</para>
+      </text>
+      <text purpose="ELABORATION"/>
+   </phrase>
+   <phrase textId="CMP_1001_REF_8">
+      <text>
+         <para>FIX.4.0 (Always unencrypted, must be first field in message)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_9">
+      <text>
+         <para>(Always unencrypted, must be second field in message)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_35">
+      <text>
+         <para>(Always unencrypted, must be third field in message)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_49">
+      <text>
+         <para>(Always unencrypted)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_56">
+      <text>
+         <para>(Always unencrypted)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_115">
+      <text>
+         <para>Trading partner company ID used when sending messages via a third party (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_128">
+      <text>
+         <para>Trading partner company ID used when sending messages via a third party (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_90">
+      <text>
+         <para>Required to identify length of encrypted section of message. (Always unencrypted)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_91">
+      <text>
+         <para>Required when message body is encrypted. Always immediately follows SecureDataLen field.</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_34">
+      <text>
+         <para>(Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_50">
+      <text>
+         <para>(Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_57">
+      <text>
+         <para>"ADMIN" reserved for administrative messages not intended for a specific user. (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_116">
+      <text>
+         <para>Trading partner SubID used when delivering messages via a third party. (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_129">
+      <text>
+         <para>Trading partner SubID used when delivering messages via a third party. (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_43">
+      <text>
+         <para>Always required for retransmissions, whether prompted by the sending system or as the result of a resend request. (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_97">
+      <text>
+         <para>Required when message may be duplicate of another message sent under a different sequence number. (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_52">
+      <text>
+         <para>(Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1001_REF_122">
+      <text>
+         <para>Required for message resends. If data is not available set to same value as SendingTime (Can be embedded within encrypted data section.)</para>
+      </text>
+   </phrase>
+   <phrase textId="COMP_StandardTrailer_TITLE">
+      <text purpose="SYNOPSIS">
+         <para>The standard FIX message trailer</para>
+      </text>
+      <text purpose="ELABORATION"/>
+   </phrase>
+   <phrase textId="CMP_1002_REF_93">
+      <text>
+         <para>Required when trailer contains signature. Note: Not to be included within SecureData field</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1002_REF_89">
+      <text>
+         <para>Note: Not to be included within SecureData field</para>
+      </text>
+   </phrase>
+   <phrase textId="CMP_1002_REF_10">
+      <text>
+         <para>(Always unencrypted, always last field in message)</para>
+      </text>
+   </phrase>
+</phrases>
