@@ -22,7 +22,7 @@ rustdoc-args = ["--cfg", "doc_cfg"]
 name = "fefast"
 
 [dependencies]
-bitvec = "0.18.3"
+bitvec = "1.0.1"
 decimal = { version = "2", optional = true }
 heck = "0.3"
 indoc = "1"
