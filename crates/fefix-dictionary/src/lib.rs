@@ -209,7 +209,7 @@ impl Dictionary {
     /// `FIXT.1.1`, `FIX.4.2`).
     ///
     /// ```
-    /// use fefix::Dictionary;
+    /// use fefix_dictionary::Dictionary;
     ///
     /// let dict = Dictionary::fix44();
     /// assert_eq!(dict.get_version(), "FIX.4.4");
@@ -328,7 +328,7 @@ impl Dictionary {
     /// Returns the [`Message`](Message) associated with `name`, if any.
     ///
     /// ```
-    /// use fefix::Dictionary;
+    /// use fefix_dictionary::Dictionary;
     ///
     /// let dict = Dictionary::fix44();
     ///
@@ -345,7 +345,7 @@ impl Dictionary {
     /// Returns the [`Message`](Message) that has the given `msgtype`, if any.
     ///
     /// ```
-    /// use fefix::Dictionary;
+    /// use fefix_dictionary::Dictionary;
     ///
     /// let dict = Dictionary::fix44();
     ///
@@ -369,7 +369,7 @@ impl Dictionary {
     /// Returns the [`Datatype`] named `name`, if any.
     ///
     /// ```
-    /// use fefix::Dictionary;
+    /// use fefix_dictionary::Dictionary;
     ///
     /// let dict = Dictionary::fix44();
     /// let dt = dict.datatype_by_name("String").unwrap();
@@ -384,7 +384,7 @@ impl Dictionary {
     /// Returns the [`Field`] associated with `tag`, if any.
     ///
     /// ```
-    /// use fefix::Dictionary;
+    /// use fefix_dictionary::Dictionary;
     ///
     /// let dict = Dictionary::fix44();
     /// let field1 = dict.field_by_tag(112).unwrap();
@@ -408,7 +408,7 @@ impl Dictionary {
     /// in `self`. Items are in no particular order.
     ///
     /// ```
-    /// use fefix::Dictionary;
+    /// use fefix_dictionary::Dictionary;
     ///
     /// let dict = Dictionary::fix44();
     /// // FIX 4.4 defines 23 (FIXME) datatypes.
@@ -425,7 +425,7 @@ impl Dictionary {
     /// no particular order.
     ///
     /// ```
-    /// use fefix::Dictionary;
+    /// use fefix_dictionary::Dictionary;
     ///
     /// let dict = Dictionary::fix44();
     /// let msg = dict.iter_messages().find(|m| m.name() == "MarketDataRequest");
@@ -848,7 +848,7 @@ mod datatype {
         /// # Examples
         ///
         /// ```
-        /// use fefix::dict::FixDatatype;
+        /// use fefix_dictionary::FixDatatype;
         ///
         /// assert_eq!(FixDatatype::from_quickfix_name("AMT"), Some(FixDatatype::Amt));
         /// assert_eq!(FixDatatype::from_quickfix_name("Amt"), Some(FixDatatype::Amt));
@@ -938,7 +938,7 @@ mod datatype {
         /// # Examples
         ///
         /// ```
-        /// use fefix::dict::FixDatatype;
+        /// use fefix_dictionary::FixDatatype;
         ///
         /// assert_eq!(FixDatatype::Qty.name(), "Qty");
         /// assert_eq!(FixDatatype::Float.name(), "float");
@@ -988,7 +988,7 @@ mod datatype {
         /// # Examples
         ///
         /// ```
-        /// use fefix::dict::FixDatatype;
+        /// use fefix_dictionary::FixDatatype;
         ///
         /// assert_eq!(FixDatatype::Float.is_base_type(), true);
         /// assert_eq!(FixDatatype::Price.is_base_type(), false);
@@ -1006,7 +1006,7 @@ mod datatype {
         /// # Examples
         ///
         /// ```
-        /// use fefix::dict::FixDatatype;
+        /// use fefix_dictionary::FixDatatype;
         ///
         /// assert_eq!(FixDatatype::Float.base_type(), FixDatatype::Float);
         /// assert_eq!(FixDatatype::Price.base_type(), FixDatatype::Float);
