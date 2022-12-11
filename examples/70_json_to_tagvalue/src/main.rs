@@ -5,8 +5,8 @@ const JSON_FIX_MESSAGE: &str = include_str!("fix-example.json");
 
 fn main() {
     let dictionary = fefix::Dictionary::fix42();
-    let mut decoder = <fefix::json::Decoder>::new(dictionary.clone());
-    let mut encoder = <fefix::tagvalue::Encoder>::new();
+    let mut decoder = fefix::json::Decoder::new(dictionary.clone());
+    let mut encoder = fefix::tagvalue::Encoder::new();
     let mut buffer = Vec::new();
 
     let json_msg = decoder.decode(JSON_FIX_MESSAGE.as_bytes()).unwrap();

@@ -1,12 +1,12 @@
-use super::{Config, Configure, DecodeError, Decoder, RawDecoder, RawFrame};
+use super::{Config, DecodeError, Decoder, RawDecoder, RawFrame};
 use crate::{Dictionary, GetConfig};
 use bytes::{Bytes, BytesMut};
 use tokio_util::codec;
 
 #[derive(Debug)]
-pub struct TokioRawDecoder<C = Config> {
+pub struct TokioRawDecoder {
     dict: Dictionary,
-    raw_decoder: RawDecoder<C>,
+    raw_decoder: RawDecoder,
 }
 
 impl codec::Decoder for TokioRawDecoder {
@@ -28,8 +28,8 @@ impl codec::Decoder for TokioRawDecoder {
     }
 }
 
-impl<C> GetConfig for TokioRawDecoder<C> {
-    type Config = C;
+impl GetConfig for TokioRawDecoder {
+    type Config = Config;
 
     fn config(&self) -> &Self::Config {
         self.raw_decoder.config()
@@ -42,12 +42,9 @@ impl<C> GetConfig for TokioRawDecoder<C> {
 
 #[derive(Debug)]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-tokio")))]
-pub struct TokioDecoder<C = Config>
-where
-    C: Configure,
-{
+pub struct TokioDecoder {
     dict: Dictionary,
-    raw_decoder: Decoder<C>,
+    raw_decoder: Decoder,
 }
 
 //impl codec::Decoder for TokioDecoder {

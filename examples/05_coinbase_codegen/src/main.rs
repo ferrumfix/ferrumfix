@@ -3,7 +3,7 @@
 mod gdax;
 
 use fefix::prelude::*;
-use fefix::tagvalue::{Config, Decoder};
+use fefix::tagvalue::Decoder;
 
 const QUICKFIX_SPEC: &str = include_str!("coinbase_quickfix.xml");
 
@@ -11,7 +11,7 @@ const FIX_MESSAGE_EXEC_REPORT: &[u8] = b"8=FIX.4.2|9=21|35=8|1003=123|1057=Y|10=
 
 fn main() {
     let mut decoder = fix_decoder();
-    decoder.config_mut().set_separator(b'|');
+    decoder.config_mut().separator = b'|';
     let msg = decoder
         .decode(FIX_MESSAGE_EXEC_REPORT)
         .expect("Invalid FIX message");
@@ -21,9 +21,9 @@ fn main() {
     assert_eq!(msg.fv(gdax::AGGRESSOR_INDICATOR), Ok(true));
 }
 
-fn fix_decoder() -> Decoder<Config> {
+fn fix_decoder() -> Decoder {
     let fix_dictionary = Dictionary::from_quickfix_spec(QUICKFIX_SPEC).unwrap();
-    Decoder::<Config>::new(fix_dictionary)
+    Decoder::new(fix_dictionary)
 }
 
 #[cfg(test)]

@@ -1,5 +1,5 @@
 use fefix::prelude::*;
-use fefix::tagvalue::{Config, Decoder};
+use fefix::tagvalue::Decoder;
 
 const FIX_MESSAGE: &[u8] = b"8=FIX.4.2|9=196|35=X|49=A|56=B|34=12|52=20100318-03:21:11.364|262=A|268=2|279=0|269=0|278=BID|55=EUR/USD|270=1.37215|15=EUR|271=2500000|346=1|279=0|269=1|278=OFFER|55=EUR/USD|270=1.37224|15=EUR|271=2503200|346=1|10=171|";
 
@@ -7,10 +7,10 @@ fn main() {
     let fix_dictionary = Dictionary::fix42();
     // Let's create a FIX decoder. This is an expensive operation, and it should
     // only be done once at the beginning of your program and/or FIX session.
-    let mut fix_decoder = Decoder::<Config>::new(fix_dictionary);
+    let mut fix_decoder = Decoder::new(fix_dictionary);
     // In this case, the FIX message is specified using "|" rather than SOH
     // (ASCII 0x1) bytes. FerrumFIX supports this.
-    fix_decoder.config_mut().set_separator(b'|');
+    fix_decoder.config_mut().separator = b'|';
     let msg = fix_decoder
         .decode(FIX_MESSAGE)
         .expect("Invalid FIX message");

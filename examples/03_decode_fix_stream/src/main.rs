@@ -15,10 +15,10 @@ fn fix_stream() -> Vec<u8> {
 fn decoder(fix_dictionary: Dictionary) -> Decoder {
     // Let's create a FIX decoder. This is an expensive operation, and it should
     // only be done once at the beginning of your program and/or FIX session.
-    let mut decoder = <Decoder>::new(fix_dictionary);
+    let mut decoder = Decoder::new(fix_dictionary);
     // In this case, the FIX message is specified using "|" rather than SOH
     // (ASCII 0x1) bytes. FerrumFIX supports this.
-    decoder.config_mut().set_separator(b'|');
+    decoder.config_mut().separator = b'|';
     decoder
 }
 

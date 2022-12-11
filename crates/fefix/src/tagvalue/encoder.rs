@@ -1,4 +1,4 @@
-use super::{Config, Configure};
+use super::Config;
 use crate::dict::IsFieldDefinition;
 use crate::field_types::CheckSum;
 use crate::{Buffer, BufferWriter, FieldType, GetConfig, SetField, TagU32};
@@ -18,20 +18,17 @@ use std::ops::Range;
 /// use fefix::prelude::*;
 ///
 /// let mut buffer = Vec::new();
-/// let mut encoder = Encoder::<Config>::default();
-/// encoder.config_mut().set_separator(b'|');
+/// let mut encoder = Encoder::default();
+/// encoder.config_mut().separator = b'|';
 /// let msg = encoder.start_message(b"FIX.4.4", &mut buffer, b"A");
 /// let data = msg.done();
 /// ```
 #[derive(Debug, Clone, Default)]
-pub struct Encoder<C = Config> {
-    config: C,
+pub struct Encoder {
+    config: Config,
 }
 
-impl<C> Encoder<C>
-where
-    C: Configure,
-{
+impl Encoder {
     /// Creates a new [`Encoder`] with [`Default`] configuration options.
     pub fn new() -> Self {
         Self::default()
@@ -45,7 +42,7 @@ where
         begin_string: &[u8],
         buffer: &'a mut B,
         msg_type: &[u8],
-    ) -> EncoderHandle<'a, B, C>
+    ) -> EncoderHandle<'a, B>
     where
         B: Buffer,
     {
@@ -79,8 +76,8 @@ where
     }
 }
 
-impl<C> GetConfig for Encoder<C> {
-    type Config = C;
+impl GetConfig for Encoder {
+    type Config = Config;
 
     fn config(&self) -> &Self::Config {
         &self.config
@@ -94,17 +91,16 @@ impl<C> GetConfig for Encoder<C> {
 /// A type returned by [`Encoder::start_message`](Encoder::start_message) to
 /// actually encode data fields.
 #[derive(Debug)]
-pub struct EncoderHandle<'a, B, C = Config> {
-    encoder: &'a mut Encoder<C>,
+pub struct EncoderHandle<'a, B> {
+    encoder: &'a mut Encoder,
     buffer: &'a mut B,
     initial_buffer_len: usize,
     body_start_i: usize,
 }
 
-impl<'a, B, C> EncoderHandle<'a, B, C>
+impl<'a, B> EncoderHandle<'a, B>
 where
     B: Buffer,
-    C: Configure,
 {
     /// Closes the current message writing operation and returns its byte
     /// representation, as well as its offset within the whole contents of the
@@ -138,10 +134,9 @@ where
     }
 }
 
-impl<'a, B, C> SetField<u32> for EncoderHandle<'a, B, C>
+impl<'a, B> SetField<u32> for EncoderHandle<'a, B>
 where
     B: Buffer,
-    C: Configure,
 {
     fn set_with<'s, V>(&'s mut self, tag: u32, value: V, settings: V::SerializeSettings)
     where
@@ -150,14 +145,13 @@ where
         write!(BufferWriter(self.buffer), "{}=", tag).unwrap();
         value.serialize_with(self.buffer, settings);
         self.buffer
-            .extend_from_slice(&[self.encoder.config().separator()]);
+            .extend_from_slice(&[self.encoder.config().separator]);
     }
 }
 
-impl<'a, B, C> SetField<TagU32> for EncoderHandle<'a, B, C>
+impl<'a, B> SetField<TagU32> for EncoderHandle<'a, B>
 where
     B: Buffer,
-    C: Configure,
 {
     fn set_with<'s, V>(&'s mut self, tag: TagU32, value: V, settings: V::SerializeSettings)
     where
@@ -167,10 +161,9 @@ where
     }
 }
 
-impl<'a, B, C, F> SetField<&F> for EncoderHandle<'a, B, C>
+impl<'a, B, F> SetField<&F> for EncoderHandle<'a, B>
 where
     B: Buffer,
-    C: Configure,
     F: IsFieldDefinition,
 {
     fn set_with<'s, V>(&'s mut self, field: &F, value: V, settings: V::SerializeSettings)

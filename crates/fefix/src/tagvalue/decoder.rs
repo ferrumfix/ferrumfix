@@ -1,4 +1,4 @@
-use super::{Config, Configure, DecodeError, RawDecoder, RawDecoderStreaming, RawFrame};
+use super::{Config, DecodeError, RawDecoder, RawDecoderStreaming, RawFrame};
 use crate::dict::IsFieldDefinition;
 use crate::FieldValueError;
 use crate::{
@@ -45,16 +45,13 @@ const BEGIN_STRING_OFFSET: usize = 2;
 ///
 /// One should create a [`Decoder`] per stream of FIX messages.
 #[derive(Debug)]
-pub struct Decoder<C = Config> {
+pub struct Decoder {
     builder: MessageBuilder<'static>,
-    raw_decoder: RawDecoder<C>,
+    raw_decoder: RawDecoder,
     tag_lookup: IntMap<u32, FixDatatype>,
 }
 
-impl<C> Decoder<C>
-where
-    C: Configure,
-{
+impl Decoder {
     /// Creates a new [`Decoder`] for the tag-value format. `dict` is used to parse
     /// messages.
     pub fn new(dict: Dictionary) -> Self {
@@ -80,7 +77,7 @@ where
     }
 
     /// Adds a [`Buffer`] to `self`, turning it into a [`StreamingDecoder`].
-    pub fn streaming<B>(self, buffer: B) -> DecoderStreaming<B, C>
+    pub fn streaming<B>(self, buffer: B) -> DecoderStreaming<B>
     where
         B: Buffer,
     {
@@ -103,8 +100,8 @@ where
     /// use fefix::prelude::*;
     ///
     /// let dict = Dictionary::fix44();
-    /// let mut decoder = Decoder::<Config>::new(dict);
-    /// decoder.config_mut().set_separator(b'|');
+    /// let mut decoder = Decoder::new(dict);
+    /// decoder.config_mut().separator = b'|';
     /// let data = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
     /// let message = decoder.decode(data).unwrap();
     /// assert_eq!(message.fv(fix44::SENDER_COMP_ID), Ok("A"));
@@ -128,7 +125,7 @@ where
     {
         self.builder.clear();
         self.message_builder_mut().bytes = frame.as_bytes();
-        let separator = self.config().separator();
+        let separator = self.config().separator;
         let payload = frame.payload();
         self.store_field(
             TagU32::new(8).unwrap(),
@@ -197,7 +194,7 @@ where
         field_value_start: usize,
         field_value_len: usize,
     ) {
-        let config_assoc = self.config().should_decode_associative();
+        let config_assoc = self.config().should_decode_associative;
         let field_value = &raw_message[field_value_start..][..field_value_len];
         if self.builder.state.new_group.is_some() {
             // We are entering a new group, but we still don't know which tag
@@ -234,8 +231,8 @@ where
     }
 }
 
-impl<C> GetConfig for Decoder<C> {
-    type Config = C;
+impl GetConfig for Decoder {
+    type Config = Config;
 
     fn config(&self) -> &Self::Config {
         self.raw_decoder.config()
@@ -257,16 +254,15 @@ impl<C> GetConfig for Decoder<C> {
 ///
 /// [^2]: [FIX TagValue Encoding: PDF.](https://www.fixtrading.org/standards/tagvalue/)
 #[derive(Debug)]
-pub struct DecoderStreaming<B, C = Config> {
-    decoder: Decoder<C>,
-    raw_decoder: RawDecoderStreaming<B, C>,
+pub struct DecoderStreaming<B> {
+    decoder: Decoder,
+    raw_decoder: RawDecoderStreaming<B>,
     is_ready: bool,
 }
 
-impl<B, C> StreamingDecoder for DecoderStreaming<B, C>
+impl<B> StreamingDecoder for DecoderStreaming<B>
 where
     B: Buffer,
-    C: Configure,
 {
     type Buffer = B;
     type Error = DecodeError;
@@ -296,10 +292,9 @@ where
     }
 }
 
-impl<B, C> DecoderStreaming<B, C>
+impl<B> DecoderStreaming<B>
 where
     B: Buffer,
-    C: Configure,
 {
     /// # Panics
     ///
@@ -316,8 +311,8 @@ where
     }
 }
 
-impl<B, C> GetConfig for DecoderStreaming<B, C> {
-    type Config = C;
+impl<B> GetConfig for DecoderStreaming<B> {
+    type Config = Config;
 
     fn config(&self) -> &Self::Config {
         self.decoder.config()
@@ -385,8 +380,8 @@ impl<'a, T> Message<'a, T> {
     ///
     /// const DATA: &[u8] = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
     ///
-    /// let mut decoder = Decoder::<Config>::new(Dictionary::fix44());
-    /// decoder.config_mut().set_separator(b'|');
+    /// let mut decoder = Decoder::new(Dictionary::fix44());
+    /// decoder.config_mut().separator = b'|';
     ///
     /// let message = decoder.decode(DATA).unwrap();
     /// let first_field = message.fields().next();
@@ -410,8 +405,8 @@ impl<'a, T> Message<'a, T> {
     ///
     /// const DATA: &[u8] = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
     ///
-    /// let mut decoder = Decoder::<Config>::new(Dictionary::fix44());
-    /// decoder.config_mut().set_separator(b'|');
+    /// let mut decoder = Decoder::new(Dictionary::fix44());
+    /// decoder.config_mut().separator = b'|';
     ///
     /// let message = decoder.decode(DATA).unwrap();
     /// assert_eq!(message.as_bytes(), DATA);
@@ -430,8 +425,8 @@ impl<'a, T> Message<'a, T> {
     ///
     /// const DATA: &[u8] = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
     ///
-    /// let mut decoder = Decoder::<Config>::new(Dictionary::fix44());
-    /// decoder.config_mut().set_separator(b'|');
+    /// let mut decoder = Decoder::new(Dictionary::fix44());
+    /// decoder.config_mut().separator = b'|';
     ///
     /// let message = decoder.decode(DATA).unwrap();
     /// assert_eq!(message.len(), message.fields().count());
@@ -704,7 +699,6 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::tagvalue::Config;
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
@@ -722,9 +716,9 @@ mod test {
         msg.split('|').collect::<Vec<&str>>().join("\x01")
     }
 
-    fn decoder() -> Decoder<Config> {
-        let mut decoder = Decoder::<Config>::new(Dictionary::fix44());
-        decoder.config_mut().set_separator(b'|');
+    fn decoder() -> Decoder {
+        let mut decoder = Decoder::new(Dictionary::fix44());
+        decoder.config_mut().separator = b'|';
         decoder
     }
 
@@ -765,20 +759,11 @@ mod test {
     }
 
     #[test]
-    fn no_skip_checksum_verification() {
-        let message = "8=FIX.FOOBAR|9=5|35=0|10=000|";
-        let mut codec = Decoder::<Config>::new(Dictionary::fix44());
-        codec.config_mut().set_verify_checksum(true);
-        let result = codec.decode(message.as_bytes());
-        assert!(result.is_err());
-    }
-
-    #[test]
     fn assortment_of_random_messages_is_ok() {
         for msg_with_vertical_bar in RANDOM_MESSAGES {
             let message = with_soh(msg_with_vertical_bar);
             let mut codec = decoder();
-            codec.config_mut().set_separator(0x1);
+            codec.config_mut().separator = 0x1;
             let result = codec.decode(message.as_bytes());
             result.unwrap();
         }

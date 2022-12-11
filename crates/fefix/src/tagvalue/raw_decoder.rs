@@ -1,4 +1,4 @@
-use crate::tagvalue::{utils, Config, Configure, DecodeError};
+use crate::tagvalue::{utils, Config, DecodeError};
 use crate::{Buffer, GetConfig, StreamingDecoder};
 use std::ops::Range;
 
@@ -27,8 +27,8 @@ where
     /// use fefix::tagvalue::{Config, RawDecoder};
     /// use fefix::prelude::*;
     ///
-    /// let mut decoder = RawDecoder::<Config>::new();
-    /// decoder.config_mut().set_separator(b'|');
+    /// let mut decoder = RawDecoder::new();
+    /// decoder.config_mut().separator = b'|';
     /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
     /// let message = decoder.decode(data).unwrap();
     ///
@@ -47,8 +47,8 @@ where
     /// use fefix::tagvalue::{Config, RawDecoder};
     /// use fefix::prelude::*;
     ///
-    /// let mut decoder = RawDecoder::<Config>::new();
-    /// decoder.config_mut().set_separator(b'|');
+    /// let mut decoder = RawDecoder::new();
+    /// decoder.config_mut().separator = b'|';
     /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
     /// let message = decoder.decode(data).unwrap();
     ///
@@ -73,8 +73,8 @@ where
     /// use fefix::tagvalue::{Config, RawDecoder};
     /// use fefix::prelude::*;
     ///
-    /// let mut decoder = RawDecoder::<Config>::new();
-    /// decoder.config_mut().set_separator(b'|');
+    /// let mut decoder = RawDecoder::new();
+    /// decoder.config_mut().separator = b'|';
     /// let data = b"8=FIX.4.2|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=022|";
     /// let message = decoder.decode(data).unwrap();
     ///
@@ -96,17 +96,14 @@ pub struct RawDecoder<C = Config> {
     config: C,
 }
 
-impl<C> RawDecoder<C>
-where
-    C: Configure,
-{
+impl RawDecoder {
     /// Creates a new [`RawDecoder`] with default configuration options.
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Adds a [`Buffer`] to `self`, turning it into a [`RawDecoderStreaming`].
-    pub fn streaming<B>(self, buffer: B) -> RawDecoderStreaming<B, C>
+    pub fn streaming<B>(self, buffer: B) -> RawDecoderStreaming<B>
     where
         B: Buffer,
     {
@@ -129,7 +126,7 @@ where
         }
 
         let header_info =
-            HeaderInfo::parse(data, self.config().separator()).ok_or(DecodeError::Invalid)?;
+            HeaderInfo::parse(data, self.config().separator).ok_or(DecodeError::Invalid)?;
 
         utils::verify_body_length(
             data,
@@ -137,7 +134,7 @@ where
             header_info.nominal_body_len as usize,
         )?;
 
-        if self.config.verify_checksum() {
+        if self.config.verify_checksum && self.config.separator == b'\x01' {
             utils::verify_checksum(data)?;
         }
 
@@ -176,10 +173,9 @@ pub struct RawDecoderStreaming<B, C = Config> {
     state: ParserState,
 }
 
-impl<B, C> StreamingDecoder for RawDecoderStreaming<B, C>
+impl<B> StreamingDecoder for RawDecoderStreaming<B>
 where
     B: Buffer,
-    C: Configure,
 {
     type Buffer = B;
     type Error = DecodeError;
@@ -205,7 +201,7 @@ where
         match self.state {
             ParserState::Empty => {
                 let header_info =
-                    HeaderInfo::parse(self.buffer.as_slice(), self.config().separator());
+                    HeaderInfo::parse(self.buffer.as_slice(), self.config().separator);
                 if let Some(header_info) = header_info {
                     let expected_len_of_frame = header_info.field_1.end
                         + 1
@@ -224,10 +220,9 @@ where
     }
 }
 
-impl<B, C> RawDecoderStreaming<B, C>
+impl<B> RawDecoderStreaming<B>
 where
     B: Buffer,
-    C: Configure,
 {
     /// Tries to deserialize the next [`RawFrame`] from the internal buffer. If
     /// the internal buffer does not contain a complete message, returns an
@@ -307,7 +302,7 @@ mod test {
 
     fn new_decoder() -> RawDecoder {
         let mut config = Config::default();
-        config.set_separator(b'|');
+        config.separator = b'|';
 
         let mut decoder = RawDecoder::new();
         *decoder.config_mut() = config;
@@ -351,9 +346,11 @@ mod test {
     #[test]
     fn message_with_bad_checksum_is_invalid() {
         let mut decoder = new_decoder();
-        decoder.config_mut().set_verify_checksum(true);
-        let msg = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=000|".as_bytes();
-        assert!(matches!(decoder.decode(msg), Err(DecodeError::CheckSum)));
+        decoder.config_mut().separator = 0x01;
+        decoder.config_mut().verify_checksum = true;
+        let msg =
+            "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=000|".replace('|', "\u{01}");
+        assert!(matches!(decoder.decode(&msg), Err(DecodeError::CheckSum)));
     }
 
     #[test]

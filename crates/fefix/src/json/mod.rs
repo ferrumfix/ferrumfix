@@ -4,7 +4,7 @@ mod config;
 mod decoder;
 mod encoder;
 
-pub use config::{Config, Configure};
+pub use config::Config;
 pub use decoder::{Decoder, FieldOrGroup, Message, MessageFieldsIter, MessageGroup};
 pub use encoder::Encoder;
 

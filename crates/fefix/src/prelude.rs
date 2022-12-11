@@ -1,9 +1,6 @@
 //! Convenience re-exports of common traits and various items within `fefix`.
 
 pub use crate::dict::Dictionary;
-#[cfg(feature = "json-encoding")]
-pub use crate::json::Configure as ConfigureJson;
-pub use crate::tagvalue::Configure as ConfigureTagValue;
 pub use crate::{
     Buffer, FieldMap, FieldType, GetConfig, RepeatingGroup, SetField, StreamingDecoder, TagU32,
 };

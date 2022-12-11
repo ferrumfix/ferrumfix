@@ -150,7 +150,7 @@ pub enum LlEvent<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::tagvalue::{Config, Decoder};
+    use crate::tagvalue::Decoder;
     use tokio::io::AsyncWriteExt;
     use tokio::net::{TcpListener, TcpStream};
     use tokio_util::compat::*;
@@ -176,7 +176,7 @@ mod test {
         let input = produce_events(events).await;
 
         LlEventLoop::new(
-            Decoder::<Config>::new(crate::Dictionary::fix44()).streaming(vec![]),
+            Decoder::new(crate::Dictionary::fix44()).streaming(vec![]),
             input.compat(),
             Duration::from_secs(3),
         )

@@ -1,4 +1,4 @@
-use super::{Config, Configure, DecodeError};
+use super::{Config, DecodeError};
 use crate::dict::FieldLocation;
 use crate::dict::IsFieldDefinition;
 use crate::FieldType;
@@ -119,16 +119,13 @@ impl<'a> Iterator for MessageFieldsIter<'a> {
 
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]
-pub struct Decoder<C = Config> {
+pub struct Decoder {
     dictionaries: HashMap<String, Dictionary>,
     message_builder: MessageInternal<'static>,
-    config: C,
+    config: Config,
 }
 
-impl<C> Decoder<C>
-where
-    C: Configure,
-{
+impl Decoder {
     /// Creates a new JSON [`Decoder`]. `dict` serves as a reference for data type inference
     /// of incoming messages' fields. Configuration options are initialized via [`Default`].
     pub fn new(dict: Dictionary) -> Self {
@@ -137,7 +134,7 @@ where
         Self {
             dictionaries,
             message_builder: MessageInternal::default(),
-            config: C::default(),
+            config: Config::default(),
         }
     }
 
@@ -167,8 +164,8 @@ where
     }
 }
 
-impl<C> GetConfig for Decoder<C> {
-    type Config = C;
+impl GetConfig for Decoder {
+    type Config = Config;
 
     fn config(&self) -> &Self::Config {
         &self.config

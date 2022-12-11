@@ -48,7 +48,7 @@ mod encoder;
 mod raw_decoder;
 mod utils;
 
-pub use config::{Config, Configure};
+pub use config::Config;
 pub use decoder::{Decoder, DecoderStreaming, Fields, Message, MessageGroup};
 pub use encoder::{Encoder, EncoderHandle};
 pub use raw_decoder::{RawDecoder, RawDecoderStreaming, RawFrame};
