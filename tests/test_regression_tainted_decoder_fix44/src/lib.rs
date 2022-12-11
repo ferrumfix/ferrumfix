@@ -1,6 +1,8 @@
 #[test]
 fn decode() {
-    use fefix::{definitions::fix44, prelude::*, tagvalue::Decoder};
+    use fefix::definitions::fix44;
+    use fefix::prelude::*;
+    use fefix::tagvalue::Decoder;
 
     const SAMPLES: [&[u8]; 2] = [
         b"8=FIX.4.4\x019=176\x0135=X\x0149=ERISX\x0156=XXXXXXXXX\x0134=3\x01\

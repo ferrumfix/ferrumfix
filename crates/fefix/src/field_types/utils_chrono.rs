@@ -1,9 +1,6 @@
 use super::{Tz, ERR_TIME, ERR_UTF8};
 use crate::{Buffer, BufferWriter, FieldType};
-use chrono::DateTime;
-use chrono::NaiveDateTime;
-
-use chrono::Timelike;
+use chrono::{DateTime, NaiveDateTime, Timelike};
 use std::fmt::Write;
 
 /// Specifies whether a timestamp should have millisecond or second precision;

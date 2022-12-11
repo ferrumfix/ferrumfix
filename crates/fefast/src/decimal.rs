@@ -1,8 +1,7 @@
 //! Decimal floating-point arithmetic for FAST.
 
 use std::cmp::{self, Ordering};
-use std::fmt;
-use std::ops;
+use std::{fmt, ops};
 
 /// [`Decimal`] is a fixed 96-bit representation of a decimal number. It can be
 /// used to represent all values of the form `m * 10**e`, with `-2**63 <= m <=

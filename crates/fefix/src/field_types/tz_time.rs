@@ -114,8 +114,7 @@ const fn ascii_digit_to_u32(digit: u8, multiplier: u32) -> u32 {
 
 #[cfg(test)]
 mod test {
-    use super::FieldType;
-    use super::*;
+    use super::{FieldType, *};
 
     struct TestCase {
         bytes: &'static [u8],

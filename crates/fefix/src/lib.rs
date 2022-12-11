@@ -121,11 +121,10 @@ pub use buffer::{Buffer, BufferWriter};
 #[cfg(feature = "codegen")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "codegen")))]
 pub use fefix_codegen as codegen;
-pub use fefix_dictionary::{self as dict, Dictionary, TagU32};
-
 // We don't show derive macros to pollute the docs.
 #[doc(hidden)]
 pub use fefix_derive::FieldType;
+pub use fefix_dictionary::{self as dict, Dictionary, TagU32};
 
 /// Allows to get mutable and immutable references to configuration options.
 pub trait GetConfig {

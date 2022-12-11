@@ -8,7 +8,8 @@
 //! can become daunting to query a [`Dictionary`](crate::Dictionary) for even
 //! the most basic operation.
 
-use crate::{dict, dict::FixDatatype, TagU32};
+use crate::dict::FixDatatype;
+use crate::{dict, TagU32};
 
 #[derive(Debug, Clone)]
 #[doc(hidden)]

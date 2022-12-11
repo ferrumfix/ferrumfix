@@ -15,6 +15,8 @@ mod heartbeat_rule;
 mod resend_request_range;
 mod seq_numbers;
 
+use crate::tagvalue::Message;
+use crate::{FieldType, SetField};
 pub use config::{Config, Configure};
 // pub use connection::*; FIXME
 pub use environment::Environment;
@@ -22,8 +24,6 @@ pub use event_loop::*;
 pub use heartbeat_rule::HeartbeatRule;
 pub use resend_request_range::ResendRequestRange;
 pub use seq_numbers::{SeqNumberError, SeqNumbers};
-
-use crate::{tagvalue::Message, FieldType, SetField};
 use std::ops::Range;
 
 /// The owner of a [`FixConnection`]. It can react to events, store incoming

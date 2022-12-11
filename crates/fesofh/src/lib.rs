@@ -45,7 +45,6 @@ pub use seq_decoder::{Frames, SeqDecoder};
 use std::convert::TryInto;
 use std::io;
 use thiserror::Error;
-
 #[cfg(feature = "utils-tokio")]
 pub use tokio_codec::TokioCodec;
 

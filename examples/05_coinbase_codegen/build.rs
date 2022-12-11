@@ -1,5 +1,4 @@
-use fefix::codegen;
-use fefix::Dictionary;
+use fefix::{codegen, Dictionary};
 use std::fs::File;
 use std::io;
 use std::io::Write;

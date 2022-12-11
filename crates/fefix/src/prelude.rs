@@ -1,10 +1,5 @@
 //! Convenience re-exports of common traits and various items within `fefix`.
 
-pub use crate::dict::Dictionary;
-pub use crate::{
-    Buffer, FieldMap, FieldType, GetConfig, RepeatingGroup, SetField, StreamingDecoder, TagU32,
-};
-
 #[cfg(feature = "fix40")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fix40")))]
 pub use crate::definitions::fix40;
@@ -30,3 +25,7 @@ pub use crate::definitions::fix50sp2;
 #[cfg(feature = "fixt11")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "fixt11")))]
 pub use crate::definitions::fixt11;
+pub use crate::dict::Dictionary;
+pub use crate::{
+    Buffer, FieldMap, FieldType, GetConfig, RepeatingGroup, SetField, StreamingDecoder, TagU32,
+};

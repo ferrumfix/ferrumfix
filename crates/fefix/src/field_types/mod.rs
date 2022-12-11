@@ -76,6 +76,7 @@ mod utils_decimal;
 #[cfg(feature = "utils-rust-decimal")]
 mod utils_rust_decimal;
 
+use crate::FieldType;
 pub use checksum::CheckSum;
 pub use date::Date;
 pub use monthyear::MonthYear;
@@ -86,8 +87,6 @@ pub use timestamp::Timestamp;
 pub use tz::Tz;
 pub use tz_time::TzTime;
 pub use tz_timestamp::TzTimestamp;
-
-use crate::FieldType;
 
 /// Type alias for ISO 3166-1 alpha-2 strings (two-letter country codes).
 pub type Country = [u8; 2];

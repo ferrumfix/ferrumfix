@@ -1,4 +1,5 @@
-use crate::{field_types::Date, field_types::Time, Buffer, FieldType};
+use crate::field_types::{Date, Time};
+use crate::{Buffer, FieldType};
 
 /// Representation for `UtcTimestamp`.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,6 +1,5 @@
 use super::{Error, Frame, Header};
-use bytes::Bytes;
-use bytes::BytesMut;
+use bytes::{Bytes, BytesMut};
 use std::io;
 use tokio_util::codec;
 

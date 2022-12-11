@@ -1,6 +1,5 @@
-use std::fmt;
 use std::fmt::Display;
-use std::io;
+use std::{fmt, io};
 
 /// Any error that is detected solely by examining a template definition, thus
 /// even before receiving any data stream. Counterparties MUST signal static

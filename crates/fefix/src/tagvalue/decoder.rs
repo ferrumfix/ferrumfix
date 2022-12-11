@@ -1,8 +1,7 @@
 use super::{Config, DecodeError, RawDecoder, RawDecoderStreaming, RawFrame};
-use crate::dict::IsFieldDefinition;
-use crate::FieldValueError;
+use crate::dict::{FixDatatype, IsFieldDefinition};
 use crate::{
-    dict::FixDatatype, Buffer, Dictionary, FieldMap, FieldType, GetConfig, RepeatingGroup,
+    Buffer, Dictionary, FieldMap, FieldType, FieldValueError, GetConfig, RepeatingGroup,
     StreamingDecoder, TagU32,
 };
 use nohash_hasher::IntMap;

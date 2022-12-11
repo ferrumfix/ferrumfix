@@ -1,9 +1,6 @@
 use super::{Config, DecodeError};
-use crate::dict::FieldLocation;
-use crate::dict::IsFieldDefinition;
-use crate::FieldType;
-use crate::FieldValueError;
-use crate::{FieldMap, GetConfig, RepeatingGroup};
+use crate::dict::{FieldLocation, IsFieldDefinition};
+use crate::{FieldMap, FieldType, FieldValueError, GetConfig, RepeatingGroup};
 use fefix_dictionary::Dictionary;
 use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, Cow};

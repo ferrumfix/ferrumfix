@@ -1,11 +1,9 @@
 use crate::tagvalue::{DecodeError, DecoderStreaming, Message};
 use crate::StreamingDecoder;
-use futures::select;
-use futures::{AsyncRead, AsyncReadExt, FutureExt};
+use futures::{select, AsyncRead, AsyncReadExt, FutureExt};
 use futures_timer::Delay;
 use std::io;
-use std::time::Duration;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 /// Asynchronous, executor-agnostic low-level event loop for FIX connectors.
 ///
