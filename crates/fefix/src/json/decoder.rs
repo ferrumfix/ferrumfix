@@ -5,6 +5,7 @@ use fefix_dictionary::Dictionary;
 use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 /// A read-only JSON FIX message as parsed by [`Decoder`].
 #[derive(Debug, Copy, Clone)]
@@ -117,7 +118,7 @@ impl<'a> Iterator for MessageFieldsIter<'a> {
 /// A codec for the JSON encoding type.
 #[derive(Debug, Clone)]
 pub struct Decoder {
-    dictionaries: HashMap<String, Dictionary>,
+    dictionaries: HashMap<String, Arc<Dictionary>>,
     message_builder: MessageInternal<'static>,
     config: Config,
 }
@@ -127,7 +128,7 @@ impl Decoder {
     /// of incoming messages' fields. Configuration options are initialized via [`Default`].
     pub fn new(dict: Dictionary) -> Self {
         let mut dictionaries = HashMap::new();
-        dictionaries.insert(dict.get_version().to_string(), dict);
+        dictionaries.insert(dict.get_version().to_string(), Arc::new(dict));
         Self {
             dictionaries,
             message_builder: MessageInternal::default(),

@@ -8,7 +8,7 @@ fn main() -> io::Result<()> {
     let fix_dictionary = coinbase_fix_dictionary()?;
     let rust_code = {
         let settings = codegen::Settings::default();
-        codegen::gen_definitions(fix_dictionary, &settings)
+        codegen::gen_definitions(&fix_dictionary, &settings)
     };
     let mut file = {
         let path = project_root().join("src").join("gdax.rs");
@@ -23,7 +23,7 @@ fn coinbase_fix_dictionary() -> io::Result<Dictionary> {
         let path = project_root().join("src").join("coinbase_quickfix.xml");
         std::fs::read_to_string(path)?
     };
-    Ok(Dictionary::from_quickfix_spec(quickfix_spec).expect("Invalid specs."))
+    Ok(Dictionary::from_quickfix_spec(&quickfix_spec).expect("Invalid specs."))
 }
 
 fn project_root() -> PathBuf {

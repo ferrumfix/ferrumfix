@@ -6,7 +6,7 @@ pub struct QuickFixReader<'a> {
     node_with_components: roxmltree::Node<'a, 'a>,
     node_with_messages: roxmltree::Node<'a, 'a>,
     node_with_fields: roxmltree::Node<'a, 'a>,
-    builder: DictionaryBuilder,
+    dict: Dictionary,
 }
 
 impl<'a> QuickFixReader<'a> {
@@ -14,7 +14,7 @@ impl<'a> QuickFixReader<'a> {
         let mut reader = Self::empty(xml_document)?;
         for child in reader.node_with_fields.children() {
             if child.is_element() {
-                import_field(&mut reader.builder, child)?;
+                import_field(&mut reader.dict, child)?;
             }
         }
         for child in reader.node_with_components.children() {
@@ -23,28 +23,24 @@ impl<'a> QuickFixReader<'a> {
                     .attribute("name")
                     .ok_or(ParseDictionaryError::InvalidFormat)?
                     .to_string();
-                import_component(&mut reader.builder, child, name)?;
+                import_component(&mut reader.dict, child, &name)?;
             }
         }
         for child in reader.node_with_messages.children() {
             if child.is_element() {
-                import_message(&mut reader.builder, child)?;
+                import_message(&mut reader.dict, child)?;
             }
         }
         // `StandardHeader` and `StandardTrailer` are defined in ad-hoc
         // sections of the XML files. They're always there, even if
         // potentially empty (e.g. FIX 5.0+).
+        import_component(&mut reader.dict, reader.node_with_header, "StandardHeader")?;
         import_component(
-            &mut reader.builder,
-            reader.node_with_header,
-            "StandardHeader",
-        )?;
-        import_component(
-            &mut reader.builder,
+            &mut reader.dict,
             reader.node_with_trailer,
             "StandardTrailer",
         )?;
-        Ok(reader.builder.build())
+        Ok(reader.dict)
     }
 
     fn empty(xml_document: &'a roxmltree::Document<'a>) -> ParseResult<Self> {
@@ -85,7 +81,7 @@ impl<'a> QuickFixReader<'a> {
             }
         );
         Ok(QuickFixReader {
-            builder: DictionaryBuilder::new(version),
+            dict: Dictionary::new(version),
             node_with_header: find_tagged_child("header")?,
             node_with_trailer: find_tagged_child("trailer")?,
             node_with_messages: find_tagged_child("messages")?,
@@ -95,16 +91,16 @@ impl<'a> QuickFixReader<'a> {
     }
 }
 
-fn import_field(builder: &mut DictionaryBuilder, node: roxmltree::Node) -> ParseResult<InternalId> {
+fn import_field(builder: &mut Dictionary, node: roxmltree::Node) -> ParseResult<()> {
     if node.tag_name().name() != "field" {
         return Err(ParseDictionaryError::InvalidFormat);
     }
-    let data_type_iid = import_datatype(builder, node);
-    let value_restrictions = value_restrictions_from_node(node, data_type_iid);
+    let data_type_name = import_datatype(builder, node);
+    let value_restrictions = value_restrictions_from_node(node, data_type_name.clone());
     let name = node
         .attribute("name")
         .ok_or(ParseDictionaryError::InvalidFormat)?
-        .to_string();
+        .into();
     let tag = node
         .attribute("number")
         .ok_or(ParseDictionaryError::InvalidFormat)?
@@ -113,7 +109,7 @@ fn import_field(builder: &mut DictionaryBuilder, node: roxmltree::Node) -> Parse
     let field = FieldData {
         name,
         tag,
-        data_type_iid,
+        data_type_name,
         associated_data_tag: None,
         value_restrictions,
         required: true,
@@ -122,34 +118,32 @@ fn import_field(builder: &mut DictionaryBuilder, node: roxmltree::Node) -> Parse
         base_category_id: None,
         description: None,
     };
-    Ok(builder.add_field(field))
+    builder.add_field(field);
+    Ok(())
 }
 
-fn import_message(
-    builder: &mut DictionaryBuilder,
-    node: roxmltree::Node,
-) -> ParseResult<InternalId> {
+fn import_message(dict: &mut Dictionary, node: roxmltree::Node) -> ParseResult<()> {
     debug_assert_eq!(node.tag_name().name(), "message");
-    let category_iid = import_category(builder, node)?;
+    let _category = import_category(dict, node)?;
     let mut layout_items = LayoutItems::new();
     for child in node.children() {
         if child.is_element() {
             // We don't need to generate new IID's because we're dealing
             // with ranges.
-            layout_items.push(import_layout_item(builder, child)?);
+            layout_items.push(import_layout_item(dict, child)?);
         }
     }
     let message = MessageData {
         name: node
             .attribute("name")
             .ok_or(ParseDictionaryError::InvalidFormat)?
-            .to_string(),
+            .into(),
         msg_type: node
             .attribute("msgtype")
             .ok_or(ParseDictionaryError::InvalidFormat)?
-            .to_string(),
+            .into(),
         component_id: 0,
-        category_iid,
+        category_name: "FIXME".into(),
         section_id: String::new(),
         layout_items,
         abbr_name: None,
@@ -157,18 +151,15 @@ fn import_message(
         elaboration: None,
         description: String::new(),
     };
-    Ok(builder.add_message(message))
+    dict.add_message(message);
+    Ok(())
 }
 
-fn import_component<S: AsRef<str>>(
-    builder: &mut DictionaryBuilder,
-    node: roxmltree::Node,
-    name: S,
-) -> ParseResult<InternalId> {
+fn import_component(dict: &mut Dictionary, node: roxmltree::Node, name: &str) -> ParseResult<()> {
     let mut layout_items = LayoutItems::new();
     for child in node.children() {
         if child.is_element() {
-            layout_items.push(import_layout_item(builder, child)?);
+            layout_items.push(import_layout_item(dict, child)?);
         }
     }
     let component = ComponentData {
@@ -180,23 +171,15 @@ fn import_component<S: AsRef<str>>(
             is_optimized: false,
         },
         layout_items,
-        category_iid: 0, // FIXME
-        name: name.as_ref().to_string(),
+        category_name: "".into(), // FIXME
+        name: name.into(),
         abbr_name: None,
     };
-    let iid = builder.add_component(component);
-    match builder.symbol(KeyRef::ComponentByName(name.as_ref())) {
-        Some(x) => Ok(*x),
-        None => {
-            builder
-                .symbol_table
-                .insert(Key::ComponentByName(name.as_ref().to_string()), iid);
-            Ok(iid)
-        }
-    }
+    dict.add_component(component);
+    Ok(())
 }
 
-fn import_datatype(builder: &mut DictionaryBuilder, node: roxmltree::Node) -> InternalId {
+fn import_datatype(dict: &mut Dictionary, node: roxmltree::Node) -> SmartString {
     // References should only happen at <field> tags.
     debug_assert_eq!(node.tag_name().name(), "field");
     let datatype = {
@@ -205,29 +188,23 @@ fn import_datatype(builder: &mut DictionaryBuilder, node: roxmltree::Node) -> In
         // Translate that into a real datatype.
         FixDatatype::from_quickfix_name(quickfix_name).unwrap()
     };
+
     // Get the official (not QuickFIX's) name of `datatype`.
     let name = datatype.name();
-    match builder.symbol(KeyRef::DatatypeByName(name)) {
-        Some(x) => *x,
-        None => {
-            let iid = builder.data_types.len() as u32;
-            let data = DatatypeData {
-                datatype,
-                description: String::new(),
-                examples: Vec::new(),
-            };
-            builder.data_types.push(data);
-            builder
-                .symbol_table
-                .insert(Key::DatatypeByName(name.to_string()), iid);
-            iid
-        }
+    if dict.datatype_by_name(name).is_none() {
+        let dt = DatatypeData {
+            datatype,
+            description: String::new(),
+            examples: Vec::new(),
+        };
+        dict.add_datatype(dt);
     }
+    name.into()
 }
 
 fn value_restrictions_from_node(
     node: roxmltree::Node,
-    _datatype: InternalId,
+    _datatype_name: SmartString,
 ) -> Option<Vec<FieldEnumData>> {
     let mut values = Vec::new();
     for child in node.children() {
@@ -248,34 +225,31 @@ fn value_restrictions_from_node(
     }
 }
 
-fn import_layout_item(
-    builder: &mut DictionaryBuilder,
-    node: roxmltree::Node,
-) -> ParseResult<LayoutItemData> {
+fn import_layout_item(dict: &mut Dictionary, node: roxmltree::Node) -> ParseResult<LayoutItemData> {
     // This processing step requires on fields being already present in
     // the dictionary.
-    debug_assert_ne!(builder.fields.len(), 0);
+    debug_assert_ne!(dict.fields().len(), 0);
     let name = node.attribute("name").unwrap();
     let required = node.attribute("required").unwrap() == "Y";
     let tag = node.tag_name().name();
     let kind = match tag {
         "field" => {
-            let field_iid = builder.symbol(KeyRef::FieldByName(name)).unwrap();
-            LayoutItemKindData::Field { iid: *field_iid }
+            let field_tag = dict.field_by_name(name).unwrap().tag().get();
+            LayoutItemKindData::Field { tag: field_tag }
         }
         "component" => {
             // Components may *not* be already present.
-            let component_iid = import_component(builder, node, name)?;
-            LayoutItemKindData::Component { iid: component_iid }
+            import_component(dict, node, name)?;
+            LayoutItemKindData::Component { name: name.into() }
         }
         "group" => {
-            let len_field_iid = *builder.symbol(KeyRef::FieldByName(name)).unwrap();
+            let len_field_tag = dict.field_by_name(name).unwrap().tag().get();
             let mut items = Vec::new();
             for child in node.children().filter(|n| n.is_element()) {
-                items.push(import_layout_item(builder, child)?);
+                items.push(import_layout_item(dict, child)?);
             }
             LayoutItemKindData::Group {
-                len_field_iid,
+                len_field_tag,
                 items,
             }
         }
@@ -287,26 +261,18 @@ fn import_layout_item(
     Ok(item)
 }
 
-fn import_category(
-    builder: &mut DictionaryBuilder,
-    node: roxmltree::Node,
-) -> ParseResult<InternalId> {
+fn import_category(dict: &mut Dictionary, node: roxmltree::Node) -> ParseResult<()> {
     debug_assert_eq!(node.tag_name().name(), "message");
     let name = node.attribute("msgcat").ok_or(ParseError::InvalidFormat)?;
-    Ok(match builder.symbol(KeyRef::CategoryByName(name)) {
-        Some(x) => *x,
-        None => {
-            let iid = builder.categories.len() as u32;
-            builder.categories.push(CategoryData {
-                name: name.to_string(),
-                fixml_filename: String::new(),
-            });
-            builder
-                .symbol_table
-                .insert(Key::CategoryByName(name.to_string()), iid);
-            iid
-        }
-    })
+
+    if dict.category_by_name(name).is_none() {
+        dict.add_category(CategoryData {
+            name: name.to_string(),
+            fixml_filename: String::new(),
+        });
+    }
+
+    Ok(())
 }
 
 type ParseError = ParseDictionaryError;

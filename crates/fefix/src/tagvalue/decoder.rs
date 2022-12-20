@@ -58,7 +58,8 @@ impl Decoder {
             builder: MessageBuilder::default(),
             raw_decoder: RawDecoder::default(),
             tag_lookup: dict
-                .iter_fields()
+                .fields()
+                .iter()
                 .filter_map(|field| {
                     let mut fix_type = field.data_type().basetype();
                     if field.is_num_in_group() {

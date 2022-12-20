@@ -37,7 +37,7 @@ fn codegen(fix_dictionary: Dictionary, filename: &str) -> io::Result<()> {
     let dir = PathBuf::from(var("OUT_DIR").unwrap());
     let codegen_settings = &mut codegen::Settings::default();
     codegen_settings.fefix_crate_name = "crate".to_string();
-    let code = codegen::gen_definitions(fix_dictionary, codegen_settings);
+    let code = codegen::gen_definitions(&fix_dictionary, codegen_settings);
     let path = dir.join(filename);
     let file = &mut File::create(path)?;
     file.write_all(code.as_bytes())?;

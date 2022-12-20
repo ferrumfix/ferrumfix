@@ -33,6 +33,7 @@ fixt11 = []
 fnv = "1"
 quick-xml = "0.23"
 roxmltree = "0.14"
+smartstring = "1"
 strum = "0.24"
 strum_macros = "0.24"
 

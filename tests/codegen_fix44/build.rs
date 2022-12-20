@@ -9,7 +9,7 @@ fn main() -> io::Result<()> {
     let fix_dictionary = Dictionary::fix44();
     let rust_code = {
         let settings = fefix::codegen::Settings::default();
-        fefix::codegen::gen_definitions(fix_dictionary, &settings)
+        fefix::codegen::gen_definitions(&fix_dictionary, &settings)
     };
     file.write_all(rust_code.as_bytes())?;
     Ok(())

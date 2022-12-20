@@ -155,7 +155,7 @@ impl Default for Settings {
 
 /// Generates the Rust code for a FIX field definition.
 pub fn codegen_field_definition_struct(
-    fix_dictionary: dict::Dictionary,
+    fix_dictionary: &dict::Dictionary,
     field: dict::Field,
 ) -> String {
     let mut header = FnvHashSet::default();
@@ -195,16 +195,18 @@ pub fn codegen_field_definition_struct(
 /// The Rust code will be free of any leading and trailing whitespace.
 /// An effort is made to provide good formatting, but users shouldn't rely on it
 /// and assume that formatting might be bad.
-pub fn gen_definitions(fix_dictionary: dict::Dictionary, settings: &Settings) -> String {
+pub fn gen_definitions(fix_dictionary: &dict::Dictionary, settings: &Settings) -> String {
     let enums = fix_dictionary
-        .iter_fields()
+        .fields()
+        .iter()
         .filter(|f| f.enums().is_some())
-        .map(|f| codegen_field_type_enum(f, settings))
+        .map(|f| codegen_field_type_enum(*f, settings))
         .collect::<Vec<String>>()
         .join("\n\n");
     let field_defs = fix_dictionary
-        .iter_fields()
-        .map(|field| codegen_field_definition_struct(fix_dictionary.clone(), field))
+        .fields()
+        .iter()
+        .map(|field| codegen_field_definition_struct(fix_dictionary, *field))
         .collect::<Vec<String>>()
         .join("\n");
     let top_comment = onixs_link_to_dictionary(fix_dictionary.get_version()).unwrap_or_default();
@@ -275,7 +277,7 @@ fn onixs_dictionary_id(fix_version: &str) -> Option<&str> {
 }
 
 fn gen_field_definition_with_hashsets(
-    fix_dictionary: dict::Dictionary,
+    fix_dictionary: &dict::Dictionary,
     header_tags: &FnvHashSet<TagU32>,
     trailer_tags: &FnvHashSet<TagU32>,
     field: dict::Field,
@@ -327,7 +329,7 @@ mod test {
     fn syntax_of_field_definitions_is_ok() {
         let codegen_settings = Settings::default();
         for dict in dict::Dictionary::common_dictionaries().into_iter() {
-            let code = gen_definitions(dict, &codegen_settings);
+            let code = gen_definitions(&dict, &codegen_settings);
             syn::parse_file(code.as_str()).unwrap();
         }
     }

@@ -2,12 +2,11 @@
 
 mod quickfix;
 
-use self::symbol_table::{Key, KeyRef, SymbolTable, SymbolTableIndex};
 pub use datatype::FixDatatype;
 use fnv::FnvHashMap;
 use quickfix::{ParseDictionaryError, QuickFixReader};
-use std::fmt;
-use std::sync::Arc;
+use smartstring::alias::String as SmartString;
+use std::{fmt, sync::Arc};
 
 /// Type alias for FIX tags: 32-bit unsigned integers, strictly positive.
 pub type TagU32 = std::num::NonZeroU32;
@@ -52,10 +51,8 @@ pub enum FieldLocation {
     Trailer,
 }
 
-type InternalId = u32;
-
 /// A mapping from FIX version strings to [`Dictionary`] values.
-pub type Dictionaries = FnvHashMap<String, Dictionary>;
+pub type Dictionaries = FnvHashMap<String, Arc<Dictionary>>;
 
 /// Specifies business semantics for application-level entities within the FIX
 /// Protocol.
@@ -73,28 +70,30 @@ pub type Dictionaries = FnvHashMap<String, Dictionary>;
 /// application protocol only for FIX 5.0 and subsequent versions. All FIX
 /// Dictionaries for older versions will also contain information about the
 /// session layer.
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub struct Dictionary {
-    inner: Arc<DictionaryData>,
-}
-
-#[derive(Clone, Debug)]
-struct DictionaryData {
     version: String,
-    symbol_table: SymbolTable,
-    abbreviations: Vec<AbbreviationData>,
-    data_types: Vec<DatatypeData>,
-    fields: Vec<FieldData>,
-    components: Vec<ComponentData>,
-    messages: Vec<MessageData>,
+
+    abbreviation_definitions: FnvHashMap<SmartString, AbbreviationData>,
+
+    data_types_by_name: FnvHashMap<SmartString, DatatypeData>,
+
+    fields_by_tags: FnvHashMap<u32, FieldData>,
+    field_tags_by_name: FnvHashMap<SmartString, u32>,
+
+    components_by_name: FnvHashMap<SmartString, ComponentData>,
+
+    messages_by_msgtype: FnvHashMap<SmartString, MessageData>,
+    message_msgtypes_by_name: FnvHashMap<SmartString, SmartString>,
+
     //layout_items: Vec<LayoutItemData>,
-    categories: Vec<CategoryData>,
+    categories_by_name: FnvHashMap<SmartString, CategoryData>,
     header: Vec<FieldData>,
 }
 
 impl fmt::Display for Dictionary {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "<fix type='FIX' version='{}'>", self.inner.version)?;
+        writeln!(f, "<fix type='FIX' version='{}'>", self.version)?;
         {
             writeln!(f, " <header>")?;
             let std_header = self.component_by_name("StandardHeader").unwrap();
@@ -105,7 +104,7 @@ impl fmt::Display for Dictionary {
         }
         {
             writeln!(f, " <messages>")?;
-            for message in self.iter_messages() {
+            for message in self.messages() {
                 writeln!(
                     f,
                     "  <message name='{}' msgtype='{}' msgcat='TODO'>",
@@ -166,28 +165,20 @@ fn display_layout_item(indent: u32, item: LayoutItem, f: &mut fmt::Formatter) ->
     Ok(())
 }
 
-impl DictionaryData {
-    fn symbol(&self, pkey: KeyRef) -> Option<&u32> {
-        self.symbol_table.get(&pkey as &dyn SymbolTableIndex)
-    }
-}
-
 impl Dictionary {
     /// Creates a new empty FIX Dictionary named `version`.
     fn new<S: ToString>(version: S) -> Self {
         Dictionary {
-            inner: Arc::new(DictionaryData {
-                version: version.to_string(),
-                symbol_table: FnvHashMap::default(),
-                abbreviations: Vec::new(),
-                data_types: Vec::new(),
-                fields: Vec::new(),
-                components: Vec::new(),
-                messages: Vec::new(),
-                //layout_items: Vec::new(),
-                categories: Vec::new(),
-                header: Vec::new(),
-            }),
+            header: Vec::new(), // FIXME
+            version: version.to_string(),
+            abbreviation_definitions: FnvHashMap::default(),
+            data_types_by_name: FnvHashMap::default(),
+            fields_by_tags: FnvHashMap::default(),
+            field_tags_by_name: FnvHashMap::default(),
+            components_by_name: FnvHashMap::default(),
+            messages_by_msgtype: FnvHashMap::default(),
+            message_msgtypes_by_name: FnvHashMap::default(),
+            categories_by_name: FnvHashMap::default(),
         }
     }
 
@@ -197,11 +188,6 @@ impl Dictionary {
         let xml_document =
             roxmltree::Document::parse(input).map_err(|_| ParseDictionaryError::InvalidFormat)?;
         QuickFixReader::new(&xml_document)
-    }
-
-    /// Creates a new empty FIX Dictionary with `FIX.???` as its version string.
-    pub fn empty() -> Self {
-        Self::new("FIX.???")
     }
 
     /// Returns the version string associated with this [`Dictionary`] (e.g.
@@ -214,7 +200,7 @@ impl Dictionary {
     /// assert_eq!(dict.get_version(), "FIX.4.4");
     /// ```
     pub fn get_version(&self) -> &str {
-        self.inner.version.as_str()
+        self.version.as_str()
     }
 
     /// Creates a new [`Dictionary`] for FIX 4.0.
@@ -312,16 +298,12 @@ impl Dictionary {
         ]
     }
 
-    fn symbol(&self, pkey: KeyRef) -> Option<&u32> {
-        self.inner.symbol(pkey)
-    }
-
     /// Return the known abbreviation for `term` -if any- according to the
     /// documentation of this FIX Dictionary.
     pub fn abbreviation_for(&self, term: &str) -> Option<Abbreviation> {
-        self.symbol(KeyRef::Abbreviation(term))
-            .map(|iid| self.inner.abbreviations.get(*iid as usize).unwrap())
-            .map(move |data| Abbreviation(self, data))
+        self.abbreviation_definitions
+            .get(term)
+            .map(|data| Abbreviation(self, data))
     }
 
     /// Returns the [`Message`](Message) associated with `name`, if any.
@@ -336,9 +318,8 @@ impl Dictionary {
     /// assert_eq!(msg1.name(), msg2.name());
     /// ```
     pub fn message_by_name(&self, name: &str) -> Option<Message> {
-        self.symbol(KeyRef::MessageByName(name))
-            .map(|iid| self.inner.messages.get(*iid as usize).unwrap())
-            .map(|data| Message(self, data))
+        let msg_type = self.message_msgtypes_by_name.get(name)?;
+        self.message_by_msgtype(msg_type)
     }
 
     /// Returns the [`Message`](Message) that has the given `msgtype`, if any.
@@ -353,15 +334,15 @@ impl Dictionary {
     /// assert_eq!(msg1.name(), msg2.name());
     /// ```
     pub fn message_by_msgtype(&self, msgtype: &str) -> Option<Message> {
-        self.symbol(KeyRef::MessageByMsgType(msgtype))
-            .map(|iid| self.inner.messages.get(*iid as usize).unwrap())
+        self.messages_by_msgtype
+            .get(msgtype)
             .map(|data| Message(self, data))
     }
 
     /// Returns the [`Component`] named `name`, if any.
     pub fn component_by_name(&self, name: &str) -> Option<Component> {
-        self.symbol(KeyRef::ComponentByName(name))
-            .map(|iid| self.inner.components.get(*iid as usize).unwrap())
+        self.components_by_name
+            .get(name)
             .map(|data| Component(self, data))
     }
 
@@ -375,8 +356,8 @@ impl Dictionary {
     /// assert_eq!(dt.name(), "String");
     /// ```
     pub fn datatype_by_name(&self, name: &str) -> Option<Datatype> {
-        self.symbol(KeyRef::DatatypeByName(name))
-            .map(|iid| self.inner.data_types.get(*iid as usize).unwrap())
+        self.data_types_by_name
+            .get(name)
             .map(|data| Datatype(self, data))
     }
 
@@ -391,159 +372,119 @@ impl Dictionary {
     /// assert_eq!(field1.name(), field2.name());
     /// ```
     pub fn field_by_tag(&self, tag: u32) -> Option<Field> {
-        self.symbol(KeyRef::FieldByTag(tag))
-            .map(|iid| self.inner.fields.get(*iid as usize).unwrap())
-            .map(|data| Field(self, data))
+        self.fields_by_tags.get(&tag).map(|data| Field(self, data))
     }
 
     /// Returns the [`Field`] named `name`, if any.
     pub fn field_by_name(&self, name: &str) -> Option<Field> {
-        self.symbol(KeyRef::FieldByName(name))
-            .map(|iid| self.inner.fields.get(*iid as usize).unwrap())
-            .map(|data| Field(self, data))
+        let tag = self.field_tags_by_name.get(name)?;
+        self.field_by_tag(*tag)
     }
 
-    /// Returns an [`Iterator`] over all [`Datatype`] defined
-    /// in `self`. Items are in no particular order.
+    /// Returns the [`Category`] named `name`, if any.
+    fn category_by_name(&self, name: &str) -> Option<Category> {
+        self.categories_by_name
+            .get(name)
+            .map(|data| Category(self, data))
+    }
+
+    /// Returns a [`Vec`] of all [`Datatype`]'s in this [`Dictionary`]. The ordering
+    /// of items is not specified.
     ///
     /// ```
     /// use fefix_dictionary::Dictionary;
     ///
     /// let dict = Dictionary::fix44();
     /// // FIX 4.4 defines 23 (FIXME) datatypes.
-    /// assert_eq!(dict.iter_datatypes().count(), 23);
+    /// assert_eq!(dict.datatypes().len(), 23);
     /// ```
-    pub fn iter_datatypes(&self) -> impl Iterator<Item = Datatype> {
-        self.inner
-            .data_types
-            .iter()
-            .map(move |data| Datatype(self, data))
+    pub fn datatypes(&self) -> Vec<Datatype> {
+        self.data_types_by_name
+            .values()
+            .map(|data| Datatype(self, data))
+            .collect()
     }
 
-    /// Returns an [`Iterator`] over this [`Dictionary`]'s messages. Items are in
-    /// no particular order.
+    /// Returns a [`Vec`] of all [`Message`]'s in this [`Dictionary`]. The ordering
+    /// of items is not specified.
     ///
     /// ```
     /// use fefix_dictionary::Dictionary;
     ///
     /// let dict = Dictionary::fix44();
-    /// let msg = dict.iter_messages().find(|m| m.name() == "MarketDataRequest");
+    /// let msgs = dict.messages();
+    /// let msg = msgs.iter().find(|m| m.name() == "MarketDataRequest");
     /// assert_eq!(msg.unwrap().msg_type(), "V");
     /// ```
-    pub fn iter_messages(&self) -> impl Iterator<Item = Message> {
-        self.inner
-            .messages
-            .iter()
-            .map(move |data| Message(self, data))
+    pub fn messages(&self) -> Vec<Message> {
+        self.messages_by_msgtype
+            .values()
+            .map(|data| Message(self, data))
+            .collect()
     }
 
-    /// Returns an [`Iterator`] over this [`Dictionary`]'s categories. Items are
-    /// in no particular order.
-    pub fn iter_categories(&self) -> impl Iterator<Item = Category> {
-        self.inner
-            .categories
-            .iter()
-            .map(move |data| Category(self, data))
+    /// Returns a [`Vec`] of all [`Category`]'s in this [`Dictionary`]. The ordering
+    /// of items is not specified.
+    pub fn categories(&self) -> Vec<Category> {
+        self.categories_by_name
+            .values()
+            .map(|data| Category(self, data))
+            .collect()
     }
 
-    /// Returns an [`Iterator`] over this [`Dictionary`]'s fields. Items are
-    /// in no particular order.
-    pub fn iter_fields(&self) -> impl Iterator<Item = Field> {
-        self.inner.fields.iter().map(move |data| Field(self, data))
+    /// Returns a [`Vec`] of all [`Field`]'s in this [`Dictionary`]. The ordering
+    /// of items is not specified.
+    pub fn fields(&self) -> Vec<Field> {
+        self.fields_by_tags
+            .values()
+            .map(|data| Field(self, data))
+            .collect()
     }
 
-    /// Returns an [`Iterator`] over this [`Dictionary`]'s components. Items are in
-    /// no particular order.
-    pub fn iter_components(&self) -> impl Iterator<Item = Component> {
-        self.inner
-            .components
-            .iter()
-            .map(move |data| Component(self, data))
+    /// Returns a [`Vec`] of all [`Component`]'s in this [`Dictionary`]. The ordering
+    /// of items is not specified.
+    pub fn components(&self) -> Vec<Component> {
+        self.components_by_name
+            .values()
+            .map(|data| Component(self, data))
+            .collect()
     }
 }
 
-struct DictionaryBuilder {
-    version: String,
-    symbol_table: FnvHashMap<Key, InternalId>,
-    abbreviations: Vec<AbbreviationData>,
-    data_types: Vec<DatatypeData>,
-    fields: Vec<FieldData>,
-    components: Vec<ComponentData>,
-    messages: Vec<MessageData>,
-    //layout_items: Vec<LayoutItemData>,
-    categories: Vec<CategoryData>,
-    header: Vec<FieldData>,
-}
-
-impl DictionaryBuilder {
-    pub fn new(version: String) -> Self {
-        Self {
-            version,
-            symbol_table: FnvHashMap::default(),
-            abbreviations: Vec::new(),
-            data_types: Vec::new(),
-            fields: Vec::new(),
-            components: Vec::new(),
-            messages: Vec::new(),
-            //layout_items: Vec::new(),
-            categories: Vec::new(),
-            header: Vec::new(),
-        }
+/// Builder utilities
+impl Dictionary {
+    fn add_field(&mut self, field: FieldData) {
+        self.field_tags_by_name
+            .insert(field.name.clone(), field.tag);
+        self.fields_by_tags.insert(field.tag, field);
     }
 
-    pub fn symbol(&self, pkey: KeyRef) -> Option<&InternalId> {
-        self.symbol_table.get(&pkey as &dyn SymbolTableIndex)
+    fn add_message(&mut self, message: MessageData) {
+        self.message_msgtypes_by_name
+            .insert(message.name.clone(), message.msg_type.clone());
+        self.messages_by_msgtype
+            .insert(message.msg_type.clone(), message);
     }
 
-    pub fn add_field(&mut self, field: FieldData) -> InternalId {
-        let iid = self.fields.len() as InternalId;
-        self.symbol_table
-            .insert(Key::FieldByName(field.name.clone()), iid);
-        self.symbol_table
-            .insert(Key::FieldByTag(field.tag as u32), iid);
-        self.fields.push(field);
-        iid
+    fn add_component(&mut self, component: ComponentData) {
+        self.components_by_name
+            .insert(component.name.clone(), component);
     }
 
-    pub fn add_message(&mut self, message: MessageData) -> InternalId {
-        let iid = self.messages.len() as InternalId;
-        self.symbol_table
-            .insert(Key::MessageByName(message.name.clone()), iid);
-        self.symbol_table
-            .insert(Key::MessageByMsgType(message.msg_type.to_string()), iid);
-        self.messages.push(message);
-        iid
+    fn add_datatype(&mut self, datatype: DatatypeData) {
+        self.data_types_by_name
+            .insert(datatype.datatype.name().into(), datatype);
     }
 
-    pub fn add_component(&mut self, component: ComponentData) -> InternalId {
-        let iid = self.components.len() as InternalId;
-        self.symbol_table
-            .insert(Key::ComponentByName(component.name.to_string()), iid);
-        self.components.push(component);
-        iid
-    }
-
-    pub fn build(self) -> Dictionary {
-        Dictionary {
-            inner: Arc::new(DictionaryData {
-                version: self.version,
-                symbol_table: self.symbol_table,
-                abbreviations: self.abbreviations,
-                data_types: self.data_types,
-                fields: self.fields,
-                components: self.components,
-                messages: self.messages,
-                //layout_items: self.layout_items,
-                categories: self.categories,
-                header: self.header,
-            }),
-        }
+    fn add_category(&mut self, category: CategoryData) {
+        self.categories_by_name
+            .insert(category.name.clone().into(), category);
     }
 }
 
 #[derive(Clone, Debug)]
 struct AbbreviationData {
-    abbreviation: String,
+    abbreviation: SmartString,
     is_last: bool,
 }
 
@@ -581,11 +522,11 @@ struct ComponentData {
     id: usize,
     component_type: FixmlComponentAttributes,
     layout_items: Vec<LayoutItemData>,
-    category_iid: InternalId,
+    category_name: SmartString,
     /// The human readable name of the component.
-    name: String,
+    name: SmartString,
     /// The name for this component when used in an XML context.
-    abbr_name: Option<String>,
+    abbr_name: Option<SmartString>,
 }
 
 /// A [`Component`] is an ordered collection of fields and/or other components.
@@ -621,13 +562,9 @@ impl<'a> Component<'a> {
 
     /// Returns the [`Category`] to which `self` belongs.
     pub fn category(&self) -> Category {
-        let data = self
-            .0
-            .inner
-            .categories
-            .get(self.1.category_iid as usize)
-            .unwrap();
-        Category(self.0, data)
+        self.0
+            .category_by_name(self.1.category_name.as_str())
+            .unwrap()
     }
 
     /// Returns an [`Iterator`] over all items that are part of `self`.
@@ -1094,12 +1031,12 @@ mod datatype {
 #[derive(Clone, Debug)]
 struct FieldData {
     /// A human readable string representing the name of the field.
-    name: String,
+    name: SmartString,
     /// **Primary key.** A positive integer representing the unique
     /// identifier for this field type.
     tag: u32,
     /// The datatype of the field.
-    data_type_iid: InternalId,
+    data_type_name: SmartString,
     /// The associated data field. If given, this field represents the length of
     /// the referenced data field
     associated_data_tag: Option<usize>,
@@ -1207,13 +1144,9 @@ impl<'a> Field<'a> {
 
     /// Returns the [`Datatype`] of `self`.
     pub fn data_type(&self) -> Datatype {
-        let data = self
-            .0
-            .inner
-            .data_types
-            .get(self.1.data_type_iid as usize)
-            .unwrap();
-        Datatype(self.0, data)
+        self.0
+            .datatype_by_name(self.1.data_type_name.as_str())
+            .unwrap()
     }
 }
 
@@ -1235,14 +1168,14 @@ impl<'a> IsFieldDefinition for Field<'a> {
 #[allow(dead_code)]
 enum LayoutItemKindData {
     Component {
-        iid: InternalId,
+        name: SmartString,
     },
     Group {
-        len_field_iid: u32,
+        len_field_tag: u32,
         items: Vec<LayoutItemData>,
     },
     Field {
-        iid: InternalId,
+        tag: u32,
     },
 }
 
@@ -1265,24 +1198,22 @@ pub trait IsFieldDefinition {
 
 fn layout_item_kind<'a>(item: &'a LayoutItemKindData, dict: &'a Dictionary) -> LayoutItemKind<'a> {
     match item {
-        LayoutItemKindData::Component { iid } => LayoutItemKind::Component(Component(
-            dict,
-            dict.inner.components.get(*iid as usize).unwrap(),
-        )),
+        LayoutItemKindData::Component { name } => {
+            LayoutItemKind::Component(dict.component_by_name(name).unwrap())
+        }
         LayoutItemKindData::Group {
-            len_field_iid,
+            len_field_tag,
             items: items_data,
         } => {
             let items = items_data
                 .iter()
                 .map(|item_data| LayoutItem(dict, item_data))
                 .collect::<Vec<_>>();
-            let len_field_data = &dict.inner.fields[*len_field_iid as usize];
-            let len_field = Field(dict, len_field_data);
+            let len_field = dict.field_by_tag(*len_field_tag).unwrap();
             LayoutItemKind::Group(len_field, items)
         }
-        LayoutItemKindData::Field { iid } => {
-            LayoutItemKind::Field(Field(dict, dict.inner.fields.get(*iid as usize).unwrap()))
+        LayoutItemKindData::Field { tag } => {
+            LayoutItemKind::Field(dict.field_by_tag(*tag).unwrap())
         }
     }
 }
@@ -1315,35 +1246,23 @@ impl<'a> LayoutItem<'a> {
     }
 
     /// Returns the human-readable name of `self`.
-    pub fn tag_text(&self) -> &str {
+    pub fn tag_text(&self) -> String {
         match &self.1.kind {
-            LayoutItemKindData::Component { iid } => self
-                .0
-                .inner
-                .components
-                .get(*iid as usize)
-                .unwrap()
-                .name
-                .as_str(),
+            LayoutItemKindData::Component { name } => {
+                self.0.component_by_name(name).unwrap().name().to_string()
+            }
             LayoutItemKindData::Group {
-                len_field_iid,
+                len_field_tag,
                 items: _items,
             } => self
                 .0
-                .inner
-                .fields
-                .get(*len_field_iid as usize)
+                .field_by_tag(*len_field_tag)
                 .unwrap()
-                .name
-                .as_str(),
-            LayoutItemKindData::Field { iid } => self
-                .0
-                .inner
-                .fields
-                .get(*iid as usize)
-                .unwrap()
-                .name
-                .as_str(),
+                .name()
+                .to_string(),
+            LayoutItemKindData::Field { tag } => {
+                self.0.field_by_tag(*tag).unwrap().name().to_string()
+            }
         }
     }
 }
@@ -1356,16 +1275,16 @@ struct MessageData {
     component_id: u32,
     /// **Primary key**. The unique character identifier of this message
     /// type; used literally in FIX messages.
-    msg_type: String,
+    msg_type: SmartString,
     /// The name of this message type.
-    name: String,
+    name: SmartString,
     /// Identifier of the category to which this message belongs.
-    category_iid: InternalId,
+    category_name: SmartString,
     /// Identifier of the section to which this message belongs.
     section_id: String,
     layout_items: LayoutItems,
     /// The abbreviated name of this message, when used in an XML context.
-    abbr_name: Option<String>,
+    abbr_name: Option<SmartString>,
     /// A boolean used to indicate if the message is to be generated as part
     /// of FIXML.
     required: bool,
@@ -1433,91 +1352,6 @@ impl<'a> Message<'a> {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Section {}
 
-mod symbol_table {
-    use super::InternalId;
-    use fnv::FnvHashMap;
-    use std::borrow::Borrow;
-    use std::hash::Hash;
-
-    pub type SymbolTable = FnvHashMap<Key, InternalId>;
-
-    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-    pub enum Key {
-        #[allow(dead_code)]
-        Abbreviation(String),
-        CategoryByName(String),
-        ComponentByName(String),
-        DatatypeByName(String),
-        FieldByTag(u32),
-        FieldByName(String),
-        MessageByName(String),
-        MessageByMsgType(String),
-    }
-
-    #[derive(Copy, Debug, Clone, PartialEq, Eq, Hash)]
-    pub enum KeyRef<'a> {
-        Abbreviation(&'a str),
-        CategoryByName(&'a str),
-        ComponentByName(&'a str),
-        DatatypeByName(&'a str),
-        FieldByTag(u32),
-        FieldByName(&'a str),
-        MessageByName(&'a str),
-        MessageByMsgType(&'a str),
-    }
-
-    impl Key {
-        fn as_ref(&self) -> KeyRef {
-            match self {
-                Key::Abbreviation(s) => KeyRef::Abbreviation(s.as_str()),
-                Key::CategoryByName(s) => KeyRef::CategoryByName(s.as_str()),
-                Key::ComponentByName(s) => KeyRef::ComponentByName(s.as_str()),
-                Key::DatatypeByName(s) => KeyRef::DatatypeByName(s.as_str()),
-                Key::FieldByTag(t) => KeyRef::FieldByTag(*t),
-                Key::FieldByName(s) => KeyRef::FieldByName(s.as_str()),
-                Key::MessageByName(s) => KeyRef::MessageByName(s.as_str()),
-                Key::MessageByMsgType(s) => KeyRef::MessageByMsgType(s.as_str()),
-            }
-        }
-    }
-
-    pub trait SymbolTableIndex {
-        fn to_key(&self) -> KeyRef;
-    }
-
-    impl SymbolTableIndex for Key {
-        fn to_key(&self) -> KeyRef {
-            self.as_ref()
-        }
-    }
-
-    impl<'a> SymbolTableIndex for KeyRef<'a> {
-        fn to_key(&self) -> KeyRef {
-            *self
-        }
-    }
-
-    impl<'a> Hash for dyn SymbolTableIndex + 'a {
-        fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-            self.to_key().hash(state);
-        }
-    }
-
-    impl<'a> Borrow<dyn SymbolTableIndex + 'a> for Key {
-        fn borrow(&self) -> &(dyn SymbolTableIndex + 'a) {
-            self
-        }
-    }
-
-    impl<'a> Eq for dyn SymbolTableIndex + 'a {}
-
-    impl<'a> PartialEq for dyn SymbolTableIndex + 'a {
-        fn eq(&self, other: &dyn SymbolTableIndex) -> bool {
-            self.to_key() == other.to_key()
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -1541,9 +1375,9 @@ mod test {
     #[test]
     fn all_datatypes_are_used_at_least_once() {
         for dict in Dictionary::common_dictionaries().iter() {
-            let datatypes_count = dict.iter_datatypes().count();
+            let datatypes_count = dict.datatypes().len();
             let mut datatypes = HashSet::new();
-            for field in dict.iter_fields() {
+            for field in dict.fields() {
                 datatypes.insert(field.data_type().name().to_string());
             }
             assert_eq!(datatypes_count, datatypes.len());
@@ -1553,7 +1387,7 @@ mod test {
     #[test]
     fn at_least_one_datatype() {
         for dict in Dictionary::common_dictionaries().iter() {
-            assert!(dict.iter_datatypes().count() >= 1);
+            assert!(dict.datatypes().len() >= 1);
         }
     }
 
