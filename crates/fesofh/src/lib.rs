@@ -34,18 +34,16 @@
 
 mod encoding_type;
 mod frame;
-mod seq_decoder;
 
-#[cfg(feature = "utils-tokio")]
+#[cfg(feature = "utils-tokio-codec")]
 mod tokio_codec;
 
 pub use encoding_type::EncodingType;
 pub use frame::Frame;
-pub use seq_decoder::{Frames, SeqDecoder};
 use std::convert::TryInto;
 use std::io;
 use thiserror::Error;
-#[cfg(feature = "utils-tokio")]
+#[cfg(feature = "utils-tokio-codec")]
 pub use tokio_codec::TokioCodec;
 
 /// The type returned in the event of an error when decoding SOFH-enclosed

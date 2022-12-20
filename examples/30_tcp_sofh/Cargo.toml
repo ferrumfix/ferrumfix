@@ -1,7 +1,0 @@
-[package]
-name = "example_tcp_sofh"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-fesofh = { path = "../../crates/fesofh" }
