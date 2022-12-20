@@ -446,7 +446,7 @@ dependencies = [
  "rayon",
  "roxmltree",
  "strum 0.20.0",
- "strum_macros 0.20.1",
+ "strum_macros",
  "syn",
 ]
 
@@ -481,7 +481,7 @@ dependencies = [
  "serde_json",
  "slog",
  "strum 0.24.1",
- "strum_macros 0.24.2",
+ "strum_macros",
  "syn",
  "thiserror",
  "tokio",
@@ -505,7 +505,7 @@ dependencies = [
  "quickcheck_derive",
  "quickcheck_macros",
  "strum 0.24.1",
- "strum_macros 0.24.2",
+ "strum_macros",
  "syn",
  "tokio",
 ]
@@ -536,7 +536,7 @@ dependencies = [
  "roxmltree",
  "smartstring",
  "strum 0.24.1",
- "strum_macros 0.24.2",
+ "strum_macros",
  "syn",
  "tokio",
 ]
@@ -1437,18 +1437,6 @@ name = "strum"
 version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "063e6045c0e62079840579a7e47a355ae92f60eb74daaf156fb1e84ba164e63f"
-
-[[package]]
-name = "strum_macros"
-version = "0.20.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee8bc6b87a5112aeeab1f4a9f7ab634fe6cbefc4850006df31267f4cfb9e3149"
-dependencies = [
- "heck 0.3.2",
- "proc-macro2",
- "quote",
- "syn",
-]
 
 [[package]]
 name = "strum_macros"
