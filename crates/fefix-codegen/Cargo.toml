@@ -23,7 +23,7 @@ strum_macros = "0.24"
 
 [dev-dependencies]
 arbitrary = { version = "1.0", features = ["derive"] }
-criterion = { version = "0.3", features = ["html_reports"] }
+criterion = { version = "0.4", features = ["html_reports"] }
 enum-as-inner = "0.5"
 fefix-dictionary = { version = "0.7", path = "../fefix-dictionary", features = ["fix40", "fix41", "fix42", "fix43", "fix50"] }
 quickcheck = "1"
