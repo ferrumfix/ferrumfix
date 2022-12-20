@@ -30,14 +30,9 @@ fix50sp2 = []
 fixt11 = []
 
 [dependencies]
-chrono = "0.4"
 fnv = "1"
-heck = "0.4"
-indoc = "1"
-lazy_static = "1"
 quick-xml = "0.23"
 roxmltree = "0.14"
-rayon = "1"
 strum = "0.24"
 strum_macros = "0.24"
 
