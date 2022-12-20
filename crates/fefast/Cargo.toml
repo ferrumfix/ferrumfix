@@ -27,7 +27,7 @@ decimal = { version = "2", optional = true }
 heck = "0.3"
 indoc = "1"
 # For reading XML.
-roxmltree = "0.14"
+roxmltree = "0.16"
 
 [build-dependencies]
 chrono = "0.4"
@@ -35,7 +35,7 @@ heck = "0.3"
 indoc = "1"
 lazy_static = "1"
 quick-xml = "0.22"
-roxmltree = "0.14"
+roxmltree = "0.16"
 rayon = "1"
 strum = "0.20"
 strum_macros = "0.20"
