@@ -193,9 +193,9 @@ impl Dictionary {
 
     /// Attempts to read a QuickFIX-style specification file and convert it into
     /// a [`Dictionary`].
-    pub fn from_quickfix_spec<S: AsRef<str>>(input: S) -> Result<Self, ParseDictionaryError> {
-        let xml_document = roxmltree::Document::parse(input.as_ref())
-            .map_err(|_| ParseDictionaryError::InvalidFormat)?;
+    pub fn from_quickfix_spec(input: &str) -> Result<Self, ParseDictionaryError> {
+        let xml_document =
+            roxmltree::Document::parse(input).map_err(|_| ParseDictionaryError::InvalidFormat)?;
         QuickFixReader::new(&xml_document)
     }
 
@@ -318,8 +318,8 @@ impl Dictionary {
 
     /// Return the known abbreviation for `term` -if any- according to the
     /// documentation of this FIX Dictionary.
-    pub fn abbreviation_for<S: AsRef<str>>(&self, term: S) -> Option<Abbreviation> {
-        self.symbol(KeyRef::Abbreviation(term.as_ref()))
+    pub fn abbreviation_for(&self, term: &str) -> Option<Abbreviation> {
+        self.symbol(KeyRef::Abbreviation(term))
             .map(|iid| self.inner.abbreviations.get(*iid as usize).unwrap())
             .map(move |data| Abbreviation(self, data))
     }
@@ -335,8 +335,8 @@ impl Dictionary {
     /// let msg2 = dict.message_by_msgtype("0").unwrap();
     /// assert_eq!(msg1.name(), msg2.name());
     /// ```
-    pub fn message_by_name<S: AsRef<str>>(&self, name: S) -> Option<Message> {
-        self.symbol(KeyRef::MessageByName(name.as_ref()))
+    pub fn message_by_name(&self, name: &str) -> Option<Message> {
+        self.symbol(KeyRef::MessageByName(name))
             .map(|iid| self.inner.messages.get(*iid as usize).unwrap())
             .map(|data| Message(self, data))
     }
@@ -352,15 +352,15 @@ impl Dictionary {
     /// let msg2 = dict.message_by_name("Heartbeat").unwrap();
     /// assert_eq!(msg1.name(), msg2.name());
     /// ```
-    pub fn message_by_msgtype<S: AsRef<str>>(&self, msgtype: S) -> Option<Message> {
-        self.symbol(KeyRef::MessageByMsgType(msgtype.as_ref()))
+    pub fn message_by_msgtype(&self, msgtype: &str) -> Option<Message> {
+        self.symbol(KeyRef::MessageByMsgType(msgtype))
             .map(|iid| self.inner.messages.get(*iid as usize).unwrap())
             .map(|data| Message(self, data))
     }
 
     /// Returns the [`Component`] named `name`, if any.
-    pub fn component_by_name<S: AsRef<str>>(&self, name: S) -> Option<Component> {
-        self.symbol(KeyRef::ComponentByName(name.as_ref()))
+    pub fn component_by_name(&self, name: &str) -> Option<Component> {
+        self.symbol(KeyRef::ComponentByName(name))
             .map(|iid| self.inner.components.get(*iid as usize).unwrap())
             .map(|data| Component(self, data))
     }
@@ -374,8 +374,8 @@ impl Dictionary {
     /// let dt = dict.datatype_by_name("String").unwrap();
     /// assert_eq!(dt.name(), "String");
     /// ```
-    pub fn datatype_by_name<S: AsRef<str>>(&self, name: S) -> Option<Datatype> {
-        self.symbol(KeyRef::DatatypeByName(name.as_ref()))
+    pub fn datatype_by_name(&self, name: &str) -> Option<Datatype> {
+        self.symbol(KeyRef::DatatypeByName(name))
             .map(|iid| self.inner.data_types.get(*iid as usize).unwrap())
             .map(|data| Datatype(self, data))
     }
@@ -397,8 +397,8 @@ impl Dictionary {
     }
 
     /// Returns the [`Field`] named `name`, if any.
-    pub fn field_by_name<S: AsRef<str>>(&self, name: S) -> Option<Field> {
-        self.symbol(KeyRef::FieldByName(name.as_ref()))
+    pub fn field_by_name(&self, name: &str) -> Option<Field> {
+        self.symbol(KeyRef::FieldByName(name))
             .map(|iid| self.inner.fields.get(*iid as usize).unwrap())
             .map(|data| Field(self, data))
     }
