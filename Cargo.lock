@@ -331,7 +331,7 @@ version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c5f0096a91d210159eceb2ff5e1c4da18388a170e1e3ce948aac9c8fdbbf595"
 dependencies = [
- "heck 0.3.2",
+ "heck 0.3.3",
  "proc-macro2",
  "quote",
  "syn",
@@ -436,7 +436,7 @@ dependencies = [
  "criterion",
  "decimal",
  "enum-as-inner 0.3.3",
- "heck 0.3.2",
+ "heck 0.4.0",
  "indoc",
  "lazy_static",
  "quick-xml 0.22.0",
@@ -722,9 +722,9 @@ checksum = "62aca2aba2d62b4a7f5b33f3712cb1b0692779a56fb510499d5c0aa594daeaf3"
 
 [[package]]
 name = "heck"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87cbf45460356b7deeb5e3415b5563308c0a9b057c85e12b06ad551f98d0a6ac"
+checksum = "6d621efb26863f0e9924c6ac577e8275e5e6b77455db64ffa6c65c904e9e132c"
 dependencies = [
  "unicode-segmentation",
 ]
@@ -1444,7 +1444,7 @@ version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee8bc6b87a5112aeeab1f4a9f7ab634fe6cbefc4850006df31267f4cfb9e3149"
 dependencies = [
- "heck 0.3.2",
+ "heck 0.3.3",
  "proc-macro2",
  "quote",
  "syn",
