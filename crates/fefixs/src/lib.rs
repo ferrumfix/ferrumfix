@@ -1,21 +1,21 @@
 //! Presets of standard TLS parameters as specified by *FIX-over-TLS*
 //! ([FIXS](https://www.fixtrading.org/standards/fixs/)).
 
-mod iana_to_openssl;
+mod iana2openssl;
 
-use iana_to_openssl::IANA_TO_OPENSSL;
+use iana2openssl::iana2openssl;
 #[cfg(feature = "utils-openssl")]
 use openssl::ssl::*;
 
-/// A release of the FIXS standard with its own recommended settings.
-pub trait FixOverTlsVersion {
+/// A common interface to the TLS parameters specified by a FIXS release.
+pub trait FixOverTlsCommon {
     /// Returns a [`Vec`] of the suggested ciphersuites for TLS,
     /// according to `self` version. The ciphersuites are specified in IANA format.
     ///
     /// ```
-    /// use fefixs::{FixOverTlsVersion, FixOverTlsV1};
+    /// use fefixs::{FixOverTlsCommon, FixOverTlsV10};
     ///
-    /// let ciphersuites_iana = FixOverTlsV1.recommended_cs_iana(false);
+    /// let ciphersuites_iana = FixOverTlsV10.recommended_cs_iana(false);
     /// assert!(ciphersuites_iana.iter().any(|cs| cs == &"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"));
     /// ```
     fn recommended_cs_iana(&self, psk: bool) -> Vec<String>;
@@ -27,9 +27,9 @@ pub trait FixOverTlsVersion {
     /// # Examples:
     ///
     /// ```
-    /// use fefixs::{FixOverTlsVersion, FixOverTlsV1};
+    /// use fefixs::{FixOverTlsCommon, FixOverTlsV10};
     ///
-    /// let ciphersuites_openssl = FixOverTlsV1.recommended_cs_openssl(false);
+    /// let ciphersuites_openssl = FixOverTlsV10.recommended_cs_openssl(false);
     /// assert!(ciphersuites_openssl.iter().any(|cs| cs == &"DHE-RSA-AES128-GCM-SHA256"));
     /// ```
     ///
@@ -37,9 +37,9 @@ pub trait FixOverTlsVersion {
     /// [`openssl-ciphers`](https://www.openssl.org/docs/manmaster/man1/openssl-ciphers.html).
     ///
     /// ```
-    /// use fefixs::{FixOverTlsVersion, FixOverTlsV1};
+    /// use fefixs::{FixOverTlsCommon, FixOverTlsV10};
     ///
-    /// let ciphersuites_openssl = FixOverTlsV1.recommended_cs_openssl(false);
+    /// let ciphersuites_openssl = FixOverTlsV10.recommended_cs_openssl(false);
     /// let cipherlist = ciphersuites_openssl.join(":");
     /// println!("Supported ciphers: {}", cipherlist);
     /// ```
@@ -56,11 +56,15 @@ pub trait FixOverTlsVersion {
     fn recommended_acceptor_builder(&self) -> SslAcceptorBuilder;
 }
 
+/// FIX-over-TLS v1.0.
+///
+/// See <https://www.fixtrading.org/packages/fixs-technical-specification-v1-0/>
+/// for the spec.
 #[derive(Debug, Copy, Clone)]
-pub struct FixOverTlsV1;
+pub struct FixOverTlsV10;
 
-impl FixOverTlsV1 {
-    const RECOMMENDED_CIPHERSUITES: &'static [&'static str] = &[
+impl FixOverTlsV10 {
+    const RECOMMENDED_CIPHERSUITES: &[&'static str] = &[
         "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
         "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
         "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
@@ -81,7 +85,7 @@ impl FixOverTlsV1 {
         "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
     ];
 
-    const RECOMMENDED_CIPHERSUITES_PSK_ONLY: &'static [&'static str] = &[
+    const RECOMMENDED_CIPHERSUITES_PSK_ONLY: &[&'static str] = &[
         "TLS_DHE_PSK_WITH_AES_128_GCM_SHA256",
         "TLS_DHE_PSK_WITH_AES_256_GCM_SHA384",
         "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA",
@@ -95,7 +99,7 @@ impl FixOverTlsV1 {
     ];
 }
 
-impl FixOverTlsVersion for FixOverTlsV1 {
+impl FixOverTlsCommon for FixOverTlsV10 {
     fn recommended_cs_iana(&self, psk: bool) -> Vec<String> {
         let recommented_ciphersuites = if psk {
             Self::RECOMMENDED_CIPHERSUITES_PSK_ONLY
@@ -112,13 +116,7 @@ impl FixOverTlsVersion for FixOverTlsV1 {
     fn recommended_cs_openssl(&self, psk: bool) -> Vec<String> {
         self.recommended_cs_iana(psk)
             .iter()
-            .map(|s| {
-                IANA_TO_OPENSSL
-                    .iter()
-                    .find(|(iana, _openssl)| iana == s)
-                    .map(|(_iana, openssl)| openssl.to_string())
-                    .unwrap()
-            })
+            .map(|s| iana2openssl(s).unwrap().to_string())
             .collect()
     }
 
@@ -163,7 +161,7 @@ mod test {
     fn v1_acceptor_is_ok() {
         use super::*;
 
-        FixOverTlsV1.recommended_acceptor_builder();
+        FixOverTlsV10.recommended_acceptor_builder();
     }
 
     #[test]
@@ -171,6 +169,6 @@ mod test {
     fn v1_connector_is_ok() {
         use super::*;
 
-        FixOverTlsV1.recommended_connector_builder();
+        FixOverTlsV10.recommended_connector_builder();
     }
 }

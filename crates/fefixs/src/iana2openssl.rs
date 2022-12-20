@@ -1,7 +1,15 @@
+/// Tries to convert an IANA cipher suite name to an OpenSSL cipher suite name.
+pub fn iana2openssl(iana: &str) -> Option<&str> {
+    IANA_TO_OPENSSL
+        .iter()
+        .find(|(iana2, _openssl)| *iana2 == iana)
+        .map(|(_iana2, openssl)| *openssl)
+}
+
 /// See <https://testssl.sh/openssl-iana.mapping.html> and
 /// <https://wiki.mozilla.org/Security/Cipher_Suites>.
 #[rustfmt::skip]
-pub const IANA_TO_OPENSSL: &[(&str, &str)] = &[
+const IANA_TO_OPENSSL: &[(&str, &str)] = &[
     ("TLS_RSA_WITH_NULL_MD5", "NULL-MD5"),
     ("TLS_RSA_WITH_NULL_SHA", "NULL-SHA"),
     ("TLS_RSA_EXPORT_WITH_RC4_40_MD5", "EXP-RC4-MD5"),
