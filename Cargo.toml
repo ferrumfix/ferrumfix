@@ -5,9 +5,9 @@ members = ["crates/*", "examples/*", "tests/*"]
 lto = true
 
 [workspace.package]
+authors = ["Filippo \"Neysofu\" Costa"]
 version = "0.7.0"
 edition = "2021"
-authors = ["Filippo Costa @neysofu"]
 homepage = "https://github.com/ferrumfix/ferrumfix"
 repository = "https://github.com/ferrumfix/ferrumfix"
 description = "FIX & FAST (FIX Adapted for STreaming) in pure Rust"

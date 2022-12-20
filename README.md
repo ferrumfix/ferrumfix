@@ -62,7 +62,7 @@ You don't have to understand the whole tech stack to use a single layer; in fact
 
 ![Bitwyre logo](https://github.com/ferrumfix/ferrumfix/raw/develop/docs/bitwyre-logo.png)
 
-Please reach out to `Filippo Costa <filippo.costa@protonmail.com>` for business inquiries.
+Please reach out at `<filippo@neysofu.me>` for business inquiries.
 
 ## Contributing
 
