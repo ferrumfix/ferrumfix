@@ -327,18 +327,6 @@ checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 
 [[package]]
 name = "enum-as-inner"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c5f0096a91d210159eceb2ff5e1c4da18388a170e1e3ce948aac9c8fdbbf595"
-dependencies = [
- "heck 0.3.2",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "enum-as-inner"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "432f044e9077ad6666f3446df0489a71ac3ed0336ea54edf6b85e00cd7562283"
@@ -442,7 +430,7 @@ dependencies = [
  "chrono",
  "criterion",
  "decimal",
- "enum-as-inner 0.3.3",
+ "enum-as-inner",
  "heck 0.3.2",
  "indoc",
  "lazy_static",
@@ -466,7 +454,7 @@ dependencies = [
  "chrono",
  "criterion",
  "decimal",
- "enum-as-inner 0.5.0",
+ "enum-as-inner",
  "fefix-codegen",
  "fefix-derive",
  "fefix-dictionary",
@@ -503,7 +491,7 @@ dependencies = [
  "arbitrary",
  "chrono",
  "criterion",
- "enum-as-inner 0.5.0",
+ "enum-as-inner",
  "fefix-dictionary",
  "fnv",
  "heck 0.4.0",
@@ -534,7 +522,7 @@ version = "0.7.0"
 dependencies = [
  "arbitrary",
  "criterion",
- "enum-as-inner 0.5.0",
+ "enum-as-inner",
  "fnv",
  "quick-xml 0.23.0",
  "quickcheck",
@@ -565,7 +553,7 @@ dependencies = [
  "arbitrary",
  "bytes",
  "criterion",
- "enum-as-inner 0.3.3",
+ "enum-as-inner",
  "quickcheck",
  "quickcheck_derive",
  "quickcheck_macros",
