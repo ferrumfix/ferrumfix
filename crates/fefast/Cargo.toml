@@ -37,7 +37,7 @@ lazy_static = "1"
 quick-xml = "0.22"
 roxmltree = "0.14"
 rayon = "1"
-strum = "0.20"
+strum = "0.24"
 strum_macros = "0.20"
 
 [dev-dependencies]
