@@ -23,8 +23,8 @@ name = "fesofh"
 
 [features]
 utils-bytes = ["bytes"]
-utils-tokio = ["tokio-util", "utils-bytes"]
-full = ["utils-bytes", "utils-tokio"]
+utils-tokio-codec = ["tokio-util", "utils-bytes"]
+full = ["utils-bytes", "utils-tokio-codec"]
 
 [dependencies]
 bytes = { version = "1", optional = true }
