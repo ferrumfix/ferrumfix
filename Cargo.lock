@@ -510,7 +510,7 @@ dependencies = [
  "heck 0.3.2",
  "indoc",
  "lazy_static",
- "quick-xml 0.22.0",
+ "quick-xml",
  "quickcheck",
  "quickcheck_derive",
  "quickcheck_macros",
@@ -541,7 +541,7 @@ dependencies = [
  "indoc",
  "lazy_static",
  "nohash-hasher",
- "quick-xml 0.23.0",
+ "quick-xml",
  "quickcheck",
  "quickcheck_derive",
  "quickcheck_macros",
@@ -600,7 +600,7 @@ dependencies = [
  "criterion",
  "enum-as-inner 0.5.0",
  "fnv",
- "quick-xml 0.23.0",
+ "quick-xml",
  "quickcheck",
  "quickcheck_derive",
  "quickcheck_macros",
@@ -1154,15 +1154,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d0e1ae9e836cc3beddd63db0df682593d7e2d3d891ae8c9083d2113e1744224"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "quick-xml"
-version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8533f14c8382aaad0d592c812ac3b826162128b65662331e1127b45c3d18536b"
-dependencies = [
- "memchr",
 ]
 
 [[package]]
