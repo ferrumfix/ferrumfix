@@ -45,22 +45,3 @@ impl Default for Config {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn config_doesnt_pretty_print_by_default() {
-        assert_eq!(Config::default().pretty_print, false);
-    }
-
-    #[test]
-    fn config_pretty_print_behavior_can_be_changed() {
-        let mut config = Config::default();
-        config.pretty_print = true;
-        assert_eq!(config.pretty_print, true);
-        config.pretty_print = false;
-        assert_eq!(config.pretty_print, false);
-    }
-}
