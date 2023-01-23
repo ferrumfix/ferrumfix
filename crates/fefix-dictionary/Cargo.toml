@@ -38,7 +38,7 @@ strum = "0.24"
 strum_macros = "0.24"
 
 [dev-dependencies]
-arbitrary = { version = "1.0", features = ["derive"] }
+arbitrary = { version = "1.2", features = ["derive"] }
 criterion = { version = "0.3", features = ["html_reports"] }
 enum-as-inner = "0.5"
 quickcheck = "1"
