@@ -25,14 +25,14 @@ name = "fefast"
 bitvec = "0.18.3"
 decimal = { version = "2", optional = true }
 heck = "0.3"
-indoc = "1"
+indoc = "2"
 # For reading XML.
 roxmltree = "0.14"
 
 [build-dependencies]
 chrono = "0.4"
 heck = "0.3"
-indoc = "1"
+indoc = "2"
 lazy_static = "1"
 quick-xml = "0.22"
 roxmltree = "0.14"

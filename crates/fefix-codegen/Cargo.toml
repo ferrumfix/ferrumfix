@@ -17,7 +17,7 @@ chrono = "0.4"
 fefix-dictionary = { version = "0.7", path = "../fefix-dictionary" }
 fnv = "1"
 heck = "0.4"
-indoc = "1"
+indoc = "2"
 strum = "0.24"
 strum_macros = "0.24"
 
