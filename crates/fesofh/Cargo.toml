@@ -29,7 +29,7 @@ full = ["utils-bytes", "utils-tokio-codec"]
 [dependencies]
 bytes = { version = "1", optional = true }
 thiserror = "1"
-tokio-util = { version = "0.6", optional = true, features = ["codec"] }
+tokio-util = { version = "0.7", optional = true, features = ["codec"] }
 
 [dev-dependencies]
 arbitrary = { version = "1.0", features = ["derive"] }

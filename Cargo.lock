@@ -404,7 +404,7 @@ dependencies = [
  "fesofh",
  "futures-util",
  "tokio",
- "tokio-util 0.6.6",
+ "tokio-util",
 ]
 
 [[package]]
@@ -423,7 +423,7 @@ dependencies = [
  "slog-async",
  "slog-term",
  "tokio",
- "tokio-util 0.6.6",
+ "tokio-util",
 ]
 
 [[package]]
@@ -485,7 +485,7 @@ dependencies = [
  "syn",
  "thiserror",
  "tokio",
- "tokio-util 0.7.3",
+ "tokio-util",
  "uuid",
 ]
 
@@ -565,7 +565,7 @@ dependencies = [
  "quickcheck_macros",
  "syn",
  "thiserror",
- "tokio-util 0.6.6",
+ "tokio-util",
 ]
 
 [[package]]
@@ -1630,21 +1630,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "tokio-util"
-version = "0.6.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "940a12c99365c31ea8dd9ba04ec1be183ffe4920102bb7122c2f515437601e8e"
-dependencies = [
- "bytes",
- "futures-core",
- "futures-io",
- "futures-sink",
- "log",
- "pin-project-lite",
- "tokio",
 ]
 
 [[package]]
