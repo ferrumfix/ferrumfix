@@ -1,6 +1,8 @@
 //! *FIX Performance Session Layer*
 //! ([FIXP](https://www.fixtrading.org/standards/fixp-online/)) support.
 
+#![allow(dead_code)]
+
 type SessionId = u128;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
