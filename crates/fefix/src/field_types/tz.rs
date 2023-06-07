@@ -58,7 +58,9 @@ impl Tz {
     #[cfg(feature = "utils-chrono")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-chrono")))]
     pub fn to_chrono_offset(&self) -> chrono::FixedOffset {
-        chrono::FixedOffset::east(self.offset().1.as_secs() as i32)
+        // unwrap(): we already verified that the offset is within bounds during
+        // deserialization
+        chrono::FixedOffset::east_opt(self.offset().1.as_secs() as i32).unwrap()
     }
 
     /// Creates a [`Tz`] from a [`chrono::FixedOffset`].

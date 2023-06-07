@@ -149,7 +149,7 @@ impl<'a> FieldType<'a> for chrono::DateTime<chrono::FixedOffset> {
     where
         B: Buffer,
     {
-        self.date().naive_local().serialize(buffer) + self.timezone().serialize(buffer)
+        self.date_naive().serialize(buffer) + self.timezone().serialize(buffer)
     }
 
     #[inline]
