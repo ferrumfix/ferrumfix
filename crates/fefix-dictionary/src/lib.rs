@@ -1148,6 +1148,20 @@ impl<'a> Field<'a> {
             .datatype_by_name(self.1.data_type_name.as_str())
             .unwrap()
     }
+
+    pub fn data_tag(&self) -> Option<TagU32> {
+        self.1
+            .associated_data_tag
+            .map(|tag| TagU32::new(tag as u32).unwrap())
+    }
+
+    pub fn required_in_xml_messages(&self) -> bool {
+        self.1.required
+    }
+
+    pub fn description(&self) -> Option<&str> {
+        self.1.description.as_ref().map(|s| s.as_str())
+    }
 }
 
 impl<'a> IsFieldDefinition for Field<'a> {
@@ -1343,6 +1357,10 @@ impl<'a> Message<'a> {
             .layout_items
             .iter()
             .map(move |data| LayoutItem(self.0, data))
+    }
+
+    pub fn fixml_required(&self) -> bool {
+        self.1.required
     }
 }
 
