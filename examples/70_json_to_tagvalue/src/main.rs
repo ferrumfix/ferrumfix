@@ -10,8 +10,8 @@ fn main() {
     let mut buffer = Vec::new();
 
     let json_msg = decoder.decode(JSON_FIX_MESSAGE.as_bytes()).unwrap();
-    let msg_type = json_msg.fv(fix42::MSG_TYPE).unwrap();
-    let begin_string = json_msg.fv(fix42::BEGIN_STRING).unwrap();
+    let msg_type = json_msg.get(fix42::MSG_TYPE).unwrap();
+    let begin_string = json_msg.get(fix42::BEGIN_STRING).unwrap();
 
     let mut fix_msg_builder = encoder.start_message(begin_string, &mut buffer, msg_type);
 

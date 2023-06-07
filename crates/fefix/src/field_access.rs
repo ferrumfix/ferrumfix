@@ -12,23 +12,23 @@ use std::ops::Range;
 /// 1. Group getters: [`FieldMap::group`] and
 /// [`FieldMap::group_opt`].
 ///
-/// 2. Field getters: [`FieldMap::fv_raw`], [`FieldMap::fv`],
+/// 2. Field getters: [`FieldMap::get_raw`], [`FieldMap::get`],
 /// etc..
 ///
 /// The most basic form of field access is done via
-/// [`FieldMap::fv_raw`], which performs no deserialization at all: it
+/// [`FieldMap::get_raw`], which performs no deserialization at all: it
 /// simply returns the bytes contents associated with a FIX field, if found.
 ///
-/// Building upon [`FieldMap::fv_raw`] and [`FieldType`], the other
+/// Building upon [`FieldMap::get_raw`] and [`FieldType`], the other
 /// field access methods all provide some utility deserialization logic. These
-/// methods all have the `fv` prefix, with the following considerations:
+/// methods all have the `get_` prefix, with the following considerations:
 ///
-/// - `fvl` methods perform "lossy" deserialization via
+/// - `get_lossy` methods perform "lossy" deserialization via
 /// [`FieldType::deserialize_lossy`]. Unlike lossless deserialization, these
 /// methods may skip some error checking logic and thus prove to be faster.
 /// Memory-safety is still guaranteed, but malformed FIX fields won't be
 /// detected 100% of the time.
-/// - `_opt` methods work exactly like their non-`_opt` counterparties, but they
+/// - `get_opt` methods work exactly like their non-`_opt` counterparties, but they
 /// have a different return type: instead of returning [`Err(None)`] for missing
 /// fields, these methods return [`None`] for missing fields and
 /// [`Some(Ok(field))`] for existing fields.
@@ -44,7 +44,7 @@ pub trait FieldMap<F> {
 
     /// Looks for a `field` within `self` and then returns its raw byte
     /// contents, if it exists.
-    fn fv_raw(&self, field: F) -> Option<&[u8]>;
+    fn get_raw(&self, field: F) -> Option<&[u8]>;
 
     /// Looks for a group that starts with `field` within `self`.
     fn group(&self, field: F) -> Result<Self::Group, FieldValueError<<usize as FieldType>::Error>>;
@@ -63,43 +63,43 @@ pub trait FieldMap<F> {
     /// Looks for a `field` within `self` and then decodes its raw byte contents
     /// via [`FieldType::deserialize`], if found.
     #[inline]
-    fn fv<'a, V>(&'a self, field: F) -> Result<V, FieldValueError<V::Error>>
+    fn get<'a, V>(&'a self, field: F) -> Result<V, FieldValueError<V::Error>>
     where
         V: FieldType<'a>,
     {
-        self.fv_opt(field)
+        self.get_opt(field)
             .map_err(FieldValueError::Invalid)
             .and_then(|opt| opt.ok_or(FieldValueError::Missing))
     }
 
-    /// Like [`FieldMap::fv`], but with lossy deserialization.
+    /// Like [`FieldMap::get`], but with lossy deserialization.
     #[inline]
-    fn fvl<'a, V>(&'a self, field: F) -> Result<V, FieldValueError<V::Error>>
+    fn get_lossy<'a, V>(&'a self, field: F) -> Result<V, FieldValueError<V::Error>>
     where
         V: FieldType<'a>,
     {
-        self.fvl_opt(field)
+        self.get_lossy_opt(field)
             .map_err(FieldValueError::Invalid)
             .and_then(|opt| opt.ok_or(FieldValueError::Missing))
     }
 
-    /// Like [`FieldMap::fv`], but doesn't return an [`Err`] if `field`
+    /// Like [`FieldMap::get`], but doesn't return an [`Err`] if `field`
     /// is missing.
     #[inline]
-    fn fv_opt<'a, V>(&'a self, field: F) -> Result<Option<V>, V::Error>
+    fn get_opt<'a, V>(&'a self, field: F) -> Result<Option<V>, V::Error>
     where
         V: FieldType<'a>,
     {
-        self.fv_raw(field).map(V::deserialize).transpose()
+        self.get_raw(field).map(V::deserialize).transpose()
     }
 
-    /// Like [`FieldMap::fv_opt`], but with lossy deserialization.
+    /// Like [`FieldMap::get_opt`], but with lossy deserialization.
     #[inline]
-    fn fvl_opt<'a, V>(&'a self, field: F) -> Result<Option<V>, V::Error>
+    fn get_lossy_opt<'a, V>(&'a self, field: F) -> Result<Option<V>, V::Error>
     where
         V: FieldType<'a>,
     {
-        self.fv_raw(field).map(V::deserialize_lossy).transpose()
+        self.get_raw(field).map(V::deserialize_lossy).transpose()
     }
 }
 

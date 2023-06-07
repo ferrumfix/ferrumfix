@@ -15,10 +15,10 @@ fn main() {
     let msg = decoder
         .decode(FIX_MESSAGE_EXEC_REPORT)
         .expect("Invalid FIX message");
-    assert_eq!(msg.fv(gdax::BEGIN_STRING), Ok(gdax::BeginString::Fix42));
-    assert_eq!(msg.fv(gdax::MSG_TYPE), Ok(gdax::MsgType::ExecutionReport));
-    assert_eq!(msg.fv(gdax::TRADE_ID), Ok("123"));
-    assert_eq!(msg.fv(gdax::AGGRESSOR_INDICATOR), Ok(true));
+    assert_eq!(msg.get(gdax::BEGIN_STRING), Ok(gdax::BeginString::Fix42));
+    assert_eq!(msg.get(gdax::MSG_TYPE), Ok(gdax::MsgType::ExecutionReport));
+    assert_eq!(msg.get(gdax::TRADE_ID), Ok("123"));
+    assert_eq!(msg.get(gdax::AGGRESSOR_INDICATOR), Ok(true));
 }
 
 fn fix_decoder() -> Decoder {

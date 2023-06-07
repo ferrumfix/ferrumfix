@@ -1,8 +1,8 @@
 use super::{errs, Backend, Config, Configure, LlEvent, LlEventLoop};
 use crate::session::{Environment, SeqNumbers};
+use crate::tagvalue::FieldMap;
 use crate::tagvalue::FvWrite;
 use crate::tagvalue::Message;
-use crate::tagvalue::FieldMap;
 use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
 use crate::Buffer;
 use crate::FieldType;
@@ -169,10 +169,7 @@ pub trait Verify {
 
     fn verify_begin_string(&self, begin_string: &[u8]) -> Result<(), Self::Error>;
 
-    fn verify_test_message_indicator(
-        &self,
-        msg: &impl FieldMap<u32>,
-    ) -> Result<(), Self::Error>;
+    fn verify_test_message_indicator(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error>;
 
     fn verify_sending_time(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error>;
 }
@@ -302,7 +299,7 @@ where
         if self.verifier().verify_test_message_indicator(msg).is_err() {
             return self.on_wrong_environment(msg);
         }
-        let seq_num = if let Ok(n) = msg.fv::<u64>(&MSG_SEQ_NUM) {
+        let seq_num = if let Ok(n) = msg.get::<u64>(&MSG_SEQ_NUM) {
             let expected = self.msg_seq_num_inbound.expected();
             if n < expected {
                 return self.on_low_seqnum(msg);
@@ -323,7 +320,7 @@ where
             return self.make_reject_for_inaccurate_sending_time(msg);
         }
 
-        let msg_type = if let Ok(x) = msg.fv::<&[u8]>(&MSG_TYPE) {
+        let msg_type = if let Ok(x) = msg.get::<&[u8]>(&MSG_TYPE) {
             x
         } else {
             self.on_inbound_app_message(msg).ok();
@@ -333,8 +330,8 @@ where
     }
 
     fn on_resend_request(&self, msg: &Message<&[u8]>) {
-        let begin_seq_num = msg.fv(&BEGIN_SEQ_NO).unwrap();
-        let end_seq_num = msg.fv(&END_SEQ_NO).unwrap();
+        let begin_seq_num = msg.get(&BEGIN_SEQ_NO).unwrap();
+        let end_seq_num = msg.get(&END_SEQ_NO).unwrap();
         self.on_resend_request(begin_seq_num..end_seq_num).ok();
     }
 
@@ -391,7 +388,7 @@ where
     }
 
     fn on_test_request(&mut self, msg: Message<&[u8]>) -> &[u8] {
-        let test_req_id = msg.fv::<&[u8]>(&TEST_REQ_ID).unwrap();
+        let test_req_id = msg.get::<&[u8]>(&TEST_REQ_ID).unwrap();
         let begin_string = self.begin_string();
         let msg_seq_num = self.msg_seq_num_outbound.next();
         let mut msg = self.start_message(begin_string, b"1");
@@ -453,8 +450,8 @@ where
     }
 
     fn make_reject_for_inaccurate_sending_time(&mut self, offender: Message<&[u8]>) -> Response {
-        let ref_seq_num = offender.fv(&MSG_SEQ_NUM).unwrap();
-        let ref_msg_type = offender.fv::<&str>(&MSG_TYPE).unwrap();
+        let ref_seq_num = offender.get(&MSG_SEQ_NUM).unwrap();
+        let ref_msg_type = offender.get::<&str>(&MSG_TYPE).unwrap();
         self.on_reject(
             ref_seq_num,
             Some(SENDING_TIME),
@@ -492,7 +489,7 @@ where
     }
 
     fn on_high_seqnum(&mut self, msg: Message<&[u8]>) -> Response {
-        let msg_seq_num = msg.fv(&MSG_SEQ_NUM).unwrap();
+        let msg_seq_num = msg.get(&MSG_SEQ_NUM).unwrap();
         self.make_resend_request(self.seq_numbers().next_inbound(), msg_seq_num);
         todo!()
     }

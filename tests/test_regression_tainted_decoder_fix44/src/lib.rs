@@ -20,7 +20,7 @@ fn decode() {
         let message = decoder
             .decode(sample)
             .expect("Couldn't decode sample FIX message");
-        let msg_type = message.fv::<fix44::MsgType>(fix44::MSG_TYPE);
+        let msg_type = message.get::<fix44::MsgType>(fix44::MSG_TYPE);
         assert!(msg_type.is_ok(), "fv() returns {:?}", msg_type);
     }
 }

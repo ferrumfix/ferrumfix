@@ -34,7 +34,7 @@ fn main() {
                 Some(_) => {
                     // we have successfully parsed a message
                     let msg = fix_decoder.message();
-                    assert_eq!(msg.fv(fix42::BEGIN_STRING), Ok("FIX.4.2"));
+                    assert_eq!(msg.get(fix42::BEGIN_STRING), Ok("FIX.4.2"));
                     // need to clear the decoder to to begin parsing next mesage
                     fix_decoder.clear();
                     break;

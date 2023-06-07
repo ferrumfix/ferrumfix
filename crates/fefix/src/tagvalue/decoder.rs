@@ -104,7 +104,7 @@ impl Decoder {
     /// decoder.config_mut().separator = b'|';
     /// let data = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
     /// let message = decoder.decode(data).unwrap();
-    /// assert_eq!(message.fv(fix44::SENDER_COMP_ID), Ok("A"));
+    /// assert_eq!(message.get(fix44::SENDER_COMP_ID), Ok("A"));
     /// ```
     #[inline]
     pub fn decode<'a, T>(&'a mut self, bytes: T) -> Result<Message<'a, T>, DecodeError>
@@ -624,7 +624,7 @@ where
         })
     }
 
-    fn fv_raw(&self, tag: u32) -> Option<&[u8]> {
+    fn get_raw(&self, tag: u32) -> Option<&[u8]> {
         let tag = TagU32::new(tag)?;
         let field_locator = FieldLocator {
             tag,
@@ -649,8 +649,8 @@ where
         self.group(field.tag().get())
     }
 
-    fn fv_raw(&self, field: &F) -> Option<&[u8]> {
-        self.fv_raw(u32::from(field.tag().get()))
+    fn get_raw(&self, field: &F) -> Option<&[u8]> {
+        self.get_raw(u32::from(field.tag().get()))
     }
 }
 
@@ -745,7 +745,7 @@ mod test {
         let message = decoder.decode(bytes).unwrap();
         let group = message.group(268).unwrap();
         assert_eq!(group.len(), 2);
-        assert_eq!(group.get(0).unwrap().fv_raw(278).unwrap(), b"BID" as &[u8]);
+        assert_eq!(group.get(0).unwrap().get_raw(278).unwrap(), b"BID" as &[u8]);
     }
 
     #[test]
@@ -755,7 +755,7 @@ mod test {
         let message = decoder.decode(&bytes).unwrap();
         let group = message.group(268).unwrap();
         assert_eq!(group.len(), 0);
-        assert_eq!(message.fv_raw(346), Some("1".as_bytes()));
+        assert_eq!(message.get_raw(346), Some("1".as_bytes()));
     }
 
     #[test]
@@ -773,10 +773,10 @@ mod test {
     fn heartbeat_message_fields_are_ok() {
         let mut codec = decoder();
         let message = codec.decode(RANDOM_MESSAGES[0].as_bytes()).unwrap();
-        assert_eq!(message.fv(35), Ok(b"0"));
-        assert_eq!(message.fv_raw(8), Some(b"FIX.4.2" as &[u8]));
-        assert_eq!(message.fv(34), Ok(12));
-        assert_eq!(message.fv_raw(34), Some(b"12" as &[u8]));
+        assert_eq!(message.get(35), Ok(b"0"));
+        assert_eq!(message.get_raw(8), Some(b"FIX.4.2" as &[u8]));
+        assert_eq!(message.get(34), Ok(12));
+        assert_eq!(message.get_raw(34), Some(b"12" as &[u8]));
     }
 
     #[test]
@@ -809,8 +809,8 @@ mod test {
             "8=FIX.4.4|9=58|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|39=0|93=8|89=foo|\x01bar|10=000|";
         let mut codec = decoder();
         let result = codec.decode(msg.as_bytes()).unwrap();
-        assert_eq!(result.fv(93), Ok(8));
-        assert!(matches!(result.fv_raw(89), Some(b"foo|\x01bar")));
+        assert_eq!(result.get(93), Ok(8));
+        assert!(matches!(result.get_raw(89), Some(b"foo|\x01bar")));
     }
 
     #[test]
@@ -841,7 +841,7 @@ mod test {
             loop {
                 stream.read_exact(codec.fillable()).unwrap();
                 if codec.try_parse().unwrap().is_some() {
-                    assert_eq!(codec.message().fv_raw(35), Some(&msg_type[..]));
+                    assert_eq!(codec.message().get_raw(35), Some(&msg_type[..]));
                     break;
                 }
             }

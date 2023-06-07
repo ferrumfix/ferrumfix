@@ -66,7 +66,7 @@ where
             })
     }
 
-    fn fv_raw(&self, field: &F) -> Option<&[u8]> {
+    fn get_raw(&self, field: &F) -> Option<&[u8]> {
         self.field_map(field)
             .get(field.name())
             .and_then(|field_or_group| {
