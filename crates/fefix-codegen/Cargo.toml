@@ -18,7 +18,7 @@ fefix-dictionary = { version = "0.7", path = "../fefix-dictionary" }
 fnv = "1"
 heck = "0.4"
 indoc = "2"
-strum = "0.24"
+strum = "0.25"
 strum_macros = "0.24"
 
 [dev-dependencies]
