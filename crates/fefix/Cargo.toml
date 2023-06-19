@@ -84,7 +84,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
 slog = { version = "2", optional = true }
 strum = "0.24"
-strum_macros = "0.24"
+strum_macros = "0.25"
 thiserror = "1"
 tokio-util = { version = "0.7", optional = true, features = ["codec", "compat"] }
 uuid = { version = "1", features = ["v4"] }
@@ -101,7 +101,7 @@ quick-xml = "0.23"
 roxmltree = "0.14"
 rayon = "1"
 strum = "0.24"
-strum_macros = "0.24"
+strum_macros = "0.25"
 
 [dev-dependencies]
 arbitrary = { version = "1.0", features = ["derive"] }
