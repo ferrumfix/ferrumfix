@@ -91,45 +91,6 @@ pub struct Dictionary {
     header: Vec<FieldData>,
 }
 
-impl fmt::Display for Dictionary {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "<fix type='FIX' version='{}'>", self.version)?;
-        {
-            writeln!(f, " <header>")?;
-            let std_header = self.component_by_name("StandardHeader").unwrap();
-            for item in std_header.items() {
-                display_layout_item(2, item, f)?;
-            }
-            writeln!(f, " </header>")?;
-        }
-        {
-            writeln!(f, " <messages>")?;
-            for message in self.messages() {
-                writeln!(
-                    f,
-                    "  <message name='{}' msgtype='{}' msgcat='TODO'>",
-                    message.name(),
-                    message.msg_type()
-                )?;
-                for item in message.layout() {
-                    display_layout_item(2, item, f)?;
-                }
-                writeln!(f, "  </message>")?;
-            }
-            writeln!(f, " </messages>")?;
-        }
-        {
-            writeln!(f, " <header>")?;
-            let std_header = self.component_by_name("StandardTrailer").unwrap();
-            for item in std_header.items() {
-                display_layout_item(2, item, f)?;
-            }
-            writeln!(f, " </header>")?;
-        }
-        Ok(())
-    }
-}
-
 fn display_layout_item(indent: u32, item: LayoutItem, f: &mut fmt::Formatter) -> fmt::Result {
     for _ in 0..indent {
         write!(f, " ")?;
