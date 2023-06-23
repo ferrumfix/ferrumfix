@@ -209,7 +209,7 @@ pub fn gen_definitions(fix_dictionary: &dict::Dictionary, settings: &Settings) -
         .map(|field| codegen_field_definition_struct(fix_dictionary, *field))
         .collect::<Vec<String>>()
         .join("\n");
-    let top_comment = onixs_link_to_dictionary(fix_dictionary.get_version()).unwrap_or_default();
+    let top_comment = onixs_link_to_dictionary(fix_dictionary.version()).unwrap_or_default();
     let code = format!(
         indoc!(
             r#"
@@ -291,7 +291,7 @@ fn gen_field_definition_with_hashsets(
     } else {
         "Body"
     };
-    let doc_link = onixs_link_to_field(fix_dictionary.get_version(), field);
+    let doc_link = onixs_link_to_field(fix_dictionary.version(), field);
     let doc = if let Some(doc_link) = doc_link {
         format!(
             "/// Field attributes for [`{} <{}>`]({}).",

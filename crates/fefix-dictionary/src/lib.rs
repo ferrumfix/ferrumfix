@@ -160,7 +160,7 @@ impl Dictionary {
     /// let dict = Dictionary::fix44();
     /// assert_eq!(dict.get_version(), "FIX.4.4");
     /// ```
-    pub fn get_version(&self) -> &str {
+    pub fn version(&self) -> &str {
         self.version.as_str()
     }
 
@@ -235,7 +235,8 @@ impl Dictionary {
     }
 
     /// Returns a [`Vec`] of FIX [`Dictionary`]'s for the most common FIX
-    /// versions. This is only intended for testing purposes.
+    /// versions (that have been enabled via feature flags). This is only
+    /// intended for testing purposes.
     pub fn common_dictionaries() -> Vec<Dictionary> {
         vec![
             #[cfg(feature = "fix40")]
