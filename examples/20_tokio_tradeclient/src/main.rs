@@ -2,11 +2,11 @@
 #[rustfmt::skip]
 mod generated_fix42;
 
+use core::fmt;
 use fefix::definitions::fix42;
 use fefix::FieldType;
 use generated_fix42 as strum_fix42;
-use std::str::FromStr;
-use strum::VariantNames;
+use strum::IntoEnumIterator;
 
 fn main() -> anyhow::Result<()> {
     loop {
@@ -37,15 +37,15 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, strum::EnumVariantNames, strum::EnumString)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, strum::EnumIter, strum::Display)]
 enum UserAction {
     EnterOrder,
     Quit,
 }
 
 fn prompt_user_action() -> anyhow::Result<UserAction> {
-    let s = inquire::Select::new("Select an action", UserAction::VARIANTS.to_vec()).prompt()?;
-    Ok(UserAction::from_str(&s)?)
+    let s = inquire::Select::new("Select an action", UserAction::iter().collect()).prompt()?;
+    Ok(s)
 }
 
 fn prompt_symbol() -> anyhow::Result<String> {
@@ -71,28 +71,29 @@ fn prompt_price() -> anyhow::Result<f32> {
 fn prompt_fix_enum<Strum, T>(prompt: &str) -> anyhow::Result<T>
 where
     T: for<'a> FieldType<'a> + Clone,
-    Strum: FieldType<'static> + strum::IntoEnumIterator + Clone,
+    Strum: FieldType<'static> + strum::IntoEnumIterator + Copy,
     &'static str: From<Strum>,
 {
-    let choices: Vec<(String, T)> = Strum::iter()
-        .map(|variant| {
-            (
-                format!(
-                    "{} - {}",
-                    FieldType::to_string(&variant),
-                    <&'static str>::from(variant.clone())
-                ),
-                T::deserialize(&variant.to_bytes()).ok().unwrap(),
-            )
-        })
-        .collect();
+    let choices: Vec<FixEnum<Strum>> = Strum::iter().map(FixEnum).collect();
+    let selection = inquire::Select::new(prompt, choices).prompt()?;
+    let result = T::deserialize(&selection.0.to_bytes()).ok().unwrap();
 
-    let s = inquire::Select::new(prompt, choices.iter().map(|p| p.0.clone()).collect()).prompt()?;
+    Ok(result)
+}
 
-    Ok(choices
-        .iter()
-        .find(|choice| choice.0 == s)
-        .unwrap()
-        .1
-        .clone())
+pub struct FixEnum<Strum>(pub Strum);
+
+impl<Strum> fmt::Display for FixEnum<Strum>
+where
+    Strum: FieldType<'static> + strum::IntoEnumIterator + Copy,
+    &'static str: From<Strum>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} - {}",
+            FieldType::to_string(&self.0),
+            <&'static str>::from(self.0)
+        )
+    }
 }
