@@ -209,20 +209,19 @@ fn value_restrictions_from_node(
     let mut values = Vec::new();
     for child in node.children() {
         if child.is_element() {
-            let variant = child.attribute("enum");
-            let description = child.attribute("description");
-            if variant.is_some() && description.is_some() {
-                let variant = child.attribute("enum").unwrap().to_string();
-                let description = child.attribute("description").unwrap().to_string();
-                let enum_value = FieldEnumData {
-                    value: variant,
-                    description,
-                };
-                values.push(enum_value);
-            } else {
-                eprintln!("expected both enum and description tag in element. at least one missing. text: {}",
-                          child.document().input_text().get(child.range().start .. child.range().end).unwrap_or("Error retrieving text").to_string());
-            }
+            let variant = child
+                .attribute("enum")
+                .unwrap_or_else(|| panic_missing_tag_in_element(child, "enum"))
+                .to_string();
+            let description = child
+                .attribute("description")
+                .unwrap_or_else(|| panic_missing_tag_in_element(child, "description"))
+                .to_string();
+            let enum_value = FieldEnumData {
+                value: variant,
+                description,
+            };
+            values.push(enum_value);
         }
     }
     if values.is_empty() {
@@ -236,18 +235,26 @@ fn import_layout_item(dict: &mut Dictionary, node: roxmltree::Node) -> ParseResu
     // This processing step requires on fields being already present in
     // the dictionary.
     debug_assert_ne!(dict.fields().len(), 0);
-    let name = node.attribute("name").expect(
-        format!("could not find attribute \"name\". text: {}",
-                node.document().input_text().get(node.range().start .. node.range().end).unwrap_or("Error retrieving text")).as_str());
-    let required = node.attribute("required").expect(
-        format!("could not find attribute \"required\". text: {}",
-                node.document().input_text().get(node.range().start .. node.range().end).unwrap_or("Error retrieving text")).as_str()
-        ) == "Y";
+    let name = node
+        .attribute("name")
+        .unwrap_or_else(|| panic_missing_tag_in_element(node, "name"));
+    let required = node
+        .attribute("required")
+        .unwrap_or_else(|| panic_missing_tag_in_element(node, "required"))
+        == "Y";
     let tag = node.tag_name().name();
     let kind = match tag {
         "field" => {
-            let field_tag = dict.field_by_name(name).expect(
-                format!("failed to find a field named \"{}\", check exact spelling and casing", name).as_str()).tag().get();
+            let field_tag = dict
+                .field_by_name(name)
+                .unwrap_or_else(||
+                    panic!(
+                        "failed to find a field named \"{}\" in the XML file, check exact spelling and casing",
+                        name
+                    )
+                )
+                .tag()
+                .get();
             LayoutItemKindData::Field { tag: field_tag }
         }
         "component" => {
@@ -256,9 +263,16 @@ fn import_layout_item(dict: &mut Dictionary, node: roxmltree::Node) -> ParseResu
             LayoutItemKindData::Component { name: name.into() }
         }
         "group" => {
-            let len_field_tag = dict.field_by_name(name).expect(
-                format!("failed to find a group named \"{}\", check exact spelling and casing", name).as_str()
-                ).tag().get();
+            let len_field_tag = dict
+                .field_by_name(name)
+                .unwrap_or_else(|| 
+                    panic!(
+                        "failed to find a group named \"{}\" in the XML file, check exact spelling and casing",
+                        name
+                    )
+                )
+                .tag()
+                .get();
             let mut items = Vec::new();
             for child in node.children().filter(|n| n.is_element()) {
                 items.push(import_layout_item(dict, child)?);
@@ -288,6 +302,18 @@ fn import_category(dict: &mut Dictionary, node: roxmltree::Node) -> ParseResult<
     }
 
     Ok(())
+}
+
+fn panic_missing_tag_in_element(elem: roxmltree::Node, tag: &str) -> ! {
+    panic!(
+        "expected `{}` tag in element, but it's missing. text: {}",
+        tag,
+        elem.document()
+            .input_text()
+            .get(elem.range().start..elem.range().end)
+            .unwrap_or("Error retrieving element text")
+            .to_string()
+    );
 }
 
 type ParseError = ParseDictionaryError;
