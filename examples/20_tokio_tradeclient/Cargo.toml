@@ -12,7 +12,7 @@ slog-term = "2"
 slog-async = "2"
 strum = { version = "0.25", features = ["derive"] }
 tokio = { version = "1", features = ["net", "io-util", "macros"] }
-tokio-util = { version = "0.6", features = ["compat"] }
+tokio-util = { version = "0.7", features = ["compat"] }
 
 [build-dependencies]
 fefix = { path = "../../crates/fefix", features = ["fix42", "codegen"] }
