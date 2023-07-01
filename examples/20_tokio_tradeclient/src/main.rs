@@ -44,7 +44,10 @@ enum UserAction {
 }
 
 fn prompt_user_action() -> anyhow::Result<UserAction> {
-    let s = inquire::Select::new("Select an action", UserAction::iter().collect()).prompt()?;
+    let s = inquire::prompt_selection("Select an action", UserAction::iter().collect())?;
+    
+    // or perhaps we could also omit inquire here since the fn name is verbose enough
+    let s = prompt_selection("Select an action", UserAction::iter().collect())?;
     Ok(s)
 }
 
