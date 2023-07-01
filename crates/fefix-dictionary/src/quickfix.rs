@@ -265,7 +265,7 @@ fn import_layout_item(dict: &mut Dictionary, node: roxmltree::Node) -> ParseResu
         "group" => {
             let len_field_tag = dict
                 .field_by_name(name)
-                .unwrap_or_else(|| 
+                .unwrap_or_else(||
                     panic!(
                         "failed to find a group named \"{}\" in the XML file, check exact spelling and casing",
                         name
