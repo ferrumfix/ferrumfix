@@ -158,7 +158,7 @@ impl Dictionary {
     /// use fefix_dictionary::Dictionary;
     ///
     /// let dict = Dictionary::fix44();
-    /// assert_eq!(dict.get_version(), "FIX.4.4");
+    /// assert_eq!(dict.version(), "FIX.4.4");
     /// ```
     pub fn version(&self) -> &str {
         self.version.as_str()
