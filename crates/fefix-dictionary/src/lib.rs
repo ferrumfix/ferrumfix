@@ -6,7 +6,8 @@ pub use datatype::FixDatatype;
 use fnv::FnvHashMap;
 use quickfix::{ParseDictionaryError, QuickFixReader};
 use smartstring::alias::String as SmartString;
-use std::{fmt, sync::Arc};
+use std::fmt;
+use std::sync::Arc;
 
 /// Type alias for FIX tags: 32-bit unsigned integers, strictly positive.
 pub type TagU32 = std::num::NonZeroU32;
