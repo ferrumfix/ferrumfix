@@ -1,6 +1,6 @@
 //! Access to FIX Dictionary reference and message specifications.
 
-mod builder;
+pub mod builder;
 mod fix_datatype;
 mod quickfix;
 

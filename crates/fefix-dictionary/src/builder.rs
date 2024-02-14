@@ -1,3 +1,5 @@
+//! A builder API for creating a [`Dictionary`] from scratch.
+
 use crate::{Dictionary, FixDatatype, FixmlComponentAttributes};
 use smartstring::alias::String as SmartString;
 
