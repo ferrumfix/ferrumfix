@@ -1,3 +1,5 @@
+// In case you're wondering, yes VS Code explicity allows comments in JSON
+// configuration files. See <https://code.visualstudio.com/docs/languages/json#_json-with-comments>.
 {
 	"rust-analyzer.check.overrideCommand": [
 		"cargo",
