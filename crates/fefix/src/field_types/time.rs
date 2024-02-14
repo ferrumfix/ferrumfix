@@ -29,12 +29,9 @@ impl Time {
     /// Creates a new time value from its components, with milliseconds.
     pub fn from_hmsm(hour: u32, minute: u32, second: u32, milli: u32) -> Option<Self> {
         if (MIN_HOUR..=MAX_HOUR).contains(&hour)
-            && minute >= MIN_MINUTE
-            && minute <= MAX_MINUTE
-            && second >= MIN_SECOND
-            && second <= MAX_SECOND
-            && milli >= MIN_MILLISECOND
-            && milli <= MAX_MILLISECOND
+            && (MIN_MINUTE..=MAX_MINUTE).contains(&minute)
+            && (MIN_SECOND..=MAX_SECOND).contains(&second)
+            && (MIN_MILLISECOND..=MAX_MILLISECOND).contains(&milli)
         {
             Some(Self {
                 hour,

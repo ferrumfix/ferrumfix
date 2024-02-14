@@ -97,7 +97,7 @@ impl Configure for Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
             verify_test_indicator: true,
             max_allowed_latency: Duration::from_secs(3),
             begin_string: "FIX.4.4".to_string(),

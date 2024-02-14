@@ -342,7 +342,7 @@ impl Decimal {
     /// ```
     pub fn truncate(&self) -> Self {
         let mut me = *self;
-        me.mantissa -= me.mantissa() % 10i64.pow(me.exp().abs() as u32);
+        me.mantissa -= me.mantissa() % 10i64.pow(me.exp().unsigned_abs());
         me.normalize()
     }
 
@@ -358,13 +358,13 @@ impl Decimal {
     /// ```
     pub fn fract(&self) -> Self {
         let mut me = *self;
-        me.mantissa %= 10i64.pow(me.exp().abs() as u32);
+        me.mantissa %= 10i64.pow(me.exp().unsigned_abs());
         me
     }
 
     /// Returns the power of 10 of mantissa, i.e. 10<sup>*e*</sup>.
     pub fn pow_of_ten(&self) -> i64 {
-        10i64.pow(self.exp().abs() as u32)
+        10i64.pow(self.exp().unsigned_abs())
     }
 
     /// Serializes `self` into a bytes array.

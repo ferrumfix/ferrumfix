@@ -30,7 +30,7 @@ impl<'a> Iterator for MultipleChars<'a> {
     type Item = u8;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(byte) = self.data.get(0).copied() {
+        if let Some(byte) = self.data.first().copied() {
             self.data = self.data.get(2..).unwrap_or(&[]);
             Some(byte)
         } else {

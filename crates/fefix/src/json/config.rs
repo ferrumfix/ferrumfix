@@ -1,6 +1,7 @@
 /// Configuration options for the FIX JSON encoding format.
 #[derive(Debug, Clone)]
 #[non_exhaustive]
+#[derive(Default)]
 pub struct Config {
     /// This setting indicates that all encoded messages should be "prettified"
     /// if possible, i.e. the JSON code will not be compressed and instead it
@@ -38,10 +39,4 @@ pub struct Config {
     pub pretty_print: bool,
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            pretty_print: false,
-        }
-    }
-}
+

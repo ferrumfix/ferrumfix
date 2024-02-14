@@ -587,7 +587,7 @@ impl<'a> Field<'a> {
     }
 
     pub fn description(&self) -> Option<&str> {
-        self.1.description.as_ref().map(|s| s.as_str())
+        self.1.description.as_deref()
     }
 }
 
@@ -786,7 +786,7 @@ mod test {
     #[test]
     fn at_least_one_datatype() {
         for dict in Dictionary::common_dictionaries().iter() {
-            assert!(dict.datatypes().len() >= 1);
+            assert!(!dict.datatypes().is_empty());
         }
     }
 

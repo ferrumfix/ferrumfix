@@ -129,7 +129,7 @@ fn import_field(builder: &mut DictionaryBuilder, node: roxmltree::Node) -> Parse
 
 fn import_message(dict: &mut DictionaryBuilder, node: roxmltree::Node) -> ParseResult<()> {
     debug_assert_eq!(node.tag_name().name(), "message");
-    let _category = import_category(dict, node)?;
+    import_category(dict, node)?;
     let mut layout_items = vec![];
     for child in node.children() {
         if child.is_element() {
@@ -326,7 +326,6 @@ fn panic_missing_tag_in_element(elem: roxmltree::Node, tag: &str) -> ! {
             .input_text()
             .get(elem.range().start..elem.range().end)
             .unwrap_or("Error retrieving element text")
-            .to_string()
     );
 }
 

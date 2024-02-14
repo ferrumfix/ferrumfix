@@ -28,12 +28,12 @@ impl Timestamp {
     pub fn utc_now() -> Self {
         use chrono::{Datelike, Timelike};
         let utc: chrono::DateTime<chrono::Utc> = chrono::Utc::now();
-        let date = Date::new(utc.year() as u32, utc.month() as u32, utc.day() as u32);
+        let date = Date::new(utc.year() as u32, utc.month(), utc.day());
         let time = Time::from_hmsm(
-            utc.hour() as u32,
-            utc.minute() as u32,
-            utc.second() as u32,
-            utc.nanosecond() as u32 / 1_000_000,
+            utc.hour(),
+            utc.minute(),
+            utc.second(),
+            utc.nanosecond() / 1_000_000,
         )
         .unwrap();
         Self::new(date.unwrap(), time)

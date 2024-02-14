@@ -148,7 +148,7 @@ impl Default for Settings {
             ],
             attributes_for_allowed_values: vec![],
             fefix_crate_name: "fefix".to_string(),
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
         }
     }
 }

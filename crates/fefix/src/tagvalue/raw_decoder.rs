@@ -131,7 +131,7 @@ impl RawDecoder {
         utils::verify_body_length(
             data,
             header_info.field_1.end + 1,
-            header_info.nominal_body_len as usize,
+            header_info.nominal_body_len,
         )?;
 
         if self.config.verify_checksum && self.config.separator == b'\x01' {

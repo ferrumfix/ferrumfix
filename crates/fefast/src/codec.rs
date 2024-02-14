@@ -189,7 +189,7 @@ impl Codec for PresenceMap {
             self.bits.push((byte >> 3) & 1 == 1);
             self.bits.push((byte >> 2) & 1 == 1);
             self.bits.push((byte >> 1) & 1 == 1);
-            self.bits.push((byte >> 0) & 1 == 1);
+            self.bits.push(byte & 1 == 1);
         }
         Ok(self.bits.len())
     }
@@ -237,7 +237,7 @@ pub fn decode_stop_bit_bitvec(input: &mut impl io::Read) -> io::Result<BitVec> {
         bits.push((byte >> 3) & 1 == 1);
         bits.push((byte >> 2) & 1 == 1);
         bits.push((byte >> 1) & 1 == 1);
-        bits.push((byte >> 0) & 1 == 1);
+        bits.push(byte & 1 == 1);
     }
     Ok(bits)
 }

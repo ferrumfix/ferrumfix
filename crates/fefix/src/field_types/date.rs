@@ -53,10 +53,8 @@ impl Date {
     /// ```
     pub fn new(year: u32, month: u32, day: u32) -> Option<Self> {
         if (MIN_YEAR..=MAX_YEAR).contains(&year)
-            && month >= MIN_MONTH
-            && month <= MAX_MONTH
-            && day >= MIN_DAY
-            && day <= MAX_DAY
+            && (MIN_MONTH..=MAX_MONTH).contains(&month)
+            && (MIN_DAY..=MAX_DAY).contains(&day)
         {
             Some(Self { year, month, day })
         } else {
@@ -236,8 +234,8 @@ mod test {
         // Lossy and losseless deserialization can only be meaningfully compared
         // on legal inputs.
         for bytes in VALID_DATES {
-            let date = Date::deserialize(*bytes).unwrap();
-            let date_lossy = Date::deserialize_lossy(*bytes).unwrap();
+            let date = Date::deserialize(bytes).unwrap();
+            let date_lossy = Date::deserialize_lossy(bytes).unwrap();
             assert_eq!(date, date_lossy);
         }
     }
@@ -251,14 +249,14 @@ mod test {
     #[test]
     fn lossless_deserialization_detects_errors() {
         for bytes in INVALID_DATES {
-            assert!(Date::deserialize(*bytes).is_err());
+            assert!(Date::deserialize(bytes).is_err());
         }
     }
 
     #[test]
     fn serialize_and_deserialize_are_consistent_with_each_other() {
         for bytes in VALID_DATES {
-            let date = Date::deserialize(*bytes).unwrap();
+            let date = Date::deserialize(bytes).unwrap();
             let serialized = date.to_bytes();
             assert_eq!(**bytes, serialized);
         }
