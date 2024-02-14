@@ -31,7 +31,6 @@ impl<'a> FieldType<'a> for chrono::NaiveDateTime {
             + self.time().serialize_with(buffer, with_millis)
     }
 
-    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         if data.len() < 10 {
             return Err("Datetime field too short.");
@@ -53,7 +52,6 @@ impl<'a> FieldType<'a> for chrono::NaiveDate {
     type Error = &'static str;
     type SerializeSettings = ();
 
-    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: Self::SerializeSettings) -> usize
     where
         B: Buffer,
@@ -70,7 +68,6 @@ impl<'a> FieldType<'a> for chrono::NaiveDate {
         8
     }
 
-    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
         Self::parse_from_str(s, "%Y%m%d").map_err(|_| ERR_TIME)
@@ -111,7 +108,6 @@ impl<'a> FieldType<'a> for chrono::NaiveTime {
         }
     }
 
-    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         let s = std::str::from_utf8(data).map_err(|_| ERR_UTF8)?;
         if data.len() == 8 {
@@ -134,7 +130,6 @@ impl<'a> FieldType<'a> for chrono::FixedOffset {
         Tz::from_chrono_offset(*self).serialize(buffer)
     }
 
-    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         Tz::deserialize(data).map(|tz| tz.to_chrono_offset())
     }
@@ -152,7 +147,6 @@ impl<'a> FieldType<'a> for chrono::DateTime<chrono::FixedOffset> {
         self.date_naive().serialize(buffer) + self.timezone().serialize(buffer)
     }
 
-    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         if data.len() < 17 {
             return Err("Datetime too short.");

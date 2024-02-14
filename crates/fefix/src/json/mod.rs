@@ -6,7 +6,6 @@ mod encoder;
 
 pub use config::Config;
 pub use decoder::{Decoder, FieldOrGroup, Message, MessageFieldsIter, MessageGroup};
-#[doc(inline)]
 pub use encoder::encoder_states;
 pub use encoder::Encoder;
 

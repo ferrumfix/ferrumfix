@@ -21,17 +21,14 @@ pub struct HardCodedFixFieldDefinition {
 }
 
 impl dict::IsFieldDefinition for HardCodedFixFieldDefinition {
-    #[inline]
     fn tag(&self) -> TagU32 {
         TagU32::new(self.tag).expect("Invalid tag number 0.")
     }
 
-    #[inline]
     fn name(&self) -> &str {
         self.name
     }
 
-    #[inline]
     fn location(&self) -> dict::FieldLocation {
         self.location
     }
