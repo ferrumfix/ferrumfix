@@ -26,44 +26,44 @@ name = "fix_decode"
 harness = false
 
 [features]
-default = ["utils-tokio", "utils-chrono"]
-codegen = ["heck", "indoc", "fefix-codegen"]
+default = [ "utils-chrono", "utils-tokio" ]
+codegen = [ "fefix-codegen", "heck", "indoc" ]
 derive = []
 json-encoding = []
-fix40 = ["fefix-dictionary/fix40"]
-fix41 = ["fefix-dictionary/fix41"]
-fix42 = ["fefix-dictionary/fix42"]
-fix43 = ["fefix-dictionary/fix43"]
-fix50 = ["fefix-dictionary/fix50"]
-fix50sp1 = ["fefix-dictionary/fix50sp1"]
-fix50sp2 = ["fefix-dictionary/fix50sp2"]
-fixt11 = ["fefix-dictionary/fixt11"]
+fix40 = [ "fefix-dictionary/fix40" ]
+fix41 = [ "fefix-dictionary/fix41" ]
+fix42 = [ "fefix-dictionary/fix42" ]
+fix43 = [ "fefix-dictionary/fix43" ]
+fix50 = [ "fefix-dictionary/fix50" ]
+fix50sp1 = [ "fefix-dictionary/fix50sp1" ]
+fix50sp2 = [ "fefix-dictionary/fix50sp2" ]
+fixt11 = [ "fefix-dictionary/fixt11" ]
 # Third-party crate integration.
-utils-bytes = ["bytes"]
+utils-bytes = [ "bytes" ]
 utils-chrono = []
-utils-decimal = ["decimal"]
-utils-rust-decimal = ["rust_decimal"]
-utils-slog = ["slog"]
-utils-tokio = ["tokio-util", "utils-bytes"]
+utils-decimal = [ "decimal" ]
+utils-rust-decimal = [ "rust_decimal" ]
+utils-slog = [ "slog" ]
+utils-tokio = [ "tokio-util", "utils-bytes" ]
 
 full = [
-    "codegen",
-    "derive",
-    "json-encoding",
-    "fix40",
-    "fix41",
-    "fix42",
-    "fix43",
-    "fix50",
-    "fix50sp1",
-    "fix50sp2",
-    "fixt11",
-    "utils-bytes",
-    "utils-chrono",
-    "utils-decimal",
-    "utils-rust-decimal",
-    "utils-slog",
-    "utils-tokio",
+	"codegen",
+	"derive",
+	"fix40",
+	"fix41",
+	"fix42",
+	"fix43",
+	"fix50",
+	"fix50sp1",
+	"fix50sp2",
+	"fixt11",
+	"json-encoding",
+	"utils-bytes",
+	"utils-chrono",
+	"utils-decimal",
+	"utils-rust-decimal",
+	"utils-slog",
+	"utils-tokio",
 ]
 
 [dependencies]
