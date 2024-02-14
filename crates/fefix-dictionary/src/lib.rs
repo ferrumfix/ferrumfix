@@ -12,7 +12,6 @@ pub use fix_datatype::FixDatatype;
 use fnv::FnvHashMap;
 use quickfix::{ParseDictionaryError, QuickFixReader};
 use smartstring::alias::String as SmartString;
-use std::fmt;
 use std::sync::Arc;
 
 /// Type alias for FIX tags: 32-bit unsigned integers, strictly positive.
@@ -60,41 +59,6 @@ pub enum FieldLocation {
 
 /// A mapping from FIX version strings to [`Dictionary`] values.
 pub type Dictionaries = FnvHashMap<String, Arc<Dictionary>>;
-
-fn display_layout_item(indent: u32, item: LayoutItem, f: &mut fmt::Formatter) -> fmt::Result {
-    for _ in 0..indent {
-        write!(f, " ")?;
-    }
-    match item.kind() {
-        LayoutItemKind::Field(_) => {
-            writeln!(
-                f,
-                "<field name='{}' required='{}' />",
-                item.tag_text(),
-                item.required(),
-            )?;
-        }
-        LayoutItemKind::Group(_, _fields) => {
-            writeln!(
-                f,
-                "<group name='{}' required='{}' />",
-                item.tag_text(),
-                item.required(),
-            )?;
-            writeln!(f, "</group>")?;
-        }
-        LayoutItemKind::Component(_c) => {
-            writeln!(
-                f,
-                "<component name='{}' required='{}' />",
-                item.tag_text(),
-                item.required(),
-            )?;
-            writeln!(f, "</component>")?;
-        }
-    }
-    Ok(())
-}
 
 /// Specifies business semantics for application-level entities within the FIX
 /// Protocol.
