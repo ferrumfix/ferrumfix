@@ -106,7 +106,6 @@ impl Decoder {
     /// let message = decoder.decode(data).unwrap();
     /// assert_eq!(message.get(fix44::SENDER_COMP_ID), Ok("A"));
     /// ```
-    #[inline]
     pub fn decode<'a, T>(&'a mut self, bytes: T) -> Result<Message<'a, T>, DecodeError>
     where
         T: AsRef<[u8]>,
@@ -299,7 +298,6 @@ where
     /// # Panics
     ///
     /// Panics if [`DecoderStreaming::try_parse()`] didn't return [`Ok(Some(()))`].
-    #[inline]
     pub fn message(&self) -> Message<&[u8]> {
         assert!(self.is_ready);
 

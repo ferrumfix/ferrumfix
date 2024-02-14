@@ -155,7 +155,6 @@ where
     type SerializeSettings: Default;
 
     /// Writes `self` to `buffer` using default settings.
-    #[inline]
     fn serialize<B>(&self, buffer: &mut B) -> usize
     where
         B: Buffer,

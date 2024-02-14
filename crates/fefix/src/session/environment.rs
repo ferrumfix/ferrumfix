@@ -28,7 +28,6 @@ impl Environment {
     /// assert_eq!(Environment::Production { allow_test: true }.allows_testing(), true);
     /// assert_eq!(Environment::Production { allow_test: false }.allows_testing(), false);
     /// ```
-    #[inline]
     pub fn allows_testing(&self) -> bool {
         match self {
             Self::Production { allow_test } => *allow_test,

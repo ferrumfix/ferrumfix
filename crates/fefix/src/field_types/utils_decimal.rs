@@ -10,7 +10,6 @@ impl<'a> FieldType<'a> for d128 {
     type Error = decimal::Status;
     type SerializeSettings = ();
 
-    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,

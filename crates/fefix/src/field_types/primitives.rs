@@ -36,7 +36,6 @@ macro_rules! impl_unsigned {
             type Error = &'static str;
             type SerializeSettings = ZeroPadding;
 
-            #[inline]
             fn serialize_with<B>(&self, buffer: &mut B, padding: ZeroPadding) -> usize
             where
                 B: Buffer,
@@ -46,7 +45,6 @@ macro_rules! impl_unsigned {
                 buffer.len() - initial_len
             }
 
-            #[inline]
             fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
                 std::str::from_utf8(data)
                     .map_err(|_| ERR_UTF8)?
@@ -54,7 +52,6 @@ macro_rules! impl_unsigned {
                     .map_err(|_| ERR_INT_INVALID)
             }
 
-            #[inline]
             fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
                 lossy_deserialize_unsigned!(data, $ty)
             }
@@ -68,7 +65,6 @@ macro_rules! impl_signed {
             type Error = &'static str;
             type SerializeSettings = ();
 
-            #[inline]
             fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
             where
                 B: Buffer,
@@ -78,7 +74,6 @@ macro_rules! impl_signed {
                 buffer.len() - initial_len
             }
 
-            #[inline]
             fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
                 std::str::from_utf8(data)
                     .map_err(|_| ERR_UTF8)?
@@ -86,7 +81,6 @@ macro_rules! impl_signed {
                     .map_err(|_| ERR_INT_INVALID)
             }
 
-            #[inline]
             fn deserialize_lossy(data: &'a [u8]) -> Result<Self, Self::Error> {
                 lossy_deserialize_signed!(data, $ty)
             }
@@ -100,7 +94,6 @@ macro_rules! impl_float {
             type Error = &'static str;
             type SerializeSettings = ();
 
-            #[inline]
             fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
             where
                 B: Buffer,
@@ -110,7 +103,6 @@ macro_rules! impl_float {
                 buffer.len() - initial_len
             }
 
-            #[inline]
             fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
                 std::str::from_utf8(data)
                     .map_err(|_| ERR_UTF8)?
@@ -137,7 +129,6 @@ impl<'a> FieldType<'a> for bool {
     type Error = &'static str;
     type SerializeSettings = ();
 
-    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -147,7 +138,6 @@ impl<'a> FieldType<'a> for bool {
         1
     }
 
-    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         match data {
             b"Y" => Ok(true),
@@ -162,7 +152,6 @@ impl<'a> FieldType<'a> for &'a str {
     type Error = std::str::Utf8Error;
     type SerializeSettings = ();
 
-    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -171,7 +160,6 @@ impl<'a> FieldType<'a> for &'a str {
         self.as_bytes().len()
     }
 
-    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         std::str::from_utf8(data)
     }
@@ -181,7 +169,6 @@ impl<'a> FieldType<'a> for &'a [u8] {
     type Error = ();
     type SerializeSettings = ();
 
-    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -190,7 +177,6 @@ impl<'a> FieldType<'a> for &'a [u8] {
         self.len()
     }
 
-    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         Ok(data)
     }
@@ -200,7 +186,6 @@ impl<'a, const N: usize> FieldType<'a> for [u8; N] {
     type Error = ();
     type SerializeSettings = ();
 
-    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, settings: ()) -> usize
     where
         B: Buffer,
@@ -208,7 +193,6 @@ impl<'a, const N: usize> FieldType<'a> for [u8; N] {
         (&self).serialize_with(buffer, settings)
     }
 
-    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         data.try_into().map_err(|_| ())
     }
@@ -218,7 +202,6 @@ impl<'a, const N: usize> FieldType<'a> for &'a [u8; N] {
     type Error = ();
     type SerializeSettings = ();
 
-    #[inline]
     fn serialize_with<B>(&self, buffer: &mut B, _settings: ()) -> usize
     where
         B: Buffer,
@@ -227,7 +210,6 @@ impl<'a, const N: usize> FieldType<'a> for &'a [u8; N] {
         self.len()
     }
 
-    #[inline]
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         data.try_into().map_err(|_| ())
     }

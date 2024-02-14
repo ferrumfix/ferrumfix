@@ -48,7 +48,6 @@ pub trait Backend: Clone {
         Environment::Production { allow_test: false }
     }
 
-    #[inline]
     fn on_heartbeat_is_due(&mut self) -> Result<(), Self::Error> {
         Ok(())
     }
@@ -60,7 +59,6 @@ pub trait Backend: Clone {
     fn on_outbound_message(&mut self, message: &[u8]) -> Result<(), Self::Error>;
 
     /// Callback for processing incoming FIX messages.
-    #[inline]
     fn on_inbound_message(
         &mut self,
         message: Message<&[u8]>,
@@ -97,13 +95,11 @@ pub struct MsgSeqNumCounter(u64);
 impl MsgSeqNumCounter {
     pub const START: Self = Self(0);
 
-    #[inline]
     pub fn next(&mut self) -> u64 {
         self.0 += 1;
         self.0
     }
 
-    #[inline]
     pub fn expected(&self) -> u64 {
         self.0 + 1
     }

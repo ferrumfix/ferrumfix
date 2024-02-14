@@ -18,7 +18,6 @@ pub trait Buffer {
     fn as_mut_slice(&mut self) -> &mut [u8];
 
     /// Returns the length of the whole contents of the buffer.
-    #[inline]
     fn len(&self) -> usize {
         self.as_slice().len()
     }
@@ -39,7 +38,6 @@ pub trait Buffer {
     /// If `new_len` is greater than [`Buffer::len()`], `self` is extended by
     /// the difference, with each additional byte set as `filler`. If `new_len`
     /// is less than [`Buffer::len()`], `self` is simply truncated.
-    #[inline]
     fn resize(&mut self, new_len: usize, filler: u8) {
         for _ in 0..new_len - self.as_slice().len() {
             self.extend_from_slice(&[filler]);
@@ -48,32 +46,26 @@ pub trait Buffer {
 }
 
 impl Buffer for Vec<u8> {
-    #[inline]
     fn as_slice(&self) -> &[u8] {
         self.as_slice()
     }
 
-    #[inline]
     fn as_mut_slice(&mut self) -> &mut [u8] {
         self.as_mut_slice()
     }
 
-    #[inline]
     fn capacity(&self) -> usize {
         self.capacity()
     }
 
-    #[inline]
     fn clear(&mut self) {
         self.clear()
     }
 
-    #[inline]
     fn extend_from_slice(&mut self, extend: &[u8]) {
         self.extend_from_slice(extend)
     }
 
-    #[inline]
     fn resize(&mut self, new_len: usize, filler: u8) {
         self.resize(new_len, filler)
     }
@@ -82,32 +74,26 @@ impl Buffer for Vec<u8> {
 #[cfg(feature = "utils-bytes")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-bytes")))]
 impl Buffer for bytes::BytesMut {
-    #[inline]
     fn as_slice(&self) -> &[u8] {
         &self[..]
     }
 
-    #[inline]
     fn as_mut_slice(&mut self) -> &mut [u8] {
         &mut self[..]
     }
 
-    #[inline]
     fn capacity(&self) -> usize {
         bytes::BytesMut::capacity(self)
     }
 
-    #[inline]
     fn clear(&mut self) {
         bytes::BytesMut::clear(self)
     }
 
-    #[inline]
     fn extend_from_slice(&mut self, extend: &[u8]) {
         bytes::BytesMut::extend_from_slice(self, extend)
     }
 
-    #[inline]
     fn resize(&mut self, new_len: usize, filler: u8) {
         bytes::BytesMut::resize(self, new_len, filler)
     }

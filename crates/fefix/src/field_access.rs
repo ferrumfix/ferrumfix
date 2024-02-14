@@ -51,7 +51,6 @@ pub trait FieldMap<F> {
 
     /// Like [`FieldMap::group`], but doesn't return an [`Err`] if the
     /// group is missing.
-    #[inline]
     fn group_opt(&self, field: F) -> Result<Option<Self::Group>, <usize as FieldType>::Error> {
         match self.group(field) {
             Ok(group) => Ok(Some(group)),
@@ -62,7 +61,6 @@ pub trait FieldMap<F> {
 
     /// Looks for a `field` within `self` and then decodes its raw byte contents
     /// via [`FieldType::deserialize`], if found.
-    #[inline]
     fn get<'a, V>(&'a self, field: F) -> Result<V, FieldValueError<V::Error>>
     where
         V: FieldType<'a>,
@@ -73,7 +71,6 @@ pub trait FieldMap<F> {
     }
 
     /// Like [`FieldMap::get`], but with lossy deserialization.
-    #[inline]
     fn get_lossy<'a, V>(&'a self, field: F) -> Result<V, FieldValueError<V::Error>>
     where
         V: FieldType<'a>,
@@ -85,7 +82,6 @@ pub trait FieldMap<F> {
 
     /// Like [`FieldMap::get`], but doesn't return an [`Err`] if `field`
     /// is missing.
-    #[inline]
     fn get_opt<'a, V>(&'a self, field: F) -> Result<Option<V>, V::Error>
     where
         V: FieldType<'a>,
@@ -94,7 +90,6 @@ pub trait FieldMap<F> {
     }
 
     /// Like [`FieldMap::get_opt`], but with lossy deserialization.
-    #[inline]
     fn get_lossy_opt<'a, V>(&'a self, field: F) -> Result<Option<V>, V::Error>
     where
         V: FieldType<'a>,
