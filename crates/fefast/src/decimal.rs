@@ -30,11 +30,6 @@ pub struct Decimal {
     mantissa: i64,
 }
 
-#[derive(Debug)]
-pub enum Error {
-    //InvalidScale,
-}
-
 impl Decimal {
     /// The greatest value that can be represented by a [`Decimal`].
     ///
