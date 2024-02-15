@@ -1,6 +1,8 @@
 //! Presets of standard TLS parameters as specified by *FIX-over-TLS*
 //! ([FIXS](https://www.fixtrading.org/standards/fixs/)).
 
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
+
 mod iana2openssl;
 
 use iana2openssl::iana2openssl;

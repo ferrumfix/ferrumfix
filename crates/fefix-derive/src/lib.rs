@@ -1,6 +1,7 @@
 //! Derive macros for FerrumFIX.
 
 #![deny(missing_debug_implementations, clippy::useless_conversion)]
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
 
 mod derive_fix_value;
 

@@ -99,7 +99,6 @@
     clippy::needless_lifetimes,
     rustdoc::invalid_rust_codeblocks
 )]
-// Only enables the `doc_cfg` feature when its feature is defined.
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 
 mod buffer;

@@ -1,4 +1,5 @@
 //! Access to FIX Dictionary reference and message specifications.
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
 
 pub mod builder;
 mod fix_datatype;

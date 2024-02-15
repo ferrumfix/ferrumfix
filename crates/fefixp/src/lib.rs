@@ -1,6 +1,7 @@
 //! *FIX Performance Session Layer*
 //! ([FIXP](https://www.fixtrading.org/standards/fixp-online/)) support.
 
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![allow(dead_code)]
 
 type SessionId = u128;
