@@ -1,8 +1,7 @@
 use fefix_dictionary::{self as dict, TagU32};
 use fnv::FnvHashSet;
 use heck::{ToPascalCase, ToShoutySnakeCase};
-use indoc::indoc;
-use std::marker::PhantomData;
+use indoc::formatdoc;
 
 const FEFIX_VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -14,22 +13,18 @@ const FEFIX_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// leading whitespace.
 ///
 /// ```text
-/// // Generated automatically by FerrumFIX. Do not modify manually.
+/// //! Generated automatically by FerrumFIX. Do not modify manually.
 /// ```
 pub fn generated_code_notice() -> String {
-    use chrono::prelude::*;
-
-    format!(
-        indoc!(
-            r#"
+    formatdoc!(
+        r#"
             // Generated automatically by FerrumFIX {} on {}.
             //
             // DO NOT MODIFY MANUALLY.
             // DO NOT COMMIT TO VERSION CONTROL.
-            // ALL CHANGES WILL BE OVERWRITTEN."#
-        ),
+            // ALL CHANGES WILL BE OVERWRITTEN."#,
         FEFIX_VERSION,
-        Utc::now().to_rfc2822(),
+        chrono::Utc::now().to_rfc2822(),
     )
 }
 
@@ -44,16 +39,14 @@ pub fn codegen_field_type_enum(field: dict::Field, settings: &Settings) -> Strin
         .map(|v| codegen_field_type_enum_variant(v, settings))
         .collect::<Vec<String>>()
         .join("\n");
-    format!(
-        indoc!(
-            r#"
+    formatdoc!(
+        r#"
             /// Field type variants for [`{field_name}`].
             #[derive({derives})]
             {attributes}
             pub enum {identifier} {{
             {variants}
-            }}"#
-        ),
+            }}"#,
         field_name = field.name().to_pascal_case(),
         derives = derives,
         attributes = attributes,
@@ -75,13 +68,11 @@ fn codegen_field_type_enum_variant(allowed_value: dict::FieldEnum, settings: &Se
     }
     let value_literal = allowed_value.value();
     indent_string(
-        format!(
-            indoc!(
-                r#"
+        formatdoc!(
+            r#"
                 /// {doc}
                 #[fefix(variant = "{value_literal}")]
-                {identifier},"#
-            ),
+                {identifier},"#,
             doc = format!("Field variant '{}'.", value_literal),
             value_literal = value_literal,
             identifier = identifier,
@@ -94,13 +85,12 @@ fn codegen_field_type_enum_variant(allowed_value: dict::FieldEnum, settings: &Se
 /// Code generation settings. Instantiate with [`Default::default`] and then
 /// change field values if necessary.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct Settings {
-    phantom: PhantomData<()>,
-
     /// The indentation prefix of all generated Rust code. Four
     /// spaces by default.
     pub indentation: String,
-    /// The indentation level of all generated Rust code. Zero by default.
+    /// The base indentation level of all generated Rust code. Zero by default.
     pub indentation_depth: u32,
     /// The name of the `fefix` crate for imports. `fefix` by default.
     pub fefix_crate_name: String,
@@ -114,8 +104,8 @@ pub struct Settings {
     /// }
     /// ```
     ///
-    /// Contains [`Debug`], [`Copy`], [`PartialEq`], [`Eq`], [`Hash`],
-    /// [`FieldType`](crate::FieldType) by default.
+    /// Contains [`Debug`], [`Copy`], [`Clone`], [`PartialEq`], [`Eq`],
+    /// [`Hash`], [`FieldType`](crate::FieldType) by default.
     pub derives_for_allowed_values: Vec<String>,
     /// A list of attribute macros for generated `enum`s variants. E.g.:
     ///
@@ -148,7 +138,6 @@ impl Default for Settings {
             ],
             attributes_for_allowed_values: vec![],
             fefix_crate_name: "fefix".to_string(),
-            phantom: PhantomData,
         }
     }
 }
@@ -208,24 +197,21 @@ pub fn gen_definitions(fix_dictionary: &dict::Dictionary, settings: &Settings) -
         .iter()
         .map(|field| codegen_field_definition_struct(fix_dictionary, *field))
         .collect::<Vec<String>>()
-        .join("\n");
+        .join("\n\n");
     let top_comment = onixs_link_to_dictionary(fix_dictionary.version()).unwrap_or_default();
-    let code = format!(
-        indoc!(
-            r#"
+    let code = formatdoc!(
+        r#"
             {notice}
 
             // {top_comment}
 
-            use {fefix_path}::dict::FieldLocation;
-            use {fefix_path}::dict::FixDatatype;
+            use {fefix_path}::dict::{{FieldLocation, FixDatatype}};
             use {fefix_path}::definitions::HardCodedFixFieldDefinition;
             use {fefix_path}::FieldType;
 
             {enum_definitions}
 
-            {field_defs}"#
-        ),
+            {field_defs}"#,
         notice = generated_code_notice(),
         top_comment = top_comment,
         enum_definitions = enums,
@@ -236,14 +222,10 @@ pub fn gen_definitions(fix_dictionary: &dict::Dictionary, settings: &Settings) -
 }
 
 fn indent_string(s: &str, prefix: &str) -> String {
-    s.lines().fold(String::new(), |mut s, line| {
-        if line.contains(char::is_whitespace) {
-            s.push_str(prefix);
-        }
-        s.push_str(line);
-        s.push('\n');
-        s
-    })
+    s.lines()
+        .map(|line| format!("{}{}", prefix, line))
+        .collect::<Vec<String>>()
+        .join("\n")
 }
 
 fn onixs_link_to_field(fix_version: &str, field: dict::Field) -> Option<String> {
@@ -301,17 +283,15 @@ fn gen_field_definition_with_hashsets(
         format!("/// Field attributes for `{} <{}>`.", name, tag)
     };
 
-    format!(
-        indoc!(
-            r#"
-                {doc}
-                pub const {identifier}: &HardCodedFixFieldDefinition = &HardCodedFixFieldDefinition {{
-                    name: "{name}",
-                    tag: {tag},
-                    data_type: FixDatatype::{data_type},
-                    location: FieldLocation::{field_location},
-                }};"#
-        ),
+    formatdoc!(
+        r#"
+            {doc}
+            pub const {identifier}: &HardCodedFixFieldDefinition = &HardCodedFixFieldDefinition {{
+                name: "{name}",
+                tag: {tag},
+                data_type: FixDatatype::{data_type},
+                location: FieldLocation::{field_location},
+            }};"#,
         doc = doc,
         identifier = name,
         name = field.name(),
