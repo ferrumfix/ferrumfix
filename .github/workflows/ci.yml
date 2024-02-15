@@ -8,6 +8,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: taiki-e/install-action@just
       - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-binstall
       - run: just install-tools
       - run: just lint
   test:
@@ -17,5 +18,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: taiki-e/install-action@just
       - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-binstall
       - run: just install-tools
       - run: just test
