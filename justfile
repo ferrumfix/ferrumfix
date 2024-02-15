@@ -6,8 +6,11 @@ export QUICKCHECK_TESTS := "2500"
 help:
 	@just --list
 
-# Install the necessary tools to build and test FerrumFIX (developers and CI only)
-install-tools:
+# Install the necessary tools to build and test FerrumFIX
+install-tools: && _install-tools-no-binstall
+	cargo install cargo-binstall
+
+_install-tools-no-binstall:
 	cargo install cargo-binstall
 	cargo binstall cargo-nextest --locked --secure --no-confirm
 	cargo binstall cargo-hack --locked --secure --no-confirm

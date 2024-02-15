@@ -9,7 +9,7 @@ jobs:
       - uses: taiki-e/install-action@just
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-binstall
-      - run: just install-tools
+      - run: just _install-tools-no-binstall
       - run: just lint
   test:
     name: Test
@@ -19,5 +19,5 @@ jobs:
       - uses: taiki-e/install-action@just
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-binstall
-      - run: just install-tools
+      - run: just _install-tools-no-binstall
       - run: just test
