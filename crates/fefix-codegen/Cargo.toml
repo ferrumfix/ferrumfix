@@ -27,5 +27,5 @@ fefix-dictionary = { version = "0.7", path = "../fefix-dictionary", features = [
 quickcheck = "1"
 quickcheck_derive = "0.3"
 quickcheck_macros = "1"
+syn = { version = "2", features = ["parsing", "full"] }
 tokio = { version = "1", features = ["full"] }
-syn = { version = "1", features = ["parsing", "full"] }
