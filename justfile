@@ -7,10 +7,10 @@ help:
 	@just --list
 
 # Install the necessary tools to build and test FerrumFIX
-install-tools: && _install-tools-no-binstall
+install-tools: && _install-tools-after-binstall
 	cargo install cargo-binstall
 
-_install-tools-no-binstall:
+_install-tools-after-binstall:
 	cargo binstall cargo-nextest --locked --secure --no-confirm
 	cargo binstall cargo-hack --locked --secure --no-confirm
 	cargo binstall cargo-udeps --locked --secure --no-confirm

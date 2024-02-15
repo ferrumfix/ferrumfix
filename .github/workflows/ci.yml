@@ -7,9 +7,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: taiki-e/install-action@just
-      - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-binstall
-      - run: just _install-tools-no-binstall
+      - run: just _install-tools-after-binstall
+      - uses: Swatinem/rust-cache@v2
       - run: just lint
   test:
     name: Test
@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: taiki-e/install-action@just
-      - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-binstall
-      - run: just _install-tools-no-binstall
+      - run: just _install-tools-after-binstall
+      - uses: Swatinem/rust-cache@v2
       - run: just test
