@@ -33,7 +33,7 @@ test:
 
 # Run cargo-hack to test all different Cargo feature combinations
 check-feature-combinations:
-	cargo hack check --all --feature-powerset --all-targets --depth 2
+	RUSTFLAGS=-Awarnings cargo hack check --all --feature-powerset --all-targets --depth 2
 
 # Find unused dependencies
 udeps:
