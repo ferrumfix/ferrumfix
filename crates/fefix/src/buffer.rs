@@ -10,6 +10,12 @@
 /// It's important to note that, unlike [`std::io::Write`] which only allows
 /// sequential write operations, [`Buffer`] allows arbitrary data manipulation
 /// over the whole buffer.
+///
+/// # Why not just use `bytes`?
+/// This trait exposes almost the very same API as `bytes::BytesMut`, it just
+/// abstracts over it so that tutorials, examples, or esoteric use cases can
+/// swap it out with other types or, more simply, [`Vec<u8>`] if they don't care
+/// about zero-copy.
 pub trait Buffer {
     /// Returns an immutable reference to the whole contents of the buffer.
     fn as_slice(&self) -> &[u8];
@@ -22,11 +28,20 @@ pub trait Buffer {
         self.as_slice().len()
     }
 
-    /// Returns the number of bytes that `self` can hold without reallocating.
+    /// Returns the number of additional bytes that `self` can hold without
+    /// reallocating.
     fn capacity(&self) -> usize;
 
-    /// Completely erases the contents of `self`.
+    /// Reserves capacity for at least `additional`` more bytes to be inserted into
+    /// this [`Buffer`].
+    fn reserve(&mut self, additional: usize);
+
+    /// Completely erases all the contents of `self`. Existing capacity is
+    /// preserved.
     fn clear(&mut self);
+
+    /// Removes all bytes from `self`, returning them in a new [`Buffer`].
+    fn split(&mut self) -> Self;
 
     /// Appends the contents of `extend` onto `self`, growing the buffer if
     /// necessary.
@@ -58,8 +73,16 @@ impl Buffer for Vec<u8> {
         self.capacity()
     }
 
+    fn reserve(&mut self, additional: usize) {
+        self.reserve(additional)
+    }
+
     fn clear(&mut self) {
         self.clear()
+    }
+
+    fn split(&mut self) -> Self {
+        self.split_off(0)
     }
 
     fn extend_from_slice(&mut self, extend: &[u8]) {
@@ -86,8 +109,16 @@ impl Buffer for bytes::BytesMut {
         bytes::BytesMut::capacity(self)
     }
 
+    fn reserve(&mut self, additional: usize) {
+        bytes::BytesMut::reserve(self, additional)
+    }
+
     fn clear(&mut self) {
         bytes::BytesMut::clear(self)
+    }
+
+    fn split(&mut self) -> Self {
+        bytes::BytesMut::split(self)
     }
 
     fn extend_from_slice(&mut self, extend: &[u8]) {

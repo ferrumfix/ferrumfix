@@ -204,6 +204,11 @@ where
     }
 }
 
+/// A marker trait for [`FieldType`] implementors that own their own data.
+pub trait FieldTypeOwned: for<'a> FieldType<'a> {}
+
+impl<T> FieldTypeOwned for T where T: for<'a> FieldType<'a> {}
+
 /// Common logic for interfacing with a streaming parser.
 ///
 /// Streaming parsers store incoming bytes in a [`Buffer`] and try to parse
@@ -214,17 +219,19 @@ where
 /// As soon as a single message fails to parse, the whole decoder should be
 /// assumed to be in an invalid state. Discard it and create another.
 pub trait StreamingDecoder {
+    /// The type of the items that are parsed by this decoder.
+    type Item;
     /// The [`Buffer`] implementation used by this decoder.
     type Buffer: Buffer;
     /// The parsing error type.
     type Error;
 
     /// Returns a mutable reference to the whole internal [`Buffer`].
-    fn buffer(&mut self) -> &mut Self::Buffer;
+    fn buffer_mut(&mut self) -> &mut Self::Buffer;
 
     /// Empties all contents of the internal buffer of `self`.
     fn clear(&mut self) {
-        self.buffer().clear();
+        self.buffer_mut().clear();
     }
 
     /// Provides a lower bound on the number of bytes that are required to reach the end of the
@@ -234,10 +241,10 @@ pub trait StreamingDecoder {
     /// Provides a buffer that must be filled before re-attempting to deserialize
     /// the next message. The slice is *guaranteed* to be non-empty.
     fn fillable(&mut self) -> &mut [u8] {
-        let len = self.buffer().len();
+        let len = self.buffer_mut().len();
         let num_bytes_required = self.num_bytes_required();
-        self.buffer().resize(num_bytes_required, 0);
-        &mut self.buffer().as_mut_slice()[len..]
+        self.buffer_mut().resize(num_bytes_required, 0);
+        &mut self.buffer_mut().as_mut_slice()[len..]
     }
 
     /// Attempts to parse the contents available in the internal [`Buffer`]. The return value gives
@@ -247,7 +254,7 @@ pub trait StreamingDecoder {
     /// - [`Ok(Some(()))`]: no errors found, and the message has been fully parsed.
     /// - [`Err`]: parsing failed.
     /// [`StreamingDecoder::Error`] upon failure.
-    fn try_parse(&mut self) -> Result<Option<()>, Self::Error>;
+    fn try_parse(&mut self) -> Result<Option<Self::Item>, Self::Error>;
 }
 
 /// Allows to write FIX fields.
