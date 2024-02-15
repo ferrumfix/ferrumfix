@@ -38,5 +38,3 @@ pub struct Config {
     /// ```
     pub pretty_print: bool,
 }
-
-

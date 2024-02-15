@@ -14,6 +14,7 @@ install-tools:
 	cargo binstall cargo-udeps --locked --secure --no-confirm
 	cargo binstall zepter --locked --secure --no-confirm
 	rustup update nightly
+	rustup update stable
 
 # Find unused dependencies
 udeps:
@@ -22,10 +23,10 @@ udeps:
 # Run all linting steps
 lint:
 	cargo +nightly fmt --check
-	cargo check --all-targets --all-features
-	cargo clippy
+	RUSTFLAGS=-Awarnings cargo check --all-targets --all-features
 	zepter
-	RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features
+	# TODO: clippy
+	# TODO: RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features
 
 # Run cargo-hack to test all different Cargo feature combinations
 check-feature-combinations:

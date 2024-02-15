@@ -1,47 +1,21 @@
 on: [push, pull_request]
 name: CI
 jobs:
-  check:
-    name: Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: Swatinem/rust-cache@v2
-      - name: Run cargo check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-  test:
-    name: Test Suite
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: Swatinem/rust-cache@v2
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-  lints:
-    name: Lints
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: cargo fmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+      - uses: taiki-e/install-action@just
+      - uses: Swatinem/rust-cache@v2
+      - run: just install-tools
+      - run: just lint
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: taiki-e/install-action@just
+      - uses: Swatinem/rust-cache@v2
+      - run: just install-tools
+      - run: just test
