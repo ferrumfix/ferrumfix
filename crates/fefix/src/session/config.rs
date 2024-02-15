@@ -1,5 +1,4 @@
 use super::{Environment, MsgSeqNumCounter, SeqNumbers};
-use std::marker::PhantomData;
 use std::num::NonZeroU64;
 use std::time::Duration;
 
@@ -49,11 +48,11 @@ pub trait Configure: Clone + Default {
 /// Most fields simply mirror the methods of the [`Configure`] trait.
 #[derive(Debug, Clone)]
 #[allow(missing_docs)]
+#[non_exhaustive]
 pub struct Config {
-    phantom: PhantomData<()>,
-
     pub verify_test_indicator: bool,
     pub max_allowed_latency: Duration,
+    /// The FIX version string. Defaults to `FIX.4.4`.
     pub begin_string: String,
     pub environment: Environment,
     pub heartbeat: Duration,
@@ -97,7 +96,6 @@ impl Configure for Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            phantom: PhantomData,
             verify_test_indicator: true,
             max_allowed_latency: Duration::from_secs(3),
             begin_string: "FIX.4.4".to_string(),

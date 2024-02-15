@@ -171,8 +171,12 @@ where
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error>;
 
     /// Like [`FieldType::deserialize`], but it's allowed to skip *some* amount of
-    /// input checking. Invalid inputs might not trigger errors and instead be
-    /// deserialized as random values.
+    /// input checking for the sake of performance. Invalid inputs might not
+    /// trigger errors and instead be deserialized as corrupted or seemingly
+    /// random values.
+    ///
+    /// You should only use this method if you trust your input to be
+    /// syntactically valid.
     ///
     /// # Safety
     ///

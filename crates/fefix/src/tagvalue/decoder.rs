@@ -20,6 +20,7 @@ use std::marker::PhantomData;
 /// generates unique identifiers for tags both outside and within groups, which
 /// allows for random (i.e. non-sequential) reads on a FIX message.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+
 struct FieldLocator {
     pub tag: TagU32,
     pub context: FieldLocatorContext,
@@ -332,7 +333,7 @@ where
     len: usize,
 }
 
-impl<'a, T> RepeatingGroup for MessageGroup<'a, T>
+impl<'a, T> RepeatingGroup<'a> for MessageGroup<'a, T>
 where
     T: AsRef<[u8]> + Clone,
 {
@@ -592,7 +593,7 @@ impl<'a, T> Iterator for Fields<'a, T> {
     }
 }
 
-impl<'a, T> FieldMap<u32> for Message<'a, T>
+impl<'a, T> FieldMap<'a, u32> for Message<'a, T>
 where
     T: AsRef<[u8]> + Clone,
 {
@@ -633,15 +634,15 @@ where
     }
 }
 
-impl<'a, F, T> FieldMap<&F> for Message<'a, T>
+impl<'a, F, T> FieldMap<'a, &F> for Message<'a, T>
 where
     F: IsFieldDefinition,
-    T: AsRef<[u8]> + Clone,
+    T: AsRef<[u8]> + Clone + 'a,
 {
     type Group = MessageGroup<'a, T>;
 
     fn group(
-        &self,
+        &'a self,
         field: &F,
     ) -> Result<Self::Group, FieldValueError<<usize as FieldType>::Error>> {
         self.group(field.tag().get())

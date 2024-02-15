@@ -100,7 +100,7 @@ impl Buffer for bytes::BytesMut {
 }
 
 /// A [`Buffer`] wrapper that implements [`std::fmt::Write`].
-#[allow(missing_debug_implementations)]
+#[derive(Debug)]
 pub struct BufferWriter<'a, B>(pub &'a mut B);
 
 impl<'a, B> std::fmt::Write for BufferWriter<'a, B>
