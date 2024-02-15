@@ -11,7 +11,6 @@ install-tools: && _install-tools-no-binstall
 	cargo install cargo-binstall
 
 _install-tools-no-binstall:
-	cargo install cargo-binstall
 	cargo binstall cargo-nextest --locked --secure --no-confirm
 	cargo binstall cargo-hack --locked --secure --no-confirm
 	cargo binstall cargo-udeps --locked --secure --no-confirm
