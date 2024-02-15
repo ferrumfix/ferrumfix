@@ -8,4 +8,4 @@ build = "build.rs"
 fefix = { path = "../../crates/fefix", features = ["codegen"] }
 
 [build-dependencies]
-fefix = { path = "../../crates/fefix" }
+fefix = { path = "../../crates/fefix", features = ["codegen"] }

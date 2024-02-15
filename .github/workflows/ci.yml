@@ -11,7 +11,7 @@ jobs:
       - run: just _install-tools-after-binstall
       - uses: Swatinem/rust-cache@v2
       - run: just lint
-  check-feature-combinations:
+  check-features:
     name: Check feature combinations
     runs-on: ubuntu-latest
     steps:
@@ -20,7 +20,7 @@ jobs:
       - uses: taiki-e/install-action@cargo-binstall
       - run: just _install-tools-after-binstall
       - uses: Swatinem/rust-cache@v2
-      - run: just check-feature-combinations
+      - run: just check-features
   test:
     name: Test
     runs-on: ubuntu-latest

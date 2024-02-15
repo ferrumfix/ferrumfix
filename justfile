@@ -32,8 +32,8 @@ test:
 	cargo nextest run --workspace --all-features
 
 # Run cargo-hack to test all different Cargo feature combinations
-check-feature-combinations:
-	RUSTFLAGS=-Awarnings cargo hack check --all --feature-powerset --all-targets --depth 2
+check-features:
+	RUSTFLAGS=-Awarnings cargo hack check --all --all-targets --each-feature
 
 # Find unused dependencies
 udeps:
