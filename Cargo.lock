@@ -593,7 +593,7 @@ dependencies = [
  "roxmltree",
  "strum 0.20.0",
  "strum_macros 0.26.1",
- "syn 1.0.109",
+ "syn 2.0.48",
 ]
 
 [[package]]
@@ -627,7 +627,7 @@ dependencies = [
  "slog",
  "strum 0.24.1",
  "strum_macros 0.26.1",
- "syn 1.0.109",
+ "syn 2.0.48",
  "thiserror",
  "tokio",
  "tokio-util",
@@ -651,7 +651,7 @@ dependencies = [
  "quickcheck_macros",
  "strum 0.24.1",
  "strum_macros 0.26.1",
- "syn 1.0.109",
+ "syn 2.0.48",
  "tokio",
 ]
 
@@ -663,7 +663,7 @@ dependencies = [
  "proc-macro-crate 3.1.0",
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn 2.0.48",
 ]
 
 [[package]]
@@ -682,7 +682,7 @@ dependencies = [
  "smartstring",
  "strum 0.24.1",
  "strum_macros 0.26.1",
- "syn 1.0.109",
+ "syn 2.0.48",
  "tokio",
 ]
 
@@ -708,7 +708,7 @@ dependencies = [
  "quickcheck",
  "quickcheck_derive",
  "quickcheck_macros",
- "syn 1.0.109",
+ "syn 2.0.48",
  "thiserror",
  "tokio-util",
 ]
