@@ -2,20 +2,24 @@
 
 export QUICKCHECK_TESTS := "2500"
 
-# Lists available recipes
+# List available recipes
 help:
 	@just --list
 
-# Installs the necessary tools to build and test FerrumFIX (developers and CI only)
+# Install the necessary tools to build and test FerrumFIX (developers and CI only)
 install-tools:
 	cargo install cargo-binstall
-	cargo binstall cargo-nextest --secure --no-confirm
-	cargo binstall cargo-hack --secure --no-confirm
-	cargo binstall zepter --secure --no-confirm
+	cargo binstall cargo-nextest --locked --secure --no-confirm
+	cargo binstall cargo-hack --locked --secure --no-confirm
+	cargo binstall cargo-udeps --locked --secure --no-confirm
+	cargo binstall zepter --locked --secure --no-confirm
 	rustup update nightly
 
+# Find unused dependencies
+udeps:
+	RUSTFLAGS=-Awarnings cargo +nightly hack udeps --package fefix --feature-powerset --all-targets --depth 2
 
-# Runs all linting steps
+# Run all linting steps
 lint:
 	cargo +nightly fmt --check
 	cargo check --all-targets --all-features
@@ -23,11 +27,11 @@ lint:
 	zepter
 	RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features
 
-# Runs cargo-hack to test all different Cargo feature combinations
+# Run cargo-hack to test all different Cargo feature combinations
 check-feature-combinations:
-	cargo hack check --workspace --feature-powerset --all-targets
+	cargo hack check --all --feature-powerset --all-targets --depth 2
 
-# Runs all tests
+# Run all tests
 test:
 	cargo nextest run --workspace --all-features
 
