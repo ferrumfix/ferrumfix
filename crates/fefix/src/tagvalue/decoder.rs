@@ -106,7 +106,7 @@ impl Decoder {
     /// let message = decoder.decode(data).unwrap();
     /// assert_eq!(message.get(fix44::SENDER_COMP_ID), Ok("A"));
     /// ```
-    pub fn decode<'a, T>(&'a mut self, bytes: T) -> Result<Message<'a, T>, DecodeError>
+    pub fn decode<T>(&mut self, bytes: T) -> Result<Message<'_, T>, DecodeError>
     where
         T: AsRef<[u8]>,
     {
@@ -114,11 +114,11 @@ impl Decoder {
         self.from_frame(frame)
     }
 
-    fn message_builder_mut<'a>(&'a mut self) -> &'a mut MessageBuilder<'a> {
+    fn message_builder_mut(&mut self) -> &mut MessageBuilder<'_> {
         unsafe { std::mem::transmute(&mut self.builder) }
     }
 
-    fn from_frame<'a, T>(&'a mut self, frame: RawFrame<T>) -> Result<Message<'a, T>, DecodeError>
+    fn from_frame<T>(&mut self, frame: RawFrame<T>) -> Result<Message<'_, T>, DecodeError>
     where
         T: AsRef<[u8]>,
     {
@@ -135,7 +135,7 @@ impl Decoder {
         let mut i = 0;
         while i < payload.len() {
             let index_of_next_equal_sign = {
-                let i_eq = (&payload[i..])
+                let i_eq = payload[i..]
                     .iter()
                     .copied()
                     .position(|byte| byte == b'=')
@@ -149,7 +149,7 @@ impl Decoder {
                 self.builder.state.data_field_length = None;
                 len
             } else {
-                let len = (&payload[index_of_next_equal_sign + 1..])
+                let len = payload[index_of_next_equal_sign + 1..]
                     .iter()
                     .copied()
                     .position(|byte| byte == separator);
@@ -160,7 +160,7 @@ impl Decoder {
             };
             let tag_num = {
                 let mut tag = 0u32;
-                for byte in (&payload[i..index_of_next_equal_sign]).iter().copied() {
+                for byte in payload[i..index_of_next_equal_sign].iter().copied() {
                     tag = tag * 10 + (byte as u32 - b'0' as u32);
                 }
                 if let Some(tag) = TagU32::new(tag) {
@@ -181,15 +181,15 @@ impl Decoder {
         }
         Ok(Message {
             builder: self.message_builder_mut(),
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
             field_locator_context: FieldLocatorContext::TopLevel,
         })
     }
 
-    fn store_field<'a>(
+    fn store_field(
         &mut self,
         tag: TagU32,
-        raw_message: &'a [u8],
+        raw_message: &[u8],
         field_value_start: usize,
         field_value_len: usize,
     ) {
@@ -303,7 +303,7 @@ where
 
         Message {
             builder: &self.decoder.builder,
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
             field_locator_context: FieldLocatorContext::TopLevel,
         }
     }
@@ -346,7 +346,7 @@ where
         if i < self.len {
             Some(Message {
                 builder: self.message.builder,
-                phantom: PhantomData::default(),
+                phantom: PhantomData,
                 field_locator_context: FieldLocatorContext::WithinGroup {
                     index_of_group_tag: self.index_of_group_tag,
                     entry_index: i.try_into().unwrap(),
@@ -614,7 +614,7 @@ where
         Ok(MessageGroup {
             message: Message {
                 builder: self.builder,
-                phantom: PhantomData::default(),
+                phantom: PhantomData,
                 field_locator_context: FieldLocatorContext::TopLevel,
             },
             index_of_group_tag,
@@ -648,7 +648,7 @@ where
     }
 
     fn get_raw(&self, field: &F) -> Option<&[u8]> {
-        self.get_raw(u32::from(field.tag().get()))
+        self.get_raw(field.tag().get())
     }
 }
 

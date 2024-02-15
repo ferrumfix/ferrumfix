@@ -182,7 +182,7 @@ mod test {
     #[test]
     fn first_field_instruction() {
         let template = Template::new(SIMPLE_TEMPLATE).unwrap();
-        let first_field_instruction = template.instructions.get(0).unwrap();
+        let first_field_instruction = template.instructions.first().unwrap();
         assert_eq!(first_field_instruction.name, "BeginString");
     }
 }

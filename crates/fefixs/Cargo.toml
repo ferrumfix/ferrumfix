@@ -13,7 +13,7 @@ categories.workspace = true
 license.workspace = true
 
 [features]
-utils-openssl = ["openssl"]
+utils-openssl = [ "openssl" ]
 
 [dependencies]
 openssl = { version = "0.10", optional = true }

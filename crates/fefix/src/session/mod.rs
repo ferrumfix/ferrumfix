@@ -39,7 +39,7 @@ pub trait Backend: Clone {
         None
     }
 
-    fn set_sender_and_target<'a>(&'a self, msg: &mut impl SetField<u32>) {
+    fn set_sender_and_target(&self, msg: &mut impl SetField<u32>) {
         msg.set(49, self.sender_comp_id());
         msg.set(56, self.target_comp_id());
     }

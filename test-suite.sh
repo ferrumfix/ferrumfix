@@ -2,16 +2,6 @@
 
 set -euxo pipefail
 
-git submodule init
-git submodule update
-
-# TODO: Were there integration tests setup against this at some point?
-# mkdir -p lib/quickfix/config
-# cd lib/quickfix/config
-# cmake ..
-# make
-# cd ../../..
-
 # Increase number of iteration for QuickCheck.
 export QUICKCHECK_TESTS="2500"
 

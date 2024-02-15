@@ -45,7 +45,7 @@ impl Tz {
     pub fn offset(&self) -> (i32, Duration) {
         (
             self.offset_from_utc_in_seconds.signum(),
-            Duration::from_secs(self.offset_from_utc_in_seconds.abs() as u64),
+            Duration::from_secs(self.offset_from_utc_in_seconds.unsigned_abs() as u64),
         )
     }
 

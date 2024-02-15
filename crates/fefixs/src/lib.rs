@@ -64,7 +64,7 @@ pub trait FixOverTlsCommon {
 pub struct FixOverTlsV10;
 
 impl FixOverTlsV10 {
-    const RECOMMENDED_CIPHERSUITES: &[&'static str] = &[
+    const RECOMMENDED_CIPHERSUITES: &'static [&'static str] = &[
         "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
         "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
         "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
@@ -85,7 +85,7 @@ impl FixOverTlsV10 {
         "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
     ];
 
-    const RECOMMENDED_CIPHERSUITES_PSK_ONLY: &[&'static str] = &[
+    const RECOMMENDED_CIPHERSUITES_PSK_ONLY: &'static [&'static str] = &[
         "TLS_DHE_PSK_WITH_AES_128_GCM_SHA256",
         "TLS_DHE_PSK_WITH_AES_256_GCM_SHA384",
         "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA",

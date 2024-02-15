@@ -620,7 +620,6 @@ dependencies = [
  "quickcheck",
  "quickcheck_derive",
  "quickcheck_macros",
- "rayon",
  "roxmltree",
  "rust_decimal",
  "serde",

@@ -157,7 +157,7 @@ where
     where
         V: FieldType<'s>,
     {
-        self.set_with(tag.get() as u32, value, settings)
+        self.set_with(tag.get(), value, settings)
     }
 }
 
