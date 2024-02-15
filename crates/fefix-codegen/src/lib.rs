@@ -2,7 +2,6 @@ use fefix_dictionary::{self as dict, TagU32};
 use fnv::FnvHashSet;
 use heck::{ToPascalCase, ToShoutySnakeCase};
 use indoc::indoc;
-use std::marker::PhantomData;
 
 const FEFIX_VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -94,13 +93,12 @@ fn codegen_field_type_enum_variant(allowed_value: dict::FieldEnum, settings: &Se
 /// Code generation settings. Instantiate with [`Default::default`] and then
 /// change field values if necessary.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct Settings {
-    phantom: PhantomData<()>,
-
     /// The indentation prefix of all generated Rust code. Four
     /// spaces by default.
     pub indentation: String,
-    /// The indentation level of all generated Rust code. Zero by default.
+    /// The base indentation level of all generated Rust code. Zero by default.
     pub indentation_depth: u32,
     /// The name of the `fefix` crate for imports. `fefix` by default.
     pub fefix_crate_name: String,
@@ -114,8 +112,8 @@ pub struct Settings {
     /// }
     /// ```
     ///
-    /// Contains [`Debug`], [`Copy`], [`PartialEq`], [`Eq`], [`Hash`],
-    /// [`FieldType`](crate::FieldType) by default.
+    /// Contains [`Debug`], [`Copy`], [`Clone`], [`PartialEq`], [`Eq`],
+    /// [`Hash`], [`FieldType`](crate::FieldType) by default.
     pub derives_for_allowed_values: Vec<String>,
     /// A list of attribute macros for generated `enum`s variants. E.g.:
     ///
@@ -148,7 +146,6 @@ impl Default for Settings {
             ],
             attributes_for_allowed_values: vec![],
             fefix_crate_name: "fefix".to_string(),
-            phantom: PhantomData,
         }
     }
 }

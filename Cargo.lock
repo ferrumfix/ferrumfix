@@ -649,8 +649,6 @@ dependencies = [
  "quickcheck",
  "quickcheck_derive",
  "quickcheck_macros",
- "strum",
- "strum_macros 0.26.1",
  "syn 1.0.109",
  "tokio",
 ]

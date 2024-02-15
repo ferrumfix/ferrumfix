@@ -30,6 +30,8 @@ lint:
 # Run all tests
 test:
 	cargo nextest run --workspace --all-features
+	# nextest does not support doctests yet: <https://github.com/nextest-rs/nextest/issues/16>.
+	cargo test --workspace --doc --all-features 
 
 # Run cargo-hack to test all different Cargo feature combinations
 check-features:
