@@ -19,10 +19,6 @@ _install-tools-after-binstall:
 	rustup component add rustfmt --toolchain nightly
 	rustup install stable
 
-# Find unused dependencies
-udeps:
-	RUSTFLAGS=-Awarnings cargo +nightly hack udeps --package fefix --feature-powerset --all-targets --depth 2
-
 # Run all linting steps
 lint:
 	cargo +nightly fmt --check
@@ -31,13 +27,17 @@ lint:
 	# TODO: clippy
 	# TODO: RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features
 
+# Run all tests
+test:
+	cargo nextest run --workspace --all-features
+
 # Run cargo-hack to test all different Cargo feature combinations
 check-feature-combinations:
 	cargo hack check --all --feature-powerset --all-targets --depth 2
 
-# Run all tests
-test:
-	cargo nextest run --workspace --all-features
+# Find unused dependencies
+udeps:
+	RUSTFLAGS=-Awarnings cargo +nightly hack udeps --package fefix --feature-powerset --all-targets --depth 2
 
 _init-submodules:
 	git submodule init
