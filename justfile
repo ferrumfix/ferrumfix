@@ -15,8 +15,8 @@ _install-tools-no-binstall:
 	cargo binstall cargo-hack --locked --secure --no-confirm
 	cargo binstall cargo-udeps --locked --secure --no-confirm
 	cargo binstall zepter --locked --secure --no-confirm
-	rustup component add rustfmt --toolchain nightly
-	rustup update stable
+	rustup install nightly
+	rustup install stable
 
 # Find unused dependencies
 udeps:
