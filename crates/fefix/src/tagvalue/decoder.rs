@@ -676,25 +676,6 @@ where
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct GroupRef<'a, T>
-where
-    T: AsRef<[u8]>,
-{
-    message: &'a Message<'a, T>,
-    len: usize,
-    field_len: u32,
-}
-
-#[derive(Debug, Clone)]
-pub struct GroupRefIter<'a, T>
-where
-    T: AsRef<[u8]>,
-{
-    group: &'a GroupRef<'a, T>,
-    i: usize,
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
