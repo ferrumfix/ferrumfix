@@ -11,6 +11,12 @@ use std::fmt::Debug;
 use std::iter::FusedIterator;
 use std::ops::Range;
 
+// Number of bytes before the start of the `BeginString` field:
+//
+//   ~~
+//   8=FIX.4.2|...
+const BEGIN_STRING_OFFSET: usize = 2;
+
 /// Univocally locates a tag within a FIX message, even with nested groups.
 ///
 /// Typically, every FIX tag is guaranteed to be unique within a single FIX
@@ -33,12 +39,6 @@ enum FieldLocatorContext {
         entry_index: u32,
     },
 }
-
-// Number of bytes before the start of the `BeginString` field:
-//
-//   ~~
-//   8=FIX.4.2|...
-const BEGIN_STRING_OFFSET: usize = 2;
 
 /// FIX message decoder.
 ///
@@ -107,7 +107,7 @@ impl Decoder {
     /// ```
     pub fn decode<T>(&self, bytes: T) -> Result<Message<T>, DecodeError>
     where
-        T: AsRef<[u8]> + Default,
+        T: AsRef<[u8]>,
     {
         let frame = self.raw_decoder.decode(bytes)?;
         self.from_frame(frame)
@@ -115,22 +115,22 @@ impl Decoder {
 
     fn from_frame<T>(&self, frame: RawFrame<T>) -> Result<Message<T>, DecodeError>
     where
-        T: AsRef<[u8]> + Default,
+        T: AsRef<[u8]>,
     {
-        let mut builder = MessageBuilder::default();
+        let mut builder = MessageBuilder::new(frame);
         let separator = self.config().separator;
-        let payload = frame.payload();
+        let begin_string_len = builder.raw_frame.begin_string().len();
         self.store_field(
             &mut builder,
             TagU32::new(8).unwrap(),
-            frame.as_bytes(),
             BEGIN_STRING_OFFSET,
-            frame.begin_string().len(),
+            begin_string_len,
         );
-        let mut i = 0;
-        while i < payload.len() {
+        let mut i = builder.raw_frame.payload.start;
+        while i < builder.raw_frame.payload.end {
+            let data = builder.raw_frame.as_bytes();
             let index_of_next_equal_sign = {
-                let i_eq = payload[i..]
+                let i_eq = data[i..]
                     .iter()
                     .copied()
                     .position(|byte| byte == b'=')
@@ -144,7 +144,7 @@ impl Decoder {
                 builder.state.data_field_length = None;
                 len
             } else {
-                let len = payload[index_of_next_equal_sign + 1..]
+                let len = data[index_of_next_equal_sign + 1..]
                     .iter()
                     .copied()
                     .position(|byte| byte == separator);
@@ -155,7 +155,7 @@ impl Decoder {
             };
             let tag_num = {
                 let mut tag = 0u32;
-                for byte in payload[i..index_of_next_equal_sign].iter().copied() {
+                for byte in data[i..index_of_next_equal_sign].iter().copied() {
                     tag = tag * 10 + (byte as u32 - b'0' as u32);
                 }
                 if let Some(tag) = TagU32::new(tag) {
@@ -167,7 +167,6 @@ impl Decoder {
             self.store_field(
                 &mut builder,
                 tag_num,
-                frame.payload(),
                 index_of_next_equal_sign + 1,
                 field_value_len,
             );
@@ -175,23 +174,20 @@ impl Decoder {
             // Separator                                       ~~~
             i = index_of_next_equal_sign + 1 + field_value_len + 1;
         }
-        builder.bytes = frame.data;
         Ok(Message {
             builder,
             field_locator_context: FieldLocatorContext::TopLevel,
         })
     }
 
-    fn store_field<B: AsRef<[u8]> + Default>(
+    fn store_field<B: AsRef<[u8]>>(
         &self,
         builder: &mut MessageBuilder<B>,
         tag: TagU32,
-        raw_message: &[u8],
         field_value_start: usize,
         field_value_len: usize,
     ) {
         let config_assoc = self.config().should_decode_associative;
-        let field_value = &raw_message[field_value_start..][..field_value_len];
         if builder.state.new_group.is_some() {
             // We are entering a new group, but we still don't know which tag
             // will be the first one in each entry.
@@ -211,6 +207,7 @@ impl Decoder {
             )
             .unwrap();
         let fix_type = self.tag_lookup.get(&tag.get());
+        let field_value = &builder.raw_frame.as_bytes()[field_value_start..][..field_value_len];
         if fix_type == Some(&FixDatatype::NumInGroup) {
             builder
                 .state
@@ -220,7 +217,7 @@ impl Decoder {
             let last_field_locator = builder.field_locators.last().unwrap();
             let last_field = builder.fields.get(last_field_locator).unwrap();
             let last_field_value = last_field.1.clone();
-            let s = std::str::from_utf8(&raw_message[last_field_value]).unwrap();
+            let s = std::str::from_utf8(&builder.raw_frame.as_bytes()[last_field_value]).unwrap();
             let data_field_length = str::parse(s).unwrap();
             builder.state.data_field_length = Some(data_field_length);
         }
@@ -304,7 +301,7 @@ pub struct MessageGroup<'a, T>
 where
     T: AsRef<[u8]>,
 {
-    message: &'a Message<T>,
+    message: &'a MessageBuilder<T>,
     index_of_group_tag: u32,
     len: usize,
 }
@@ -313,6 +310,50 @@ where
 pub struct MessageRef<'a, T> {
     builder: &'a MessageBuilder<T>,
     field_locator_context: FieldLocatorContext,
+}
+
+impl<'a, T> FieldMap<'a, u32> for (&'a MessageBuilder<T>, FieldLocatorContext)
+where
+    T: AsRef<[u8]> + Clone + 'a,
+{
+    type Group = MessageGroup<'a, T>;
+
+    fn group(
+        &'a self,
+        tag: u32,
+    ) -> Result<Self::Group, FieldValueError<<usize as FieldType>::Error>> {
+        let tag = TagU32::new(tag).ok_or(FieldValueError::Missing)?;
+        let field_locator_of_group_tag = FieldLocator {
+            tag,
+            context: self.1,
+        };
+        let num_in_group_range = self
+            .0
+            .fields
+            .get(&field_locator_of_group_tag)
+            .ok_or(FieldValueError::Missing)?;
+        let num_in_group = &self.0.raw_frame.as_bytes()[num_in_group_range.1.clone()];
+        let num_entries = usize::deserialize(num_in_group).map_err(FieldValueError::Invalid)?;
+        let index_of_group_tag = num_in_group_range.2 as u32;
+        Ok(MessageGroup {
+            message: self.0,
+            index_of_group_tag,
+            len: num_entries,
+        })
+    }
+
+    fn get_raw(&self, tag: u32) -> Option<&[u8]> {
+        let tag = TagU32::new(tag)?;
+        let field_locator = FieldLocator {
+            tag,
+            context: self.1,
+        };
+        dbglog!("looking for {:?}", field_locator);
+        self.0
+            .fields
+            .get(&field_locator)
+            .map(|field| &self.0.raw_frame.as_bytes()[field.1.clone()])
+    }
 }
 
 impl<'a, F, T> FieldMap<'a, &F> for MessageRef<'a, T>
@@ -326,11 +367,36 @@ where
         &'a self,
         field: &F,
     ) -> Result<Self::Group, FieldValueError<<usize as FieldType>::Error>> {
-        unimplemented!()
+        let field_locator_of_group_tag = FieldLocator {
+            tag: field.tag(),
+            context: self.field_locator_context,
+        };
+        let num_in_group_range = self
+            .builder
+            .fields
+            .get(&field_locator_of_group_tag)
+            .ok_or(FieldValueError::Missing)?;
+        let num_in_group = &self.builder.raw_frame.as_bytes()[num_in_group_range.1.clone()];
+        let num_entries = usize::deserialize(num_in_group).map_err(FieldValueError::Invalid)?;
+        let index_of_group_tag = num_in_group_range.2 as u32;
+        Ok(MessageGroup {
+            message: self.builder,
+            index_of_group_tag,
+            len: num_entries,
+        })
     }
 
     fn get_raw(&self, field: &F) -> Option<&[u8]> {
-        unimplemented!()
+        let tag = TagU32::new(field.tag().get())?;
+        let field_locator = FieldLocator {
+            tag,
+            context: self.field_locator_context,
+        };
+        dbglog!("looking for {:?}", field_locator);
+        self.builder
+            .fields
+            .get(&field_locator)
+            .map(|field| &self.builder.raw_frame.as_bytes()[field.1.clone()])
     }
 }
 
@@ -347,7 +413,7 @@ where
     fn get(&self, i: usize) -> Option<Self::Entry> {
         if i < self.len {
             Some(MessageRef {
-                builder: &self.message.builder,
+                builder: &self.message,
                 field_locator_context: FieldLocatorContext::WithinGroup {
                     index_of_group_tag: self.index_of_group_tag,
                     entry_index: i.try_into().unwrap(),
@@ -410,7 +476,7 @@ impl<T: AsRef<[u8]>> Message<T> {
     /// assert_eq!(message.as_bytes(), DATA);
     /// ```
     pub fn as_bytes(&self) -> &[u8] {
-        self.builder.bytes.as_ref()
+        self.builder.raw_frame.as_bytes()
     }
 
     /// Returns the number of FIX tags contained in `self`.
@@ -511,11 +577,11 @@ struct MessageBuilder<T> {
     state: DecoderState,
     fields: HashMap<FieldLocator, (TagU32, Range<usize>, usize)>,
     field_locators: Vec<FieldLocator>,
-    bytes: T,
+    raw_frame: RawFrame<T>,
 }
 
-impl<T: Default> Default for MessageBuilder<T> {
-    fn default() -> Self {
+impl<T> MessageBuilder<T> {
+    fn new(raw_frame: RawFrame<T>) -> Self {
         Self {
             state: DecoderState {
                 group_information: Vec::new(),
@@ -524,16 +590,12 @@ impl<T: Default> Default for MessageBuilder<T> {
             },
             field_locators: Vec::new(),
             fields: HashMap::new(),
-            bytes: T::default(),
+            raw_frame,
         }
     }
 }
 
-impl<T: Default> MessageBuilder<T> {
-    fn clear(&mut self) {
-        *self = Self::default();
-    }
-
+impl<T> MessageBuilder<T> {
     fn add_field(
         &mut self,
         tag: TagU32,
@@ -605,7 +667,7 @@ where
         let num_entries = usize::deserialize(num_in_group).map_err(FieldValueError::Invalid)?;
         let index_of_group_tag = num_in_group_range.2 as u32;
         Ok(MessageGroup {
-            message: &self,
+            message: &self.builder,
             index_of_group_tag,
             len: num_entries,
         })

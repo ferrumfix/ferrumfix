@@ -4,7 +4,7 @@ use std::ops::Range;
 
 /// An immutable view over the contents of a FIX message as seen by a
 /// [`RawDecoder`].
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RawFrame<T> {
     /// Raw, untouched contents of the whole message. Includes everything from
     /// `BeginString <8>` up to `CheckSum <8>`, included.
@@ -109,7 +109,7 @@ impl RawDecoder {
         B: Buffer,
     {
         RawDecoderStreaming {
-            config: self.config,
+            raw_decoder: self,
             buffer,
             state: ParserState::Empty,
         }
@@ -168,9 +168,9 @@ enum ParserState {
 
 /// A [`RawDecoder`] that can buffer incoming data and read a stream of messages.
 #[derive(Debug)]
-pub struct RawDecoderStreaming<B, C = Config> {
+pub struct RawDecoderStreaming<B> {
+    raw_decoder: RawDecoder,
     buffer: B,
-    config: C,
     state: ParserState,
 }
 
@@ -203,7 +203,7 @@ where
         match self.state {
             ParserState::Empty => {
                 let header_info =
-                    HeaderInfo::parse(self.buffer.as_slice(), self.config().separator);
+                    HeaderInfo::parse(self.buffer.as_slice(), self.raw_decoder.config().separator);
                 if let Some(header_info) = header_info {
                     let expected_len_of_frame = header_info.field_1.end
                         + 1
@@ -232,15 +232,15 @@ where
     }
 }
 
-impl<B, C> GetConfig for RawDecoderStreaming<B, C> {
-    type Config = C;
+impl<B> GetConfig for RawDecoderStreaming<B> {
+    type Config = Config;
 
-    fn config(&self) -> &C {
-        &self.config
+    fn config(&self) -> &Self::Config {
+        self.raw_decoder.config()
     }
 
-    fn config_mut(&mut self) -> &mut C {
-        &mut self.config
+    fn config_mut(&mut self) -> &mut Self::Config {
+        self.raw_decoder.config_mut()
     }
 }
 
