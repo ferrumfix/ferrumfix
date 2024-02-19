@@ -83,7 +83,7 @@ rust_decimal = { version = "1", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
 slog = { version = "2", optional = true }
-strum = "0.25"
+strum = "0.26"
 strum_macros = "0.26"
 thiserror = "1"
 tokio-util = { version = "0.7", optional = true, features = ["codec", "compat"] }
@@ -99,7 +99,7 @@ indoc = "2"
 lazy_static = "1"
 quick-xml = "0.31"
 roxmltree = "0.19"
-strum = "0.25"
+strum = "0.26"
 strum_macros = "0.26"
 
 [dev-dependencies]
