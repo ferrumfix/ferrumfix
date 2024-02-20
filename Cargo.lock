@@ -609,11 +609,8 @@ dependencies = [
  "fefix-codegen",
  "fefix-derive",
  "fefix-dictionary",
- "fnv",
  "futures",
  "futures-timer",
- "heck 0.4.1",
- "indoc",
  "lazy_static",
  "nohash-hasher",
  "quick-xml",
@@ -625,8 +622,6 @@ dependencies = [
  "serde",
  "serde_json",
  "slog",
- "strum",
- "strum_macros 0.26.1",
  "syn 1.0.109",
  "thiserror",
  "tokio",
@@ -672,7 +667,6 @@ dependencies = [
  "criterion",
  "enum-as-inner",
  "fnv",
- "quick-xml",
  "quickcheck",
  "quickcheck_derive",
  "quickcheck_macros",
@@ -1862,13 +1856,6 @@ dependencies = [
 
 [[package]]
 name = "test_codegen_fix44"
-version = "0.1.0"
-dependencies = [
- "fefix",
-]
-
-[[package]]
-name = "test_compile_full_features"
 version = "0.1.0"
 dependencies = [
  "fefix",
