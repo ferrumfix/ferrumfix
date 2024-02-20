@@ -1,7 +1,0 @@
-[package]
-name = "test_compile_full_features"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-fefix = { path = "../../crates/fefix", features = ["full"] }

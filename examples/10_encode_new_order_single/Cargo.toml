@@ -3,6 +3,9 @@ name = "example_encode_new_order_single"
 version = "0.1.0"
 edition = "2021"
 
+[package.metadata.cargo-machete]
+ignored = ["rust_decimal"] # False positive
+
 [dependencies]
 decimal = "2"
 fefix = { path = "../../crates/fefix", features = ["utils-decimal", "utils-rust-decimal"] }
