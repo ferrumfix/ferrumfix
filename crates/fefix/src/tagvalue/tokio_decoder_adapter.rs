@@ -28,7 +28,7 @@ where
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         if src.len() >= self.num_bytes_read + self.decoder.num_bytes_required() {
             self.decoder.buffer_mut().extend_from_slice(&src);
-            self.num_bytes_read += src.len();
+            self.num_bytes_read = src.len();
         }
         self.decoder.try_parse().map_err(Into::into)
     }
