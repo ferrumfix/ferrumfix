@@ -17,7 +17,6 @@
     clippy::needless_bool,
     clippy::needless_lifetimes
 )]
-// Only enables the `doc_cfg` feature when its feature is defined.
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 
 use template::Template;

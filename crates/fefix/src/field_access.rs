@@ -37,21 +37,24 @@ use std::ops::Range;
 ///
 /// This trait is generic over a type `F`, which must univocally identify FIX
 /// fields (besides FIX repeating groups, which allow repetitions).
-pub trait FieldMap<F> {
+pub trait FieldMap<'s, F> {
     /// The type returned by [`FieldMap::group`] and
     /// [`FieldMap::group_opt`].
-    type Group: RepeatingGroup<Entry = Self>;
+    type Group: RepeatingGroup<'s>;
 
     /// Looks for a `field` within `self` and then returns its raw byte
     /// contents, if it exists.
     fn get_raw(&self, field: F) -> Option<&[u8]>;
 
     /// Looks for a group that starts with `field` within `self`.
-    fn group(&self, field: F) -> Result<Self::Group, FieldValueError<<usize as FieldType>::Error>>;
+    fn group(
+        &'s self,
+        field: F,
+    ) -> Result<Self::Group, FieldValueError<<usize as FieldType>::Error>>;
 
     /// Like [`FieldMap::group`], but doesn't return an [`Err`] if the
     /// group is missing.
-    fn group_opt(&self, field: F) -> Result<Option<Self::Group>, <usize as FieldType>::Error> {
+    fn group_opt(&'s self, field: F) -> Result<Option<Self::Group>, <usize as FieldType>::Error> {
         match self.group(field) {
             Ok(group) => Ok(Some(group)),
             Err(FieldValueError::Missing) => Ok(None),
@@ -99,7 +102,7 @@ pub trait FieldMap<F> {
 }
 
 /// Provides access to entries within a FIX repeating group.
-pub trait RepeatingGroup: Sized {
+pub trait RepeatingGroup<'s>: Sized {
     /// The type of entries in this FIX repeating group. Must implement
     /// [`FieldMap`].
     type Entry;
@@ -108,12 +111,12 @@ pub trait RepeatingGroup: Sized {
     fn len(&self) -> usize;
 
     /// Returns the `i` -th entry in `self`, if present.
-    fn get(&self, i: usize) -> Option<Self::Entry>;
+    fn get(&'s self, i: usize) -> Option<Self::Entry>;
 
     /// Creates and returns an [`Iterator`] over the entries in `self`.
     /// Iteration MUST be done in sequential order, i.e. in which they appear in
     /// the original FIX message.
-    fn entries(&self) -> GroupEntries<Self> {
+    fn entries(&'s self) -> GroupEntries<Self> {
         GroupEntries {
             group: self,
             range: 0..self.len(),
@@ -134,7 +137,7 @@ pub struct GroupEntries<'a, G> {
 
 impl<'a, G> Iterator for GroupEntries<'a, G>
 where
-    G: RepeatingGroup,
+    G: RepeatingGroup<'a>,
 {
     type Item = G::Entry;
 
@@ -148,12 +151,12 @@ where
     }
 }
 
-impl<'a, G> FusedIterator for GroupEntries<'a, G> where G: RepeatingGroup {}
-impl<'a, G> ExactSizeIterator for GroupEntries<'a, G> where G: RepeatingGroup {}
+impl<'a, G> FusedIterator for GroupEntries<'a, G> where G: RepeatingGroup<'a> {}
+impl<'a, G> ExactSizeIterator for GroupEntries<'a, G> where G: RepeatingGroup<'a> {}
 
 impl<'a, G> DoubleEndedIterator for GroupEntries<'a, G>
 where
-    G: RepeatingGroup,
+    G: RepeatingGroup<'a>,
 {
     fn next_back(&mut self) -> Option<Self::Item> {
         let i = self.range.next_back()?;

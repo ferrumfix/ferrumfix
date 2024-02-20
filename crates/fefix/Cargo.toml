@@ -12,8 +12,6 @@ keywords.workspace = true
 categories.workspace = true
 license.workspace = true
 
-# https://stackoverflow.com/q/61417452/
-# Test locally using `RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features`.
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "doc_cfg"]

@@ -25,7 +25,7 @@ lint:
 	RUSTFLAGS=-Awarnings cargo check --all-targets --all-features
 	zepter
 	# TODO: clippy
-	# TODO: RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features
+	# TODO: check doc deadlinks
 
 # Run all tests
 test:
@@ -40,6 +40,9 @@ check-features:
 # Find unused dependencies
 udeps:
 	RUSTFLAGS=-Awarnings cargo +nightly hack udeps --package fefix --feature-powerset --all-targets --depth 2
+
+docs:
+	RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features
 
 _init-submodules:
 	git submodule init

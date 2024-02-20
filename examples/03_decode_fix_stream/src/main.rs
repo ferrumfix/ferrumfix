@@ -31,9 +31,7 @@ fn main() {
             // You *must* use `std::io::Read::read_exact`.
             stream.read_exact(fix_decoder.fillable()).unwrap();
             match fix_decoder.try_parse().unwrap() {
-                Some(_) => {
-                    // we have successfully parsed a message
-                    let msg = fix_decoder.message();
+                Some(msg) => {
                     assert_eq!(msg.get(fix42::BEGIN_STRING), Ok("FIX.4.2"));
                     // need to clear the decoder to to begin parsing next mesage
                     fix_decoder.clear();

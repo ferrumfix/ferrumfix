@@ -54,7 +54,7 @@ where
         self.heartbeat_hard_tolerance = hard_tolerance;
     }
 
-    pub async fn next_event<'a>(&'a mut self) -> Option<LlEvent<'a>> {
+    pub async fn next_event(&mut self) -> Option<LlEvent> {
         let mut buf_filled_len = 0;
         let mut buf = self.decoder.fillable();
 
@@ -88,8 +88,7 @@ where
                             buf = &mut self.decoder.fillable()[buf_filled_len..];
 
                             match result {
-                                Ok(Some(())) => {
-                                    let msg = self.decoder.message();
+                                Ok(Some(msg)) => {
                                     return Some(LlEvent::Message(msg));
                                 }
                                 Ok(None) => {
@@ -126,9 +125,9 @@ where
 
 /// A low level event produced by a [`LlEventLoop`].
 #[derive(Debug)]
-pub enum LlEvent<'a> {
+pub enum LlEvent {
     /// Incoming FIX message.
-    Message(Message<'a, &'a [u8]>),
+    Message(Message<Vec<u8>>),
     /// Tried to parse an incoming FIX message, but got illegal data.
     BadMessage(DecodeError),
     /// I/O error at the transport layer.

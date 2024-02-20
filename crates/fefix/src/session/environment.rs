@@ -12,6 +12,12 @@ pub enum Environment {
     Testing,
 }
 
+impl Default for Environment {
+    fn default() -> Self {
+        Self::Production { allow_test: false }
+    }
+}
+
 impl Environment {
     /// Returns `true` if an only if `self` allows test messages, depending on
     /// the provided configuration.

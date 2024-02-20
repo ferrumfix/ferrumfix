@@ -12,6 +12,10 @@ keywords.workspace = true
 categories.workspace = true
 license.workspace = true
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "doc_cfg"]
+
 [dependencies]
 chrono = { version = "0.4", features = ["std"] }
 fefix-dictionary = { version = "0.7", path = "../fefix-dictionary" }

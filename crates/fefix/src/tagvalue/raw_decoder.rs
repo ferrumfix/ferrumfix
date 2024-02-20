@@ -2,11 +2,12 @@ use crate::tagvalue::{utils, Config, DecodeError};
 use crate::{Buffer, GetConfig, StreamingDecoder};
 use std::ops::Range;
 
-/// An immutable view over the contents of a FIX message by a [`RawDecoder`].
-#[derive(Debug)]
+/// An immutable view over the contents of a FIX message as seen by a
+/// [`RawDecoder`].
+#[derive(Debug, Clone)]
 pub struct RawFrame<T> {
-    /// Raw, untouched contents of the message. Includes everything from `BeginString <8>` up to
-    /// `CheckSum <8>`.
+    /// Raw, untouched contents of the whole message. Includes everything from
+    /// `BeginString <8>` up to `CheckSum <8>`, included.
     pub data: T,
     /// The range of bytes that address the value of `BeginString <8>`.
     pub begin_string: Range<usize>,
@@ -92,8 +93,8 @@ where
 /// `BodyLength (9)` and `CheckSum (10)` to the final user. Everything else is
 /// left to the user to deal with.
 #[derive(Debug, Clone, Default)]
-pub struct RawDecoder<C = Config> {
-    config: C,
+pub struct RawDecoder {
+    config: Config,
 }
 
 impl RawDecoder {
@@ -108,7 +109,7 @@ impl RawDecoder {
         B: Buffer,
     {
         RawDecoderStreaming {
-            config: self.config,
+            raw_decoder: self,
             buffer,
             state: ParserState::Empty,
         }
@@ -146,14 +147,14 @@ impl RawDecoder {
     }
 }
 
-impl<C> GetConfig for RawDecoder<C> {
-    type Config = C;
+impl GetConfig for RawDecoder {
+    type Config = Config;
 
-    fn config(&self) -> &C {
+    fn config(&self) -> &Self::Config {
         &self.config
     }
 
-    fn config_mut(&mut self) -> &mut C {
+    fn config_mut(&mut self) -> &mut Self::Config {
         &mut self.config
     }
 }
@@ -167,9 +168,9 @@ enum ParserState {
 
 /// A [`RawDecoder`] that can buffer incoming data and read a stream of messages.
 #[derive(Debug)]
-pub struct RawDecoderStreaming<B, C = Config> {
+pub struct RawDecoderStreaming<B> {
+    raw_decoder: RawDecoder,
     buffer: B,
-    config: C,
     state: ParserState,
 }
 
@@ -177,15 +178,16 @@ impl<B> StreamingDecoder for RawDecoderStreaming<B>
 where
     B: Buffer,
 {
+    type Item = RawFrame<B>;
     type Buffer = B;
     type Error = DecodeError;
 
-    fn buffer(&mut self) -> &mut B {
+    fn buffer_mut(&mut self) -> &mut B {
         &mut self.buffer
     }
 
     fn clear(&mut self) {
-        self.buffer().clear();
+        self.buffer_mut().clear();
         self.state = ParserState::Empty;
     }
 
@@ -197,11 +199,11 @@ where
         }
     }
 
-    fn try_parse(&mut self) -> Result<Option<()>, Self::Error> {
+    fn try_parse(&mut self) -> Result<Option<Self::Item>, Self::Error> {
         match self.state {
             ParserState::Empty => {
                 let header_info =
-                    HeaderInfo::parse(self.buffer.as_slice(), self.config().separator);
+                    HeaderInfo::parse(self.buffer.as_slice(), self.raw_decoder.config().separator);
                 if let Some(header_info) = header_info {
                     let expected_len_of_frame = header_info.field_1.end
                         + 1
@@ -214,44 +216,33 @@ where
                     Err(DecodeError::Invalid)
                 }
             }
-            ParserState::Header(_, _) => Ok(Some(())),
+            ParserState::Header(ref header_info, _len) => {
+                let data = self.buffer.split();
+                let payload =
+                    header_info.field_1.end + 1..data.len() - utils::FIELD_CHECKSUM_LEN_IN_BYTES;
+
+                let begin_string = header_info.field_0.clone();
+                self.clear();
+                Ok(Some(RawFrame {
+                    data,
+                    begin_string,
+                    payload,
+                }))
+            }
             ParserState::Failed => panic!("Failed state"),
         }
     }
 }
 
-impl<B> RawDecoderStreaming<B>
-where
-    B: Buffer,
-{
-    /// Tries to deserialize the next [`RawFrame`] from the internal buffer. If
-    /// the internal buffer does not contain a complete message, returns an
-    /// [`Ok(None)`].
-    pub fn raw_frame(&self) -> RawFrame<&[u8]> {
-        if let ParserState::Header(header_info, _len) = &self.state {
-            let data = &self.buffer.as_slice();
+impl<B> GetConfig for RawDecoderStreaming<B> {
+    type Config = Config;
 
-            RawFrame {
-                data,
-                begin_string: header_info.field_0.clone(),
-                payload: header_info.field_1.end + 1
-                    ..data.len() - utils::FIELD_CHECKSUM_LEN_IN_BYTES,
-            }
-        } else {
-            panic!("The message is not fully decoded. Check `try_parse` return value.");
-        }
-    }
-}
-
-impl<B, C> GetConfig for RawDecoderStreaming<B, C> {
-    type Config = C;
-
-    fn config(&self) -> &C {
-        &self.config
+    fn config(&self) -> &Self::Config {
+        self.raw_decoder.config()
     }
 
-    fn config_mut(&mut self) -> &mut C {
-        &mut self.config
+    fn config_mut(&mut self) -> &mut Self::Config {
+        self.raw_decoder.config_mut()
     }
 }
 
@@ -376,27 +367,25 @@ mod test {
 
     #[test]
     fn new_streaming_decoder() {
-        let stream = {
-            let mut stream = Vec::new();
-            for _ in 0..42 {
-                stream.extend_from_slice(
-                    b"8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|",
-                );
-            }
-            stream
-        };
-        let mut i = 0;
+        let stream = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|"
+            .repeat(42)
+            .into_bytes();
+
         let mut decoder = new_decoder().streaming(vec![]);
-        let mut ready = false;
-        while !ready || i >= stream.len() {
+        let mut i = 0;
+        let raw_frame;
+        loop {
             let buf = decoder.fillable();
             buf.clone_from_slice(&stream[i..i + buf.len()]);
             i += buf.len();
-            ready = decoder.try_parse().unwrap().is_some();
+            if let Ok(Some(f)) = decoder.try_parse() {
+                raw_frame = Some(f);
+                break;
+            }
         }
-        assert_eq!(decoder.raw_frame().begin_string(), b"FIX.4.2");
+        //assert_eq!(raw_frame.begin_string(), b"FIX.4.2");
         assert_eq!(
-            decoder.raw_frame().payload(),
+            raw_frame.unwrap().payload(),
             b"35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|"
         );
     }

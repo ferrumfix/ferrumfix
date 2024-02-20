@@ -7,22 +7,28 @@ use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-/// A read-only JSON FIX message as parsed by [`Decoder`].
-#[derive(Debug, Copy, Clone)]
-pub struct Message<'a> {
+#[derive(Debug, Clone)]
+pub struct MessageRef<'a> {
     internal: &'a MessageInternal<'a>,
+    group_map: Option<&'a Fields<'a>>,
+}
+
+/// A read-only JSON FIX message as parsed by [`Decoder`].
+#[derive(Debug, Clone)]
+pub struct Message<'a> {
+    internal: MessageInternal<'a>,
     group_map: Option<&'a Fields<'a>>,
 }
 
 impl<'a> Message<'a> {
     /// Creates an [`Iterator`] over all FIX fields in `self`.
-    pub fn iter_fields(&self) -> MessageFieldsIter<'a> {
+    pub fn iter_fields(&'a self) -> MessageFieldsIter<'a> {
         MessageFieldsIter {
             fields: self.internal.std_header.iter(),
         }
     }
 
-    fn field_map<F>(&self, field: &F) -> &'a Fields<'a>
+    fn field_map<F>(&'a self, field: &F) -> &'a Fields<'a>
     where
         F: IsFieldDefinition,
     {
@@ -38,14 +44,14 @@ impl<'a> Message<'a> {
     }
 }
 
-impl<'a, F> FieldMap<&F> for Message<'a>
+impl<'a, F> FieldMap<'a, &F> for Message<'a>
 where
     F: IsFieldDefinition,
 {
     type Group = MessageGroup<'a>;
 
     fn group(
-        &self,
+        &'a self,
         field: &F,
     ) -> Result<Self::Group, FieldValueError<<usize as FieldType>::Error>> {
         self.field_map(field)
@@ -54,8 +60,8 @@ where
             .and_then(|field_or_group| {
                 if let FieldOrGroup::Group(ref entries) = field_or_group {
                     Ok(MessageGroup {
-                        message: Message {
-                            internal: self.internal,
+                        message: MessageRef {
+                            internal: &self.internal,
                             group_map: None,
                         },
                         entries,
@@ -81,21 +87,21 @@ where
 }
 
 /// A repeating group within a [`Message`].
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct MessageGroup<'a> {
-    message: Message<'a>,
+    message: MessageRef<'a>,
     entries: &'a [Fields<'a>],
 }
 
-impl<'a> RepeatingGroup for MessageGroup<'a> {
-    type Entry = Message<'a>;
+impl<'a> RepeatingGroup<'a> for MessageGroup<'a> {
+    type Entry = MessageRef<'a>;
 
     fn len(&self) -> usize {
         self.entries.len()
     }
 
     fn get(&self, i: usize) -> Option<Self::Entry> {
-        self.entries.get(i).map(|context| Message {
+        self.entries.get(i).map(|context| MessageRef {
             internal: self.message.internal,
             group_map: Some(context),
         })
@@ -138,8 +144,8 @@ impl Decoder {
 
     pub fn decode<'a>(&'a mut self, data: &'a [u8]) -> Result<Message<'a>, DecodeError> {
         let mut deserilizer = serde_json::Deserializer::from_slice(data);
-        let msg = self.message_builder();
-        MessageInternal::deserialize_in_place(&mut deserilizer, msg).map_err(|err| {
+        let mut msg = MessageInternal::default();
+        MessageInternal::deserialize_in_place(&mut deserilizer, &mut msg).map_err(|err| {
             if err.is_syntax() || err.is_eof() || err.is_io() {
                 DecodeError::Syntax
             } else {
@@ -150,15 +156,6 @@ impl Decoder {
             internal: msg,
             group_map: None,
         })
-    }
-
-    fn message_builder<'a>(&'a mut self) -> &'a mut MessageInternal<'a> {
-        self.message_builder.clear();
-        unsafe {
-            std::mem::transmute::<&'a mut MessageInternal<'static>, &'a mut MessageInternal<'a>>(
-                &mut self.message_builder,
-            )
-        }
     }
 }
 

@@ -12,6 +12,10 @@ keywords.workspace = true
 categories.workspace = true
 license.workspace = true
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "doc_cfg"]
+
 [lib]
 name = "fefix_derive"
 proc-macro = true
