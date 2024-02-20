@@ -200,6 +200,10 @@ where
     }
 
     fn try_parse(&mut self) -> Result<Option<Self::Item>, Self::Error> {
+        println!(
+            "try_parse, contents are: {:?}",
+            std::str::from_utf8(self.buffer.as_slice())
+        );
         match self.state {
             ParserState::Empty => {
                 let header_info =
@@ -221,9 +225,11 @@ where
                 let payload =
                     header_info.field_1.end + 1..data.len() - utils::FIELD_CHECKSUM_LEN_IN_BYTES;
 
+                let begin_string = header_info.field_0.clone();
+                self.clear();
                 Ok(Some(RawFrame {
                     data,
-                    begin_string: header_info.field_0.clone(),
+                    begin_string,
                     payload,
                 }))
             }
@@ -365,19 +371,14 @@ mod test {
 
     #[test]
     fn new_streaming_decoder() {
-        let stream = {
-            let mut stream = Vec::new();
-            for _ in 0..42 {
-                stream.extend_from_slice(
-                    b"8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|",
-                );
-            }
-            stream
-        };
-        let mut i = 0;
+        let stream = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|"
+            .repeat(42)
+            .into_bytes();
+
         let mut decoder = new_decoder().streaming(vec![]);
-        let mut raw_frame = None;
-        while i >= stream.len() {
+        let mut i = 0;
+        let raw_frame;
+        loop {
             let buf = decoder.fillable();
             buf.clone_from_slice(&stream[i..i + buf.len()]);
             i += buf.len();
