@@ -1,4 +1,4 @@
-use crate::{Buffer, StreamingDecoder};
+use crate::StreamingDecoder;
 use bytes::BytesMut;
 use tokio_util::codec;
 
@@ -19,7 +19,7 @@ impl<D> TokioDecoderAdapter<D> {
 
 impl<D> codec::Decoder for TokioDecoderAdapter<D>
 where
-    D: StreamingDecoder,
+    D: StreamingDecoder<Buffer = BytesMut>,
     D::Error: From<std::io::Error>,
 {
     type Item = D::Item;
@@ -27,7 +27,9 @@ where
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         if src.len() >= self.num_bytes_read + self.decoder.num_bytes_required() {
-            self.decoder.buffer_mut().extend_from_slice(&src);
+            let bytes_needed =
+                src.split_to(self.num_bytes_read + self.decoder.num_bytes_required());
+            self.decoder.buffer_mut().unsplit(bytes_needed);
             self.num_bytes_read = src.len();
         }
         self.decoder.try_parse().map_err(Into::into)

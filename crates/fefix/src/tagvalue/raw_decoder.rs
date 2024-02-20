@@ -200,10 +200,6 @@ where
     }
 
     fn try_parse(&mut self) -> Result<Option<Self::Item>, Self::Error> {
-        println!(
-            "try_parse, contents are: {:?}",
-            std::str::from_utf8(self.buffer.as_slice())
-        );
         match self.state {
             ParserState::Empty => {
                 let header_info =
