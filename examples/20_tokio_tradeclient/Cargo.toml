@@ -10,7 +10,7 @@ inquire = "0.6"
 slog = "2"
 slog-term = "2"
 slog-async = "2"
-strum = { version = "0.25", features = ["derive"] }
+strum = { version = "0.26", features = ["derive"] }
 tokio = { version = "1", features = ["net", "io-util", "macros"] }
 tokio-util = { version = "0.7", features = ["compat"] }
 
