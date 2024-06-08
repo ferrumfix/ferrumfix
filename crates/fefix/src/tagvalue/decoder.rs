@@ -193,6 +193,9 @@ impl Decoder {
         field_value_start: usize,
         field_value_len: usize,
     ) {
+        if field_value_start + field_value_len > raw_message.len() {
+            return;
+        }
         let config_assoc = self.config().should_decode_associative;
         let field_value = &raw_message[field_value_start..][..field_value_len];
         if self.builder.state.new_group.is_some() {
