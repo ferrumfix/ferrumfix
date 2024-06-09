@@ -131,7 +131,7 @@ impl Decoder {
             frame.as_bytes(),
             BEGIN_STRING_OFFSET,
             frame.begin_string().len(),
-        );
+        )?;
         let mut i = 0;
         while i < payload.len() {
             let index_of_next_equal_sign = {
@@ -174,7 +174,7 @@ impl Decoder {
                 frame.payload(),
                 index_of_next_equal_sign + 1,
                 field_value_len,
-            );
+            )?;
             // Equal sign                ~~~
             // Separator                                       ~~~
             i = index_of_next_equal_sign + 1 + field_value_len + 1;
@@ -192,9 +192,9 @@ impl Decoder {
         raw_message: &[u8],
         field_value_start: usize,
         field_value_len: usize,
-    ) {
+    ) -> Result<(), DecodeError> {
         if field_value_start + field_value_len > raw_message.len() {
-            return;
+            return Err(DecodeError::Invalid);
         }
         let config_assoc = self.config().should_decode_associative;
         let field_value = &raw_message[field_value_start..][..field_value_len];
@@ -230,6 +230,7 @@ impl Decoder {
             let data_field_length = str::parse(s).unwrap();
             self.builder.state.data_field_length = Some(data_field_length);
         }
+        Ok(())
     }
 }
 
