@@ -214,8 +214,7 @@ impl Decoder {
                 tag,
                 &raw_message[field_value_start..][..field_value_len],
                 config_assoc,
-            )
-            .unwrap();
+            ).map_err(|e| DecodeError::Invalid)?;
         let fix_type = self.tag_lookup.get(&tag.get());
         if fix_type == Some(&FixDatatype::NumInGroup) {
             self.builder
@@ -223,11 +222,13 @@ impl Decoder {
                 .add_group(tag, self.builder.field_locators.len() - 1, field_value);
         } else if fix_type == Some(&FixDatatype::Length) {
             // FIXME
-            let last_field_locator = self.builder.field_locators.last().unwrap();
-            let last_field = self.builder.fields.get(last_field_locator).unwrap();
+            let last_field_locator = self.builder.field_locators.last()
+                .ok_or(DecodeError::FieldPresence)?;
+            let last_field = self.builder.fields.get(last_field_locator)
+                .ok_or(DecodeError::FieldPresence)?;
             let last_field_value = last_field.1;
-            let s = std::str::from_utf8(last_field_value).unwrap();
-            let data_field_length = str::parse(s).unwrap();
+            let s = std::str::from_utf8(last_field_value).map_err(|_| DecodeError::Invalid)?;
+            let data_field_length = str::parse(s).map_err(|_| DecodeError::Invalid)?;
             self.builder.state.data_field_length = Some(data_field_length);
         }
         Ok(())
