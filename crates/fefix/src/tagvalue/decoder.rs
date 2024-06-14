@@ -131,7 +131,7 @@ impl Decoder {
             frame.as_bytes(),
             BEGIN_STRING_OFFSET,
             frame.begin_string().len(),
-        );
+        )?;
         let mut i = 0;
         while i < payload.len() {
             let index_of_next_equal_sign = {
@@ -174,7 +174,7 @@ impl Decoder {
                 frame.payload(),
                 index_of_next_equal_sign + 1,
                 field_value_len,
-            );
+            )?;
             // Equal sign                ~~~
             // Separator                                       ~~~
             i = index_of_next_equal_sign + 1 + field_value_len + 1;
@@ -192,7 +192,10 @@ impl Decoder {
         raw_message: &[u8],
         field_value_start: usize,
         field_value_len: usize,
-    ) {
+    ) -> Result<(), DecodeError> {
+        if field_value_start + field_value_len > raw_message.len() {
+            return Err(DecodeError::Invalid);
+        }
         let config_assoc = self.config().should_decode_associative;
         let field_value = &raw_message[field_value_start..][..field_value_len];
         if self.builder.state.new_group.is_some() {
@@ -212,7 +215,7 @@ impl Decoder {
                 &raw_message[field_value_start..][..field_value_len],
                 config_assoc,
             )
-            .unwrap();
+            .map_err(|e| DecodeError::Invalid)?;
         let fix_type = self.tag_lookup.get(&tag.get());
         if fix_type == Some(&FixDatatype::NumInGroup) {
             self.builder
@@ -220,13 +223,22 @@ impl Decoder {
                 .add_group(tag, self.builder.field_locators.len() - 1, field_value);
         } else if fix_type == Some(&FixDatatype::Length) {
             // FIXME
-            let last_field_locator = self.builder.field_locators.last().unwrap();
-            let last_field = self.builder.fields.get(last_field_locator).unwrap();
+            let last_field_locator = self
+                .builder
+                .field_locators
+                .last()
+                .ok_or(DecodeError::FieldPresence)?;
+            let last_field = self
+                .builder
+                .fields
+                .get(last_field_locator)
+                .ok_or(DecodeError::FieldPresence)?;
             let last_field_value = last_field.1;
-            let s = std::str::from_utf8(last_field_value).unwrap();
-            let data_field_length = str::parse(s).unwrap();
+            let s = std::str::from_utf8(last_field_value).map_err(|_| DecodeError::Invalid)?;
+            let data_field_length = str::parse(s).map_err(|_| DecodeError::Invalid)?;
             self.builder.state.data_field_length = Some(data_field_length);
         }
+        Ok(())
     }
 }
 
