@@ -161,6 +161,9 @@ impl Decoder {
             let tag_num = {
                 let mut tag = 0u32;
                 for byte in payload[i..index_of_next_equal_sign].iter().copied() {
+                    if !byte.is_ascii_digit() {
+                        return Err(DecodeError::Invalid);
+                    }
                     tag = tag * 10 + (byte as u32 - b'0' as u32);
                 }
                 if let Some(tag) = TagU32::new(tag) {
@@ -787,6 +790,17 @@ mod test {
         assert_eq!(message.get_raw(8), Some(b"FIX.4.2" as &[u8]));
         assert_eq!(message.get(34), Ok(12));
         assert_eq!(message.get_raw(34), Some(b"12" as &[u8]));
+    }
+
+    #[test]
+    fn message_with_non_digit_in_tag_number() {
+        let message = "8=FIX.FOOBAR|9=5|3/=0|10=000|";
+        //                               ^
+        //                               |
+        //               Not a digit ----+
+        let mut decoder = decoder();
+        let result = decoder.decode(message.as_bytes());
+        assert!(matches!(result, Err(DecodeError::Invalid)));
     }
 
     #[test]
