@@ -57,6 +57,10 @@ This TODO consolidates analysis of all 8 crates to address:
   - [ ] Implement required field checking using Dictionary
   - [ ] Add malformed message recovery in decoders
   - [ ] Create validation benchmarks
+  - [ ] Implement `CheckCompID` validation
+  - [ ] Implement `CheckLatency` and `MaxLatency` checks
+  - [ ] Implement `ValidateFieldsOutOfOrder` configuration
+  - [ ] Implement `ValidateFieldsHaveValues` configuration
 
 ### Enhanced Error Handling
 - [ ] **Replace panics with proper error handling**
@@ -128,3 +132,37 @@ This TODO consolidates analysis of all 8 crates to address:
   - [ ] RPIT lifetime capture rules
   - [ ] Unsafe attributes where needed
   - [ ] Static mutable reference alternatives 
+
+---
+
+## ⚡ PHASE 5: Production Readiness & Feature Parity
+
+> This phase focuses on implementing advanced features inspired by the mature C++ QuickFIX engine, targeting production-level robustness and a complete feature set.
+
+### Advanced Session Management
+- [ ] **Flexible Sequence Number Handling**:
+  - [ ] Implement `ResetOnLogon`, `ResetOnLogout`, and `ResetOnDisconnect` policies.
+  - [ ] Implement `RefreshOnLogon` for hot-failover capabilities.
+- [ ] **High-Volume Support**:
+  - [ ] Investigate and implement support for `uint64` sequence numbers.
+- [ ] **Non-Stop Sessions**:
+  - [ ] Design and implement a `NonStopSession` feature, building on persistence and `RefreshOnLogon` work.
+
+### Network & Transport Layer
+- [ ] **Connection Failover**:
+  - [ ] Implement a failover mechanism in the `SocketInitiator` to cycle through a list of alternate hosts and ports (`SocketConnectHost<n>`, `SocketConnectPort<n>`).
+- [ ] **Socket Configuration**:
+  - [ ] Expose socket options like `TCP_NODELAY`, `SO_SNDBUF`, and `SO_RCVBUF` in session settings.
+
+### Advanced Protocol Features
+- [ ] **Custom Header/Trailer Fields**:
+  - [ ] Extend the `Decoder` to allow for user-defined fields in the `StandardHeader` and `StandardTrailer`.
+- [ ] **High-Precision Timestamps**:
+  - [ ] Ensure `quanta` is used consistently for all internal timestamps.
+  - [ ] Expose a `TimestampPrecision` configuration to control the level of precision (milliseconds, microseconds, nanoseconds) in outgoing messages.
+
+### Tooling & Usability
+- [ ] **HTTP Monitoring Interface (Long-term)**:
+  - [ ] Design and implement a web-based monitoring panel similar to QuickFIX's `HttpAcceptPort`.
+- [ ] **Language Bindings (Future Goal)**:
+  - [ ] Investigate creating Python bindings for `rustyfix` using `PyO3`. 
