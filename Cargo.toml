@@ -3,20 +3,24 @@ members = ["crates/*", "examples/*", "tests/*"]
 resolver = "2"
 
 [workspace.package]
-authors = ["Filippo Neysofu Costa"]
+authors = ["cognitive-glitch", "Team Rusty Trading", "Filippo Neysofu Costa"]
 version = "0.7.0"
-edition = "2021"
-homepage = "https://github.com/ferrumfix/ferrumfix"
-repository = "https://github.com/ferrumfix/ferrumfix"
+edition = "2024"
+homepage = "https://github.com/rusty-engine/rustyfix"
+repository = "https://github.com/rusty-engine/rustyfix"
 description = "FIX & FAST (FIX Adapted for STreaming) in pure Rust"
 publish = true
 readme = "README.md"
 keywords = ["fix", "fast", "protocol", "finance", "fintech"]
 categories = ["network-programming", "parser-implementations", "encoding"]
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 
 [profile.release]
 lto = true
+opt-level = 3
+codegen-units = 1
+panic = "abort"
+strip = true
 
 [profile.dev.build-override]
 # Helps with compile times for macro-heavy code. See
