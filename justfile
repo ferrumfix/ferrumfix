@@ -1,4 +1,4 @@
-pre# Justfile docs: <https://just.systems/man/en/chapter_22.html>
+# Justfile docs: <https://just.systems/man/en/chapter_22.html>
 
 export QUICKCHECK_TESTS := "2500"
 
