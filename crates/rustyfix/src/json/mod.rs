@@ -6,7 +6,7 @@ mod encoder;
 
 pub use config::Config;
 pub use decoder::{Decoder, FieldOrGroup, Message, MessageFieldsIter, MessageGroup};
-// pub use encoder::{Encoder, encoder_states}; // TODO: Implement encoder module
+pub use encoder::Encoder;
 
 /// The type returned in the event of an error when encoding a FIX JSON message.
 #[derive(Copy, Clone, Debug, thiserror::Error)]

@@ -9,7 +9,7 @@ use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use std::marker::{PhantomData, Unpin};
 use std::pin::Pin;
-use std::time::Duration;
+use quanta::Duration;
 use uuid::Uuid;
 
 const BEGIN_SEQ_NO: u32 = 7;
@@ -93,16 +93,16 @@ where
             let target_comp_id = self.config.target_comp_id();
             let heartbeat = self.config.heartbeat().as_secs();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut msg = self
+            let mut message = self
                 .encoder
                 .start_message(begin_string, &mut self.buffer, b"A");
-            msg.set_fv_with_key(&SENDER_COMP_ID, sender_comp_id);
-            msg.set_fv_with_key(&TARGET_COMP_ID, target_comp_id);
-            msg.set_fv_with_key(&SENDING_TIME, chrono::Utc::now());
-            msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
-            msg.set_fv_with_key(&ENCRYPT_METHOD, 0);
-            msg.set_fv_with_key(&108, heartbeat);
-            msg.done()
+            message.set_fv_with_key(&SENDER_COMP_ID, sender_comp_id);
+            message.set_fv_with_key(&TARGET_COMP_ID, target_comp_id);
+            message.set_fv_with_key(&SENDING_TIME, chrono::Utc::now());
+            message.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
+            message.set_fv_with_key(&ENCRYPT_METHOD, 0);
+            message.set_fv_with_key(&108, heartbeat);
+            message.done()
         };
         output.write(logon).await.unwrap();
         self.backend.on_outbound_message(logon).ok();
@@ -135,8 +135,8 @@ where
                 .await
                 .expect("The connection died unexpectedly.");
             match event {
-                LlEvent::Message(msg) => {
-                    let response = self.on_inbound_message(msg, unimplemented!());
+                LlEvent::Message(message) => {
+                    let response = self.on_inbound_message(message, unimplemented!());
                     match response {
                         Response::OutboundBytes(bytes) => {
                             output.write_all(bytes).await.unwrap();
@@ -169,9 +169,9 @@ pub trait Verify {
 
     fn verify_begin_string(&self, begin_string: &[u8]) -> Result<(), Self::Error>;
 
-    fn verify_test_message_indicator(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error>;
+    fn verify_test_message_indicator(&self, message: &impl FieldMap<u32>) -> Result<(), Self::Error>;
 
-    fn verify_sending_time(&self, msg: &impl FieldMap<u32>) -> Result<(), Self::Error>;
+    fn verify_sending_time(&self, message: &impl FieldMap<u32>) -> Result<(), Self::Error>;
 }
 
 impl<'a, B, C, V> FixConnector<'a, B, C, V> for FixConnection<B, C>
@@ -251,28 +251,28 @@ where
 
     fn verifier(&self) -> &Z;
 
-    fn dispatch_by_msg_type(&self, msg_type: &[u8], msg: Message<&[u8]>) -> Response {
+    fn dispatch_by_msg_type(&self, msg_type: &[u8], message: Message<&[u8]>) -> Response {
         match msg_type {
             b"A" => {
-                self.on_logon(msg);
+                self.on_logon(message);
                 return Response::None;
             }
             b"1" => {
-                let msg = self.on_test_request(msg);
-                return Response::OutboundBytes(msg);
+                let test_request_response = self.on_test_request(message);
+                return Response::OutboundBytes(test_request_response);
             }
             b"2" => {
                 return Response::None;
             }
             b"5" => {
-                return Response::OutboundBytes(self.on_logout(&msg));
+                return Response::OutboundBytes(self.on_logout(&message));
             }
             b"0" => {
-                self.on_heartbeat(msg);
+                self.on_heartbeat(message);
                 return Response::ResetHeartbeat;
             }
             _ => {
-                return self.on_application_message(msg);
+                return self.on_application_message(message);
             }
         }
     }
@@ -293,67 +293,66 @@ where
 
     fn on_inbound_message(
         &'a mut self,
-        msg: Message<&[u8]>,
+        message: Message<&[u8]>,
         builder: MessageBuilder,
     ) -> Response<'a> {
-        if self.verifier().verify_test_message_indicator(msg).is_err() {
-            return self.on_wrong_environment(msg);
+        if self.verifier().verify_test_message_indicator(message).is_err() {
+            return self.on_wrong_environment(message);
         }
-        let seq_num = if let Ok(n) = msg.get::<u64>(&MSG_SEQ_NUM) {
+        let seq_num = if let Ok(n) = message.get::<u64>(&MSG_SEQ_NUM) {
             let expected = self.msg_seq_num_inbound.expected();
             if n < expected {
-                return self.on_low_seqnum(msg);
+                return self.on_low_seqnum(message);
             } else if n > expected {
                 // Refer to specs. §4.8 for more information.
-                return self.on_high_seqnum(msg);
+                return self.on_high_seqnum(message);
             }
             n
         } else {
             // See §4.5.3.
-            return self.on_missing_seqnum(msg);
+            return self.on_missing_seqnum(message);
         };
 
         // Increment immediately.
         self.msg_seq_num_inbound.next();
 
-        if self.verifier().verify_sending_time(&msg).is_err() {
-            return self.make_reject_for_inaccurate_sending_time(msg);
+        if self.verifier().verify_sending_time(&message).is_err() {
+            return self.make_reject_for_inaccurate_sending_time(message);
         }
 
-        let msg_type = if let Ok(x) = msg.get::<&[u8]>(&MSG_TYPE) {
+        let msg_type = if let Ok(x) = message.get::<&[u8]>(&MSG_TYPE) {
             x
         } else {
-            self.on_inbound_app_message(msg).ok();
-            return self.on_application_message(msg);
+            self.on_inbound_app_message(message).ok();
+            return self.on_application_message(message);
         };
-        self.dispatch_by_msg_type(msg_type, msg)
+        self.dispatch_by_msg_type(msg_type, message)
     }
 
-    fn on_resend_request(&self, msg: &Message<&[u8]>) {
-        let begin_seq_num = msg.get(&BEGIN_SEQ_NO).unwrap();
-        let end_seq_num = msg.get(&END_SEQ_NO).unwrap();
+    fn on_resend_request(&self, message: &Message<&[u8]>) {
+        let begin_seq_num = message.get(&BEGIN_SEQ_NO).unwrap();
+        let end_seq_num = message.get(&END_SEQ_NO).unwrap();
         self.on_resend_request(begin_seq_num..end_seq_num).ok();
     }
 
-    fn on_logout(&mut self, data: ResponseData, _msg: &Message<&[u8]>) -> &[u8] {
+    fn on_logout(&mut self, data: ResponseData, _message: &Message<&[u8]>) -> &[u8] {
         let fix_message = {
             let msg_seq_num = self.next();
-            let mut msg = self.start_message(data.begin_string, b"5");
-            self.set_sender_and_target(&mut msg);
-            msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
-            msg.set_fv_with_key(&TEXT, "Logout");
-            msg.done()
+            let mut logout_message = self.start_message(data.begin_string, b"5");
+            self.set_sender_and_target(&mut logout_message);
+            logout_message.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
+            logout_message.set_fv_with_key(&TEXT, "Logout");
+            logout_message.done()
         };
         fix_message
     }
 
-    //    fn add_seqnum(&self, msg: &mut RawEncoderState) {
-    //        msg.add_field(tags::MSG_SEQ_NUM, self.seq_numbers().next_outbound());
-    //        self.seq_numbers_mut().incr_outbound();
+    //    fn add_seqnum(&self, message: &mut RawEncoderState) {
+    //        message.add_field(tags::MSG_SEQ_NUM, self.seq_numbers().next_outbound());
     //    }
     //
-    //    fn add_sending_time(&self, msg: &mut RawEncoderState) {
-    //        msg.add_field(tags::SENDING_TIME, DtfTimestamp::utc_now());
+    //    fn add_sending_time(&self, message: &mut RawEncoderState) {
+    //        message.add_field(tags::SENDING_TIME, DtfTimestamp::utc_now());
     //    }
     //
     //    #[must_use]
@@ -361,42 +360,42 @@ where
         let fix_message = {
             let begin_string = self.begin_string();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut msg = self
+            let mut heartbeat_message = self
                 .encoder
                 .start_message(begin_string, &mut self.buffer, b"0");
-            self.set_sender_and_target(&mut msg);
-            msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
-            self.set_sending_time(&mut msg);
-            msg.done()
+            self.set_sender_and_target(&mut heartbeat_message);
+            heartbeat_message.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
+            self.set_sending_time(&mut heartbeat_message);
+            heartbeat_message.done()
         };
         fix_message
     }
 
-    fn set_sender_and_target(&'a self, msg: &mut impl FvWrite<'a, Key = u32>) {
-        msg.set_fv_with_key(&SENDER_COMP_ID, self.sender_comp_id());
-        msg.set_fv_with_key(&TARGET_COMP_ID, self.target_comp_id());
+    fn set_sender_and_target(&'a self, message: &mut impl FvWrite<'a, Key = u32>) {
+        message.set_fv_with_key(&SENDER_COMP_ID, self.sender_comp_id());
+        message.set_fv_with_key(&TARGET_COMP_ID, self.target_comp_id());
     }
 
-    fn set_sending_time(&'a self, msg: &mut impl FvWrite<'a, Key = u32>) {
-        msg.set_fv_with_key(&SENDING_TIME, chrono::Utc::now());
+    fn set_sending_time(&'a self, message: &mut impl FvWrite<'a, Key = u32>) {
+        message.set_fv_with_key(&SENDING_TIME, chrono::Utc::now());
     }
 
-    fn set_header_details(&'a self, _msg: &mut impl FvWrite<'a, Key = u32>) {}
+    fn set_header_details(&'a self, _message: &mut impl FvWrite<'a, Key = u32>) {}
 
-    fn on_heartbeat(&mut self, _msg: Message<&[u8]>) {
+    fn on_heartbeat(&mut self, _message: Message<&[u8]>) {
         // TODO: verify stuff.
     }
 
-    fn on_test_request(&mut self, msg: Message<&[u8]>) -> &[u8] {
-        let test_req_id = msg.get::<&[u8]>(&TEST_REQ_ID).unwrap();
+    fn on_test_request(&mut self, message: Message<&[u8]>) -> &[u8] {
+        let test_req_id = message.get::<&[u8]>(&TEST_REQ_ID).unwrap();
         let begin_string = self.begin_string();
         let msg_seq_num = self.msg_seq_num_outbound.next();
-        let mut msg = self.start_message(begin_string, b"1");
-        self.set_sender_and_target(&mut msg);
-        msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
-        self.set_sending_time(&mut msg);
-        msg.set_fv_with_key(&TEST_REQ_ID, test_req_id);
-        msg.done()
+        let mut response_message = self.start_message(begin_string, b"1");
+        self.set_sender_and_target(&mut response_message);
+        response_message.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
+        self.set_sending_time(&mut response_message);
+        response_message.set_fv_with_key(&TEST_REQ_ID, test_req_id);
+        response_message.done()
     }
 
     fn on_wrong_environment(&mut self, _message: Message<&[u8]>) -> Response {
@@ -407,12 +406,12 @@ where
         let begin_string = self.begin_string();
         let msg_seq_num = self.msg_seq_num_outbound.next();
         let text = errs::msg_seq_num(self.msg_seq_num_inbound.0 + 1);
-        let mut msg = self.start_message(begin_string, b"FIXME");
-        msg.set_fv_with_key(&MSG_TYPE, "5");
-        self.set_sender_and_target(&mut msg);
-        msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
-        msg.set_fv_with_key(&TEXT, text.as_str());
-        msg.done()
+        let mut message = self.start_message(begin_string, b"FIXME");
+        message.set_fv_with_key(&MSG_TYPE, "5");
+        self.set_sender_and_target(&mut message);
+        message.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
+        message.set_fv_with_key(&TEXT, text.as_str());
+        message.done()
     }
 
     fn on_missing_seqnum(&mut self, _message: Message<&[u8]>) -> Response {
@@ -435,18 +434,18 @@ where
         let sender_comp_id = self.sender_comp_id();
         let target_comp_id = self.target_comp_id();
         let msg_seq_num = self.msg_seq_num_outbound.next();
-        let mut msg = self.start_message(begin_string, b"3");
-        self.set_sender_and_target(&mut msg);
-        msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
+        let mut reject_message = self.start_message(begin_string, b"3");
+        self.set_sender_and_target(&mut reject_message);
+        reject_message.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
         if let Some(ref_tag) = ref_tag {
-            msg.set_fv_with_key(&REF_TAG_ID, ref_tag);
+            reject_message.set_fv_with_key(&REF_TAG_ID, ref_tag);
         }
         if let Some(ref_msg_type) = ref_msg_type {
-            msg.set_fv_with_key(&REF_MSG_TYPE, ref_msg_type);
+            reject_message.set_fv_with_key(&REF_MSG_TYPE, ref_msg_type);
         }
-        msg.set_fv_with_key(&SESSION_REJECT_REASON, reason);
-        msg.set_fv_with_key(&TEXT, err_text.as_str());
-        Response::OutboundBytes(msg.done())
+        reject_message.set_fv_with_key(&SESSION_REJECT_REASON, reason);
+        reject_message.set_fv_with_key(&TEXT, err_text.as_str());
+        Response::OutboundBytes(reject_message.done())
     }
 
     fn make_reject_for_inaccurate_sending_time(&mut self, offender: Message<&[u8]>) -> Response {
@@ -467,51 +466,53 @@ where
             let sender_comp_id = self.sender_comp_id();
             let target_comp_id = self.target_comp_id();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut msg = self.start_message(begin_string, b"5");
-            self.set_sender_and_target(&mut msg);
-            msg.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
-            msg.set_fv_with_key(&TEXT, text.as_str());
-            self.set_sending_time(&mut msg);
-            msg.done()
+            let mut logout_message = self.start_message(begin_string, b"5");
+            self.set_sender_and_target(&mut logout_message);
+            logout_message.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
+            logout_message.set_fv_with_key(&TEXT, text.as_str());
+            self.set_sending_time(&mut logout_message);
+            logout_message.done()
         };
         Response::OutboundBytes(fix_message)
     }
 
     fn make_resend_request(&mut self, start: u64, end: u64) -> Response {
         let begin_string = self.begin_string();
-        let mut msg = self.start_message(begin_string, b"2");
-        //Self::add_comp_id(msg);
-        //self.add_sending_time(msg);
-        //self.add_seqnum(msg);
-        msg.set_fv_with_key(&BEGIN_SEQ_NO, start);
-        msg.set_fv_with_key(&END_SEQ_NO, end);
-        Response::OutboundBytes(msg.done())
+        let mut resend_request = self.start_message(begin_string, b"2");
+        //Self::add_comp_id(resend_request);
+        //self.add_sending_time(resend_request);
+        //self.add_seqnum(resend_request);
+        resend_request.set_fv_with_key(&BEGIN_SEQ_NO, start);
+        resend_request.set_fv_with_key(&END_SEQ_NO, end);
+        Response::OutboundBytes(resend_request.done())
     }
 
-    fn on_high_seqnum(&mut self, msg: Message<&[u8]>) -> Response {
-        let msg_seq_num = msg.get(&MSG_SEQ_NUM).unwrap();
-        self.make_resend_request(self.seq_numbers().next_inbound(), msg_seq_num);
-        todo!()
+    fn on_high_seqnum(&mut self, message: Message<&[u8]>) -> Response {
+        let msg_seq_num = message.get(&MSG_SEQ_NUM).unwrap();
+        // The message is NOT stored. This is a deficiency that should be
+        // addressed later as part of "complete session state management".
+        // For now, we just request the missing messages.
+        self.make_resend_request(self.msg_seq_num_inbound.expected(), msg_seq_num - 1)
     }
 
     fn on_logon(&mut self, _logon: Message<&[u8]>) {
         let begin_string = self.begin_string();
-        let mut _msg = self.start_message(begin_string, b"A");
-        //Self::add_comp_id(msg);
-        //self.add_sending_time(msg);
-        //self.add_sending_time(msg);
+        let mut _message = self.start_message(begin_string, b"A");
+        //Self::add_comp_id(_message);
+        //self.add_sending_time(_message);
+        //self.add_sending_time(_message);
     }
 
-    fn on_application_message(&mut self, msg: Message<'a, &'a [u8]>) -> Response<'a> {
-        Response::Application(msg)
+    fn on_application_message(&mut self, message: Message<'a, &'a [u8]>) -> Response<'a> {
+        Response::Application(message)
     }
 }
 
-//fn add_time_to_msg(mut msg: EncoderHandle) {
+//fn add_time_to_msg(mut message: EncoderHandle) {
 //    // https://www.onixs.biz/fix-dictionary/4.4/index.html#UTCTimestamp.
 //    let time = chrono::Utc::now();
 //    let timestamp = time.format("%Y%m%d-%H:%M:%S.%.3f");
-//    msg.set_fv_with_key(fix44::SENDING_TIME, timestamp.to_string().as_str());
+//    message.set_fv_with_key(fix44::SENDING_TIME, timestamp.to_string().as_str());
 //}
 
 //#[cfg(test)]
@@ -535,12 +536,12 @@ where
 //        let conn = &mut conn();
 //        let responses = &mut conn.on_heartbeat_is_due();
 //        let next = responses.next().unwrap();
-//        let msg = next.as_outbound().unwrap();
-//        assert_eq!(msg.field_str(tags::MSG_TYPE), Some("0"));
-//        assert_eq!(msg.field_str(tags::SENDER_COMP_ID), Some("SENDER"));
-//        assert_eq!(msg.field_str(tags::TARGET_COMP_ID), Some("TARGET"));
-//        assert_eq!(msg.field_bool(tags::POSS_DUP_FLAG), None);
-//        assert_eq!(msg.field_i64(tags::TEST_REQ_ID), None);
+//        let message = next.as_outbound().unwrap();
+//        assert_eq!(message.field_str(tags::MSG_TYPE), Some("0"));
+//        assert_eq!(message.field_str(tags::SENDER_COMP_ID), Some("SENDER"));
+//        assert_eq!(message.field_str(tags::TARGET_COMP_ID), Some("TARGET"));
+//        assert_eq!(message.field_bool(tags::POSS_DUP_FLAG), None);
+//        assert_eq!(message.field_i64(tags::TEST_REQ_ID), None);
 //        assert!(responses.next().is_none());
 //    }
 //
@@ -555,27 +556,27 @@ where
 //    #[test]
 //    fn inaccurate_sending_time() {
 //        let conn = &mut conn();
-//        let mut msg = FixMessage::new();
-//        msg.add_str(tags::MSG_TYPE, "BE");
-//        msg.add_str(tags::SENDER_COMP_ID, "SENDER");
-//        msg.add_str(tags::TARGET_COMP_ID, "TARGET");
-//        msg.add_i64(tags::MSG_SEQ_NUM, 1);
-//        msg.add_str(
+//        let mut message = FixMessage::new();
+//        message.add_str(tags::MSG_TYPE, "BE");
+//        message.add_str(tags::SENDER_COMP_ID, "SENDER");
+//        message.add_str(tags::TARGET_COMP_ID, "TARGET");
+//        message.add_i64(tags::MSG_SEQ_NUM, 1);
+//        message.add_str(
 //            tags::USER_REQUEST_ID,
 //            "47b6f4a6-993d-4430-b68f-d9b680a1a772",
 //        );
-//        msg.add_i64(tags::USER_REQUEST_TYPE, 1);
-//        msg.add_str(tags::USERNAME, "john-doe");
-//        let mut responses = conn.on_inbound_message(msg);
+//        message.add_i64(tags::USER_REQUEST_TYPE, 1);
+//        message.add_str(tags::USERNAME, "john-doe");
+//        let mut responses = conn.on_inbound_message(message);
 //        let next = responses.next().unwrap();
-//        let msg = next.as_outbound().unwrap();
-//        assert_eq!(msg.field_str(tags::MSG_TYPE), Some("3"));
-//        assert_eq!(msg.field_str(tags::SENDER_COMP_ID), Some("SENDER"));
-//        assert_eq!(msg.field_str(tags::TARGET_COMP_ID), Some("TARGET"));
-//        assert_eq!(msg.field_bool(tags::POSS_DUP_FLAG), None);
-//        assert_eq!(msg.field_i64(tags::TEST_REQ_ID), None);
-//        assert_eq!(msg.field_i64(tags::SESSION_REJECT_REASON), Some(10));
-//        assert_eq!(msg.field_i64(tags::REF_SEQ_NUM), Some(10));
+//        let message = next.as_outbound().unwrap();
+//        assert_eq!(message.field_str(tags::MSG_TYPE), Some("3"));
+//        assert_eq!(message.field_str(tags::SENDER_COMP_ID), Some("SENDER"));
+//        assert_eq!(message.field_str(tags::TARGET_COMP_ID), Some("TARGET"));
+//        assert_eq!(message.field_bool(tags::POSS_DUP_FLAG), None);
+//        assert_eq!(message.field_i64(tags::TEST_REQ_ID), None);
+//        assert_eq!(message.field_i64(tags::SESSION_REJECT_REASON), Some(10));
+//        assert_eq!(message.field_i64(tags::REF_SEQ_NUM), Some(10));
 //        assert!(responses.next().is_none());
 //    }
 //}

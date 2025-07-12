@@ -23,10 +23,8 @@
 
 mod codec;
 mod codegen;
+mod data_type_field;
 mod decimal;
-mod dtf;
-mod errors;
-mod field_operators;
 mod template;
 
 pub use self::decimal::Decimal;

@@ -11,10 +11,11 @@ use builder::{
     LayoutItemData, LayoutItemKindData, MessageData,
 };
 pub use fix_datatype::FixDatatype;
-use fnv::FnvHashMap;
+use rustc_hash::FxHashMap;
 use quickfix::{ParseDictionaryError, QuickFixReader};
 use smartstring::alias::String as SmartString;
 use std::sync::Arc;
+use smallvec::SmallVec;
 
 /// Type alias for FIX tags: 32-bit unsigned integers, strictly positive.
 pub type TagU32 = std::num::NonZeroU32;
@@ -60,7 +61,7 @@ pub enum FieldLocation {
 }
 
 /// A mapping from FIX version strings to [`Dictionary`] values.
-pub type Dictionaries = FnvHashMap<String, Arc<Dictionary>>;
+pub type Dictionaries = FxHashMap<SmartString, Arc<Dictionary>>;
 
 /// Specifies business semantics for application-level entities within the FIX
 /// Protocol.
@@ -80,22 +81,22 @@ pub type Dictionaries = FnvHashMap<String, Arc<Dictionary>>;
 /// session layer.
 #[derive(Debug, Clone)]
 pub struct Dictionary {
-    version: String,
+    version: SmartString,
 
-    abbreviation_definitions: FnvHashMap<SmartString, AbbreviationData>,
+    abbreviation_definitions: FxHashMap<SmartString, AbbreviationData>,
 
-    data_types_by_name: FnvHashMap<SmartString, DatatypeData>,
+    data_types_by_name: FxHashMap<SmartString, DatatypeData>,
 
-    fields_by_tags: FnvHashMap<u32, FieldData>,
-    field_tags_by_name: FnvHashMap<SmartString, u32>,
+    fields_by_tags: FxHashMap<u32, FieldData>,
+    field_tags_by_name: FxHashMap<SmartString, u32>,
 
-    components_by_name: FnvHashMap<SmartString, ComponentData>,
+    components_by_name: FxHashMap<SmartString, ComponentData>,
 
-    messages_by_msgtype: FnvHashMap<SmartString, MessageData>,
-    message_msgtypes_by_name: FnvHashMap<SmartString, SmartString>,
+    messages_by_msgtype: FxHashMap<SmartString, MessageData>,
+    message_msgtypes_by_name: FxHashMap<SmartString, SmartString>,
 
     //layout_items: Vec<LayoutItemData>,
-    categories_by_name: FnvHashMap<SmartString, CategoryData>,
+    categories_by_name: FxHashMap<SmartString, CategoryData>,
     // header: Vec<FieldData>,
 }
 
@@ -104,15 +105,15 @@ impl Dictionary {
     fn new<S: ToString>(version: S) -> Self {
         Dictionary {
             // header: Vec::new(), // FIXME
-            version: version.to_string(),
-            abbreviation_definitions: FnvHashMap::default(),
-            data_types_by_name: FnvHashMap::default(),
-            fields_by_tags: FnvHashMap::default(),
-            field_tags_by_name: FnvHashMap::default(),
-            components_by_name: FnvHashMap::default(),
-            messages_by_msgtype: FnvHashMap::default(),
-            message_msgtypes_by_name: FnvHashMap::default(),
-            categories_by_name: FnvHashMap::default(),
+            version: version.to_string().into(),
+            abbreviation_definitions: FxHashMap::default(),
+            data_types_by_name: FxHashMap::default(),
+            fields_by_tags: FxHashMap::default(),
+            field_tags_by_name: FxHashMap::default(),
+            components_by_name: FxHashMap::default(),
+            messages_by_msgtype: FxHashMap::default(),
+            message_msgtypes_by_name: FxHashMap::default(),
+            categories_by_name: FxHashMap::default(),
         }
     }
 
@@ -202,8 +203,8 @@ impl Dictionary {
     /// Returns a [`Vec`] of FIX [`Dictionary`]'s for the most common FIX
     /// versions (all that have been enabled via feature flags). This is only
     /// intended for testing purposes.
-    pub fn common_dictionaries() -> Vec<Dictionary> {
-        vec![
+    pub fn common_dictionaries() -> SmallVec<[Dictionary; 10]> {
+        smallvec::smallvec![
             #[cfg(feature = "fix40")]
             Self::fix40(),
             #[cfg(feature = "fix41")]
@@ -319,7 +320,7 @@ impl Dictionary {
     /// // FIX 4.4 defines 23 (FIXME) datatypes.
     /// assert_eq!(dict.datatypes().len(), 23);
     /// ```
-    pub fn datatypes(&self) -> Vec<Datatype> {
+    pub fn datatypes(&self) -> SmallVec<[Datatype; 24]> {
         self.data_types_by_name.values().map(Datatype).collect()
     }
 
@@ -343,7 +344,7 @@ impl Dictionary {
 
     /// Returns a [`Vec`] of all [`Category`]'s in this [`Dictionary`]. The ordering
     /// of items is not specified.
-    pub fn categories(&self) -> Vec<Category> {
+    pub fn categories(&self) -> SmallVec<[Category; 8]> {
         self.categories_by_name.values().map(Category).collect()
     }
 
@@ -622,7 +623,7 @@ fn layout_item_kind<'a>(item: &'a LayoutItemKindData, dict: &'a Dictionary) -> L
             let items = items_data
                 .iter()
                 .map(|item_data| LayoutItem(dict, item_data))
-                .collect::<Vec<_>>();
+                .collect::<SmallVec<[_; 8]>>();
             let len_field = dict.field_by_tag(*len_field_tag).unwrap();
             LayoutItemKind::Group(len_field, items)
         }
@@ -642,7 +643,7 @@ pub enum LayoutItemKind<'a> {
     /// This component item is another component.
     Component(Component<'a>),
     /// This component item is a FIX repeating group.
-    Group(Field<'a>, Vec<LayoutItem<'a>>),
+    Group(Field<'a>, SmallVec<[LayoutItem<'a>; 8]>),
     /// This component item is a FIX field.
     Field(Field<'a>),
 }
@@ -660,10 +661,10 @@ impl<'a> LayoutItem<'a> {
     }
 
     /// Returns the human-readable name of `self`.
-    pub fn tag_text(&self) -> String {
+    pub fn tag_text(&self) -> SmartString {
         match &self.1.kind {
             LayoutItemKindData::Component { name } => {
-                self.0.component_by_name(name).unwrap().name().to_string()
+                self.0.component_by_name(name).unwrap().name().into()
             }
             LayoutItemKindData::Group {
                 len_field_tag,
@@ -673,9 +674,9 @@ impl<'a> LayoutItem<'a> {
                 .field_by_tag(*len_field_tag)
                 .unwrap()
                 .name()
-                .to_string(),
+                .into(),
             LayoutItemKindData::Field { tag } => {
-                self.0.field_by_tag(*tag).unwrap().name().to_string()
+                self.0.field_by_tag(*tag).unwrap().name().into()
             }
         }
     }
@@ -755,7 +756,7 @@ mod test {
         let dict = Dictionary::fix44();
         let msg_heartbeat = dict.message_by_name("Heartbeat").unwrap();
         assert_eq!(msg_heartbeat.msg_type(), "0");
-        assert_eq!(msg_heartbeat.name(), "Heartbeat".to_string());
+        assert_eq!(msg_heartbeat.name(), "Heartbeat");
         assert!(msg_heartbeat.layout().any(|c| {
             if let LayoutItemKind::Field(f) = c.kind() {
                 f.name() == "TestReqID"
@@ -771,7 +772,7 @@ mod test {
             let datatypes_count = dict.datatypes().len();
             let mut datatypes = HashSet::new();
             for field in dict.fields() {
-                datatypes.insert(field.data_type().name().to_string());
+                datatypes.insert(field.data_type().name().into());
             }
             assert_eq!(datatypes_count, datatypes.len());
         }

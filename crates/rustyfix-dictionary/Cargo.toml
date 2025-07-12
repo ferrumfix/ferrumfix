@@ -31,11 +31,12 @@ fix50sp2 = []
 fixt11 = []
 
 [dependencies]
-fnv = "1"
 roxmltree = "0.19"
 smartstring = "1"
 strum = "0.25"
 strum_macros = "0.26"
+rustc-hash = { workspace = true }
+smallvec = { version = "1.11.0", features = ["serde"] }
 
 [dev-dependencies]
 arbitrary = { version = "1.4", features = ["derive"] }

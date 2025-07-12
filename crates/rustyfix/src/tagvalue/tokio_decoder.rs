@@ -57,7 +57,7 @@ impl codec::Decoder for TokioDecoder {
         match result {
             Ok(_raw_frame) => {
                 // FIXME
-                todo!()
+                unimplemented!("The Message type does not support owning its buffer, which is required for a Tokio codec. This needs a redesign of the Message struct.");
             }
             Err(DecodeError::Invalid) => Ok(None),
             Err(e) => Err(e),

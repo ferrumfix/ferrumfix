@@ -1,6 +1,7 @@
 use super::Decimal;
-use super::errors::StaticError;
+use super::errors::{Error, StaticError};
 use super::field_operators::FieldOperatorInstruction;
+use std::num::ParseIntError;
 
 #[derive(Clone, Debug)]
 pub enum PrimitiveValue<'a> {
@@ -12,6 +13,18 @@ pub enum PrimitiveValue<'a> {
     AsciiString(&'a [u8]),
     Utf8String(&'a str),
     Bytes(&'a [u8]),
+}
+
+#[derive(Clone, Debug)]
+pub enum OwnedPrimitiveValue {
+    I32(i32),
+    U32(u32),
+    I64(i64),
+    U64(u64),
+    Decimal(Decimal),
+    AsciiString(Vec<u8>),
+    Utf8String(String),
+    Bytes(Vec<u8>),
 }
 
 #[derive(Clone, Debug, Copy)]
@@ -52,22 +65,41 @@ pub enum FieldType {
 }
 
 impl FieldInstruction {
-    fn from_template(node: roxmltree::Node) -> Result<Self, StaticError> {
+    fn from_template(node: roxmltree::Node) -> Result<Self, Error> {
         let name = node.attribute("name").ok_or(StaticError::S1)?;
-        let id = node.attribute("id").unwrap().parse().unwrap();
+        let id = node
+            .attribute("id")
+            .ok_or(StaticError::S1)?
+            .parse()
+            .map_err(|e: ParseIntError| Error::Static(StaticError::S3))?;
         let mandatory = {
             let attr = node.attribute("presence").unwrap_or("true");
             attr == "true"
         };
         let type_name = node.tag_name().name();
+        let operator = Self::operator_from_node(node).unwrap_or(FieldOperatorInstruction::None);
         let instruction = FieldInstruction {
             field_type: Template::xml_tag_to_instruction(type_name)?,
             name: name.to_string(),
             id,
             mandatory,
-            operator: FieldOperatorInstruction::Constant,
+            operator,
         };
         Ok(instruction)
+    }
+
+    fn operator_from_node(node: roxmltree::Node) -> Option<FieldOperatorInstruction> {
+        node.children()
+            .find(|n| n.is_element())
+            .map(|n| n.tag_name().name())
+            .map(|name| match name {
+                "copy" => FieldOperatorInstruction::Copy,
+                "constant" => FieldOperatorInstruction::Constant,
+                "delta" => FieldOperatorInstruction::Delta,
+                "tail" => FieldOperatorInstruction::Tail,
+                "increment" => FieldOperatorInstruction::Increment,
+                _ => FieldOperatorInstruction::None,
+            })
     }
 }
 
@@ -95,20 +127,25 @@ pub struct Template {
 impl Template {
     /// # Panics
     /// Panics if the XML is malformed.
-    pub fn new(xml_document: &str) -> Result<Template, StaticError> {
-        let document = roxmltree::Document::parse(xml_document).unwrap();
-        let container = document.root().first_element_child().unwrap();
-        let root = container.first_element_child().unwrap();
+    pub fn new(xml_document: &str) -> Result<Template, Error> {
+        let document = roxmltree::Document::parse(xml_document).map_err(|e| StaticError::S1)?;
+        let container = document
+            .root()
+            .first_element_child()
+            .ok_or(StaticError::S1)?;
+        let root = container
+            .first_element_child()
+            .ok_or(StaticError::S1)?;
         Template::from_xml(root)
     }
 
-    fn from_xml(root: roxmltree::Node) -> Result<Self, StaticError> {
+    fn from_xml(root: roxmltree::Node) -> Result<Self, Error> {
         debug_assert_eq!(root.tag_name().name(), "template");
-        let name = root.attribute("name").unwrap();
+        let name = root.attribute("name").ok_or(StaticError::S1)?;
         let id = {
             let id = root.attribute("id");
             match id {
-                Some(num) => Some(num.parse().map_err(|_| StaticError::S1)?),
+                Some(num) => Some(num.parse().map_err(|_| StaticError::S3)?),
                 None => None,
             }
         };
@@ -152,7 +189,7 @@ impl Template {
         self.instructions.iter()
     }
 
-    fn xml_tag_to_instruction(tag: &str) -> Result<FieldType, StaticError> {
+    fn xml_tag_to_instruction(tag: &str) -> Result<FieldType, Error> {
         Ok(match tag {
             "string" => FieldType::Primitive(PrimitiveType::AsciiString),
             "uInt32" => FieldType::Primitive(PrimitiveType::U32),
@@ -162,7 +199,7 @@ impl Template {
             "decimal" => FieldType::Primitive(PrimitiveType::Decimal),
             "byteVector" => FieldType::Primitive(PrimitiveType::Decimal),
             "length" => FieldType::Primitive(PrimitiveType::U32),
-            _ => return Err(StaticError::S1),
+            _ => return Err(StaticError::S2.into()),
         })
     }
 

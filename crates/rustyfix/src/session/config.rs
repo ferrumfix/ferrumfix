@@ -1,7 +1,7 @@
 use super::{Environment, MsgSeqNumCounter, SeqNumbers};
 use std::marker::PhantomData;
 use std::num::NonZeroU64;
-use std::time::Duration;
+use quanta::Duration;
 
 /// Collection of configuration options related to
 /// [`FixConnection`](super::FixConnection).

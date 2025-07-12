@@ -4,8 +4,10 @@ use crate::{FieldMap, FieldType, FieldValueError, GetConfig, RepeatingGroup};
 use rustyfix_dictionary::Dictionary;
 use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, Cow};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::sync::Arc;
+use smallvec::SmallVec;
+use smartstring::alias::String as SmartString;
 
 /// A read-only JSON FIX message as parsed by [`Decoder`].
 #[derive(Debug, Copy, Clone)]
@@ -121,7 +123,7 @@ impl<'a> Iterator for MessageFieldsIter<'a> {
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct Decoder {
-    dictionaries: HashMap<String, Arc<Dictionary>>,
+    dictionaries: FxHashMap<SmartString, Arc<Dictionary>>,
     message_builder: MessageInternal<'static>,
     config: Config,
 }
@@ -130,8 +132,8 @@ impl Decoder {
     /// Creates a new JSON [`Decoder`]. `dict` serves as a reference for data type inference
     /// of incoming messages' fields. Configuration options are initialized via [`Default`].
     pub fn new(dict: Dictionary) -> Self {
-        let mut dictionaries = HashMap::new();
-        dictionaries.insert(dict.version().to_string(), Arc::new(dict));
+        let mut dictionaries = FxHashMap::default();
+        dictionaries.insert(dict.version().into(), Arc::new(dict));
         Self {
             dictionaries,
             message_builder: MessageInternal::default(),
@@ -142,8 +144,8 @@ impl Decoder {
     /// Decodes `data` and returns a [`Message`].
     pub fn decode<'a>(&'a mut self, data: &'a [u8]) -> Result<Message<'a>, DecodeError> {
         let mut deserilizer = serde_json::Deserializer::from_slice(data);
-        let msg = self.message_builder();
-        MessageInternal::deserialize_in_place(&mut deserilizer, msg).map_err(|err| {
+        let message = self.message_builder();
+        MessageInternal::deserialize_in_place(&mut deserilizer, message).map_err(|err| {
             if err.is_syntax() || err.is_eof() || err.is_io() {
                 DecodeError::Syntax
             } else {
@@ -151,7 +153,7 @@ impl Decoder {
             }
         })?;
         Ok(Message {
-            internal: msg,
+            internal: message,
             group_map: None,
         })
     }
@@ -178,7 +180,7 @@ impl GetConfig for Decoder {
     }
 }
 
-type Fields<'a> = HashMap<Cow<'a, str>, FieldOrGroup<'a>>;
+type Fields<'a> = FxHashMap<Cow<'a, str>, FieldOrGroup<'a>>;
 
 /// A field or a repeating group of fields.
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -188,7 +190,7 @@ pub enum FieldOrGroup<'a> {
     Field(Cow<'a, str>),
     /// A repeating group of fields.
     #[serde(borrow)]
-    Group(Vec<Fields<'a>>),
+    Group(SmallVec<[Fields<'a>; 8]>),
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]

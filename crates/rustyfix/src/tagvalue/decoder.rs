@@ -5,11 +5,12 @@ use crate::{
     StreamingDecoder, TagU32,
 };
 use nohash_hasher::IntMap;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::convert::TryInto;
 use std::fmt::Debug;
 use std::iter::FusedIterator;
 use std::marker::PhantomData;
+use smallvec::SmallVec;
 
 /// Univocally locates a tag within a FIX message, even with nested groups.
 ///
@@ -484,7 +485,7 @@ struct DecoderStateNewGroup {
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
 struct DecoderState {
-    group_information: Vec<DecoderGroupState>,
+    group_information: SmallVec<[DecoderGroupState; 4]>,
     new_group: Option<DecoderStateNewGroup>,
     data_field_length: Option<usize>,
 }
@@ -533,7 +534,7 @@ impl DecoderState {
 struct MessageBuilder<'a> {
     state: DecoderState,
     raw: &'a [u8],
-    fields: HashMap<FieldLocator, (TagU32, &'a [u8], usize)>,
+    fields: FxHashMap<FieldLocator, (TagU32, &'a [u8], usize)>,
     field_locators: Vec<FieldLocator>,
     i_first_cell: usize,
     i_last_cell: usize,
@@ -547,13 +548,13 @@ impl<'a> Default for MessageBuilder<'a> {
     fn default() -> Self {
         Self {
             state: DecoderState {
-                group_information: Vec::new(),
+                group_information: SmallVec::new(),
                 new_group: None,
                 data_field_length: None,
             },
             raw: b"",
             field_locators: Vec::new(),
-            fields: HashMap::new(),
+            fields: FxHashMap::default(),
             i_first_cell: 0,
             i_last_cell: 0,
             len_end_body: 0,
@@ -722,6 +723,7 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
+    use smartstring::alias::String as SmartString;
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
@@ -735,8 +737,8 @@ mod test {
         "8=FIX.4.2|9=196|35=X|49=A|56=B|34=12|52=20100318-03:21:11.364|262=A|268=2|279=0|269=0|278=BID|55=EUR/USD|270=1.37215|15=EUR|271=2500000|346=1|279=0|269=1|278=OFFER|55=EUR/USD|270=1.37224|15=EUR|271=2503200|346=1|10=171|",
     ];
 
-    fn with_soh(msg: &str) -> String {
-        msg.split('|').collect::<Vec<&str>>().join("\x01")
+    fn with_soh(message: &str) -> SmartString {
+        message.split('|').collect::<smallvec::SmallVec<[&str; 128]>>().join("\x01").into()
     }
 
     fn decoder() -> Decoder {
@@ -783,8 +785,8 @@ mod test {
 
     #[test]
     fn assortment_of_random_messages_is_ok() {
-        for msg_with_vertical_bar in RANDOM_MESSAGES {
-            let message = with_soh(msg_with_vertical_bar);
+        for message_with_vertical_bar in RANDOM_MESSAGES {
+            let message = with_soh(message_with_vertical_bar);
             let mut codec = decoder();
             codec.config_mut().separator = 0x1;
             let result = codec.decode(message.as_bytes());
@@ -812,43 +814,43 @@ mod test {
 
     #[test]
     fn message_must_end_with_separator() {
-        let msg = "8=FIX.4.2|9=41|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127";
+        let message = "8=FIX.4.2|9=41|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127";
         let mut codec = decoder();
-        let result = codec.decode(msg.as_bytes());
+        let result = codec.decode(message.as_bytes());
         assert!(matches!(result, Err(DecodeError::Invalid)));
     }
 
     #[test]
     fn message_without_checksum() {
-        let msg = "8=FIX.4.4|9=37|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|";
+        let message = "8=FIX.4.4|9=37|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|";
         let mut codec = decoder();
-        let result = codec.decode(msg.as_bytes());
+        let result = codec.decode(message.as_bytes());
         assert!(matches!(result, Err(DecodeError::Invalid)));
     }
 
     #[test]
     fn message_with_data_field() {
-        let msg =
+        let message =
             "8=FIX.4.4|9=58|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|39=0|93=8|89=foo|\x01bar|10=000|";
         let mut codec = decoder();
-        let result = codec.decode(msg.as_bytes()).unwrap();
+        let result = codec.decode(message.as_bytes()).unwrap();
         assert_eq!(result.get(93), Ok(8));
         assert!(matches!(result.get_raw(89), Some(b"foo|\x01bar")));
     }
 
     #[test]
     fn message_without_standard_header() {
-        let msg = "35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=000|";
+        let message = "35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=000|";
         let mut codec = decoder();
-        let result = codec.decode(msg.as_bytes());
+        let result = codec.decode(message.as_bytes());
         assert!(matches!(result, Err(DecodeError::Invalid)));
     }
 
     #[test]
     fn detect_incorrect_checksum() {
-        let msg = "8=FIX.4.2|9=43|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=146|";
+        let message = "8=FIX.4.2|9=43|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=146|";
         let mut codec = decoder();
-        let result = codec.decode(msg.as_bytes());
+        let result = codec.decode(message.as_bytes());
         assert!(matches!(result, Err(DecodeError::Invalid)));
     }
 

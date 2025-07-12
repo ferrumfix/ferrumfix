@@ -1,5 +1,6 @@
 use bitvec::prelude::*;
 use std::io;
+use smallvec::{smallvec, SmallVec};
 
 const STOP_BYTE: u8 = 0x80;
 const SIGNIFICANT_BYTE: u8 = !STOP_BYTE;
@@ -83,22 +84,60 @@ impl Codec for i32 {
 }
 
 impl Codec for u64 {
-    fn deserialize(&mut self, _input: &mut impl io::Read) -> io::Result<usize> {
-        todo!();
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<usize> {
+        let mut value = *self;
+        if value == 0 {
+            writer.write_all(&[0b1000_0000])?;
+            return Ok(1);
+        }
+
+        let mut buf = [0u8; 10];
+        let mut i = buf.len();
+
+        i -= 1;
+        buf[i] = (value & 0b0111_1111) as u8 | 0b1000_0000;
+        value >>= 7;
+
+        while value > 0 {
+            i -= 1;
+            buf[i] = (value & 0b0111_1111) as u8;
+            value >>= 7;
+        }
+
+        writer.write_all(&buf[i..])?;
+        Ok(buf.len() - i)
     }
 
-    fn serialize(&self, _output: &mut impl io::Write) -> io::Result<usize> {
-        todo!();
+    fn deserialize(&mut self, reader: &mut impl io::Read) -> io::Result<usize> {
+        let bytes = decode_stop_bit_entity(reader)?;
+        *self = 0;
+        for byte in &bytes {
+            if (*self >> (64 - 7)) > 0 {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "u64 overflow in FAST decoding",
+                ));
+            }
+            *self = (*self << 7) | u64::from(*byte);
+        }
+        Ok(bytes.len())
     }
 }
 
 impl Codec for i64 {
-    fn deserialize(&mut self, _input: &mut impl io::Read) -> io::Result<usize> {
-        todo!();
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<usize> {
+        // ZigZag encoding.
+        let zigzag_encoded = (*self << 1) ^ (*self >> 63);
+        (zigzag_encoded as u64).serialize(writer)
     }
 
-    fn serialize(&self, _output: &mut impl io::Write) -> io::Result<usize> {
-        todo!();
+    fn deserialize(&mut self, reader: &mut impl io::Read) -> io::Result<usize> {
+        let mut zigzag_encoded = 0u64;
+        let bytes_read = zigzag_encoded.deserialize(reader)?;
+        // ZigZag decoding.
+        let value = (zigzag_encoded >> 1) as i64 ^ -((zigzag_encoded & 1) as i64);
+        *self = value;
+        Ok(bytes_read)
     }
 }
 
@@ -167,31 +206,55 @@ impl PresenceMap {
 }
 
 impl Codec for PresenceMap {
-    fn serialize(&self, _output: &mut impl io::Write) -> io::Result<usize> {
-        todo!();
+    fn serialize(&self, output: &mut impl io::Write) -> io::Result<usize> {
+        if self.bits.is_empty() {
+            output.write_all(&[STOP_BYTE])?;
+            return Ok(1);
+        }
+
+        let mut bytes = Vec::new();
+        for chunk in self.bits.chunks(7) {
+            let mut byte = 0u8;
+            for (i, bit) in chunk.iter().by_vals().enumerate() {
+                if bit {
+                    byte |= 1 << (6 - i);
+                }
+            }
+            bytes.push(byte);
+        }
+
+        if let Some(last_byte) = bytes.last_mut() {
+            *last_byte |= STOP_BYTE;
+        }
+
+        output.write_all(&bytes)?;
+        Ok(bytes.len())
     }
 
     fn deserialize(&mut self, input: &mut impl io::Read) -> io::Result<usize> {
-        self.bits = BitVec::new();
-        let mut stop_bit = false;
-        while !stop_bit {
+        self.bits.clear();
+        let mut bytes_read = 0;
+        loop {
             let mut buffer = [0u8; 1];
-            input.read_exact(&mut buffer[..])?;
-            let byte = buffer[0];
-            stop_bit = byte >= STOP_BYTE;
-            if !stop_bit {
-                self.bits.push(byte >> 7 == 1);
+            let n = input.read(&mut buffer)?;
+            if n == 0 {
+                return Err(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "Incomplete PresenceMap: no stop bit found",
+                ));
             }
-            self.bits.push((byte >> 6) & 1 == 1);
-            self.bits.push((byte >> 5) & 1 == 1);
-            self.bits.push((byte >> 4) & 1 == 1);
-            self.bits.push((byte >> 4) & 1 == 1);
-            self.bits.push((byte >> 3) & 1 == 1);
-            self.bits.push((byte >> 2) & 1 == 1);
-            self.bits.push((byte >> 1) & 1 == 1);
-            self.bits.push(byte & 1 == 1);
+            bytes_read += 1;
+            let byte = buffer[0];
+
+            let data = byte & SIGNIFICANT_BYTE;
+            let data_bits: &BitSlice<Msb0, u8> = BitSlice::from_element(&data);
+            self.bits.extend_from_bitslice(&data_bits[1..8]);
+
+            if (byte & STOP_BYTE) != 0 {
+                break;
+            }
         }
-        Ok(self.bits.len())
+        Ok(bytes_read)
     }
 }
 
@@ -202,8 +265,8 @@ impl Codec for PresenceMap {
 //    }
 //}
 
-pub fn decode_stop_bit_entity(input: &mut impl io::Read) -> io::Result<Vec<u8>> {
-    let mut bytes = Vec::new();
+pub fn decode_stop_bit_entity(input: &mut impl io::Read) -> io::Result<SmallVec<[u8; 10]>> {
+    let mut bytes = smallvec![];
     loop {
         let mut byte = [0u8; 1];
         input.read_exact(&mut byte[..])?;

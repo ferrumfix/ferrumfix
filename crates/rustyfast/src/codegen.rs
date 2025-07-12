@@ -1,5 +1,5 @@
 use super::{FieldType, PrimitiveType, Template};
-use heck::CamelCase;
+use heck::{CamelCase, SnakeCase};
 use indoc::indoc;
 
 const GENERATED_CODE_NOTICE: &str = indoc!(
@@ -14,14 +14,51 @@ pub fn template_struct(template: &Template, custom_derive_line: &str) -> String 
     let identifier = template.name().to_camel_case();
     let fields = template
         .iter_items()
-        .map(|field_instruction| match field_instruction.kind() {
-            FieldType::Primitive(pt) => optional_rust_type(
-                primitive_fast_type_to_rust_type(*pt),
-                !field_instruction.is_mandatory(),
-            ),
-            FieldType::Group(_group) => String::new(),
+        .map(|field_instruction| {
+            let field_name = field_instruction.name().to_snake_case();
+            let field_type_str = match field_instruction.kind() {
+                FieldType::Primitive(pt) => optional_rust_type(
+                    primitive_fast_type_to_rust_type(*pt),
+                    !field_instruction.is_mandatory(),
+                ),
+                FieldType::Group(_group) => String::new(), // No fields for groups for now.
+            };
+            if field_type_str.is_empty() {
+                String::new()
+            } else {
+                format!("{}: {},", field_name, field_type_str)
+            }
         })
-        .collect::<Vec<String>>();
+        .collect::<Vec<String>>()
+        .join("\n                ");
+    let methods = template
+        .iter_items()
+        .map(|field_instruction| {
+            let field_name = field_instruction.name().to_snake_case();
+            let field_type_str = match field_instruction.kind() {
+                FieldType::Primitive(pt) => {
+                    let rust_type = primitive_fast_type_to_rust_type(*pt);
+                    optional_rust_type(rust_type, !field_instruction.is_mandatory())
+                }
+                FieldType::Group(_) => return String::new(), // No methods for groups for now.
+            };
+
+            if field_type_str.is_empty() {
+                return String::new();
+            }
+
+            let getter = format!(
+                "pub fn {field_name}(&self) -> {field_type_str} {{\n                    self.{field_name}\n                }}",
+            );
+
+            let setter = format!(
+                "pub fn set_{field_name}(&mut self, value: {field_type_str}) {{\n                    self.{field_name} = value;\n                }}",
+            );
+
+            format!("{}\n\n                {}", getter, setter)
+        })
+        .collect::<Vec<String>>()
+        .join("\n\n                ");
     format!(
         indoc!(
             r#"
@@ -42,8 +79,8 @@ pub fn template_struct(template: &Template, custom_derive_line: &str) -> String 
         notice = GENERATED_CODE_NOTICE,
         custom_derive_line = custom_derive_line,
         identifier = identifier,
-        fields = fields.join("\n"),
-        methods = "", // TODO
+        fields = fields,
+        methods = methods,
     )
 }
 

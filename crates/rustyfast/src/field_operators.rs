@@ -9,6 +9,7 @@ pub enum FieldOperatorInstruction {
     Delta,
     Tail,
     Copy,
+    Increment,
 }
 
 /// *Field encoding operator* in FAST terminology.

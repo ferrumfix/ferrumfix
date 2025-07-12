@@ -41,7 +41,7 @@ pub enum FixDatatype {
     /// of "shares" (securities denominated in whole units) or a decimal value
     /// containing decimal places for non-share quantity asset classes
     /// (securities denominated in fractional units).
-    Qty,
+    Quantity,
     /// float field representing a percentage (e.g. 0.05 represents 5% and 0.9525
     /// represents 95.25%). Note the number of decimal places may vary.
     Percentage,
@@ -183,7 +183,7 @@ impl FixDatatype {
             "PERCENTAGE" => FixDatatype::Percentage,
             "PRICE" => FixDatatype::Price,
             "PRICEOFFSET" => FixDatatype::PriceOffset,
-            "QTY" => FixDatatype::Qty,
+            "QTY" => FixDatatype::Quantity,
             "STRING" => FixDatatype::String,
             "TZTIMEONLY" => FixDatatype::UtcTimeOnly, // FIXME
             "TZTIMESTAMP" => FixDatatype::UtcTimestamp, // FIXME
@@ -211,7 +211,7 @@ impl FixDatatype {
             FixDatatype::Amt => "AMT",
             FixDatatype::Price => "PRICE",
             FixDatatype::PriceOffset => "PRICEOFFSET",
-            FixDatatype::Qty => "QTY",
+            FixDatatype::Quantity => "QTY",
             FixDatatype::Percentage => "PERCENTAGE",
             FixDatatype::DayOfMonth => "DAYOFMONTH",
             FixDatatype::NumInGroup => "NUMINGROUP",
@@ -244,7 +244,7 @@ impl FixDatatype {
     /// ```
     /// use rustyfix_dictionary::FixDatatype;
     ///
-    /// assert_eq!(FixDatatype::Qty.name(), "Qty");
+    /// assert_eq!(FixDatatype::Quantity.name(), "Quantity");
     /// assert_eq!(FixDatatype::Float.name(), "float");
     /// assert_eq!(FixDatatype::String.name(), "String");
     /// ```
@@ -263,7 +263,7 @@ impl FixDatatype {
             FixDatatype::Amt => "Amt",
             FixDatatype::Price => "Price",
             FixDatatype::PriceOffset => "PriceOffset",
-            FixDatatype::Qty => "Qty",
+            FixDatatype::Quantity => "Quantity",
             FixDatatype::Percentage => "Percentage",
             FixDatatype::DayOfMonth => "DayOfMonth",
             FixDatatype::NumInGroup => "NumInGroup",
@@ -319,7 +319,7 @@ impl FixDatatype {
             | Self::Amt
             | Self::Price
             | Self::PriceOffset
-            | Self::Qty
+            | Self::Quantity
             | Self::Percentage => Self::Float,
             Self::Int
             | Self::DayOfMonth

@@ -3,7 +3,7 @@ use crate::tagvalue::{DecodeError, DecoderStreaming, Message};
 use futures::{AsyncRead, AsyncReadExt, FutureExt, select};
 use futures_timer::Delay;
 use std::io;
-use std::time::{Duration, Instant};
+use quanta::{Clock, Duration, Instant};
 
 /// Asynchronous, executor-agnostic low-level event loop for FIX connectors.
 ///
@@ -20,6 +20,7 @@ pub struct LlEventLoop<I> {
     last_reset: Instant,
     last_heartbeat: Instant,
     is_alive: bool,
+    clock: Clock,
 }
 
 impl<I> LlEventLoop<I>
@@ -31,15 +32,17 @@ where
     pub fn new(decoder: DecoderStreaming<Vec<u8>>, input: I, heartbeat: Duration) -> Self {
         let heartbeat_soft_tolerance = heartbeat * 2;
         let heartbeat_hard_tolerance = heartbeat * 3;
+        let clock = Clock::new();
         Self {
             decoder,
             input,
             heartbeat,
             heartbeat_soft_tolerance,
             heartbeat_hard_tolerance,
-            last_reset: Instant::now(),
-            last_heartbeat: Instant::now(),
+            last_reset: clock.now(),
+            last_heartbeat: clock.now(),
             is_alive: true,
+            clock,
         }
     }
 
@@ -64,7 +67,7 @@ where
                 return None;
             }
 
-            let now = Instant::now();
+            let now = self.clock.now();
             let mut timer_heartbeat = Delay::new(now - self.last_heartbeat + self.heartbeat).fuse();
             let mut timer_test_request =
                 Delay::new(now - self.last_reset + self.heartbeat_soft_tolerance).fuse();
@@ -105,7 +108,7 @@ where
                     };
                 },
                 () = timer_heartbeat => {
-                    self.last_heartbeat = Instant::now();
+                    self.last_heartbeat = self.clock.now();
                     return Some(LlEvent::Heartbeat);
                 },
                 () = timer_test_request => {
@@ -121,7 +124,7 @@ where
 
     /// Resets the FIX counterparty's `Heartbeat <0>` -associated timers.
     pub fn ping_heartbeat(&mut self) {
-        self.last_reset = Instant::now();
+        self.last_reset = self.clock.now();
     }
 }
 

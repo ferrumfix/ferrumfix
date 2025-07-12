@@ -1,6 +1,6 @@
 use super::errs;
 use std::ops::RangeInclusive;
-use std::time::Duration;
+use quanta::Duration;
 
 /// Rules placed on the expected heartbeat interval via out-of-band rules of
 /// engagement.
@@ -38,7 +38,7 @@ impl HeartbeatRule {
     ///
     /// ```
     /// use rustyfix::session::HeartbeatRule;
-    /// use std::time::Duration;
+    /// use quanta::Duration;
     ///
     /// let rule = HeartbeatRule::Exact(Duration::from_secs(30));
     /// assert!(rule.validate(&Duration::from_secs(60)).is_err());
@@ -51,7 +51,7 @@ impl HeartbeatRule {
     ///
     /// ```
     /// use rustyfix::session::HeartbeatRule;
-    /// use std::time::Duration;
+    /// use quanta::Duration;
     ///
     /// let rule = HeartbeatRule::Any;
     /// assert!(rule.validate(&Duration::from_secs(1000)).is_ok());
