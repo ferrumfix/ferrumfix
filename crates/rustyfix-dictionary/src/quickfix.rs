@@ -99,7 +99,7 @@ fn import_field(builder: &mut DictionaryBuilder, node: roxmltree::Node) -> Parse
         return Err(ParseDictionaryError::InvalidFormat);
     }
     let data_type_name = import_datatype(builder, node);
-    let value_restrictions = value_restrictions_from_node(node, data_type_name.clone());
+    let value_restrictions = value_restrictions_from_node(node, data_type_name.clone())?;
     let name = node
         .attribute("name")
         .ok_or(ParseDictionaryError::InvalidFormat)?
@@ -212,12 +212,18 @@ fn import_datatype(builder: &mut DictionaryBuilder, node: roxmltree::Node) -> Sm
 fn value_restrictions_from_node(
     node: roxmltree::Node,
     _datatype_name: SmartString,
-) -> Option<Vec<FieldEnumData>> {
+) -> ParseResult<Option<Vec<FieldEnumData>>> {
     let mut values = Vec::new();
     for child in node.children() {
         if child.is_element() {
-            let variant = child.attribute("enum")?.to_string();
-            let description = child.attribute("description")?.to_string();
+            let variant = child
+                .attribute("enum")
+                .ok_or(ParseDictionaryError::InvalidFormat)?
+                .to_string();
+            let description = child
+                .attribute("description")
+                .ok_or(ParseDictionaryError::InvalidFormat)?
+                .to_string();
             let enum_value = FieldEnumData {
                 value: variant,
                 description,
@@ -226,9 +232,9 @@ fn value_restrictions_from_node(
         }
     }
     if values.is_empty() {
-        None
+        Ok(None)
     } else {
-        Some(values)
+        Ok(Some(values))
     }
 }
 

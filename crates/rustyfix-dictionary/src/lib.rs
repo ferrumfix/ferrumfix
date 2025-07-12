@@ -131,7 +131,7 @@ impl Dictionary {
     /// ```
     /// use rustyfix_dictionary::Dictionary;
     ///
-    /// let dict = Dictionary::fix44();
+    /// let dict = Dictionary::fix44().unwrap();
     /// assert_eq!(dict.version(), "FIX.4.4");
     /// ```
     pub fn version(&self) -> &str {
@@ -237,7 +237,7 @@ impl Dictionary {
     /// ```
     /// use rustyfix_dictionary::Dictionary;
     ///
-    /// let dict = Dictionary::fix44();
+    /// let dict = Dictionary::fix44().unwrap();
     ///
     /// let msg1 = dict.message_by_name("Heartbeat").unwrap();
     /// let msg2 = dict.message_by_msgtype("0").unwrap();
@@ -253,7 +253,7 @@ impl Dictionary {
     /// ```
     /// use rustyfix_dictionary::Dictionary;
     ///
-    /// let dict = Dictionary::fix44();
+    /// let dict = Dictionary::fix44().unwrap();
     ///
     /// let msg1 = dict.message_by_msgtype("0").unwrap();
     /// let msg2 = dict.message_by_name("Heartbeat").unwrap();
@@ -277,7 +277,7 @@ impl Dictionary {
     /// ```
     /// use rustyfix_dictionary::Dictionary;
     ///
-    /// let dict = Dictionary::fix44();
+    /// let dict = Dictionary::fix44().unwrap();
     /// let dt = dict.datatype_by_name("String").unwrap();
     /// assert_eq!(dt.name(), "String");
     /// ```
@@ -290,7 +290,7 @@ impl Dictionary {
     /// ```
     /// use rustyfix_dictionary::Dictionary;
     ///
-    /// let dict = Dictionary::fix44();
+    /// let dict = Dictionary::fix44().unwrap();
     /// let field1 = dict.field_by_tag(112).unwrap();
     /// let field2 = dict.field_by_name("TestReqID").unwrap();
     /// assert_eq!(field1.name(), field2.name());
@@ -316,7 +316,7 @@ impl Dictionary {
     /// ```
     /// use rustyfix_dictionary::Dictionary;
     ///
-    /// let dict = Dictionary::fix44();
+    /// let dict = Dictionary::fix44().unwrap();
     /// // FIX 4.4 defines 23 (FIXME) datatypes.
     /// assert_eq!(dict.datatypes().len(), 23);
     /// ```
@@ -330,7 +330,7 @@ impl Dictionary {
     /// ```
     /// use rustyfix_dictionary::Dictionary;
     ///
-    /// let dict = Dictionary::fix44();
+    /// let dict = Dictionary::fix44().unwrap();
     /// let msgs = dict.messages();
     /// let msg = msgs.iter().find(|m| m.name() == "MarketDataRequest");
     /// assert_eq!(msg.unwrap().msg_type(), "V");

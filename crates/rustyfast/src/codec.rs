@@ -247,8 +247,9 @@ impl Codec for PresenceMap {
             let byte = buffer[0];
 
             let data = byte & SIGNIFICANT_BYTE;
-            let data_bits: &BitSlice<u8, Msb0> = BitSlice::from_element(&data);
-            self.bits.extend_from_bitslice(&data_bits[1..8]);
+            for i in (0..7).rev() {
+                self.bits.push((data >> i) & 1 != 0);
+            }
 
             if (byte & STOP_BYTE) != 0 {
                 break;

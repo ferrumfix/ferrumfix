@@ -11,6 +11,7 @@ fn decode_fix_message(fix_decoder: &mut Decoder, msg: &[u8]) {
 fn fix_decode_benchmark(c: &mut Criterion) {
     let fix_dictionary = Dictionary::fix44().unwrap();
     let mut fix_decoder = Decoder::new(fix_dictionary);
+    fix_decoder.config_mut().separator = b'|';
     c.bench_function("FIX decode", |b| {
         b.iter(|| decode_fix_message(black_box(&mut fix_decoder), black_box(FIX_MESSAGE)))
     });

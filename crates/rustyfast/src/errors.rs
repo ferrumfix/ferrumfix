@@ -20,7 +20,7 @@ pub enum StaticError {
     /// It is a static error if an initial value specified by the value attribute
     /// in the concrete syntax cannot be converted to a value of the type of the
     /// field.
-    #[error("No initial value is specified for a default operator on a mandatory field.")]
+    #[error("The initial value specified for a field is not convertible to its type.")]
     S3,
     /// It is a static error if no initial value is specified for a constant
     /// operator.
