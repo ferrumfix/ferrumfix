@@ -1,7 +1,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 use crate::{Buffer, FieldType};
 use std::hash::Hash;
-use quanta::Duration;
+use std::time::Duration;
 
 const ERR_INVALID: &str = "Invalid timezone.";
 
@@ -15,7 +15,7 @@ const MINUTE: u32 = 60;
 /// ```
 /// use rustyfix::FieldType;
 /// use rustyfix::field_types::Tz;
-/// use quanta::Duration;
+/// use std::time::Duration;
 ///
 /// let timezone = Tz::deserialize(b"Z").unwrap();
 /// assert_eq!(timezone, Tz::UTC);

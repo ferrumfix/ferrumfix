@@ -216,14 +216,8 @@ fn value_restrictions_from_node(
     let mut values = Vec::new();
     for child in node.children() {
         if child.is_element() {
-            let variant = child
-                .attribute("enum")
-                .unwrap_or_else(|| panic_missing_tag_in_element(child, "enum"))
-                .to_string();
-            let description = child
-                .attribute("description")
-                .unwrap_or_else(|| panic_missing_tag_in_element(child, "description"))
-                .to_string();
+            let variant = child.attribute("enum")?.to_string();
+            let description = child.attribute("description")?.to_string();
             let enum_value = FieldEnumData {
                 value: variant,
                 description,
@@ -247,10 +241,10 @@ fn import_layout_item(
     debug_assert_ne!(builder.dict().fields().len(), 0);
     let name = node
         .attribute("name")
-        .unwrap_or_else(|| panic_missing_tag_in_element(node, "name"));
+        .ok_or(ParseDictionaryError::InvalidFormat)?;
     let required = node
         .attribute("required")
-        .unwrap_or_else(|| panic_missing_tag_in_element(node, "required"))
+        .ok_or(ParseDictionaryError::InvalidFormat)?
         == "Y";
     let tag = node.tag_name().name();
     let kind = match tag {
@@ -258,11 +252,7 @@ fn import_layout_item(
             let field_tag = builder
                 .dict()
                 .field_by_name(name)
-                .unwrap_or_else(||
-                    panic!(
-                        "failed to find a field named \"{name}\" in the XML file, check exact spelling and casing"
-                    )
-                )
+                .ok_or(ParseDictionaryError::InvalidFormat)?
                 .tag()
                 .get();
             LayoutItemKindData::Field { tag: field_tag }
@@ -276,11 +266,7 @@ fn import_layout_item(
             let len_field_tag = builder
                 .dict()
                 .field_by_name(name)
-                .unwrap_or_else(||
-                    panic!(
-                        "failed to find a group named \"{name}\" in the XML file, check exact spelling and casing"
-                    )
-                )
+                .ok_or(ParseDictionaryError::InvalidFormat)?
                 .tag()
                 .get();
             let mut items = Vec::new();
@@ -302,7 +288,9 @@ fn import_layout_item(
 
 fn import_category(builder: &mut DictionaryBuilder, node: roxmltree::Node) -> ParseResult<()> {
     debug_assert_eq!(node.tag_name().name(), "message");
-    let name = node.attribute("msgcat").ok_or(ParseError::InvalidFormat)?;
+    let name = node
+        .attribute("msgcat")
+        .ok_or(ParseDictionaryError::InvalidFormat)?;
 
     if builder.dict().category_by_name(name).is_none() {
         builder.add_category(CategoryData {
@@ -314,23 +302,14 @@ fn import_category(builder: &mut DictionaryBuilder, node: roxmltree::Node) -> Pa
     Ok(())
 }
 
-fn panic_missing_tag_in_element(elem: roxmltree::Node, tag: &str) -> ! {
-    panic!(
-        "expected `{}` tag in element, but it's missing. text: {}",
-        tag,
-        elem.document()
-            .input_text()
-            .get(elem.range().start..elem.range().end)
-            .unwrap_or("Error retrieving element text")
-    );
-}
-
 type ParseError = ParseDictionaryError;
 type ParseResult<T> = Result<T, ParseError>;
 
 /// The error type that can arise when decoding a QuickFIX Dictionary.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, thiserror::Error)]
 pub enum ParseDictionaryError {
+    #[error("Invalid format.")]
     InvalidFormat,
+    #[error("Invalid data: {0}")]
     InvalidData(String),
 }

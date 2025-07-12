@@ -10,7 +10,6 @@ use std::convert::TryInto;
 use std::fmt::Debug;
 use std::iter::FusedIterator;
 use std::marker::PhantomData;
-use smallvec::SmallVec;
 
 /// Univocally locates a tag within a FIX message, even with nested groups.
 ///
@@ -485,7 +484,7 @@ struct DecoderStateNewGroup {
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
 struct DecoderState {
-    group_information: SmallVec<[DecoderGroupState; 4]>,
+    group_information: Vec<DecoderGroupState>,
     new_group: Option<DecoderStateNewGroup>,
     data_field_length: Option<usize>,
 }
@@ -548,7 +547,7 @@ impl<'a> Default for MessageBuilder<'a> {
     fn default() -> Self {
         Self {
             state: DecoderState {
-                group_information: SmallVec::new(),
+                group_information: Vec::new(),
                 new_group: None,
                 data_field_length: None,
             },
@@ -723,7 +722,6 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use smartstring::alias::String as SmartString;
 
     // Use http://www.validfix.com/fix-analyzer.html for testing.
 
@@ -737,12 +735,12 @@ mod test {
         "8=FIX.4.2|9=196|35=X|49=A|56=B|34=12|52=20100318-03:21:11.364|262=A|268=2|279=0|269=0|278=BID|55=EUR/USD|270=1.37215|15=EUR|271=2500000|346=1|279=0|269=1|278=OFFER|55=EUR/USD|270=1.37224|15=EUR|271=2503200|346=1|10=171|",
     ];
 
-    fn with_soh(message: &str) -> SmartString {
-        message.split('|').collect::<smallvec::SmallVec<[&str; 128]>>().join("\x01").into()
+    fn with_soh(message: &str) -> String {
+        message.split('|').collect::<Vec<&str>>().join("\x01")
     }
 
     fn decoder() -> Decoder {
-        let mut decoder = Decoder::new(Dictionary::fix44());
+        let mut decoder = Decoder::new(Dictionary::fix44().unwrap());
         decoder.config_mut().separator = b'|';
         decoder
     }

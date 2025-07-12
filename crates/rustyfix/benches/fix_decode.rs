@@ -9,15 +9,13 @@ fn decode_fix_message(fix_decoder: &mut Decoder, msg: &[u8]) {
     fix_decoder.decode(msg).expect("Invalid FIX message");
 }
 
-fn criterion_benchmark(c: &mut Criterion) {
-    let fix_dictionary = Dictionary::fix44();
-    let fix_decoder = &mut Decoder::new(fix_dictionary);
-    fix_decoder.config_mut().separator = b'|';
-    fix_decoder.config_mut().should_decode_associative = true;
-    c.bench_function("FIX tag-value decoding", |b| {
-        b.iter(|| decode_fix_message(black_box(fix_decoder), black_box(FIX_MESSAGE)))
+fn fix_decode_benchmark(c: &mut Criterion) {
+    let fix_dictionary = Dictionary::fix44().unwrap();
+    let mut fix_decoder = Decoder::new(fix_dictionary);
+    c.bench_function("FIX decode", |b| {
+        b.iter(|| decode_fix_message(black_box(&mut fix_decoder), black_box(FIX_MESSAGE)))
     });
 }
 
-criterion_group!(benches, criterion_benchmark);
+criterion_group!(benches, fix_decode_benchmark);
 criterion_main!(benches);

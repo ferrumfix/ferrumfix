@@ -11,11 +11,11 @@ use builder::{
     LayoutItemData, LayoutItemKindData, MessageData,
 };
 pub use fix_datatype::FixDatatype;
-use rustc_hash::FxHashMap;
 use quickfix::{ParseDictionaryError, QuickFixReader};
+use rustc_hash::FxHashMap;
+use smallvec::SmallVec;
 use smartstring::alias::String as SmartString;
 use std::sync::Arc;
-use smallvec::SmallVec;
 
 /// Type alias for FIX tags: 32-bit unsigned integers, strictly positive.
 pub type TagU32 = std::num::NonZeroU32;
@@ -140,90 +140,90 @@ impl Dictionary {
 
     /// Creates a new [`Dictionary`] for FIX 4.0.
     #[cfg(feature = "fix40")]
-    pub fn fix40() -> Self {
+    pub fn fix40() -> Result<Self, ParseDictionaryError> {
         let spec = include_str!("resources/quickfix/FIX-4.0.xml");
-        Dictionary::from_quickfix_spec(spec).unwrap()
+        Dictionary::from_quickfix_spec(spec)
     }
 
     /// Creates a new [`Dictionary`] for FIX 4.1.
     #[cfg(feature = "fix41")]
-    pub fn fix41() -> Self {
+    pub fn fix41() -> Result<Self, ParseDictionaryError> {
         let spec = include_str!("resources/quickfix/FIX-4.1.xml");
-        Dictionary::from_quickfix_spec(spec).unwrap()
+        Dictionary::from_quickfix_spec(spec)
     }
 
     /// Creates a new [`Dictionary`] for FIX 4.2.
     #[cfg(feature = "fix42")]
-    pub fn fix42() -> Self {
+    pub fn fix42() -> Result<Self, ParseDictionaryError> {
         let spec = include_str!("resources/quickfix/FIX-4.2.xml");
-        Dictionary::from_quickfix_spec(spec).unwrap()
+        Dictionary::from_quickfix_spec(spec)
     }
 
     /// Creates a new [`Dictionary`] for FIX 4.3.
     #[cfg(feature = "fix43")]
-    pub fn fix43() -> Self {
+    pub fn fix43() -> Result<Self, ParseDictionaryError> {
         let spec = include_str!("resources/quickfix/FIX-4.3.xml");
-        Dictionary::from_quickfix_spec(spec).unwrap()
+        Dictionary::from_quickfix_spec(spec)
     }
 
     /// Creates a new [`Dictionary`] for FIX 4.4.
-    pub fn fix44() -> Self {
+    pub fn fix44() -> Result<Self, ParseDictionaryError> {
         let spec = include_str!("resources/quickfix/FIX-4.4.xml");
-        Dictionary::from_quickfix_spec(spec).unwrap()
+        Dictionary::from_quickfix_spec(spec)
     }
 
     /// Creates a new [`Dictionary`] for FIX 5.0.
     #[cfg(feature = "fix50")]
-    pub fn fix50() -> Self {
+    pub fn fix50() -> Result<Self, ParseDictionaryError> {
         let spec = include_str!("resources/quickfix/FIX-5.0.xml");
-        Dictionary::from_quickfix_spec(spec).unwrap()
+        Dictionary::from_quickfix_spec(spec)
     }
 
     /// Creates a new [`Dictionary`] for FIX 5.0 SP1.
     #[cfg(feature = "fix50sp1")]
-    pub fn fix50sp1() -> Self {
+    pub fn fix50sp1() -> Result<Self, ParseDictionaryError> {
         let spec = include_str!("resources/quickfix/FIX-5.0-SP1.xml");
-        Dictionary::from_quickfix_spec(spec).unwrap()
+        Dictionary::from_quickfix_spec(spec)
     }
 
     /// Creates a new [`Dictionary`] for FIX 5.0 SP2.
     #[cfg(feature = "fix50sp2")]
-    pub fn fix50sp2() -> Self {
+    pub fn fix50sp2() -> Result<Self, ParseDictionaryError> {
         let spec = include_str!("resources/quickfix/FIX-5.0-SP2.xml");
-        Dictionary::from_quickfix_spec(spec).unwrap()
+        Dictionary::from_quickfix_spec(spec)
     }
 
     /// Creates a new [`Dictionary`] for FIXT 1.1.
     #[cfg(feature = "fixt11")]
-    pub fn fixt11() -> Self {
+    pub fn fixt11() -> Result<Self, ParseDictionaryError> {
         let spec = include_str!("resources/quickfix/FIXT-1.1.xml");
-        Dictionary::from_quickfix_spec(spec).unwrap()
+        Dictionary::from_quickfix_spec(spec)
     }
 
     /// Returns a [`Vec`] of FIX [`Dictionary`]'s for the most common FIX
     /// versions (all that have been enabled via feature flags). This is only
     /// intended for testing purposes.
     pub fn common_dictionaries() -> SmallVec<[Dictionary; 10]> {
-        smallvec::smallvec![
-            #[cfg(feature = "fix40")]
-            Self::fix40(),
-            #[cfg(feature = "fix41")]
-            Self::fix41(),
-            #[cfg(feature = "fix42")]
-            Self::fix42(),
-            #[cfg(feature = "fix43")]
-            Self::fix43(),
-            #[cfg(feature = "fix44")]
-            Self::fix44(),
-            #[cfg(feature = "fix50")]
-            Self::fix50(),
-            #[cfg(feature = "fix50sp1")]
-            Self::fix50sp1(),
-            #[cfg(feature = "fix50sp2")]
-            Self::fix50sp2(),
-            #[cfg(feature = "fixt11")]
-            Self::fixt11(),
-        ]
+        let mut dictionaries = SmallVec::new();
+        #[cfg(feature = "fix40")]
+        dictionaries.push(Self::fix40().unwrap());
+        #[cfg(feature = "fix41")]
+        dictionaries.push(Self::fix41().unwrap());
+        #[cfg(feature = "fix42")]
+        dictionaries.push(Self::fix42().unwrap());
+        #[cfg(feature = "fix43")]
+        dictionaries.push(Self::fix43().unwrap());
+        #[cfg(feature = "fix44")]
+        dictionaries.push(Self::fix44().unwrap());
+        #[cfg(feature = "fix50")]
+        dictionaries.push(Self::fix50().unwrap());
+        #[cfg(feature = "fix50sp1")]
+        dictionaries.push(Self::fix50sp1().unwrap());
+        #[cfg(feature = "fix50sp2")]
+        dictionaries.push(Self::fix50sp2().unwrap());
+        #[cfg(feature = "fixt11")]
+        dictionaries.push(Self::fixt11().unwrap());
+        dictionaries
     }
 
     /// Return the known abbreviation for `term` -if any- according to the
@@ -669,15 +669,8 @@ impl<'a> LayoutItem<'a> {
             LayoutItemKindData::Group {
                 len_field_tag,
                 items: _items,
-            } => self
-                .0
-                .field_by_tag(*len_field_tag)
-                .unwrap()
-                .name()
-                .into(),
-            LayoutItemKindData::Field { tag } => {
-                self.0.field_by_tag(*tag).unwrap().name().into()
-            }
+            } => self.0.field_by_tag(*len_field_tag).unwrap().name().into(),
+            LayoutItemKindData::Field { tag } => self.0.field_by_tag(*tag).unwrap().name().into(),
         }
     }
 }
@@ -753,7 +746,7 @@ mod test {
 
     #[test]
     fn fix44_quickfix_is_ok() {
-        let dict = Dictionary::fix44();
+        let dict = Dictionary::fix44().unwrap();
         let msg_heartbeat = dict.message_by_name("Heartbeat").unwrap();
         assert_eq!(msg_heartbeat.msg_type(), "0");
         assert_eq!(msg_heartbeat.name(), "Heartbeat");
@@ -770,7 +763,7 @@ mod test {
     fn all_datatypes_are_used_at_least_once() {
         for dict in Dictionary::common_dictionaries().iter() {
             let datatypes_count = dict.datatypes().len();
-            let mut datatypes = HashSet::new();
+            let mut datatypes: HashSet<SmartString> = HashSet::new();
             for field in dict.fields() {
                 datatypes.insert(field.data_type().name().into());
             }
@@ -796,7 +789,7 @@ mod test {
 
     #[test]
     fn fix44_field_28_has_three_variants() {
-        let dict = Dictionary::fix44();
+        let dict = Dictionary::fix44().unwrap();
         let field_28 = dict.field_by_tag(28).unwrap();
         assert_eq!(field_28.name(), "IOITransType");
         assert_eq!(field_28.enums().unwrap().count(), 3);
@@ -804,7 +797,7 @@ mod test {
 
     #[test]
     fn fix44_field_36_has_no_variants() {
-        let dict = Dictionary::fix44();
+        let dict = Dictionary::fix44().unwrap();
         let field_36 = dict.field_by_tag(36).unwrap();
         assert_eq!(field_36.name(), "NewSeqNo");
         assert!(field_36.enums().is_none());
@@ -812,7 +805,7 @@ mod test {
 
     #[test]
     fn fix44_field_167_has_eucorp_variant() {
-        let dict = Dictionary::fix44();
+        let dict = Dictionary::fix44().unwrap();
         let field_167 = dict.field_by_tag(167).unwrap();
         assert_eq!(field_167.name(), "SecurityType");
         assert!(field_167.enums().unwrap().any(|e| e.value() == "EUCORP"));

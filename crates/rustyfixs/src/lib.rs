@@ -7,6 +7,8 @@ mod iana2openssl;
 
 use iana2openssl::iana2openssl;
 #[cfg(feature = "utils-openssl")]
+use openssl::error::ErrorStack as SslError;
+#[cfg(feature = "utils-openssl")]
 use openssl::ssl::*;
 
 /// A common interface to the TLS parameters specified by a FIXS release.
@@ -50,12 +52,12 @@ pub trait FixOverTlsCommon {
     /// Creates an [`SslConnectorBuilder`] with fhe FIXS recommended settings.
     #[cfg(feature = "utils-openssl")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-openssl")))]
-    fn recommended_connector_builder(&self) -> SslConnectorBuilder;
+    fn recommended_connector_builder(&self) -> Result<SslConnectorBuilder, SslError>;
 
     /// Creates an [`SslAcceptorBuilder`] with fhe FIXS recommended settings.
     #[cfg(feature = "utils-openssl")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-openssl")))]
-    fn recommended_acceptor_builder(&self) -> SslAcceptorBuilder;
+    fn recommended_acceptor_builder(&self) -> Result<SslAcceptorBuilder, SslError>;
 }
 
 /// FIX-over-TLS v1.0.
@@ -118,41 +120,33 @@ impl FixOverTlsCommon for FixOverTlsV10 {
     fn recommended_cs_openssl(&self, psk: bool) -> Vec<String> {
         self.recommended_cs_iana(psk)
             .iter()
-            .map(|s| iana2openssl(s).unwrap().to_string())
+            .filter_map(|s| iana2openssl(s).map(|s| s.to_string()))
             .collect()
     }
 
     #[cfg(feature = "utils-openssl")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-openssl")))]
-    fn recommended_connector_builder(&self) -> SslConnectorBuilder {
-        let mut context = SslConnector::builder(SslMethod::tls()).unwrap();
-        context
-            .set_min_proto_version(Some(SslVersion::TLS1_2))
-            .unwrap();
+    fn recommended_connector_builder(&self) -> Result<SslConnectorBuilder, SslError> {
+        let mut context = SslConnector::builder(SslMethod::tls())?;
+        context.set_min_proto_version(Some(SslVersion::TLS1_2))?;
         context.set_options(SslOptions::NO_COMPRESSION);
         context.set_options(SslOptions::NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
         context.set_session_cache_mode(SslSessionCacheMode::SERVER);
-        context
-            .set_cipher_list(self.recommended_cs_openssl(false).join(":").as_str())
-            .unwrap();
-        context
+        context.set_cipher_list(self.recommended_cs_openssl(false).join(":").as_str())?;
+        Ok(context)
     }
 
     #[cfg(feature = "utils-openssl")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-openssl")))]
-    fn recommended_acceptor_builder(&self) -> SslAcceptorBuilder {
-        let mut context = SslAcceptor::mozilla_intermediate_v5(SslMethod::tls()).unwrap();
-        context
-            .set_min_proto_version(Some(SslVersion::TLS1_2))
-            .unwrap();
+    fn recommended_acceptor_builder(&self) -> Result<SslAcceptorBuilder, SslError> {
+        let mut context = SslAcceptor::mozilla_intermediate_v5(SslMethod::tls())?;
+        context.set_min_proto_version(Some(SslVersion::TLS1_2))?;
         context.set_session_cache_mode(SslSessionCacheMode::SERVER);
         context.set_options(SslOptions::CIPHER_SERVER_PREFERENCE);
         context.set_options(SslOptions::NO_COMPRESSION);
         context.set_options(SslOptions::NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
-        context
-            .set_cipher_list(self.recommended_cs_openssl(false).join(":").as_str())
-            .unwrap();
-        context
+        context.set_cipher_list(self.recommended_cs_openssl(false).join(":").as_str())?;
+        Ok(context)
     }
 }
 
@@ -163,7 +157,7 @@ mod test {
     fn v1_acceptor_is_ok() {
         use super::*;
 
-        FixOverTlsV10.recommended_acceptor_builder();
+        FixOverTlsV10.recommended_acceptor_builder().unwrap();
     }
 
     #[test]
@@ -171,6 +165,6 @@ mod test {
     fn v1_connector_is_ok() {
         use super::*;
 
-        FixOverTlsV10.recommended_connector_builder();
+        FixOverTlsV10.recommended_connector_builder().unwrap();
     }
 }

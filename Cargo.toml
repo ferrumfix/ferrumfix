@@ -20,7 +20,7 @@ rust-2024-compatibility = "warn"
 rust-2024-incompatible-pat = "warn"
 
 [workspace.dependencies]
-rustc-hash = "1.1.0"
+rustc-hash = "2.1"
 
 [profile.release]
 lto = true

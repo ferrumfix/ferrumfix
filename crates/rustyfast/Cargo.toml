@@ -22,31 +22,31 @@ rustdoc-args = ["--cfg", "doc_cfg"]
 name = "rustyfast"
 
 [dependencies]
-bitvec = "0.18.5"
+bitvec = "1.0.1"
 decimal = { version = "2", optional = true }
-heck = "0.3"
+heck = "0.5"
 indoc = "2"
 # For reading XML.
-roxmltree = "0.19"
-smallvec = { version = "1.11.0", features = ["serde"] }
-thiserror = "1.0"
+roxmltree = "0.20"
+smallvec = { version = "1.15.1", features = ["serde"] }
+thiserror = "2.0"
 
 [build-dependencies]
 chrono = "0.4"
-heck = "0.3"
+heck = "0.5"
 indoc = "2"
 lazy_static = "1"
-quick-xml = "0.31"
-roxmltree = "0.19"
+quick-xml = "0.38"
+roxmltree = "0.20"
 rayon = "1"
-strum = "0.25"
-strum_macros = "0.26"
+strum = "0.27"
+strum_macros = "0.27"
 
 [dev-dependencies]
 arbitrary = { version = "1.4", features = ["derive"] }
-criterion = { version = "0.3", features = ["html_reports"] }
+criterion = { version = "0.6", features = ["html_reports"] }
 enum-as-inner = "0.6"
 quickcheck = "1"
 quickcheck_derive = "0.3"
 quickcheck_macros = "1"
-syn = { version = "1", features = ["parsing"] }
+syn = { version = "2", features = ["parsing"] }

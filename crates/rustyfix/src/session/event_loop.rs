@@ -3,7 +3,7 @@ use crate::tagvalue::{DecodeError, DecoderStreaming, Message};
 use futures::{AsyncRead, AsyncReadExt, FutureExt, select};
 use futures_timer::Delay;
 use std::io;
-use quanta::{Clock, Duration, Instant};
+use std::time::{Duration, Instant};
 
 /// Asynchronous, executor-agnostic low-level event loop for FIX connectors.
 ///
@@ -20,7 +20,6 @@ pub struct LlEventLoop<I> {
     last_reset: Instant,
     last_heartbeat: Instant,
     is_alive: bool,
-    clock: Clock,
 }
 
 impl<I> LlEventLoop<I>
@@ -32,17 +31,15 @@ where
     pub fn new(decoder: DecoderStreaming<Vec<u8>>, input: I, heartbeat: Duration) -> Self {
         let heartbeat_soft_tolerance = heartbeat * 2;
         let heartbeat_hard_tolerance = heartbeat * 3;
-        let clock = Clock::new();
         Self {
             decoder,
             input,
             heartbeat,
             heartbeat_soft_tolerance,
             heartbeat_hard_tolerance,
-            last_reset: clock.now(),
-            last_heartbeat: clock.now(),
+            last_reset: Instant::now(),
+            last_heartbeat: Instant::now(),
             is_alive: true,
-            clock,
         }
     }
 
@@ -67,7 +64,7 @@ where
                 return None;
             }
 
-            let now = self.clock.now();
+            let now = Instant::now();
             let mut timer_heartbeat = Delay::new(now - self.last_heartbeat + self.heartbeat).fuse();
             let mut timer_test_request =
                 Delay::new(now - self.last_reset + self.heartbeat_soft_tolerance).fuse();
@@ -108,7 +105,7 @@ where
                     };
                 },
                 () = timer_heartbeat => {
-                    self.last_heartbeat = self.clock.now();
+                    self.last_heartbeat = Instant::now();
                     return Some(LlEvent::Heartbeat);
                 },
                 () = timer_test_request => {
@@ -124,7 +121,7 @@ where
 
     /// Resets the FIX counterparty's `Heartbeat <0>` -associated timers.
     pub fn ping_heartbeat(&mut self) {
-        self.last_reset = self.clock.now();
+        self.last_reset = Instant::now();
     }
 }
 
@@ -178,7 +175,7 @@ mod test {
         let input = produce_events(events).await;
 
         LlEventLoop::new(
-            Decoder::new(crate::Dictionary::fix44()).streaming(vec![]),
+            Decoder::new(crate::Dictionary::fix44().unwrap()).streaming(vec![]),
             input.compat(),
             Duration::from_secs(3),
         )

@@ -52,7 +52,7 @@ impl codec::Decoder for TokioCodec {
             }
             Err(Error::InvalidMessageLength) => Err(Error::InvalidMessageLength),
             Err(Error::Incomplete { needed: _ }) => Ok(None),
-            Err(Error::Io(_)) => panic!("Unexpected I/O error."),
+            Err(Error::Io(e)) => Err(Error::Io(e)),
         }
     }
 }

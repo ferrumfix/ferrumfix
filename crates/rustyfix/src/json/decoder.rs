@@ -1,13 +1,12 @@
 use super::{Config, DecodeError};
 use crate::dict::{FieldLocation, IsFieldDefinition};
 use crate::{FieldMap, FieldType, FieldValueError, GetConfig, RepeatingGroup};
+use rustc_hash::FxHashMap;
 use rustyfix_dictionary::Dictionary;
 use serde::{Deserialize, Serialize};
-use std::borrow::{Borrow, Cow};
-use rustc_hash::FxHashMap;
-use std::sync::Arc;
-use smallvec::SmallVec;
 use smartstring::alias::String as SmartString;
+use std::borrow::{Borrow, Cow};
+use std::sync::Arc;
 
 /// A read-only JSON FIX message as parsed by [`Decoder`].
 #[derive(Debug, Copy, Clone)]
@@ -190,7 +189,7 @@ pub enum FieldOrGroup<'a> {
     Field(Cow<'a, str>),
     /// A repeating group of fields.
     #[serde(borrow)]
-    Group(SmallVec<[Fields<'a>; 8]>),
+    Group(Vec<Fields<'a>>),
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
@@ -225,7 +224,7 @@ mod test {
     const MESSAGE_WITHOUT_HEADER: &str = include_str!("test_data/message_without_header.json");
 
     fn encoder_fix44() -> Decoder {
-        Decoder::new(Dictionary::fix44())
+        Decoder::new(Dictionary::fix44().unwrap())
     }
 
     #[test]

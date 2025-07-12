@@ -48,7 +48,7 @@ You don't have to understand the whole tech stack to use a single layer; in fact
 
 ## Legal
 
-RustyFix is available under the terms of the Apache License 2.0. See `LICENSEt` in this repository for more information.
+RustyFix is available under the terms of the Apache License 2.0. See `LICENSE` in this repository for more information.
 
 All FIX Protocol-related intellectual property, including but not limited to the original documentation that ships with RustyFix, is licensed by FIX Protocol Ltd. under *Creative Commons Attribution - No Derivatives 4.0 International* (CC BY-ND 4.0). By contributing to this project you agree to comply with all license requirements.
 

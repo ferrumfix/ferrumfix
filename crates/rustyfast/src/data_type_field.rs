@@ -1,3 +1,3 @@
 #![allow(unused)]
 
-pub trait DataType {} 
+pub trait DataType {}

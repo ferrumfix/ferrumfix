@@ -71,7 +71,7 @@ impl FieldInstruction {
             .attribute("id")
             .ok_or(StaticError::S1)?
             .parse()
-            .map_err(|e: ParseIntError| Error::Static(StaticError::S3))?;
+            .map_err(|_: ParseIntError| Error::Static(StaticError::S3))?;
         let mandatory = {
             let attr = node.attribute("presence").unwrap_or("true");
             attr == "true"
@@ -128,14 +128,12 @@ impl Template {
     /// # Panics
     /// Panics if the XML is malformed.
     pub fn new(xml_document: &str) -> Result<Template, Error> {
-        let document = roxmltree::Document::parse(xml_document).map_err(|e| StaticError::S1)?;
+        let document = roxmltree::Document::parse(xml_document).map_err(|_| StaticError::S1)?;
         let container = document
             .root()
             .first_element_child()
             .ok_or(StaticError::S1)?;
-        let root = container
-            .first_element_child()
-            .ok_or(StaticError::S1)?;
+        let root = container.first_element_child().ok_or(StaticError::S1)?;
         Template::from_xml(root)
     }
 

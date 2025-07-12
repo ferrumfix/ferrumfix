@@ -1,6 +1,6 @@
 use bitvec::prelude::*;
+use smallvec::{SmallVec, smallvec};
 use std::io;
-use smallvec::{smallvec, SmallVec};
 
 const STOP_BYTE: u8 = 0x80;
 const SIGNIFICANT_BYTE: u8 = !STOP_BYTE;
@@ -177,7 +177,7 @@ impl Codec for String {
     }
 }
 
-fn _serialize_bitvec(bits: &BitSlice<Msb0, u8>, output: &mut impl io::Write) -> io::Result<usize> {
+fn _serialize_bitvec(bits: &BitSlice<u8, Msb0>, output: &mut impl io::Write) -> io::Result<usize> {
     let significant_data_bits_per_byte = bits.chunks_exact(7);
     let mut i = 0;
     let remaineder = significant_data_bits_per_byte.remainder().load::<u8>();
@@ -194,14 +194,14 @@ fn _serialize_bitvec(bits: &BitSlice<Msb0, u8>, output: &mut impl io::Write) -> 
     Ok(i)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct PresenceMap {
-    bits: BitVec,
+    bits: BitVec<u8, Msb0>,
 }
 
 impl PresenceMap {
-    pub fn bits(&self) -> impl Iterator<Item = &bool> {
-        self.bits.iter()
+    pub fn bits(&self) -> impl Iterator<Item = bool> + '_ {
+        self.bits.iter().map(|b| *b)
     }
 }
 
@@ -215,8 +215,8 @@ impl Codec for PresenceMap {
         let mut bytes = Vec::new();
         for chunk in self.bits.chunks(7) {
             let mut byte = 0u8;
-            for (i, bit) in chunk.iter().by_vals().enumerate() {
-                if bit {
+            for (i, bit) in chunk.iter().enumerate() {
+                if *bit {
                     byte |= 1 << (6 - i);
                 }
             }
@@ -247,7 +247,7 @@ impl Codec for PresenceMap {
             let byte = buffer[0];
 
             let data = byte & SIGNIFICANT_BYTE;
-            let data_bits: &BitSlice<Msb0, u8> = BitSlice::from_element(&data);
+            let data_bits: &BitSlice<u8, Msb0> = BitSlice::from_element(&data);
             self.bits.extend_from_bitslice(&data_bits[1..8]);
 
             if (byte & STOP_BYTE) != 0 {
@@ -315,6 +315,24 @@ mod test {
         let mut bytes: Vec<u8> = Vec::new();
         expected_value.serialize(&mut bytes).unwrap();
         let mut value = 0u32;
+        value.deserialize(&mut &bytes[..]).unwrap();
+        value == expected_value
+    }
+
+    #[quickcheck]
+    fn encode_then_decode_u64(expected_value: u64) -> bool {
+        let mut bytes: Vec<u8> = Vec::new();
+        expected_value.serialize(&mut bytes).unwrap();
+        let mut value = 0u64;
+        value.deserialize(&mut &bytes[..]).unwrap();
+        value == expected_value
+    }
+
+    #[quickcheck]
+    fn encode_then_decode_i64(expected_value: i64) -> bool {
+        let mut bytes: Vec<u8> = Vec::new();
+        expected_value.serialize(&mut bytes).unwrap();
+        let mut value = 0i64;
         value.deserialize(&mut &bytes[..]).unwrap();
         value == expected_value
     }

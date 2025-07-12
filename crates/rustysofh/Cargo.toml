@@ -28,14 +28,14 @@ full = ["utils-bytes", "utils-tokio-codec"]
 
 [dependencies]
 bytes = { version = "1", optional = true }
-thiserror = "1"
+thiserror = "2"
 tokio-util = { version = "0.7", optional = true, features = ["codec"] }
 
 [dev-dependencies]
 arbitrary = { version = "1.4", features = ["derive"] }
-criterion = { version = "0.3", features = ["html_reports"] }
+criterion = { version = "0.6", features = ["html_reports"] }
 enum-as-inner = "0.6"
 quickcheck = "1"
 quickcheck_derive = "0.3"
 quickcheck_macros = "1"
-syn = { version = "1", features = ["parsing"] }
+syn = { version = "2", features = ["parsing"] }

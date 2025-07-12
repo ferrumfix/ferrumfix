@@ -108,6 +108,7 @@ pub mod definitions;
 pub mod field_types;
 pub mod prelude;
 pub mod session;
+pub mod validation;
 
 pub use field_access::{FieldMap, GroupEntries, RepeatingGroup};
 pub mod tagvalue;
@@ -122,6 +123,7 @@ pub use rustyfix_codegen as codegen;
 #[doc(hidden)]
 pub use rustyfix_derive::FieldType;
 pub use rustyfix_dictionary::{self as dict, Dictionary, TagU32};
+pub use validation::Validator;
 
 /// Allows to get mutable and immutable references to configuration options.
 pub trait GetConfig {

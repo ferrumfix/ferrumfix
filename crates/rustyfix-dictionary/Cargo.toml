@@ -31,12 +31,13 @@ fix50sp2 = []
 fixt11 = []
 
 [dependencies]
-roxmltree = "0.19"
+roxmltree = "0.20"
 smartstring = "1"
 strum = "0.25"
 strum_macros = "0.26"
 rustc-hash = { workspace = true }
 smallvec = { version = "1.11.0", features = ["serde"] }
+thiserror = "1.0"
 
 [dev-dependencies]
 arbitrary = { version = "1.4", features = ["derive"] }
@@ -46,4 +47,4 @@ quickcheck = "1"
 quickcheck_derive = "0.3"
 quickcheck_macros = "1"
 tokio = { version = "1", features = ["full"] }
-syn = { version = "1", features = ["parsing"] }
+syn = { version = "2", features = ["parsing"] }
