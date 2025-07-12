@@ -319,26 +319,6 @@ async fn example() -> impl Future<Output = u32> {
     async { 42 }
 }
 ```
-
-### Edition Migration Guide
-
-To migrate to Rust 2024:
-
-1. Update to Rust 1.85 or newer
-2. Enable compatibility lints:
-   ```toml
-   # In Cargo.toml
-   [lints.rust]
-   rust-2024-compatibility = "warn"
-   ```
-3. Fix warnings incrementally:
-   ```bash
-   cargo fix --edition
-   ```
-4. Update edition in `Cargo.toml`:
-   ```toml
-   [package]
-   edition = "2024"
    ```
 
 ## Robust Coding Practices
