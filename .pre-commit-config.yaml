@@ -24,6 +24,6 @@ repos:
       - id: cargo-clippy
         name: Cargo Clippy
         language: system
-        entry: cargo clippy --all-targets --all-features --workspace --
+        entry: cargo clippy --all-targets --all-features --workspace --fix --allow-dirty --
         files: \.rs$
         pass_filenames: false # Always run, regardless of changed files

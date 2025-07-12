@@ -19,7 +19,7 @@ all-features = true
 rustdoc-args = ["--cfg", "doc_cfg"]
 
 [features]
-utils-openssl = ["openssl"]
+utils-openssl = [ "openssl" ]
 
 [dependencies]
 openssl = { version = "0.10", optional = true }

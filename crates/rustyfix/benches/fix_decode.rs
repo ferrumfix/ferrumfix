@@ -1,5 +1,4 @@
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
-use rustyfix::GetConfig;
 use rustyfix::prelude::*;
 use rustyfix::tagvalue::Decoder;
 
