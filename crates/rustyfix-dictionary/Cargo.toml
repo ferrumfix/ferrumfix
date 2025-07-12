@@ -1,0 +1,48 @@
+[package]
+name = "rustyfix-dictionary"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description.workspace = true
+publish.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+
+# https://stackoverflow.com/q/61417452/
+# Test locally using `RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features`.
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "doc_cfg"]
+
+[features]
+fix40 = []
+fix41 = []
+fix42 = []
+fix43 = []
+fix44 = []
+# FIX 4.4 is always enabled.
+fix50 = []
+fix50sp1 = []
+fix50sp2 = []
+fixt11 = []
+
+[dependencies]
+fnv = "1"
+roxmltree = "0.19"
+smartstring = "1"
+strum = "0.25"
+strum_macros = "0.26"
+
+[dev-dependencies]
+arbitrary = { version = "1.4", features = ["derive"] }
+criterion = { version = "0.3", features = ["html_reports"] }
+enum-as-inner = "0.6"
+quickcheck = "1"
+quickcheck_derive = "0.3"
+quickcheck_macros = "1"
+tokio = { version = "1", features = ["full"] }
+syn = { version = "1", features = ["parsing"] }

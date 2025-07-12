@@ -3,9 +3,9 @@
 mod generated_fix42;
 
 use core::fmt;
-use fefix::definitions::fix42;
-use fefix::FieldType;
 use generated_fix42 as strum_fix42;
+use rustyfix::FieldType;
+use rustyfix::definitions::fix42;
 use strum::IntoEnumIterator;
 
 fn main() -> anyhow::Result<()> {
@@ -22,13 +22,13 @@ fn main() -> anyhow::Result<()> {
                 let price = prompt_price()?;
                 let sender_comp_id = inquire::Text::new("SenderCompID").prompt()?;
                 let target_comp_id = inquire::Text::new("TargetCompID").prompt()?;
-                println!("symbol: {}", symbol);
-                println!("side: {:?}", side);
-                println!("ord_type: {:?}", ord_type);
-                println!("time_in_force: {:?}", time_in_force);
-                println!("price: {}", price);
-                println!("sender_comp_id: {}", sender_comp_id);
-                println!("target_comp_id: {}", target_comp_id);
+                println!("symbol: {symbol}");
+                println!("side: {side:?}");
+                println!("ord_type: {ord_type:?}");
+                println!("time_in_force: {time_in_force:?}");
+                println!("price: {price}");
+                println!("sender_comp_id: {sender_comp_id}");
+                println!("target_comp_id: {target_comp_id}");
             }
             UserAction::Quit => break,
         }

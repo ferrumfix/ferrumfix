@@ -2,8 +2,8 @@
 #[rustfmt::skip]
 mod gdax;
 
-use fefix::prelude::*;
-use fefix::tagvalue::Decoder;
+use rustyfix::prelude::*;
+use rustyfix::tagvalue::Decoder;
 
 const QUICKFIX_SPEC: &str = include_str!("coinbase_quickfix.xml");
 

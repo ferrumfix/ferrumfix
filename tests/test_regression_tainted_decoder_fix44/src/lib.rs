@@ -1,8 +1,8 @@
 #[test]
 fn decode() {
-    use fefix::definitions::fix44;
-    use fefix::prelude::*;
-    use fefix::tagvalue::Decoder;
+    use rustyfix::definitions::fix44;
+    use rustyfix::prelude::*;
+    use rustyfix::tagvalue::Decoder;
 
     const SAMPLES: [&[u8]; 2] = [
         b"8=FIX.4.4\x019=176\x0135=X\x0149=ERISX\x0156=XXXXXXXXX\x0134=3\x01\
@@ -21,6 +21,6 @@ fn decode() {
             .decode(sample)
             .expect("Couldn't decode sample FIX message");
         let msg_type = message.get::<fix44::MsgType>(fix44::MSG_TYPE);
-        assert!(msg_type.is_ok(), "fv() returns {:?}", msg_type);
+        assert!(msg_type.is_ok(), "fv() returns {msg_type:?}");
     }
 }

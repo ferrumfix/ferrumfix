@@ -1,0 +1,41 @@
+[package]
+name = "rustysofh"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description.workspace = true
+publish.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+
+# https://stackoverflow.com/q/61417452/
+# Test locally using `RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features`.
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "doc_cfg"]
+
+[lib]
+name = "rustysofh"
+
+[features]
+utils-bytes = ["bytes"]
+utils-tokio-codec = ["tokio-util", "utils-bytes"]
+full = ["utils-bytes", "utils-tokio-codec"]
+
+[dependencies]
+bytes = { version = "1", optional = true }
+thiserror = "1"
+tokio-util = { version = "0.7", optional = true, features = ["codec"] }
+
+[dev-dependencies]
+arbitrary = { version = "1.4", features = ["derive"] }
+criterion = { version = "0.3", features = ["html_reports"] }
+enum-as-inner = "0.6"
+quickcheck = "1"
+quickcheck_derive = "0.3"
+quickcheck_macros = "1"
+syn = { version = "1", features = ["parsing"] }

@@ -1,7 +1,7 @@
 use decimal::d128;
-use fefix::prelude::*;
-use fefix::tagvalue::Encoder;
 use rust_decimal_macros::dec;
+use rustyfix::prelude::*;
+use rustyfix::tagvalue::Encoder;
 
 // 8=FIX.4.4|9=122|35=D|34=215|49=CLIENT12|52=20100225-19:41:57.316|56=B|1=Marcel|11=13346|21=1|40=2|44=5|54=1|59=0|60=20100225-19:39:52.020|10=072|
 

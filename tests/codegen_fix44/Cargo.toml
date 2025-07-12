@@ -5,7 +5,7 @@ edition = "2021"
 build = "build.rs"
 
 [dependencies]
-fefix = { path = "../../crates/fefix", features = ["codegen"] }
+rustyfix = { path = "../../crates/rustyfix", features = ["codegen"] }
 
 [build-dependencies]
-fefix = { path = "../../crates/fefix", features = ["codegen"] }
+rustyfix = { path = "../../crates/rustyfix", features = ["codegen"] }

@@ -1,10 +1,10 @@
 [workspace]
-members = ["crates/*", "examples/*", "tests/*"]
+members = ["crates/*"] # "examples/*", "tests/*"
 resolver = "2"
 
 [workspace.package]
 authors = ["cognitive-glitch", "Team Rusty Trading", "Filippo Neysofu Costa"]
-version = "0.7.0"
+version = "0.7.1"
 edition = "2024"
 homepage = "https://github.com/rusty-engine/rustyfix"
 repository = "https://github.com/rusty-engine/rustyfix"
@@ -15,12 +15,27 @@ keywords = ["fix", "fast", "protocol", "finance", "fintech"]
 categories = ["network-programming", "parser-implementations", "encoding"]
 license = "Apache-2.0"
 
+[workspace.lints.rust]
+rust-2024-compatibility = "warn"
+rust-2024-incompatible-pat = "warn"
+
 [profile.release]
 lto = true
 opt-level = 3
 codegen-units = 1
-panic = "abort"
 strip = true
+debug = false
+overflow-checks = false
+rpath = false
+
+[profile.release.build-override]
+opt-level = 3
+codegen-units = 1
+[profile.release.package."*"]
+opt-level = 3
+
+[profile.dev]
+incremental = false
 
 [profile.dev.build-override]
 # Helps with compile times for macro-heavy code. See

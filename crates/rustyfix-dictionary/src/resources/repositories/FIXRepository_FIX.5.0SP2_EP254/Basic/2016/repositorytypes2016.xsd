@@ -1,0 +1,911 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:fixr="http://fixprotocol.io/2016/fixrepository" targetNamespace="http://fixprotocol.io/2016/fixrepository" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0-rc3">
+	<xs:annotation>
+		<xs:documentation>
+			© Copyright 2016-2017 FIX Protocol Limited Creative
+			Commons Attribution-NoDerivatives 4.0
+			International Public License
+		</xs:documentation>
+	</xs:annotation>
+	<xs:simpleType name="Abbreviation_t">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:complexType name="abbreviationType">
+		<xs:sequence>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="fixr:entityAttribGrp"/>
+		<xs:attribute name="name" type="xs:string"/>
+		<!-- was abbrTerm -->
+	</xs:complexType>
+	<xs:complexType name="actorType">
+		<xs:annotation>
+			<xs:documentation>Represents a class of participants</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:choice minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>State variables</xs:documentation>
+				</xs:annotation>
+				<xs:element name="field" type="fixr:fieldType"/>
+				<xs:element name="fieldRef" type="fixr:fieldRefType"/>
+				<xs:element name="component" type="fixr:componentType"/>
+				<xs:element name="componentRef" type="fixr:componentRefType"/>
+				<xs:element name="group" type="fixr:groupType"/>
+				<xs:element name="groupRef" type="fixr:groupRefType"/>
+				<xs:element name="states" type="fixr:stateMachineType"/>
+				<xs:element name="timer" type="fixr:timerType"/>
+			</xs:choice>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="name" type="fixr:Name_t" use="required"/>
+		<xs:attribute name="extends" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="annotation">
+		<xs:choice maxOccurs="unbounded">
+			<xs:element name="documentation" type="fixr:documentation"/>
+			<xs:element name="appinfo" type="fixr:appinfo"/>
+		</xs:choice>
+		<xs:attributeGroup ref="fixr:entityAttribGrp"/>
+	</xs:complexType>
+	<xs:complexType name="appinfo" mixed="true">
+		<xs:annotation>
+			<xs:documentation>Usage specific annotation, optionally with link to
+				an external reference or standard
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="specUrl" type="xs:anyURI">
+			<xs:annotation>
+				<xs:documentation>Reference documentation</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="langId" type="fixr:language_t"/>
+		<xs:attribute name="purpose" type="fixr:purpose_t"/>
+		<xs:attributeGroup ref="fixr:entityAttribGrp"/>
+	</xs:complexType>
+	<xs:complexType name="blockAssignmentType">
+		<xs:sequence>
+			<xs:element name="fieldRef" type="fixr:fieldRefType" maxOccurs="unbounded"/>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="CatComponentType_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Field"/>
+			<xs:enumeration value="Message"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="CategoryComponentType_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Field"/>
+			<xs:enumeration value="Message"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="CategoryID_t">
+		<xs:restriction base="fixr:Name_t"/>
+	</xs:simpleType>
+	<xs:complexType name="categoryType">
+		<xs:sequence>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="id" type="fixr:CategoryID_t"/>
+		<xs:attribute name="FIXMLFileName" type="fixr:Name_t"/>
+		<xs:attribute name="componentType" type="fixr:CatComponentType_t"/>
+		<xs:attribute name="section" type="fixr:SectionID_t"/>
+		<xs:attribute name="volume" type="fixr:Volume_t"/>
+		<xs:attribute name="includeFile" type="fixr:CatIncludeFile_t"/>
+		<xs:attributeGroup ref="fixr:entityAttribGrp"/>
+	</xs:complexType>
+	<xs:simpleType name="CatIncludeFile_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="components"/>
+			<xs:enumeration value="fields"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="changeType_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Editorial"/>
+			<xs:enumeration value="Definitional"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="codeSetType">
+		<xs:sequence>
+			<xs:element name="code" type="fixr:codeType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="fixr:oidGrp"/>
+		<xs:attribute name="type" type="fixr:Name_t" use="required">
+			<xs:annotation>
+				<xs:documentation>Underlying FIX datatype of codes
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="default" type="xs:string"/>
+		<xs:attribute name="specUrl" type="xs:anyURI">
+			<xs:annotation>
+				<xs:documentation>Reference documentation for an external code set
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attributeGroup ref="fixr:entityAttribGrp"/>
+	</xs:complexType>
+	<xs:complexType name="codeType">
+		<xs:sequence>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="fixr:oidGrp"/>
+		<xs:attribute name="value" type="xs:string" use="required"/>
+		<xs:attribute name="sort" type="xs:string"/>
+		<xs:attribute name="group" type="xs:string"/>
+		<xs:attributeGroup ref="fixr:entityAttribGrp"/>
+	</xs:complexType>
+	<xs:simpleType name="CompID_t">
+		<xs:restriction base="xs:positiveInteger">
+			<xs:minInclusive value="1000"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="ComponentName_t">
+		<xs:restriction base="fixr:Name_t"/>
+	</xs:simpleType>
+	<xs:complexType name="componentRefType">
+		<xs:sequence>
+			<xs:element name="blockAssignment" type="fixr:blockAssignmentType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Specifies a how a component or each group entry is populated (optional)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="fixr:entityAttribGrp"/>
+		<xs:attributeGroup ref="fixr:oidGrp"/>
+		<xs:attribute name="presence" type="fixr:presence_t" default="optional"/>
+		<xs:attribute name="abbrName" type="fixr:Abbreviation_t"/>
+		<xs:attribute name="instanceName" type="fixr:ComponentName_t">
+			<xs:annotation>
+				<xs:documentation>Override the component name for this instance, for
+					code generation and the like. Allows more than one instance of a
+					component in a message.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="componentType">
+		<xs:sequence>
+			<xs:choice maxOccurs="unbounded">
+				<xs:element name="componentRef" type="fixr:componentRefType"/>
+				<xs:element name="groupRef" type="fixr:groupRefType"/>
+				<xs:element name="fieldRef" type="fixr:fieldRefType"/>
+				<xs:element name="component" type="fixr:componentType"/>
+				<xs:element name="group" type="fixr:groupType"/>
+				<xs:element name="field" type="fixr:fieldType"/>
+			</xs:choice>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="fixr:entityAttribGrp"/>
+		<xs:attributeGroup ref="fixr:oidGrp"/>
+		<xs:attribute name="category" type="fixr:CategoryID_t"/>
+		<xs:attribute name="abbrName" type="fixr:Abbreviation_t"/>
+	</xs:complexType>
+	<xs:attributeGroup name="containerAttribGrp">
+		<xs:attribute name="latestEP" type="fixr:EP_t"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="datatypeGrp">
+		<xs:attribute name="standard" type="fixr:datatypeStandard_t" use="required"/>
+		<xs:attribute name="builtin" type="xs:boolean" use="required"/>
+		<xs:attribute name="base" type="xs:string" use="required"/>
+		<xs:attribute name="pattern" type="xs:string"/>
+		<xs:attribute name="element" type="xs:string"/>
+		<xs:attribute name="parameter" type="xs:string"/>
+		<xs:attribute name="minInclusive" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>Inclusive lower bound</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="maxInclusive" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>Inclusive upper bound</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:simpleType name="datatypeStandard_enum">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="ISO11404">
+				<xs:annotation>
+					<xs:documentation>General Purpose Datatypes</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="GPB"/>
+			<xs:enumeration value="JSON"/>
+			<xs:enumeration value="SBE"/>
+			<xs:enumeration value="XML">
+				<xs:annotation>
+					<xs:documentation>XML Schema types</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="datatypeStandard_t">
+		<xs:annotation>
+			<xs:documentation>Extensible datatype standards</xs:documentation>
+		</xs:annotation>
+		<xs:union memberTypes="fixr:datatypeStandard_enum xs:string"/>
+	</xs:simpleType>
+	<xs:complexType name="documentation" mixed="true">
+		<xs:sequence>
+			<xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="langId" type="fixr:language_t"/>
+		<xs:attribute name="purpose" type="fixr:purpose_t"/>
+		<xs:attributeGroup ref="fixr:entityAttribGrp"/>
+	</xs:complexType>
+	<xs:simpleType name="Edition_t">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="8"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:attributeGroup name="entityAttribGrp">
+		<xs:attribute name="added" type="fixr:Version_t"/>
+		<xs:attribute name="addedEP" type="fixr:EP_t"/>
+		<xs:attribute name="changeType" type="fixr:changeType_t"/>
+		<xs:attribute name="deprecated" type="fixr:Version_t"/>
+		<xs:attribute name="deprecatedEP" type="fixr:EP_t"/>
+		<xs:attribute name="issue" type="xs:string"/>
+		<xs:attribute name="lastModified" type="fixr:Version_t"/>
+		<xs:attribute name="replaced" type="fixr:Version_t"/>
+		<xs:attribute name="replacedEP" type="fixr:EP_t"/>
+		<xs:attribute name="replacedByField" type="fixr:id_t"/>
+		<xs:attribute name="supported" type="fixr:supportType" default="supported"/>
+		<xs:attribute name="updated" type="fixr:Version_t"/>
+		<xs:attribute name="updatedEP" type="fixr:EP_t"/>
+	</xs:attributeGroup>
+	<xs:simpleType name="EP_t">
+		<xs:restriction base="xs:integer"/>
+	</xs:simpleType>
+	<xs:simpleType name="expressionType">
+		<xs:annotation>
+			<xs:documentation>Expressed in a Domain Specific Language
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="1024"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:attributeGroup name="fieldAttribGrp">
+		<xs:annotation>
+			<xs:documentation>Attributes of a field that be overridden by a rule
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="minInclusive" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>Inclusive lower bound</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="maxInclusive" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>Inclusive upper bound</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="implLength" type="xs:short">
+			<xs:annotation>
+				<xs:documentation>Fixed length</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="implMinLength" type="xs:short"/>
+		<xs:attribute name="implMaxLength" type="xs:short"/>
+		<xs:attribute name="presence" type="fixr:presence_t" default="optional"/>
+		<xs:attribute name="encoding" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>Character encoding if other than US-ASCII
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="value" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>If presence is optional, then it represents a
+					default when the sender does not provide the field.
+					If presence is constant, then it is the constant value.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:complexType name="fieldRefType">
+		<xs:sequence>
+			<xs:element name="codeSet" type="fixr:codeSetType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>CodeSet may be specified inline or referenced by
+						type attribute, but not both. Not currently enforced by this
+						schema.
+						Consider XML schema assertion in future.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="rule" type="fixr:fieldRuleType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Rule to tell when a conditionally require field
+						is required or forbidden, to override other attributes, or perform
+						validation.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="assign" type="fixr:expressionType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Content of element holds an assignment expression
+						for a message field or state variable
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="fixr:entityAttribGrp"/>
+		<xs:attributeGroup ref="fixr:oidGrp"/>
+		<xs:attribute name="lengthId" type="fixr:id_t">
+			<xs:annotation>
+				<xs:documentation>Identifies a field used as a length prefix
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attributeGroup ref="fixr:fieldAttribGrp"/>
+	</xs:complexType>
+	<xs:complexType name="fieldRuleType">
+		<xs:sequence>
+			<xs:sequence>
+				<xs:element name="unique" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="fieldRef" type="fixr:fieldRefType" minOccurs="0" maxOccurs="unbounded">
+								<xs:annotation>
+									<xs:documentation>Other field or fields that scope uniqueness.
+									If none provided, then the field value must be globally unique.</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="assign" type="fixr:expressionType" minOccurs="0" maxOccurs="unbounded">
+					<xs:annotation>
+						<xs:documentation>Content of element holds an assignment expression
+							for a message field or state variable.
+							This can be used for field validation.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+			<xs:element name="when" type="fixr:expressionType"/>
+		</xs:sequence>
+		<xs:attribute name="name" type="fixr:Name_t">
+			<xs:annotation>
+				<xs:documentation>Name of this rule</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="type" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>Overrides the type of the referenced field.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attributeGroup ref="fixr:fieldAttribGrp"/>
+	</xs:complexType>
+	<xs:complexType name="fieldType">
+		<xs:sequence>
+			<xs:element name="codeSet" type="fixr:codeSetType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>CodeSet may be specified inline or referenced by
+						type attribute, but not both. Not currently enforced by this
+						schema.
+						Consider XML schema assertion in future.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="rule" type="fixr:fieldRuleType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Rule to tell when a conditionally require field
+						is required or forbidden, to override other attributes, or perform
+						validation.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="assign" type="fixr:expressionType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Content of element holds an assignment expression
+						for a message field or state variable
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="fixr:entityAttribGrp"/>
+		<xs:attributeGroup ref="fixr:oidGrp"/>
+		<xs:attribute name="type" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>Attribute type refers to either a datatype or a
+					codeSet, which carries an underlying datatype.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attributeGroup ref="fixr:fieldAttribGrp"/>
+		<xs:attribute name="lengthId" type="fixr:id_t">
+			<xs:annotation>
+				<xs:documentation>Identifies a field used as a length prefix
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="lengthName" type="fixr:Name_t"/>
+		<xs:attribute name="abbrName" type="fixr:Abbreviation_t"/>
+		<xs:attribute name="baseCategory" type="fixr:CategoryID_t"/>
+		<xs:attribute name="baseCategoryAbbrName" type="fixr:Name_t"/>
+		<xs:attribute name="unionDataType" type="fixr:UnionDataType_t"/>
+	</xs:complexType>
+	<xs:complexType name="flowType">
+		<xs:annotation>
+			<xs:documentation>A stream of messages in one direction</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="name" type="fixr:Name_t" use="required"/>
+		<xs:attribute name="source" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>Name of the actor that originates messages
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="destination" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>Name of the actor that receives messages.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="reliability" type="fixr:reliability_t"/>
+	</xs:complexType>
+	<xs:simpleType name="GroupName_t">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:complexType name="groupRefType">
+		<xs:complexContent>
+			<xs:extension base="fixr:componentRefType">
+				<xs:attribute name="implMinOccurs" type="xs:nonNegativeInteger"/>
+				<xs:attribute name="implMaxOccurs" type="fixr:unboundedIntType" default="unbounded"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="groupType">
+		<xs:complexContent>
+			<xs:extension base="fixr:componentType">
+				<xs:attribute name="numInGroupId" type="fixr:id_t" use="required"/>
+				<xs:attribute name="numInGroupName" type="fixr:Name_t" use="required"/>
+				<xs:attribute name="implMinOccurs" type="xs:nonNegativeInteger"/>
+				<xs:attribute name="implMaxOccurs" type="fixr:unboundedIntType" default="unbounded"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="id_t">
+		<xs:restriction base="xs:positiveInteger"/>
+	</xs:simpleType>
+	<xs:simpleType name="IncludeFile_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="components"/>
+			<xs:enumeration value="fields"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="language_t">
+		<xs:restriction base="xs:language"/>
+	</xs:simpleType>
+	<xs:attributeGroup name="messageAttribGrp">
+		<xs:attribute name="msgType" type="fixr:MsgType_t"/>
+		<xs:attribute name="category" type="fixr:CategoryID_t"/>
+		<xs:attribute name="section" type="fixr:SectionID_t"/>
+		<xs:attribute name="abbrName" type="fixr:Abbreviation_t"/>
+	</xs:attributeGroup>
+	<xs:complexType name="messageRefType">
+		<xs:attribute name="name" type="fixr:Name_t" use="required"/>
+		<xs:attribute name="msgType" type="fixr:MsgType_t"/>
+		<xs:attribute name="scenario" type="xs:string" default="base"/>
+		<xs:attribute name="implMinOccurs" type="xs:positiveInteger" default="1"/>
+		<xs:attribute name="implMaxOccurs" type="fixr:unboundedIntType" default="unbounded">
+			<xs:annotation>
+				<xs:documentation>The same message type may be sent one or more times</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="messageType">
+		<xs:sequence>
+			<xs:element name="structure">
+				<xs:complexType>
+					<xs:choice maxOccurs="unbounded">
+						<xs:element name="component" type="fixr:componentType"/>
+						<xs:element name="componentRef" type="fixr:componentRefType"/>
+						<xs:element name="group" type="fixr:groupType"/>
+						<xs:element name="groupRef" type="fixr:groupRefType"/>
+						<xs:element name="field" type="fixr:fieldType"/>
+						<xs:element name="fieldRef" type="fixr:fieldRefType"/>
+					</xs:choice>
+					<!-- message elements may be by reference or inline -->
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="responses" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="response" type="fixr:responseType" maxOccurs="unbounded">
+							<xs:annotation>
+								<xs:documentation>Responses are evaluated and triggered in the order listed</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="fixr:messageAttribGrp"/>
+		<xs:attributeGroup ref="fixr:oidGrp"/>
+		<xs:attributeGroup ref="fixr:entityAttribGrp"/>
+		<xs:attribute name="scenario" type="xs:string" default="base">
+			<xs:annotation>
+				<xs:documentation>The name of one use case of this message type. The default scenario name is 'base'.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="extends" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>If present, refers to another scenario, assuming
+					the same message name
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="flow" type="fixr:Name_t"/>
+	</xs:complexType>
+	<xs:simpleType name="MsgType_t">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="2"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Name_t">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="255"/>
+			<xs:pattern value="([A-Z]|[a-z]|_)([0-9]|[A-Z]|[a-z]|_)*"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="oid_t">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="\{?[a-zA-Z0-9()\-\.]+\}?"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:attributeGroup name="oidGrp">
+		<xs:attribute name="id" type="fixr:id_t" use="required"/>
+		<xs:attribute name="name" type="fixr:Name_t" use="required"/>
+		<xs:attribute name="oid" type="fixr:oid_t">
+			<xs:annotation>
+				<xs:documentation>Object identifier (OID) in ASN.1 or dotted notation</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:simpleType name="presence_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="optional"/>
+			<xs:enumeration value="required"/>
+			<xs:enumeration value="conditional"/>
+			<xs:enumeration value="forbidden"/>
+			<xs:enumeration value="ignored"/>
+			<xs:enumeration value="constant"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="purpose_enum">
+		<xs:annotation>
+			<xs:documentation>Recommended annotation purposes</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="SYNOPSIS"/>
+			<xs:enumeration value="ELABORATION"/>
+			<xs:enumeration value="EXAMPLE"/>
+			<xs:enumeration value="DISPLAY">
+				<xs:annotation>
+					<xs:documentation>For UI when different from canonical name; may
+						have multi-language displays
+					</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="purpose_t">
+		<xs:annotation>
+			<xs:documentation>Extensible annotation purposes</xs:documentation>
+		</xs:annotation>
+		<xs:union memberTypes="fixr:purpose_enum xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="reliability_t">
+		<xs:annotation>
+			<xs:documentation>Message delivery gurantee</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="bestEffort"/>
+			<xs:enumeration value="idempotent"/>
+			<xs:enumeration value="recoverable"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="actionType">
+		<xs:sequence>
+			<xs:choice id="parameters" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Event parameters</xs:documentation>
+				</xs:annotation>
+				<xs:element name="field" type="fixr:fieldType"/>
+				<xs:element name="fieldRef" type="fixr:fieldRefType"/>
+				<xs:element name="component" type="fixr:componentType"/>
+				<xs:element name="componentRef" type="fixr:componentRefType"/>
+				<xs:element name="group" type="fixr:groupType"/>
+				<xs:element name="groupRef" type="fixr:groupRefType"/>
+			</xs:choice>
+			<xs:choice id="actions" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Any number of action behaviors can be triggered at the same time.</xs:documentation>
+				</xs:annotation>
+				<xs:element name="messageRef" type="fixr:messageRefType">
+					<xs:annotation>
+						<xs:documentation>Send a message</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="assign" type="fixr:expressionType">
+					<xs:annotation>
+						<xs:documentation>Content of element holds an assignment expression
+							for a state variable in the form '$actor.variable=value'
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="trigger" type="fixr:triggerType">
+					<xs:annotation>
+						<xs:documentation>Trigger a state transtion in a state machine</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="timerSchedule" type="fixr:timerSchedule"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="responseType">
+		<xs:annotation>
+			<xs:documentation>Any number of action behaviors can be triggered by the same 'when' condition</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="fixr:actionType">
+				<xs:sequence>
+					<xs:element name="when" type="fixr:expressionType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>A common condition for all of the actions. If it
+						evalutes true, then the actions are invoked. If 'when' is not
+						present, the actions are unconditional.
+					</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+				</xs:sequence>
+				<xs:attribute name="name" type="fixr:Name_t"/>
+				<xs:attribute name="sync" type="fixr:synchronization" use="optional"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="SectionID_t">
+		<xs:restriction base="fixr:Name_t">
+			<xs:enumeration value="Session"/>
+			<xs:enumeration value="PreTrade"/>
+			<xs:enumeration value="Trade"/>
+			<xs:enumeration value="PostTrade"/>
+			<xs:enumeration value="Infrastructure"/>
+			<xs:enumeration value="Other"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="sectionType">
+		<xs:sequence>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="id" type="fixr:SectionID_t"/>
+		<xs:attribute name="name" type="fixr:Name_t"/>
+		<xs:attribute name="displayOrder" type="xs:int"/>
+		<xs:attribute name="volume" type="fixr:Volume_t"/>
+		<xs:attribute name="FIXMLFileName" type="fixr:Name_t"/>
+		<xs:attributeGroup ref="fixr:entityAttribGrp"/>
+	</xs:complexType>
+	<xs:simpleType name="Sort_t">
+		<xs:restriction base="xs:nonNegativeInteger"/>
+	</xs:simpleType>
+	<xs:complexType name="stateMachineType">
+		<xs:sequence>
+			<xs:element name="initial" type="fixr:stateType">
+				<xs:annotation>
+					<xs:documentation>Initial state of a state machine</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="state" type="fixr:stateType" maxOccurs="unbounded"/>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="name" type="fixr:Name_t" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="stateType">
+		<xs:annotation>
+			<xs:documentation>A state of a state machine. If it has no transitions, then it is a final state.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="transition" type="fixr:transitionType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="onentry" type="fixr:actionType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Operation fired when entering a state.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="activity" type="fixr:actionType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Operation fired when entering a state and completing when exiting or earlier.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="onexit" type="fixr:actionType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Operation fired when exiting a state.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="name" type="fixr:Name_t" use="required"/>
+	</xs:complexType>
+	<xs:simpleType name="supportType">
+		<xs:annotation>
+			<xs:documentation>Support level</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="supported"/>
+			<xs:enumeration value="forbidden"/>
+			<xs:enumeration value="ignored"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="synchronization">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="asynchronous">
+				<xs:annotation>
+					<xs:documentation>Event timing is completely independent</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="synchronous">
+				<xs:annotation>
+					<xs:documentation>Requests in-progress block subsequent requests</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="pipelined">
+				<xs:annotation>
+					<xs:documentation>Response timing is dependent on a request, but multiple requests can be in-flight</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Term_t">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="timerOperation">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="START"/>
+			<xs:enumeration value="CANCEL"/>
+			<xs:enumeration value="RESET">
+				<xs:annotation>
+					<xs:documentation>Cancel and restart</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="timerSchedule">
+		<xs:sequence>
+			<xs:element name="activity" type="fixr:actionType">
+				<xs:annotation>
+					<xs:documentation>Action to take when a timer expires
+								</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="actor" type="fixr:Name_t" use="required">
+			<xs:annotation>
+				<xs:documentation>Name of the actor that owns the timer
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="name" type="fixr:Name_t" use="required">
+			<xs:annotation>
+				<xs:documentation>Name of the timer</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="operation" type="fixr:timerOperation" use="required"/>
+		<xs:attribute name="interval" type="xs:duration"/>
+	</xs:complexType>
+	<xs:complexType name="timerType">
+		<xs:attribute name="name" type="fixr:Name_t" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="triggerType">
+		<xs:attribute name="stateMachine" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>Name of the state machine</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="actor" type="fixr:Name_t" use="required">
+			<xs:annotation>
+				<xs:documentation>Name of the actor that owns the state machine
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="name" type="fixr:Name_t" use="required">
+			<xs:annotation>
+				<xs:documentation>Name of the transition to invoke
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="transitionType">
+		<xs:sequence>
+			<xs:element name="when" type="fixr:expressionType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Optional guard condition. The transition is
+						allowed if the condition evaluates true. If not present, the
+						transition is unconditional.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="annotation" type="fixr:annotation" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="name" type="fixr:Name_t" use="required"/>
+		<xs:attribute name="target" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>The target state of the transition
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:simpleType name="unbounded">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="unbounded"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="unboundedIntType">
+		<xs:union memberTypes="xs:nonNegativeInteger fixr:unbounded"/>
+	</xs:simpleType>
+	<xs:simpleType name="UnionDataType_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Qty"/>
+			<xs:enumeration value="Reserved100Plus"/>
+			<xs:enumeration value="Reserved1000Plus"/>
+			<xs:enumeration value="Reserved4000Plus"/>
+			<xs:enumeration value="Tenor"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Usage_t">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="Version_t">
+		<xs:restriction base="xs:string">
+			<xs:annotation>
+				<xs:documentation>Enumerated FIX versions or major.minor or date as
+					yyyymmdd of any protocol
+				</xs:documentation>
+			</xs:annotation>
+			<xs:pattern value="(FIX.2.7)|(FIX.3.0)|(FIX\.4\.[0-4])|(FIX\.5\.0(SP\d{1,2})?(_EP((9[8-9])|([1-9][0-9][0-9])))?)|(FIXT.1.1)|([0-9]+)\.([0-9]+)|(\d{8})"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Volume_t">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="1"/>
+			<xs:enumeration value="2"/>
+			<xs:enumeration value="3"/>
+			<xs:enumeration value="4"/>
+			<xs:enumeration value="5"/>
+			<xs:enumeration value="6"/>
+			<xs:enumeration value="FIXT.1.1"/>
+			<xs:enumeration value="?"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="VolumeName_t">
+		<xs:restriction base="fixr:Name_t">
+			<xs:enumeration value="Volume1"/>
+			<xs:enumeration value="Volume2"/>
+			<xs:enumeration value="Volume3"/>
+			<xs:enumeration value="Volume4"/>
+			<xs:enumeration value="Volume5"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="VolumeNumber_t">
+		<xs:restriction base="xs:nonNegativeInteger">
+			<xs:minInclusive value="1"/>
+			<xs:maxInclusive value="5"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

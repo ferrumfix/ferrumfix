@@ -1,4 +1,4 @@
-use fefix::{codegen, Dictionary};
+use rustyfix::{Dictionary, codegen};
 use std::fs::File;
 use std::io;
 use std::io::Write;
@@ -15,7 +15,7 @@ fn main() -> io::Result<()> {
             "PartialEq".to_string(),
             "Eq".to_string(),
             "Hash".to_string(),
-            "::fefix::FieldType".to_string(),
+            "::rustyfix::FieldType".to_string(),
             "::strum::EnumIter".to_string(),
             "::strum::IntoStaticStr".to_string(),
         ];

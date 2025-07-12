@@ -1,0 +1,29 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0 # Or the latest stable version
+    hooks:
+      - id: check-yaml # Verify YAML syntax
+      - id: check-toml # Verify TOML syntax (in case your Cargo.toml is in the repo)
+      - id: check-added-large-files # Prevent committing large files
+
+  - repo: local # Run cargo check locally
+    hooks:
+      - id: cargo-fmt
+        name: Cargo Fmt
+        language: system
+        entry: cargo fmt --all --
+        files: \.rs$
+
+      - id: cargo-check
+        name: Cargo Check
+        language: system
+        entry: cargo check --all-targets --all-features --workspace
+        files: \.rs$
+        pass_filenames: false # Always run, regardless of changed files
+
+      - id: cargo-clippy
+        name: Cargo Clippy
+        language: system
+        entry: cargo clippy --all-targets --all-features --workspace --
+        files: \.rs$
+        pass_filenames: false # Always run, regardless of changed files

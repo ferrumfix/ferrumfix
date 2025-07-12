@@ -1,5 +1,5 @@
-use fefix::prelude::*;
-use fefix::tagvalue::Decoder;
+use rustyfix::prelude::*;
+use rustyfix::tagvalue::Decoder;
 use std::io::{Cursor, Read};
 
 const FIX_MESSAGES: &[&[u8]] = &[

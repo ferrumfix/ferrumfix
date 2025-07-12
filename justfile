@@ -1,4 +1,4 @@
-# Justfile docs: <https://just.systems/man/en/chapter_22.html>
+pre# Justfile docs: <https://just.systems/man/en/chapter_22.html>
 
 export QUICKCHECK_TESTS := "2500"
 
@@ -6,7 +6,7 @@ export QUICKCHECK_TESTS := "2500"
 help:
 	@just --list
 
-# Install the necessary tools to build and test FerrumFIX
+# Install the necessary tools to build and test RustyFix
 install-tools: && _install-tools-after-binstall
 	cargo install cargo-binstall
 
@@ -31,7 +31,7 @@ lint:
 test:
 	cargo nextest run --workspace --all-features
 	# nextest does not support doctests yet: <https://github.com/nextest-rs/nextest/issues/16>.
-	cargo test --workspace --doc --all-features 
+	cargo test --workspace --doc --all-features
 
 # Run cargo-hack to test all different Cargo feature combinations
 check-features:
@@ -39,7 +39,7 @@ check-features:
 
 # Find unused dependencies
 udeps:
-	RUSTFLAGS=-Awarnings cargo +nightly hack udeps --package fefix --feature-powerset --all-targets --depth 2
+	RUSTFLAGS=-Awarnings cargo +nightly hack udeps --package rustyfix --feature-powerset --all-targets --depth 2
 
 _init-submodules:
 	git submodule init

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2010 rel. 2 (x64) (http://www.altova.com) by Philip Oliver (Oliver Computing LLC) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:include schemaLocation="repositorystructures.xsd"/>
+	<xs:element name="Components">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Component" type="Component_cs_t" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attributeGroup ref="ContainerLevelRevisionAttribGrp"/>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

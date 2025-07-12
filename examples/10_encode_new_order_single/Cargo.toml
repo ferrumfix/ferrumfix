@@ -8,6 +8,9 @@ ignored = ["rust_decimal"] # False positive
 
 [dependencies]
 decimal = "2"
-fefix = { path = "../../crates/fefix", features = ["utils-decimal", "utils-rust-decimal"] }
+rustyfix = { path = "../../crates/rustyfix", features = [
+    "utils-decimal",
+    "utils-rust-decimal",
+] }
 rust_decimal = "1"
 rust_decimal_macros = "1"

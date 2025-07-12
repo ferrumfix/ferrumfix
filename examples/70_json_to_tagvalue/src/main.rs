@@ -1,12 +1,12 @@
-use fefix::json::FieldOrGroup;
-use fefix::prelude::*;
+use rustyfix::json::FieldOrGroup;
+use rustyfix::prelude::*;
 
 const JSON_FIX_MESSAGE: &str = include_str!("fix-example.json");
 
 fn main() {
-    let dictionary = fefix::Dictionary::fix42();
-    let mut decoder = fefix::json::Decoder::new(dictionary.clone());
-    let mut encoder = fefix::tagvalue::Encoder::new();
+    let dictionary = rustyfix::Dictionary::fix42();
+    let mut decoder = rustyfix::json::Decoder::new(dictionary.clone());
+    let mut encoder = rustyfix::tagvalue::Encoder::new();
     let mut buffer = Vec::new();
 
     let json_msg = decoder.decode(JSON_FIX_MESSAGE.as_bytes()).unwrap();

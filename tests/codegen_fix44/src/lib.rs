@@ -5,7 +5,7 @@ mod generated_fix44;
 #[cfg(test)]
 mod tests {
     use crate::generated_fix44 as fields;
-    use fefix::dict::IsFieldDefinition;
+    use rustyfix::dict::IsFieldDefinition;
 
     #[test]
     fn info_about_begin_string_field_is_correct() {

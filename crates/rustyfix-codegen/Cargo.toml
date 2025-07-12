@@ -1,0 +1,37 @@
+[package]
+name = "rustyfix-codegen"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description.workspace = true
+publish.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+
+[dependencies]
+chrono = { version = "0.4", features = ["std"] }
+rustyfix-dictionary = { version = "0.7", path = "../rustyfix-dictionary" }
+fnv = "1"
+heck = "0.4"
+indoc = "2"
+
+[dev-dependencies]
+arbitrary = { version = "1.4", features = ["derive"] }
+criterion = { version = "0.3", features = ["html_reports"] }
+enum-as-inner = "0.6"
+rustyfix-dictionary = { version = "0.7", path = "../rustyfix-dictionary", features = [
+    "fix40",
+    "fix41",
+    "fix42",
+    "fix43",
+    "fix50",
+] }
+quickcheck = "1"
+quickcheck_derive = "0.3"
+quickcheck_macros = "1"
+syn = { version = "2", features = ["parsing", "full"] }
+tokio = { version = "1", features = ["full"] }
