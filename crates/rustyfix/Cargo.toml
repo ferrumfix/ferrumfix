@@ -29,7 +29,7 @@ harness = false
 default = ["utils-chrono", "utils-tokio"]
 codegen = ["rustyfix-codegen"]
 derive = []
-json-encoding = []
+json-encoding = ["simd-json"]
 fix40 = ["rustyfix-dictionary/fix40"]
 fix41 = ["rustyfix-dictionary/fix41"]
 fix42 = ["rustyfix-dictionary/fix42"]
@@ -90,7 +90,7 @@ nohash-hasher = { workspace = true }
 rustc-hash = { workspace = true }
 rust_decimal = { workspace = true, optional = true }
 serde = { workspace = true }
-simd-json = { workspace = true }
+simd-json = { workspace = true, optional = true }
 slog = { workspace = true, optional = true }
 smallvec = { workspace = true }
 smartstring = { workspace = true }
@@ -106,8 +106,6 @@ uuid = { workspace = true }
 chrono = { workspace = true }
 rustyfix-codegen = { version = "0.7", path = "../rustyfix-codegen" }
 rustyfix-dictionary = { version = "0.7", path = "../rustyfix-dictionary" }
-lazy_static = { workspace = true }
-quick-xml = { workspace = true }
 roxmltree = { workspace = true }
 
 [dev-dependencies]

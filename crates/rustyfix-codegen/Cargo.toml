@@ -19,7 +19,6 @@ rustc-hash = { workspace = true }
 heck = { workspace = true }
 indoc = { workspace = true }
 smartstring = { workspace = true }
-syn = { workspace = true, features = ["full"] }
 
 [dev-dependencies]
 arbitrary = { workspace = true }
