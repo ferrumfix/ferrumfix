@@ -29,8 +29,12 @@ pub struct SimpleValidator {}
 
 impl Validator for SimpleValidator {
     fn validate<T>(&self, msg: &Message<T>, dict: &Dictionary) -> Result<(), ValidationError> {
-        let msg_type = msg.msg_type().unwrap();
-        let message_spec = dict.message_by_msgtype(msg_type.as_str()).unwrap();
+        let msg_type = msg
+            .msg_type()
+            .map_err(|_| ValidationError::InvalidMessage)?;
+        let message_spec = dict
+            .message_by_msgtype(msg_type.as_str())
+            .ok_or(ValidationError::InvalidMessage)?;
 
         for item in message_spec.layout() {
             if item.required() {

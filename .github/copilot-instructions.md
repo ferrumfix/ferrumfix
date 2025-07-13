@@ -155,7 +155,7 @@ These are widely understood and may be kept:
 - `yawc` for WebSocket connections (instead of `tungstenite` or `tokio-tungstenite`)
 - `quanta` for high-resolution timekeeping (instead of `chrono`)
 
-* Look for @docs/external-libraries/ for crates' information
+* Look for docs/external-libraries/ for crates' information
 
 ### Core Performance Mandates
 

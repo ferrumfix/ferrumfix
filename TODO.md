@@ -44,26 +44,27 @@
 
 ## 🚧 **IMMEDIATE PRIORITIES (Real Gaps Found)**
 
-### 1. Complete Tokio Integration
+### 1. Complete Tokio Integration ✅ COMPLETED
 **Priority**: HIGH | **Evidence**: Actual FIXME found in code analysis
-```rust
-// FOUND in crates/rustyfix/src/tagvalue/tokio_decoder.rs
-match result {
-    Ok(_raw_frame) => {
-        // FIXME - Incomplete implementation
-        Err(DecodeError::Unsupported("The operation is not supported.".to_string()))
-    }
-}
-```
-
-**Tasks**:
-- [ ] **Complete TokioDecoder implementation**
+- [x] **Complete TokioDecoder implementation** - Fixed compilation errors and basic functionality
 - [ ] **Add comprehensive streaming codec tests**
 - [ ] **Implement proper frame-to-message conversion**
 - [ ] **Add tokio example demonstrating usage**
 
-### 2. Enhance Validation Beyond SimpleValidator
-**Priority**: HIGH | **Evidence**: Minimal validation vs production needs
+### 2. Critical Memory Safety Issues
+**Priority**: CRITICAL | **Evidence**: Unsafe memory access violations from AI review
+- [ ] **Fix unsafe aliased mutable references in decoder.rs**
+  ```rust
+  // Lines 369 and 726: Creates mutable refs from shared refs - violates aliasing rules
+  builder: unsafe { &mut *(self.message.builder as *const _ as *mut _) },
+  ```
+- [ ] **Redesign MessageBuilder architecture to avoid unsafe casts**
+- [ ] **Consider using interior mutability patterns (RefCell) if mutation needed**
+- [ ] **Alternative: Refactor API to not require aliasing**
+
+### 3. Enhance Validation Beyond SimpleValidator ✅ IMPROVED
+**Priority**: HIGH | **Evidence**: AI review found panic vulnerabilities
+- [x] **Fix validator panics on unknown message types** - Replaced unwrap() with proper error handling
 - [ ] **Implement AdvancedValidator with QuickFIX patterns**
   ```rust
   pub struct AdvancedValidator {
@@ -76,7 +77,35 @@ match result {
 - [ ] **Add comprehensive validation test suite**
 - [ ] **Implement field presence validation per message type**
 
-### 3. Complete Backend Implementations
+### 4. FIX Protocol Compliance Issues 
+**Priority**: HIGH | **Evidence**: AI review found protocol violations
+- [ ] **Fix Logout message handling with high sequence numbers**
+  ```rust
+  // Current logic incorrectly drops Logout messages and requests resend
+  // Should terminate session immediately per FIX specification
+  fn on_high_seqnum(&mut self, message: Message<&[u8]>) -> Response {
+      let msg_type = message.get_raw(MSG_TYPE).unwrap_or_default();
+      if msg_type == b"5" { // Logout
+          return self.make_logout("Logout with high sequence number".to_string());
+      }
+      // ... rest of logic
+  }
+  ```
+- [ ] **Implement Sequence Reset-GapFill special handling**
+- [ ] **Add session state management for edge cases**
+
+### 5. Code Quality and Maintenance
+**Priority**: MEDIUM | **Evidence**: AI review suggestions
+- [ ] **Improve error messages with more context**
+  ```rust
+  // Instead of generic "u64 overflow", include the problematic value
+  format!("u64 overflow in FAST decoding: {}", problematic_value)
+  ```
+- [ ] **Clean up commented code blocks** - Remove TODO comments for slog::Value and PartialEq
+- [ ] **Remove dead code** - `new_order_single_decoder()` function in validation.rs
+- [ ] **Update deprecated criterion::black_box** - Use `std::hint::black_box()` instead
+
+### 6. Complete Backend Implementations
 **Priority**: MEDIUM | **Evidence**: Trait definitions need implementations
 - [ ] **Complete session backend implementations**
 - [ ] **Add message store backends (File, Memory, Database)**
