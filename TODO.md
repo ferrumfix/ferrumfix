@@ -286,7 +286,7 @@ MIRIFLAGS="-Zmiri-tag-raw-pointers" cargo +nightly miri test
 - [x] **Fix JSON encoder issues** - Resolved struct mismatches and imports
 - [x] **Enhance TLS cipher conversion error handling** - Proper logging instead of silent failures
 - [ ] **Improve error messages with more context**
-- [ ] **Clean up commented code blocks**
+- [x] **Clean up commented code blocks**
 - [ ] **Make AdvancedValidator Data-Driven** - Replace hardcoded enum validation in `validation.rs:313-371` with `field.enums()` from dictionary for maintainable validation
 - [ ] **Remove Unused Error Variant** - Either implement or remove `Unsupported(String)` error variant in `tagvalue/mod.rs:70-72`
 - [x] **Fix validation performance O(n²) issue** - Replace repeated get_raw() calls with single field iteration

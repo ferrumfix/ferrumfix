@@ -122,11 +122,19 @@ impl RawDecoder {
         let data = src.as_ref();
         let len = data.len();
         if len < utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
-            return Err(DecodeError::Invalid);
+            return Err(DecodeError::Invalid {
+                reason: format!(
+                    "Message too short: {} bytes, minimum required: {}",
+                    len,
+                    utils::MIN_FIX_MESSAGE_LEN_IN_BYTES
+                ),
+            });
         }
 
         let header_info =
-            HeaderInfo::parse(data, self.config().separator).ok_or(DecodeError::Invalid)?;
+            HeaderInfo::parse(data, self.config().separator).ok_or(DecodeError::Invalid {
+                reason: "Failed to parse FIX message header".to_string(),
+            })?;
 
         utils::verify_body_length(
             data,
@@ -212,11 +220,15 @@ where
                     Ok(None)
                 } else {
                     self.state = ParserState::Failed;
-                    Err(DecodeError::Invalid)
+                    Err(DecodeError::Invalid {
+                        reason: "Failed to parse streaming FIX message header".to_string(),
+                    })
                 }
             }
             ParserState::Header(_, _) => Ok(Some(())),
-            ParserState::Failed => Err(DecodeError::Invalid),
+            ParserState::Failed => Err(DecodeError::Invalid {
+                reason: "Parser in failed state".to_string(),
+            }),
         }
     }
 }
@@ -321,7 +333,7 @@ mod test {
         let decoder = new_decoder();
         assert!(matches!(
             decoder.decode(&[] as &[u8]),
-            Err(DecodeError::Invalid)
+            Err(DecodeError::Invalid { .. })
         ));
     }
 
@@ -347,7 +359,10 @@ mod test {
     fn message_with_empty_payload_is_invalid() {
         let decoder = new_decoder();
         let msg = "8=?|9=5|10=082|".as_bytes();
-        assert!(matches!(decoder.decode(msg), Err(DecodeError::Invalid)));
+        assert!(matches!(
+            decoder.decode(msg),
+            Err(DecodeError::Invalid { .. })
+        ));
     }
 
     #[test]

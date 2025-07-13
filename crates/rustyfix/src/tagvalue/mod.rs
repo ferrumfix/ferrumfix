@@ -62,11 +62,17 @@ pub use tokio_decoder::TokioDecoder;
 #[derive(Debug, thiserror::Error)]
 pub enum DecodeError {
     /// Mandatory field not found.
-    #[error("Field not found.")]
-    FieldPresence,
+    #[error("Required field {tag} not found in message")]
+    FieldPresence {
+        /// The missing field tag
+        tag: u32,
+    },
     /// Invalid FIX message syntax, `BodyLength <9>` value mismatch, or similar errors.
-    #[error("Invalid FIX message syntax.")]
-    Invalid,
+    #[error("Invalid FIX message syntax: {reason}")]
+    Invalid {
+        /// Reason for the syntax error
+        reason: String,
+    },
     /// Invalid `CheckSum <10>` FIX field value.
     #[error("Invalid `CheckSum <10>` FIX field value.")]
     CheckSum,

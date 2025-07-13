@@ -48,7 +48,11 @@ pub fn verify_body_length(
         .wrapping_sub(start_of_body);
     let end_of_body = data.len() - FIELD_CHECKSUM_LEN_IN_BYTES;
     if start_of_body > end_of_body || nominal_body_length != body_length {
-        Err(DecodeError::Invalid)
+        Err(DecodeError::Invalid {
+            reason: format!(
+                "Body length mismatch: declared={nominal_body_length}, actual={body_length}, start={start_of_body}, end={end_of_body}"
+            ),
+        })
     } else {
         debug_assert!(body_length < data.len());
         Ok(())

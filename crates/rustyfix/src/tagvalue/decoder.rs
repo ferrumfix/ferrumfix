@@ -204,7 +204,15 @@ impl Decoder {
         field_value_len: usize,
     ) -> Result<(), DecodeError> {
         if field_value_start + field_value_len > raw_message.len() {
-            return Err(DecodeError::Invalid);
+            return Err(DecodeError::Invalid {
+                reason: format!(
+                    "Field {} has invalid bounds: start={}, len={}, message_len={}",
+                    tag.get(),
+                    field_value_start,
+                    field_value_len,
+                    raw_message.len()
+                ),
+            });
         }
         let config_assoc = self.config().should_decode_associative;
         let field_value = &raw_message[field_value_start..][..field_value_len];
@@ -225,7 +233,9 @@ impl Decoder {
                 &raw_message[field_value_start..][..field_value_len],
                 config_assoc,
             )
-            .map_err(|_| DecodeError::Invalid)?;
+            .map_err(|_| DecodeError::Invalid {
+                reason: format!("Failed to add field {} to message builder", tag.get()),
+            })?;
         let fix_type = self.tag_lookup.get(&tag.get());
         if fix_type == Some(&FixDatatype::NumInGroup) {
             self.builder
@@ -237,15 +247,23 @@ impl Decoder {
                 .builder
                 .field_locators
                 .last()
-                .ok_or(DecodeError::FieldPresence)?;
+                .ok_or(DecodeError::FieldPresence { tag: tag.get() })?;
             let last_field = self
                 .builder
                 .fields
                 .get(last_field_locator)
-                .ok_or(DecodeError::FieldPresence)?;
+                .ok_or(DecodeError::FieldPresence { tag: tag.get() })?;
             let last_field_value = last_field.1;
-            let s = std::str::from_utf8(last_field_value).map_err(|_| DecodeError::Invalid)?;
-            let data_field_length = str::parse(s).map_err(|_| DecodeError::Invalid)?;
+            let s = std::str::from_utf8(last_field_value).map_err(|_| DecodeError::Invalid {
+                reason: format!("Length field {} contains invalid UTF-8", tag.get()),
+            })?;
+            let data_field_length = str::parse(s).map_err(|_| DecodeError::Invalid {
+                reason: format!(
+                    "Length field {} contains invalid number: '{}'",
+                    tag.get(),
+                    s
+                ),
+            })?;
             self.builder.state.data_field_length = Some(data_field_length);
         }
         Ok(())
@@ -920,7 +938,7 @@ mod test {
         let message = "8=FIX.4.2|9=41|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=127";
         let mut codec = decoder();
         let result = codec.decode(message.as_bytes());
-        assert!(matches!(result, Err(DecodeError::Invalid)));
+        assert!(matches!(result, Err(DecodeError::Invalid { .. })));
     }
 
     #[test]
@@ -928,7 +946,7 @@ mod test {
         let message = "8=FIX.4.4|9=37|35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|";
         let mut codec = decoder();
         let result = codec.decode(message.as_bytes());
-        assert!(matches!(result, Err(DecodeError::Invalid)));
+        assert!(matches!(result, Err(DecodeError::Invalid { .. })));
     }
 
     #[test]
@@ -946,7 +964,7 @@ mod test {
         let message = "35=D|49=AFUNDMGR|56=ABROKERt|15=USD|59=0|10=000|";
         let mut codec = decoder();
         let result = codec.decode(message.as_bytes());
-        assert!(matches!(result, Err(DecodeError::Invalid)));
+        assert!(matches!(result, Err(DecodeError::Invalid { .. })));
     }
 
     #[test]
@@ -954,7 +972,7 @@ mod test {
         let message = "8=FIX.4.2|9=43|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=146|";
         let mut codec = decoder();
         let result = codec.decode(message.as_bytes());
-        assert!(matches!(result, Err(DecodeError::Invalid)));
+        assert!(matches!(result, Err(DecodeError::Invalid { .. })));
     }
 
     #[test]

@@ -112,7 +112,7 @@ impl codec::Decoder for TokioRawDecoder {
                 begin_string: raw_frame.begin_string,
                 payload: raw_frame.payload,
             })),
-            Err(DecodeError::Invalid) => Ok(None),
+            Err(DecodeError::Invalid { .. }) => Ok(None),
             Err(e) => Err(e),
         }
     }
@@ -160,7 +160,7 @@ impl codec::Decoder for TokioDecoder {
                 let owned_message = OwnedMessage::from_message(message, raw_bytes_clone);
                 Ok(Some(owned_message))
             }
-            Err(DecodeError::Invalid) => Ok(None),
+            Err(DecodeError::Invalid { .. }) => Ok(None),
             Err(e) => Err(e),
         }
     }
