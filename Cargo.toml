@@ -22,12 +22,6 @@ license = "Apache-2.0"
 [workspace.lints.rust]
 rust-2024-compatibility = "warn"
 rust-2024-incompatible-pat = "warn"
-unsafe_code = "deny"
-missing_docs = "warn"
-unreachable_pub = "warn"
-unused_extern_crates = "warn"
-unused_import_braces = "warn"
-unused_qualifications = "warn"
 
 [workspace.lints.clippy]
 all = { level = "warn", priority = -1 }
@@ -42,42 +36,6 @@ fallible_impl_from = "warn"
 unwrap_used = "warn"
 expect_used = "warn"
 panic = "warn"
-# Style lints
-module_name_repetitions = "allow" # Allow for clear module naming
-similar_names = "allow"           # Allow similar parameter names
-
-# Shared dependencies across workspace crates
-# Following project guidelines to use high-performance alternatives
-[workspace.dependencies]
-# Core performance libraries (mandatory per guidelines)
-rustc-hash = "2.1"  # Fast non-cryptographic hashing
-smallvec = "1.13"   # Stack-allocated vectors for small collections
-smartstring = "1.0" # Small string optimization  
-simd-json = "0.15"  # High-performance JSON parsing
-quanta = "0.12"     # High-resolution timing
-
-# Common utility libraries
-log = "0.4"       # Logging facade
-thiserror = "2.0" # Error handling
-anyhow = "1.0"    # Error context
-bytes = "1.8"     # Byte buffer utilities
-
-# Async/networking libraries  
-tokio = { version = "1.42", features = ["full"] }
-flume = "0.11"                                    # High-performance channels
-
-# Serialization
-serde = { version = "1.0", features = ["derive"] }
-
-# Testing utilities
-criterion = "0.6" # Benchmarking
-
-# Development tools
-tracing = "0.1"            # Structured logging
-tracing-subscriber = "0.3" # Tracing subscriber implementations
-
-# FIX protocol specific
-rust_decimal = { version = "1.37", features = ["macros"] }
 
 # Release profile - optimized for production performance
 [profile.release]
@@ -111,3 +69,53 @@ overflow-checks = true # Enable overflow checks for safety
 # Helps with compile times for macro-heavy code
 # See: https://corrode.dev/blog/tips-for-faster-rust-compile-times/
 opt-level = 1
+
+# Shared dependencies across workspace crates
+# Following project guidelines to use high-performance alternatives
+[workspace.dependencies]
+# Core performance libraries (mandatory per guidelines)
+rustc-hash = "2.1" # Fast non-cryptographic hashing
+simd-json = "0.15" # High-performance JSON parsing
+quanta = "0.12" # High-resolution timing
+parking_lot = { version = "0.12", features = [
+    "serde",
+] } # Use parking_lot for thread-safe synchronization
+thiserror = "2.0" # Error handling
+
+# Collections and data structures
+smallvec = { version = "1.15", features = ["serde"] }
+arrayvec = { version = "0.7", features = ["serde"] }
+smartstring = { version = "1.0", features = ["serde"] }
+crossbeam-skiplist = "0.1"
+dashmap = { version = "6.1", features = [
+    "serde",
+] } # Lock-free concurrent hashmap
+smallbytes = "0.1" # Small byte arrays; Use instead of `bytes` crate from tokio team
+
+# Enhanced SIMD Operations
+wide = "0.7"         # Stable Rust SIMD abstraction
+simd_aligned = "0.6" # Guaranteed SIMD memory alignment
+
+# Zero-Copy
+zerocopy = { version = "0.8", features = [
+    "derive",
+] } # Zero-copy data manipulations
+zerocopy-derive = "0.8" # Derive macros for zerocopy
+
+# Logging and tracing
+fastrace = "0.7"       # Use fastrace instead of tracing
+fastrace-macro = "0.7"
+log = "0.4"            # Use log's comfortable macros
+
+# Async/networking libraries  
+tokio = { version = "1.42", features = ["full"] }
+tachyonix = "0.3.1"                               # High-performance channels
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+
+# Testing utilities
+criterion = "0.6" # Benchmarking
+
+# FIX protocol specific
+rust_decimal = { version = "1.37", features = ["macros"] }
