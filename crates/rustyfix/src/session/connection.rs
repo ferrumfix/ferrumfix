@@ -135,7 +135,9 @@ where
                 .expect("The connection died unexpectedly.");
             match event {
                 LlEvent::Message(message) => {
-                    let response = self.on_inbound_message(message, unimplemented!());
+                    // TODO: Implement proper MessageBuilder integration
+                    let stub_builder = MessageBuilder {};
+                    let response = self.on_inbound_message(message, stub_builder);
                     match response {
                         Response::OutboundBytes(bytes) => {
                             output.write_all(bytes).await.unwrap();
@@ -176,6 +178,30 @@ pub trait Verify {
     fn verify_sending_time(&self, message: &impl FieldMap<u32>) -> Result<(), Self::Error>;
 }
 
+/// A no-op verifier implementation for basic functionality
+/// TODO: Replace with proper verification implementation
+#[derive(Debug, Default)]
+pub struct NoOpVerifier;
+
+impl Verify for NoOpVerifier {
+    type Error = ();
+
+    fn verify_begin_string(&self, _begin_string: &[u8]) -> Result<(), Self::Error> {
+        Ok(()) // Always accept for now
+    }
+
+    fn verify_test_message_indicator(
+        &self,
+        _message: &impl FieldMap<u32>,
+    ) -> Result<(), Self::Error> {
+        Ok(()) // Always accept for now
+    }
+
+    fn verify_sending_time(&self, _message: &impl FieldMap<u32>) -> Result<(), Self::Error> {
+        Ok(()) // Always accept for now
+    }
+}
+
 impl<'a, B, C, V> FixConnector<'a, B, C, V> for FixConnection<B, C>
 where
     B: Backend,
@@ -194,7 +220,14 @@ where
     }
 
     fn verifier(&self) -> V {
-        unimplemented!()
+        // TODO: Implement proper verifier configuration
+        // ARCHITECTURAL LIMITATION: Cannot create instance of generic type V
+        // This method needs redesign to either:
+        // 1. Return Option<&V> or Result<V, Error>
+        // 2. Be removed from the trait
+        // 3. Have V be a concrete type with Default trait
+        // For now, this will fail to compile for most V types
+        todo!("Session layer verifier needs architectural redesign")
     }
 
     fn environment(&self) -> Environment {
@@ -222,7 +255,9 @@ pub struct MessageBuiderTuple<'a> {
 
 impl<'a> MessageBuiderTuple<'a> {
     pub fn get(self) -> (EncoderHandle<'a, Vec<u8>>, &'a mut MessageBuilder) {
-        unimplemented!()
+        // TODO: Implement proper message building functionality
+        // This requires integration with the encoder system
+        todo!("MessageBuilder integration not implemented")
     }
 }
 
