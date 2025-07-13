@@ -138,6 +138,9 @@ impl Decoder {
         //
         // The 'static lifetime parameter is used as a placeholder since MessageBuilder must be
         // parameterized with a lifetime, but the actual lifetime is managed dynamically per decode.
+        //
+        // FIXME: This transmute should be eliminated by redesigning MessageBuilder to use
+        // dynamic lifetime management or a different ownership model.
         unsafe { std::mem::transmute(&mut self.builder) }
     }
 
@@ -348,13 +351,30 @@ impl<B> DecoderStreaming<B>
 where
     B: Buffer,
 {
+    /// Returns an immutable view of the decoded message.
+    ///
     /// # Panics
     ///
     /// Panics if [`DecoderStreaming::try_parse()`] didn't return [`Ok(Some(()))`].
-    pub fn message(&mut self) -> Message<&[u8]> {
+    pub fn message(&self) -> Message<&[u8]> {
         assert!(self.is_ready);
 
         Message {
+            builder: &self.decoder.builder,
+            phantom: PhantomData,
+            field_locator_context: FieldLocatorContext::TopLevel,
+        }
+    }
+
+    /// Returns a mutable view of the decoded message.
+    ///
+    /// # Panics
+    ///
+    /// Panics if [`DecoderStreaming::try_parse()`] didn't return [`Ok(Some(()))`].
+    pub fn message_mut(&mut self) -> MessageMut<&[u8]> {
+        assert!(self.is_ready);
+
+        MessageMut {
             builder: self.decoder.message_builder_mut(),
             phantom: PhantomData,
             field_locator_context: FieldLocatorContext::TopLevel,

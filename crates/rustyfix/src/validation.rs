@@ -98,11 +98,26 @@ impl Validator for SimpleValidator {
 
 /// An advanced [`Validator`] with comprehensive validation capabilities inspired by QuickFIX patterns.
 ///
-/// This validator provides multi-layered validation including:
-/// - Message type validation  
-/// - Field format validation
-/// - Required field presence validation per message type
-/// - Field value range and constraint validation
+/// QuickFIX is a widely-used library for FIX protocol implementations, and its validation patterns
+/// emphasize robustness and flexibility. `AdvancedValidator` incorporates several of these patterns:
+///
+/// ## Validation Layers
+/// - **Message type validation**: Ensures that the message type is recognized and adheres to the expected structure.
+/// - **Field format validation**: Validates that field values conform to the expected data types and formats.
+/// - **Required field presence validation**: Checks that all mandatory fields for a given message type are present.
+/// - **Field value range and constraint validation**: Verifies that field values fall within acceptable ranges or meet specific constraints.
+///
+/// ## Differences from SimpleValidator
+/// Unlike the `SimpleValidator`, which focuses on basic field presence and correctness, `AdvancedValidator`
+/// provides additional layers of validation inspired by QuickFIX's emphasis on strict adherence to protocol rules:
+///
+/// - **Enhanced Format Validation**: Strict validation of date/time formats, decimal precision, and string lengths
+/// - **Protocol Compliance**: Enforcement of FIX protocol rules such as conditional field requirements
+/// - **Range Validation**: Checking that numeric values fall within protocol-defined ranges
+/// - **Custom Constraints**: Support for application-specific validation rules
+///
+/// These features make `AdvancedValidator` suitable for applications requiring high reliability and compliance
+/// with FIX protocol standards. For more information on QuickFIX patterns, refer to the official QuickFIX documentation.
 #[derive(Debug, Default, Clone)]
 pub struct AdvancedValidator {
     /// Whether to perform strict field format validation
@@ -473,13 +488,16 @@ mod test {
     #[test]
     fn test_missing_required_field() {
         let validator = SimpleValidator::default();
-        let dict = Dictionary::fix44().unwrap();
+        let dict =
+            Dictionary::fix44().expect("Failed to load FIX 4.4 dictionary for validation test");
         let mut decoder = Decoder::new(dict.clone());
         decoder.config_mut().separator = b'|';
 
         // Test a message missing required field ClOrdID (11)
         let msg = "8=FIX.4.2|9=40|35=D|49=AFUNDMGR|56=ABROKER|15=USD|59=0|10=091|";
-        let message = decoder.decode(msg.as_bytes()).unwrap();
+        let message = decoder
+            .decode(msg.as_bytes())
+            .expect("Failed to decode test FIX message");
 
         // Should fail validation due to missing ClOrdID (tag 11)
         let result = validator.validate(&message, &dict);
@@ -498,7 +516,8 @@ mod test {
     #[test]
     fn test_advanced_validator_basic_functionality() {
         let validator = AdvancedValidator::new();
-        let dict = Dictionary::fix44().unwrap();
+        let dict =
+            Dictionary::fix44().expect("Failed to load FIX 4.4 dictionary for validation test");
 
         // Test that the advanced validator correctly identifies validation issues
         // Test 1: Valid message type should pass
@@ -533,7 +552,8 @@ mod test {
     #[test]
     fn test_advanced_validator_unknown_message_type() {
         let validator = AdvancedValidator::new();
-        let dict = Dictionary::fix44().unwrap();
+        let dict =
+            Dictionary::fix44().expect("Failed to load FIX 4.4 dictionary for validation test");
 
         // Test unknown message type validation
         let result = validator.validate_message_type("UNKNOWN", &dict);
@@ -545,7 +565,8 @@ mod test {
     #[test]
     fn test_advanced_validator_field_value_validation() {
         let validator = AdvancedValidator::new();
-        let dict = Dictionary::fix44().unwrap();
+        let dict =
+            Dictionary::fix44().expect("Failed to load FIX 4.4 dictionary for validation test");
 
         // Test invalid sequence number (zero)
         let result = validator.validate_field_values(34, b"0", &dict);
@@ -573,7 +594,8 @@ mod test {
     #[test]
     fn test_advanced_validator_format_validation() {
         let validator = AdvancedValidator::new();
-        let dict = Dictionary::fix44().unwrap();
+        let dict =
+            Dictionary::fix44().expect("Failed to load FIX 4.4 dictionary for validation test");
 
         // Test invalid time format
         let result = validator.validate_field_format(52, b"invalid-time", &dict);
@@ -611,7 +633,8 @@ mod test {
     #[test]
     fn test_advanced_validator_configurable_validation() {
         let mut validator = AdvancedValidator::new();
-        let dict = Dictionary::fix44().unwrap();
+        let dict =
+            Dictionary::fix44().expect("Failed to load FIX 4.4 dictionary for validation test");
 
         // Disable strict format validation
         validator.strict_format_validation = false;
@@ -631,7 +654,8 @@ mod test {
     #[test]
     fn test_validation_error_messages() {
         let validator = AdvancedValidator::new();
-        let dict = Dictionary::fix44().unwrap();
+        let dict =
+            Dictionary::fix44().expect("Failed to load FIX 4.4 dictionary for validation test");
 
         // Test error message content for unknown message type
         let result = validator.validate_message_type("TEST", &dict);
@@ -659,7 +683,8 @@ mod test {
     #[test]
     fn test_comprehensive_message_validation() {
         let validator = AdvancedValidator::new();
-        let dict = Dictionary::fix44().unwrap();
+        let dict =
+            Dictionary::fix44().expect("Failed to load FIX 4.4 dictionary for validation test");
 
         // Test individual validation functions instead of full message decoding to avoid decoder issues
 

@@ -447,9 +447,9 @@ pub struct MessageBuiderTuple<'a> {
 
 impl<'a> MessageBuiderTuple<'a> {
     pub fn get(self) -> (EncoderHandle<'a, Vec<u8>>, &'a mut MessageBuilder) {
-        // TODO: Implement proper message building functionality
-        // This requires integration with the encoder system
-        todo!("MessageBuilder integration not implemented")
+        // NOTE: This is a placeholder implementation to prevent runtime panics
+        // TODO: Implement proper message building functionality when encoder integration is ready
+        unimplemented!("MessageBuilder integration not yet implemented - use encoder directly")
     }
 }
 

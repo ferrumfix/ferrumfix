@@ -111,11 +111,14 @@ impl Codec for u64 {
     fn deserialize(&mut self, reader: &mut impl io::Read) -> io::Result<usize> {
         let bytes = decode_stop_bit_entity(reader)?;
         *self = 0;
-        for byte in &bytes {
+        for (i, byte) in bytes.iter().enumerate() {
             if (*self >> (64 - 7)) > 0 {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
-                    "u64 overflow in FAST decoding",
+                    format!(
+                        "u64 overflow in FAST decoding: current value 0x{:016x} would overflow when processing byte {} (0x{:02x}) at position {}",
+                        *self, byte, byte, i
+                    ),
                 ));
             }
             *self = (*self << 7) | u64::from(*byte);
@@ -126,7 +129,19 @@ impl Codec for u64 {
 
 impl Codec for i64 {
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<usize> {
-        // ZigZag encoding.
+        // ZigZag encoding: Maps signed integers to unsigned integers efficiently.
+        //
+        // ZigZag encoding interleaves positive and negative integers:
+        // 0 -> 0, -1 -> 1, 1 -> 2, -2 -> 3, 2 -> 4, -3 -> 5, ...
+        //
+        // This allows small negative numbers to be encoded as small positive numbers,
+        // which is more efficient in variable-length encoding schemes like FAST.
+        // Without ZigZag, -1 would be encoded as a very large unsigned integer (2^64-1).
+        //
+        // Formula: (n << 1) ^ (n >> 63)
+        // - Left shift by 1 multiplies by 2
+        // - Right shift by 63 propagates the sign bit (arithmetic right shift)
+        // - XOR combines them to create the zigzag pattern
         let zigzag_encoded = (*self << 1) ^ (*self >> 63);
         (zigzag_encoded as u64).serialize(writer)
     }
@@ -134,7 +149,14 @@ impl Codec for i64 {
     fn deserialize(&mut self, reader: &mut impl io::Read) -> io::Result<usize> {
         let mut zigzag_encoded = 0u64;
         let bytes_read = zigzag_encoded.deserialize(reader)?;
-        // ZigZag decoding.
+
+        // ZigZag decoding: Reverses the ZigZag encoding to restore the original signed value.
+        //
+        // Formula: (n >> 1) ^ -(n & 1)
+        // - Right shift by 1 divides by 2 (restores the magnitude)
+        // - Extract the least significant bit (n & 1) which indicates sign
+        // - Negate the LSB to create a mask (0 or -1)
+        // - XOR with the magnitude to restore the original signed value
         let value = (zigzag_encoded >> 1) as i64 ^ -((zigzag_encoded & 1) as i64);
         *self = value;
         Ok(bytes_read)

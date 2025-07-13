@@ -162,6 +162,15 @@ impl Decoder {
 
     fn message_builder<'a>(&'a mut self) -> &'a mut MessageInternal<'a> {
         self.message_builder.clear();
+        // SAFETY: This transmute changes the lifetime parameter of MessageInternal from 'static to 'a.
+        // This is sound because:
+        // 1. The MessageInternal<'static> is a private field only accessible through this method
+        // 2. The returned reference has lifetime 'a tied to &mut self
+        // 3. MessageInternal.clear() is called immediately before, invalidating old references
+        // 4. The MessageInternal only stores references to data provided in the current decode call
+        // 5. The lifetime 'a ensures references cannot outlive the source data
+        //
+        // FIXME: This transmute should be eliminated by redesigning MessageInternal lifetime management.
         unsafe {
             std::mem::transmute::<&'a mut MessageInternal<'static>, &'a mut MessageInternal<'a>>(
                 &mut self.message_builder,

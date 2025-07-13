@@ -1,6 +1,31 @@
-# CLAUDE.md
+# Cognitive Approach
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+* **Think DEEP and RIGOROUSLY.** Critically reflect on all decisions and actions. Consider long-term consequences and downstream effects of your choices.
+* **Systematically decompose complex problems** into fundamental, manageable components for thorough analysis.
+* **Leverage pattern recognition** - Find similar cases, strategies, and analogies from your knowledge base to inform high-quality responses.
+
+- **AGGRESSIVELY Apply Test-Driven Development (TDD) for adaptive `code ↔ test` cycles**
+    - Always include comprehensive test cases when generating code
+    - Update and validate test code after refactoring to maintain correctness
+    - Ensure tests cover edge cases and failure scenarios
+- **Favor simplicity over complexity** - Avoid premature abstraction and over-engineering
+- **Maintain strategic oversight:**
+    - Periodically review and update TODO.md with actionable items
+    - Refresh internal task prioritization and plan next steps systematically
+    - Think holistically about project direction and dependencies
+- **Consolidate and clean up when milestones are complete:**
+    - Remove fragmented, redundant, or obsolete files/codebases
+    - Organize code for clarity, maintainability, and robustness
+    - Eliminate compatibility layers and legacy code during refactoring
+    - Keep the codebase lean, focused, and well-structured
+- **Maintain disciplined scope** - Execute only ordered tasks; avoid scope creep that can introduce instability
+- **Auto commit and push after each individual task is done.**
+- **Always look for @docs/external-libraries/ when implementing APIs or designing exchange abstractions.**
+- **Periodically renew @TODO.md for saving current progress and updating the pending tasks.**
+
+---
+
+# RustyFix Project
 
 ## Project Overview
 

@@ -87,17 +87,21 @@ impl OwnedMessage {
     where
         T: AsRef<[u8]>,
     {
-        let mut fields = FxHashMap::default();
-
         // Extract ALL fields from the message by iterating over them
         // This ensures no fields are lost during conversion to OwnedMessage
+        // Pre-allocate HashMap capacity to reduce reallocations during insertion
+        let field_count = message.fields().count();
+        let mut fields = FxHashMap::with_capacity_and_hasher(field_count, Default::default());
+
         for (tag, value) in message.fields() {
+            // Optimize: SmallBytes<64> can stack-allocate up to 64 bytes, avoiding heap allocation
+            // for most FIX field values which are typically short
             let mut small_bytes = SmallBytes::<64>::new();
             small_bytes.extend_from_slice(value);
             fields.insert(tag.get(), small_bytes);
         }
 
-        Self::new(raw_bytes, fields)
+        Self { raw_bytes, fields }
     }
 
     /// Returns the FIX message type of this message.
@@ -258,7 +262,9 @@ impl codec::Decoder for TokioDecoder {
         };
 
         // We have enough data - split off exactly the message we need
-        let raw_bytes = src.split_to(header_info.0 + header_info.1 + 7).freeze();
+        let raw_bytes = src
+            .split_to(header_info.0 + header_info.1 + CHECKSUM_FIELD_LEN)
+            .freeze();
         let raw_bytes_clone = raw_bytes.clone();
 
         let result = self.decoder.decode(&raw_bytes);
