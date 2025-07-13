@@ -250,7 +250,7 @@ async fn send_small_message(writer: &mut impl AsyncWriteExt) -> Result<(), Box<d
     buf.put_slice(b"header");
     buf.put_u32(message_id);
     buf.put_slice(&payload);
-    
+
     writer.write_all(buf.as_ref()).await?;
     Ok(())
 }

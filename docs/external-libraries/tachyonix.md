@@ -36,7 +36,7 @@ block_on(async move {
     pool.spawn_ok(async move {
         assert_eq!(s.send("Hello").await, Ok(()));
     });
-     
+
     assert_eq!(r.recv().await, Ok("Hello"));
 });
 ```

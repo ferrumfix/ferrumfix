@@ -1,373 +1,442 @@
-[Docs.rs](https://docs.rs/)
+# Zerocopy Documentation
 
-- [zerocopy-0.8.25](https://docs.rs/zerocopy/0.8.25/zerocopy/# "Zerocopy makes zero-cost memory manipulation effortless. We write \"unsafe\" so you don't have to.")
+## Overview
 
+Zerocopy is a Rust library that makes zero-cost memory manipulation effortless. We write `unsafe` so you don't have to.
 
-- zerocopy 0.8.25
+**Version**: 0.8.26
+**License**: BSD-2-Clause OR Apache-2.0 OR MIT
+**Repository**: https://github.com/google/zerocopy
 
-- [Docs.rs crate page](https://docs.rs/crate/zerocopy/0.8.25 "See zerocopy in docs.rs")
-- [BSD-2-Clause](https://spdx.org/licenses/BSD-2-Clause) OR [Apache-2.0](https://spdx.org/licenses/Apache-2.0)
-  OR [MIT](https://spdx.org/licenses/MIT)
+### Key Philosophy
 
-- Links
-- [Repository](https://github.com/google/zerocopy)
-- [crates.io](https://crates.io/crates/zerocopy "See zerocopy in crates.io")
-- [Source](https://docs.rs/crate/zerocopy/0.8.25/source/ "Browse source of zerocopy-0.8.25")
+**"Fast, safe, compile error. Pick two."**
 
-- Owners
-- [jswrenn](https://crates.io/users/jswrenn)
-- [joshlf](https://crates.io/users/joshlf)
+Zerocopy enables efficient, safe transmutation between types with compile-time guarantees and minimal runtime overhead. It's expressly designed for use in security-critical contexts.
 
-- Dependencies
--
-    - [zerocopy-derive =0.8.25\\
-      \\
-      _normal_ _optional_](https://docs.rs/zerocopy-derive/=0.8.25)
-- [either =1.13.0\\
-  \\
-  _dev_](https://docs.rs/either/=1.13.0)
-- [elain ^0.3.0\\
-  \\
-  _dev_](https://docs.rs/elain/^0.3.0)
-- [itertools ^0.11\\
-  \\
-  _dev_](https://docs.rs/itertools/^0.11)
-- [rand ^0.8.5\\
-  \\
-  _dev_](https://docs.rs/rand/^0.8.5)
-- [rustversion ^1.0\\
-  \\
-  _dev_](https://docs.rs/rustversion/^1.0)
-- [static\_assertions ^1.1\\
-  \\
-  _dev_](https://docs.rs/static_assertions/^1.1)
-- [trybuild =1.0.89\\
-  \\
-  _dev_](https://docs.rs/trybuild/=1.0.89)
-- [zerocopy-derive =0.8.25\\
-  \\
-  _dev_](https://docs.rs/zerocopy-derive/=0.8.25)
-- [zerocopy-derive =0.8.25\\
-  \\
-  _normal_](https://docs.rs/zerocopy-derive/=0.8.25)
+## Core Traits
 
-- Versions
+### Conversion Traits
 
-- [**100%**\\
-  of the crate is documented](https://docs.rs/crate/zerocopy/0.8.25)
+#### 1. `TryFromBytes`
 
-- [Platform](https://docs.rs/zerocopy/0.8.25/zerocopy/#)  - [i686-pc-windows-msvc](https://docs.rs/crate/zerocopy/0.8.25/target-redirect/i686-pc-windows-msvc/zerocopy/index.html)
-    - [i686-unknown-linux-gnu](https://docs.rs/crate/zerocopy/0.8.25/target-redirect/i686-unknown-linux-gnu/zerocopy/index.html)
-    - [x86\_64-apple-darwin](https://docs.rs/crate/zerocopy/0.8.25/target-redirect/x86_64-apple-darwin/zerocopy/index.html)
-    - [x86\_64-pc-windows-msvc](https://docs.rs/crate/zerocopy/0.8.25/target-redirect/x86_64-pc-windows-msvc/zerocopy/index.html)
-    - [x86\_64-unknown-linux-gnu](https://docs.rs/crate/zerocopy/0.8.25/target-redirect/x86_64-unknown-linux-gnu/zerocopy/index.html)
-- [Feature flags](https://docs.rs/crate/zerocopy/0.8.25/features "Browse available feature flags of zerocopy-0.8.25")
-
-- [docs.rs](https://docs.rs/zerocopy/0.8.25/zerocopy/#)  - [About docs.rs](https://docs.rs/about)
-    - [Privacy policy](https://foundation.rust-lang.org/policies/privacy-policy/#docs.rs)
-
-- [Rust](https://docs.rs/zerocopy/0.8.25/zerocopy/#)  - [Rust website](https://www.rust-lang.org/)
-    - [The Book](https://doc.rust-lang.org/book/)
-    - [Standard Library API Reference](https://doc.rust-lang.org/std/)
-    - [Rust by Example](https://doc.rust-lang.org/rust-by-example/)
-    - [The Cargo Guide](https://doc.rust-lang.org/cargo/guide/)
-    - [Clippy Documentation](https://doc.rust-lang.org/nightly/clippy)
-
-[iframe](/-/storage-change-detection.html)
-
-# Crate zerocopyCopy item path
-
-[Settings](https://docs.rs/zerocopy/0.8.25/settings.html)
-
-[Help](https://docs.rs/zerocopy/0.8.25/help.html)
-
-Summary[Source](https://docs.rs/zerocopy/0.8.25/src/zerocopy/lib.rs.html#15-6733)
-
-Expand description
-
-_Need more out of zerocopy?_
-_Submit a [customer request issue](https://github.com/google/zerocopy/issues/new/choose)!_
-
-_**Fast, safe, compile error. Pick two.**_
-
-Zerocopy makes zero-cost memory manipulation effortless. We write `unsafe`
-so you don’t have to.
-
-_Thanks for using zerocopy 0.8! For an overview of what changes from 0.7,_
-_check out our [release notes](https://github.com/google/zerocopy/discussions/1680), which include a step-by-step_
-_guide for upgrading from 0.7._
-
-_Have questions? Need help? Ask the maintainers
-on [GitHub](https://github.com/google/zerocopy/discussions/categories/q-a) or_
-_on [Discord](https://discord.gg/MAvWH2R6zk)!_
-
-## [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#overview) Overview
-
-###### [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#conversion-traits) Conversion Traits
-
-Zerocopy provides four derivable traits for zero-cost conversions:
-
-- [`TryFromBytes`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.TryFromBytes.html "trait zerocopy::TryFromBytes")
-  indicates that a type may safely be converted from
-  certain byte sequences (conditional on runtime checks)
-- [`FromZeros`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.FromZeros.html "trait zerocopy::FromZeros") indicates
-  that a sequence of zero bytes represents a valid
-  instance of a type
-- [`FromBytes`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.FromBytes.html "trait zerocopy::FromBytes") indicates
-  that a type may safely be converted from an
-  arbitrary byte sequence
-- [`IntoBytes`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.IntoBytes.html "trait zerocopy::IntoBytes") indicates
-  that a type may safely be converted _to_ a byte
-  sequence
-
-These traits support sized types, slices,
-and [slice DSTs](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.KnownLayout.html#dynamically-sized-types "trait zerocopy::KnownLayout").
-
-###### [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#marker-traits) Marker Traits
-
-Zerocopy provides three derivable marker traits that do not provide any
-functionality themselves, but are required to call certain methods provided
-by the conversion traits:
-
-- [`KnownLayout`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.KnownLayout.html "trait zerocopy::KnownLayout")
-  indicates that zerocopy can reason about certain layout
-  qualities of a type
-- [`Immutable`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.Immutable.html "trait zerocopy::Immutable") indicates
-  that a type is free from interior mutability,
-  except by ownership or an exclusive ( `&mut`) borrow
-- [`Unaligned`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.Unaligned.html "trait zerocopy::Unaligned") indicates
-  that a type’s alignment requirement is 1
-
-You should generally derive these marker traits whenever possible.
-
-###### [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#conversion-macros) Conversion Macros
-
-Zerocopy provides six macros for safe casting between types:
-
-- ( [`try_`](https://docs.rs/zerocopy/0.8.25/zerocopy/macro.try_transmute.html "macro zerocopy::try_transmute")) [
-  `transmute`](https://docs.rs/zerocopy/0.8.25/zerocopy/macro.transmute.html "macro zerocopy::transmute") (
-  conditionally) converts a value of
-  one type to a value of another type of the same size
-- ( [
-  `try_`](https://docs.rs/zerocopy/0.8.25/zerocopy/macro.try_transmute_mut.html "macro zerocopy::try_transmute_mut")) [
-  `transmute_mut`](https://docs.rs/zerocopy/0.8.25/zerocopy/macro.transmute_mut.html "macro zerocopy::transmute_mut") (
-  conditionally) converts a
-  mutable reference of one type to a mutable reference of another type of
-  the same size
-- ( [
-  `try_`](https://docs.rs/zerocopy/0.8.25/zerocopy/macro.try_transmute_ref.html "macro zerocopy::try_transmute_ref")) [
-  `transmute_ref`](https://docs.rs/zerocopy/0.8.25/zerocopy/macro.transmute_ref.html "macro zerocopy::transmute_ref") (
-  conditionally) converts a
-  mutable or immutable reference of one type to an immutable reference of
-  another type of the same size
-
-These macros perform _compile-time_ size and alignment checks, meaning that
-unconditional casts have zero cost at runtime. Conditional casts do not need
-to validate size or alignment runtime, but do need to validate contents.
-
-These macros cannot be used in generic contexts. For generic conversions,
-use the methods defined by the [conversion traits](https://docs.rs/zerocopy/0.8.25/zerocopy/#conversion-traits).
-
-###### [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#byteorder-aware-numerics) Byteorder-Aware Numerics
-
-Zerocopy provides byte-order aware integer types that support these
-conversions; see the [
-`byteorder`](https://docs.rs/zerocopy/0.8.25/zerocopy/byteorder/index.html "mod zerocopy::byteorder") module. These
-types are especially useful
-for network parsing.
-
-## [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#cargo-features) Cargo Features
-
-- **`alloc`**
-  By default, `zerocopy` is `no_std`. When the `alloc` feature is enabled,
-  the `alloc` crate is added as a dependency, and some allocation-related
-  functionality is added.
-
-- **`std`**
-  By default, `zerocopy` is `no_std`. When the `std` feature is enabled, the
-  `std` crate is added as a dependency (ie, `no_std` is disabled), and
-  support for some `std` types is added. `std` implies `alloc`.
-
-- **`derive`**
-  Provides derives for the core marker traits via the `zerocopy-derive`
-  crate. These derives are re-exported from `zerocopy`, so it is not
-  necessary to depend on `zerocopy-derive` directly.
-
-However, you may experience better compile times if you instead directly
-depend on both `zerocopy` and `zerocopy-derive` in your `Cargo.toml`,
-since doing so will allow Rust to compile these crates in parallel. To do
-so, do _not_ enable the `derive` feature, and list both dependencies in
-your `Cargo.toml` with the same leading non-zero version number; e.g:
-
+```rust
+pub unsafe trait TryFromBytes {
+    // Methods for conditional conversion from bytes
+}
 ```
+
+- **Purpose**: Types for which *some* bit patterns are valid
+- **Key Methods**:
+  - `try_ref_from_bytes(source: &[u8]) -> Result<&Self, TryFromBytesError>`
+  - `try_read_from_bytes(source: &[u8]) -> Result<Self, TryFromBytesError>`
+  - `try_ref_from_prefix/suffix` variants
+  - `_with_elems` variants for DSTs
+- **Example**:
+```rust
+#[derive(TryFromBytes, KnownLayout, Immutable)]
+#[repr(u8)]
+enum Command {
+    Read = 0x01,
+    Write = 0x02,
+}
+
+let bytes = &[0x01];
+let cmd = Command::try_ref_from_bytes(bytes).unwrap();
+```
+
+#### 2. `FromZeros`
+
+```rust
+pub unsafe trait FromZeros {
+    // Zero bytes represent a valid instance
+}
+```
+
+- **Purpose**: Types where a sequence of zero bytes is valid
+- **Key Methods**:
+  - `new_zeroed() -> Self` (for sized types)
+  - `new_slice_zeroed(len: usize) -> Self` (for slices)
+- **Implementations**: All numeric types, Option<NonZero*>, etc.
+
+#### 3. `FromBytes`
+
+```rust
+pub unsafe trait FromBytes: FromZeros {
+    // Any bit pattern is valid
+}
+```
+
+- **Purpose**: Types where *any* bit pattern is valid
+- **Key Methods**:
+  - `ref_from_bytes(source: &[u8]) -> Result<&Self, CastError>`
+  - `mut_from_bytes(source: &mut [u8]) -> Result<&mut Self, CastError>`
+  - `read_from_bytes(source: &[u8]) -> Result<Self, CastError>`
+- **Example**:
+```rust
+#[derive(FromBytes, KnownLayout, Immutable)]
+#[repr(C)]
+struct PacketHeader {
+    src_port: [u8; 2],
+    dst_port: [u8; 2],
+    length: [u8; 2],
+    checksum: [u8; 2],
+}
+
+let bytes = &[0, 1, 2, 3, 4, 5, 6, 7][..];
+let header = PacketHeader::ref_from_bytes(bytes).unwrap();
+```
+
+#### 4. `IntoBytes`
+
+```rust
+pub unsafe trait IntoBytes {
+    // Can be converted to bytes
+}
+```
+
+- **Purpose**: Types that can be safely converted to byte slices
+- **Key Methods**:
+  - `as_bytes(&self) -> &[u8]`
+  - `as_mut_bytes(&mut self) -> &mut [u8]`
+  - `write_to(&self, dst: &mut [u8]) -> Result<(), SizeError>`
+  - `write_to_io(&self, dst: &mut impl Write) -> io::Result<()>`
+- **Example**:
+```rust
+#[derive(IntoBytes, Immutable)]
+#[repr(C)]
+struct Response {
+    status: u16,
+    data: [u8; 32],
+}
+
+let response = Response { status: 200, data: [0; 32] };
+let bytes = response.as_bytes();
+```
+
+### Marker Traits
+
+#### 1. `KnownLayout`
+
+```rust
+pub unsafe trait KnownLayout {
+    // Zerocopy can reason about the type's layout
+}
+```
+
+- **Purpose**: Enables zerocopy to understand type layout
+- **Required for**: Most zerocopy operations
+- **Auto-implemented for**: Sized types with `FromBytes`
+
+#### 2. `Immutable`
+
+```rust
+pub unsafe trait Immutable {
+    // No interior mutability
+}
+```
+
+- **Purpose**: Indicates freedom from interior mutability
+- **Required for**: Creating immutable references from bytes
+- **NOT implemented for**: `Cell`, `RefCell`, atomics, etc.
+
+#### 3. `Unaligned`
+
+```rust
+pub unsafe trait Unaligned {
+    // align_of::<Self>() == 1
+}
+```
+
+- **Purpose**: Types with no alignment requirement
+- **Use Cases**: Network protocols, packed structs
+- **Derive Requirements**: `#[repr(C)]`, `#[repr(packed)]`, or `#[repr(u8)]`
+
+## Transmutation Macros
+
+### Basic Transmutation
+
+#### `transmute!`
+```rust
+let one_dimensional: [u8; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
+let two_dimensional: [[u8; 4]; 2] = transmute!(one_dimensional);
+```
+
+- Compile-time size checks
+- Zero runtime cost
+- Works in const contexts
+
+#### `transmute_ref!`
+```rust
+let array: [u8; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
+let bytes: &[[u8; 2]; 4] = transmute_ref!(&array);
+```
+
+#### `transmute_mut!`
+```rust
+let mut array: [u8; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
+let bytes: &mut [[u8; 2]; 4] = transmute_mut!(&mut array);
+```
+
+### Conditional Transmutation
+
+#### `try_transmute!`
+```rust
+let value: Result<NonZeroU32, _> = try_transmute!(some_u32);
+```
+
+- Runtime validation
+- Returns `Result`
+- For types with validity requirements
+
+Similar variants: `try_transmute_ref!`, `try_transmute_mut!`
+
+## Core Types
+
+### `Ref<B, T>`
+
+A typed reference derived from a byte slice.
+
+```rust
+pub struct Ref<B, T: ?Sized> { ... }
+```
+
+**Key Methods**:
+- `from_bytes(source: B) -> Result<Ref<B, T>, CastError>`
+- `into_ref(self) -> &T`
+- `into_mut(self) -> &mut T` (if B: ByteSliceMut)
+
+**Example**:
+```rust
+#[derive(FromBytes, IntoBytes, KnownLayout, Immutable, Unaligned)]
+#[repr(C)]
+struct UdpPacket {
+    header: UdpHeader,
+    body: [u8],  // DST field
+}
+
+impl UdpPacket {
+    pub fn parse<B: ByteSlice>(bytes: B) -> Option<Ref<B, UdpPacket>> {
+        Ref::from_bytes(bytes).ok()
+    }
+}
+```
+
+### `Unalign<T>`
+
+A wrapper that removes alignment requirements.
+
+```rust
+#[repr(packed)]
+pub struct Unalign<T>(T);
+```
+
+**Use Case**: Reading unaligned data from byte streams
+```rust
+let bytes = &[0xFF, 0x00, 0x00, 0x00];
+let unaligned = Unalign::<u32>::ref_from_bytes(bytes).unwrap();
+let value: u32 = unaligned.get();
+```
+
+## Byteorder Module
+
+Provides byte order-aware numeric primitives for network protocols and file formats.
+
+### Types
+
+- **Integers**: `U16`, `U32`, `U64`, `U128`, `I16`, `I32`, `I64`, `I128`
+- **Floating Point**: `F32`, `F64`
+- **Platform Types**: `Usize`, `Isize`
+
+### Endianness
+
+```rust
+use zerocopy::byteorder::{U32, NetworkEndian, LittleEndian};
+
+// Type aliases
+type NetworkU32 = U32<NetworkEndian>;
+type LEU32 = U32<LittleEndian>;
+```
+
+### Example: Network Protocol
+
+```rust
+#[derive(FromBytes, IntoBytes, KnownLayout, Immutable, Unaligned)]
+#[repr(C)]
+struct TcpHeader {
+    src_port: U16<NetworkEndian>,
+    dst_port: U16<NetworkEndian>,
+    sequence: U32<NetworkEndian>,
+    ack_number: U32<NetworkEndian>,
+    // ... other fields
+}
+
+impl TcpHeader {
+    fn get_src_port(&self) -> u16 {
+        self.src_port.get()
+    }
+}
+```
+
+## Error Types
+
+### `CastError<Src, Dst>`
+Errors from casting operations, containing:
+- `SizeError`: Size mismatch
+- `AlignmentError`: Alignment requirements not met
+- `ValidityError`: Invalid bit pattern for target type
+
+### Error Handling Example
+```rust
+match PacketHeader::ref_from_bytes(bytes) {
+    Ok(header) => process_header(header),
+    Err(CastError::Size(e)) => println!("Wrong size: {:?}", e),
+    Err(CastError::Alignment(e)) => println!("Misaligned: {:?}", e),
+    Err(CastError::Validity(e)) => println!("Invalid data: {:?}", e),
+}
+```
+
+## Feature Flags
+
+### Core Features
+
+- **`alloc`**: Enables `alloc` crate dependency
+- **`std`**: Enables `std` crate (implies `alloc`)
+- **`derive`**: Enables derive macros (re-exported from `zerocopy-derive`)
+
+### Platform Features
+
+- **`simd`**: Stable SIMD type support
+- **`simd-nightly`**: Unstable SIMD types
+- **`float-nightly`**: `f16` and `f128` support
+
+### Recommended Setup
+
+For better compile times, use both crates directly:
+```toml
 [dependencies]
-zerocopy = "0.X"
-zerocopy-derive = "0.X"
+zerocopy = "0.8"
+zerocopy-derive = "0.8"
 ```
 
-To avoid the risk of [duplicate import errors](https://github.com/google/zerocopy/issues/1587) if
-one of your dependencies enables zerocopy’s `derive` feature, import
-derives as `use zerocopy_derive::*` rather than by name (e.g., `use zerocopy_derive::FromBytes`).
+Then import derives as:
+```rust
+use zerocopy::*;
+use zerocopy_derive::*;
+```
 
-- **`simd`**
-  When the `simd` feature is enabled, `FromZeros`, `FromBytes`, and
-  `IntoBytes` impls are emitted for all stable SIMD types which exist on the
-  target platform. Note that the layout of SIMD types is not yet stabilized,
-  so these impls may be removed in the future if layout changes make them
-  invalid. For more information, see the Unsafe Code Guidelines Reference
-  page on
-  the [layout of packed SIMD vectors](https://rust-lang.github.io/unsafe-code-guidelines/layout/packed-simd-vectors.html).
+## Best Practices
 
-- **`simd-nightly`**
-  Enables the `simd` feature and adds support for SIMD types which are only
-  available on nightly. Since these types are unstable, support for any type
-  may be removed at any point in the future.
+### 1. Derive Usage
 
-- **`float-nightly`**
-  Adds support for the unstable `f16` and `f128` types. These types are
-  not yet fully implemented and may not be supported on all platforms.
+Always use derive macros instead of manual implementation:
+```rust
+#[derive(TryFromBytes, FromZeros, FromBytes, IntoBytes, KnownLayout, Immutable)]
+#[repr(C)]
+struct MyStruct {
+    // fields
+}
+```
 
-## [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#security-ethos) Security Ethos
+### 2. Representation Attributes
 
-Zerocopy is expressly designed for use in security-critical contexts. We
-strive to ensure that that zerocopy code is sound under Rust’s current
-memory model, and _any future memory model_. We ensure this by:
+Use appropriate `#[repr]` attributes:
+- `#[repr(C)]`: For structs with predictable layout
+- `#[repr(packed)]`: For unaligned access
+- `#[repr(u8)]`/`#[repr(i32)]`: For enums
 
-- **…not ‘guessing’ about Rust’s semantics.**
-  We annotate `unsafe` code with a precise rationale for its soundness that
-  cites a relevant section of Rust’s official documentation. When Rust’s
-  documented semantics are unclear, we work with the Rust Operational
-  Semantics Team to clarify Rust’s documentation.
-- **…rigorously testing our implementation.**
-  We run tests using [Miri](https://github.com/rust-lang/miri), ensuring that zerocopy is sound across a wide
-  array of supported target platforms of varying endianness and pointer
-  width, and across both current and experimental memory models of Rust.
-- **…formally proving the correctness of our implementation.**
-  We apply formal verification tools like [Kani](https://github.com/model-checking/kani) to prove zerocopy’s
-  correctness.
+### 3. Network Parsing Pattern
 
-For more information, see our
-full [soundness policy](https://github.com/google/zerocopy/blob/main/POLICIES.md#soundness).
+```rust
+use zerocopy::{byteorder::NetworkEndian, FromBytes, Ref, Unaligned};
 
-## [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#relationship-to-project-safe-transmute) Relationship to Project Safe Transmute
+#[derive(FromBytes, Unaligned)]
+#[repr(C)]
+struct NetworkPacket {
+    magic: U32<NetworkEndian>,
+    version: u8,
+    flags: u8,
+    payload_len: U16<NetworkEndian>,
+    payload: [u8],  // DST
+}
 
-[Project Safe Transmute](https://rust-lang.github.io/rfcs/2835-project-safe-transmute.html) is an official initiative of
-the Rust Project to
-develop language-level support for safer transmutation. The Project consults
-with crates like zerocopy to identify aspects of safer transmutation that
-would benefit from compiler support, and has developed an [experimental,\\
-compiler-supported analysis](https://github.com/rust-lang/compiler-team/issues/411) which determines whether,
-for a given type, any value of that type may be soundly transmuted into
-another type. Once this functionality is sufficiently mature, zerocopy
-intends to replace its internal transmutability analysis (implemented by our
-custom derives) with the compiler-supported one. This change will likely be
-an implementation detail that is invisible to zerocopy’s users.
+fn parse_packet(bytes: &[u8]) -> Option<Ref<&[u8], NetworkPacket>> {
+    Ref::from_bytes(bytes).ok()
+}
+```
 
-Project Safe Transmute will not replace the need for most of zerocopy’s
-higher-level abstractions. The experimental compiler analysis is a tool for
-checking the soundness of `unsafe` code, not a tool to avoid writing
-`unsafe` code altogether. For the foreseeable future, crates like zerocopy
-will still be required in order to provide higher-level abstractions on top
-of the building block provided by Project Safe Transmute.
+### 4. Zero-Copy Deserialization
 
-## [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#msrv) MSRV
+```rust
+// Instead of:
+let data: MyStruct = bincode::deserialize(&bytes)?;  // Allocates
 
-See our [MSRV policy](https://github.com/google/zerocopy/blob/main/POLICIES.md#msrv).
+// Use:
+let data = MyStruct::ref_from_bytes(&bytes)?;  // Zero allocation
+```
 
-## [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#changelog) Changelog
+## Safety Guarantees
 
-Zerocopy uses [GitHub Releases](https://github.com/google/zerocopy/releases).
+Zerocopy provides strong safety guarantees through:
 
-## [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#thanks) Thanks
+1. **Compile-time validation**: Derives check type layouts at compile time
+2. **Conservative approach**: Only allows operations proven safe
+3. **Formal verification**: Uses tools like Kani for correctness proofs
+4. **Extensive testing**: Miri testing across platforms and memory models
 
-Zerocopy is maintained by engineers at Google and Amazon with help from
-[many wonderful contributors](https://github.com/google/zerocopy/graphs/contributors). Thank you to everyone who has
-lent a hand in making Rust a little more secure!
+## Common Patterns
 
-## Re-exports [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#reexports)
+### File Memory Mapping
+```rust
+use memmap2::Mmap;
+use zerocopy::FromBytes;
 
-`pub use crate::byte_slice::*;``pub use crate::byteorder::*;``pub use crate::error::*;`
+let file = File::open("data.bin")?;
+let mmap = unsafe { Mmap::map(&file)? };
+let header = FileHeader::ref_from_bytes(&mmap[..]).unwrap();
+```
 
-## Modules [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#modules)
+### Efficient Serialization
+```rust
+#[derive(IntoBytes)]
+#[repr(C)]
+struct Record {
+    id: u64,
+    timestamp: i64,
+    data: [u8; 256],
+}
 
-[byte\_slice](https://docs.rs/zerocopy/0.8.25/zerocopy/byte_slice/index.html "mod zerocopy::byte_slice")Traits for types
-that encapsulate a
-`[u8]`.[byteorder](https://docs.rs/zerocopy/0.8.25/zerocopy/byteorder/index.html "mod zerocopy::byteorder")Byte
-order-aware numeric primitives.[error](https://docs.rs/zerocopy/0.8.25/zerocopy/error/index.html "mod zerocopy::error")
-Types related to error reporting.
+let record = Record { /* ... */ };
+file.write_all(record.as_bytes())?;
+```
 
-## Macros [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#macros)
+### Protocol Implementation
+```rust
+#[derive(FromBytes, IntoBytes, Unaligned)]
+#[repr(C, packed)]
+struct DnsHeader {
+    id: U16<NetworkEndian>,
+    flags: U16<NetworkEndian>,
+    qdcount: U16<NetworkEndian>,
+    ancount: U16<NetworkEndian>,
+    nscount: U16<NetworkEndian>,
+    arcount: U16<NetworkEndian>,
+}
+```
 
-[include\_value](https://docs.rs/zerocopy/0.8.25/zerocopy/macro.include_value.html "macro zerocopy::include_value")
-Includes a file and safely transmutes it to a value of an arbitrary
-type.[transmute](https://docs.rs/zerocopy/0.8.25/zerocopy/macro.transmute.html "macro zerocopy::transmute")Safely
-transmutes a value of one type to a value of another type of the same
-size.[transmute\_mut](https://docs.rs/zerocopy/0.8.25/zerocopy/macro.transmute_mut.html "macro zerocopy::transmute_mut")
-Safely transmutes a mutable reference of one type to a mutable reference of
-another type of the same size and compatible
-alignment.[transmute\_ref](https://docs.rs/zerocopy/0.8.25/zerocopy/macro.transmute_ref.html "macro zerocopy::transmute_ref")
-Safely transmutes a mutable or immutable reference of one type to an
-immutable reference of another type of the same size and compatible
-alignment.[try\_transmute](https://docs.rs/zerocopy/0.8.25/zerocopy/macro.try_transmute.html "macro zerocopy::try_transmute")
-Conditionally transmutes a value of one type to a value of another type of
-the same
-size.[try\_transmute\_mut](https://docs.rs/zerocopy/0.8.25/zerocopy/macro.try_transmute_mut.html "macro zerocopy::try_transmute_mut")
-Conditionally transmutes a mutable reference of one type to a mutable
-reference of another type of the same size and compatible
-alignment.[try\_transmute\_ref](https://docs.rs/zerocopy/0.8.25/zerocopy/macro.try_transmute_ref.html "macro zerocopy::try_transmute_ref")
-Conditionally transmutes a mutable or immutable reference of one type to an
-immutable reference of another type of the same size and compatible
-alignment.
+## Performance Considerations
 
-## Structs [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#structs)
+1. **Zero allocations**: All operations work on existing memory
+2. **No runtime overhead**: Compile-time checks eliminate runtime validation
+3. **Cache-friendly**: Direct memory access patterns
+4. **SIMD-compatible**: Works with aligned data for vectorization
 
-[Ref](https://docs.rs/zerocopy/0.8.25/zerocopy/struct.Ref.html "struct zerocopy::Ref")A typed reference derived from a
-byte slice.[Split](https://docs.rs/zerocopy/0.8.25/zerocopy/struct.Split.html "struct zerocopy::Split")A `T` that has
-been split into two possibly-overlapping
-parts.[Unalign](https://docs.rs/zerocopy/0.8.25/zerocopy/struct.Unalign.html "struct zerocopy::Unalign")A type with no
-alignment requirement.
+## Migration from v0.7 to v0.8
 
-## Traits [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#traits)
+Major changes include:
+- New trait hierarchy with `TryFromBytes`
+- Improved error types
+- Better DST support
+- Enhanced derive capabilities
 
-[FromBytes](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.FromBytes.html "trait zerocopy::FromBytes")Types for which
-any bit pattern is
-valid.[FromZeros](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.FromZeros.html "trait zerocopy::FromZeros")Types for
-which a sequence of `0` bytes is a valid
-instance.[Immutable](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.Immutable.html "trait zerocopy::Immutable")Types
-which are free from interior
-mutability.[IntoBytes](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.IntoBytes.html "trait zerocopy::IntoBytes")Types
-that can be converted to an immutable slice of initialized
-bytes.[KnownLayout](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.KnownLayout.html "trait zerocopy::KnownLayout")
-Indicates that zerocopy can reason about certain aspects of a type’s
-layout.[SplitAt](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.SplitAt.html "trait zerocopy::SplitAt")Types that can be
-split in
-two.[TryFromBytes](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.TryFromBytes.html "trait zerocopy::TryFromBytes")Types
-for which some bit patterns are
-valid.[Unaligned](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.Unaligned.html "trait zerocopy::Unaligned")Types with
-no alignment requirement.
-
-## Derive Macros [§](https://docs.rs/zerocopy/0.8.25/zerocopy/\#derives)
-
-[ByteEq](https://docs.rs/zerocopy/0.8.25/zerocopy/derive.ByteEq.html "derive zerocopy::ByteEq") `derive`Derives
-optimized [`PartialEq`](https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html "trait core::cmp::PartialEq")
-and [`Eq`](https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html "trait core::cmp::Eq")
-implementations.[ByteHash](https://docs.rs/zerocopy/0.8.25/zerocopy/derive.ByteHash.html "derive zerocopy::ByteHash")
-`derive`Derives an optimized [
-`Hash`](https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html "trait core::hash::Hash")
-implementation.[FromBytes](https://docs.rs/zerocopy/0.8.25/zerocopy/derive.FromBytes.html "derive zerocopy::FromBytes")
-`derive`Analyzes whether a type is [
-`FromBytes`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.FromBytes.html "trait zerocopy::FromBytes").[FromZeros](https://docs.rs/zerocopy/0.8.25/zerocopy/derive.FromZeros.html "derive zerocopy::FromZeros")
-`derive`Analyzes whether a type is [
-`FromZeros`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.FromZeros.html "trait zerocopy::FromZeros").[Immutable](https://docs.rs/zerocopy/0.8.25/zerocopy/derive.Immutable.html "derive zerocopy::Immutable")
-`derive`Analyzes whether a type is [
-`Immutable`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.Immutable.html "trait zerocopy::Immutable").[IntoBytes](https://docs.rs/zerocopy/0.8.25/zerocopy/derive.IntoBytes.html "derive zerocopy::IntoBytes")
-`derive`Analyzes whether a type is [
-`IntoBytes`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.IntoBytes.html "trait zerocopy::IntoBytes").[KnownLayout](https://docs.rs/zerocopy/0.8.25/zerocopy/derive.KnownLayout.html "derive zerocopy::KnownLayout")
-`derive`Implements [
-`KnownLayout`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.KnownLayout.html "trait zerocopy::KnownLayout").[SplitAt](https://docs.rs/zerocopy/0.8.25/zerocopy/derive.SplitAt.html "derive zerocopy::SplitAt")
-`derive`Implements [
-`SplitAt`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.SplitAt.html "trait zerocopy::SplitAt").[TryFromBytes](https://docs.rs/zerocopy/0.8.25/zerocopy/derive.TryFromBytes.html "derive zerocopy::TryFromBytes")
-`derive`Implements [
-`TryFromBytes`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.TryFromBytes.html "trait zerocopy::TryFromBytes").[Unaligned](https://docs.rs/zerocopy/0.8.25/zerocopy/derive.Unaligned.html "derive zerocopy::Unaligned")
-`derive`Analyzes whether a type is [
-`Unaligned`](https://docs.rs/zerocopy/0.8.25/zerocopy/trait.Unaligned.html "trait zerocopy::Unaligned").
+See [release notes](https://github.com/google/zerocopy/discussions/1680) for detailed migration guide.
