@@ -70,52 +70,64 @@ overflow-checks = true # Enable overflow checks for safety
 # See: https://corrode.dev/blog/tips-for-faster-rust-compile-times/
 opt-level = 1
 
-# Shared dependencies across workspace crates
-# Following project guidelines to use high-performance alternatives
 [workspace.dependencies]
-# Core performance libraries (mandatory per guidelines)
-rustc-hash = "2.1" # Fast non-cryptographic hashing
-simd-json = "0.15" # High-performance JSON parsing
-quanta = "0.12" # High-resolution timing
-parking_lot = { version = "0.12", features = [
-    "serde",
-] } # Use parking_lot for thread-safe synchronization
-thiserror = "2.0" # Error handling
-
-# Collections and data structures
-smallvec = { version = "1.15", features = ["serde"] }
+anyhow = "1.0"
+arbitrary = { version = "1.4", features = ["derive"] }
 arrayvec = { version = "0.7", features = ["serde"] }
-smartstring = { version = "1.0", features = ["serde"] }
+bitvec = "1.0.1"
+bytes = "1"
+chrono = "0.4"
+criterion = "0.6"
 crossbeam-skiplist = "0.1"
-dashmap = { version = "6.1", features = [
-    "serde",
-] } # Lock-free concurrent hashmap
-smallbytes = "0.1" # Small byte arrays; Use instead of `bytes` crate from tokio team
-
-# Enhanced SIMD Operations
-wide = "0.7"         # Stable Rust SIMD abstraction
-simd_aligned = "0.6" # Guaranteed SIMD memory alignment
-
-# Zero-Copy
-zerocopy = { version = "0.8", features = [
-    "derive",
-] } # Zero-copy data manipulations
-zerocopy-derive = "0.8" # Derive macros for zerocopy
-
-# Logging and tracing
-fastrace = "0.7"       # Use fastrace instead of tracing
+darling = "0.21"
+dashmap = { version = "6.1", features = ["serde"] }
+decimal = "2"
+enum-as-inner = "0.6"
+fastrace = "0.7"
 fastrace-macro = "0.7"
-log = "0.4"            # Use log's comfortable macros
-
-# Async/networking libraries  
-tokio = { version = "1.42", features = ["full"] }
-tachyonix = "0.3.1"                               # High-performance channels
-
-# Serialization
-serde = { version = "1.0", features = ["derive"] }
-
-# Testing utilities
-criterion = "0.6" # Benchmarking
-
-# FIX protocol specific
+fnv = "1"
+futures = "0.3"
+futures-timer = "3"
+futures-util = "0.3"
+heck = "0.5"
+inquire = "0.6"
+indoc = "2"
+lazy_static = "1.4.0"
+log = "0.4"
+nohash-hasher = "0.2"
+openssl = "0.10"
+parking_lot = { version = "0.12", features = ["serde"] }
+proc-macro-crate = "3"
+proc-macro2 = "1"
+quanta = "0.12"
+quick-xml = "0.38"
+quickcheck = "1"
+quickcheck_derive = "0.3"
+quickcheck_macros = "1"
+quote = "1"
+rayon = "1"
+roxmltree = "0.20"
 rust_decimal = { version = "1.37", features = ["macros"] }
+rust_decimal_macros = "1.33.1"
+rustc-hash = "2.1"
+serde = { version = "1.0", features = ["derive"] }
+simd-json = "0.15"
+simd_aligned = "0.6"
+slog = "2"
+slog-async = "2"
+slog-term = "2"
+smallbytes = "0.1"
+smallvec = { version = "1.15", features = ["serde"] }
+smartstring = { version = "1.0", features = ["serde"] }
+strum = { version = "0.25", features = ["derive"] }
+strum_macros = "0.26"
+syn = { version = "2", features = ["full", "parsing", "derive"] }
+tachyonix = "0.3.1"
+thiserror = "2.0"
+tokio = { version = "1.42", features = ["full"] }
+tokio-util = { version = "0.7", features = ["codec", "compat"] }
+tracing-subscriber = "0.3"
+uuid = { version = "1", features = ["v4"] }
+wide = "0.7"
+zerocopy = { version = "0.8", features = ["derive"] }
+zerocopy-derive = "0.8"

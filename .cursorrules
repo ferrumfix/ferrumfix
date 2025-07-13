@@ -483,17 +483,18 @@ Append the following to the existing "Performance Considerations" section:
 
 **ALWAYS use these high-performance alternatives:**
 
-- `SmallVec` instead of `Vec` (for collections < 32 items)
+- `SmallVec` instead of `Vec`
 - `smartstring` instead of `String` (for short text data)
 - `FxHashMap`/`FxHashSet` from `rustc-hash` instead of std `HashMap`/`HashSet`
   - Also consider using `dashmap` for concurrent access
 - `simd-json` instead of `serde_json` (for all JSON operations)
 - `parking_lot::Mutex` instead of `std::sync::Mutex`
-- `flume` channels instead of `std::sync::mpsc`
+- `tachyonix` channels instead of `tokio::sync::mpsc`
 - `simd_aligned` for SIMD usage
 - `zerocopy` for zero-copy manipulations
-- `yawc` for WebSocket connections (instead of `tungstenite` or `tokio-tungstenite`)
 - `quanta` for high-resolution timekeeping (instead of `chrono`)
+- Use `smallbytes` instead of `bytes` crate from tokio team
+- Use `fastrace` instead of `tracing` if logging is needed
 
 * Look for @docs/external-libraries/ for crates' information
 
