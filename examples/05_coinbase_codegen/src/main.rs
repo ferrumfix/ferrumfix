@@ -1,6 +1,6 @@
 #[allow(dead_code)]
 #[rustfmt::skip]
-mod gdax;
+mod generated_coinbase;
 
 use rustyfix::prelude::*;
 use rustyfix::tagvalue::Decoder;
@@ -15,10 +15,19 @@ fn main() {
     let msg = decoder
         .decode(FIX_MESSAGE_EXEC_REPORT)
         .expect("Invalid FIX message");
-    assert_eq!(msg.get(gdax::BEGIN_STRING), Ok(gdax::BeginString::Fix42));
-    assert_eq!(msg.get(gdax::MSG_TYPE), Ok(gdax::MsgType::ExecutionReport));
-    assert_eq!(msg.get(gdax::TRADE_ID), Ok("123"));
-    assert_eq!(msg.get(gdax::AGGRESSOR_INDICATOR), Ok(true));
+    assert_eq!(
+        msg.get(generated_coinbase::BEGIN_STRING.tag),
+        Ok(generated_coinbase::BeginString::Fix42)
+    );
+    assert_eq!(
+        msg.get(generated_coinbase::MSG_TYPE.tag),
+        Ok(generated_coinbase::MsgType::ExecutionReport)
+    );
+    assert_eq!(msg.get(generated_coinbase::TRADE_ID.tag), Ok("123"));
+    assert_eq!(
+        msg.get(generated_coinbase::AGGRESSOR_INDICATOR.tag),
+        Ok(true)
+    );
 }
 
 fn fix_decoder() -> Decoder {

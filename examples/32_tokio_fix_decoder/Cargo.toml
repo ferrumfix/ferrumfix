@@ -1,0 +1,25 @@
+[package]
+name = "tokio_fix_decoder_example"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+rustyfix = { path = "../../crates/rustyfix", features = ["utils-tokio"] }
+rustyfix-dictionary = { path = "../../crates/rustyfix-dictionary", features = [
+    "fix42",
+] }
+tokio = { version = "1.0", features = ["full"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+futures-util = "0.3"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[[bin]]
+name = "fix_server"
+path = "src/server.rs"
+
+[[bin]]
+name = "fix_client"
+path = "src/client.rs"

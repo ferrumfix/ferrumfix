@@ -81,8 +81,8 @@ impl Decoder {
     }
 
     /// Returns a reference to the [`Dictionary`] used by `self`.
-    pub fn dictionary(&self) -> Option<&Dictionary> {
-        Some(&self.dict)
+    pub fn dictionary(&self) -> &Dictionary {
+        &self.dict
     }
 
     /// Adds a [`Buffer`] to `self`, turning it into a [`StreamingDecoder`].
@@ -416,6 +416,7 @@ pub struct Message<'a, T> {
 /// This type provides mutable access to FIX message data. It can be converted to
 /// a read-only [`Message`] using the [`as_read_only`](MessageMut::as_read_only) method.
 #[derive(Debug)]
+#[allow(dead_code)] // Part of Split Read/Write API design - will be used when mutable operations are needed
 pub struct MessageMut<'a, T> {
     builder: &'a mut MessageBuilder<'a>,
     phantom: PhantomData<T>,

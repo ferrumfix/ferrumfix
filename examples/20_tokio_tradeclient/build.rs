@@ -5,7 +5,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 fn main() -> io::Result<()> {
-    let fix_dictionary = Dictionary::fix42();
+    let fix_dictionary = Dictionary::fix42().expect("Failed to load FIX 4.2 dictionary");
     let rust_code = {
         let mut settings = codegen::Settings::default();
         settings.derives_for_allowed_values = vec![

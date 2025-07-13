@@ -4,7 +4,7 @@ use rustyfix::prelude::*;
 const JSON_FIX_MESSAGE: &str = include_str!("fix-example.json");
 
 fn main() {
-    let dictionary = rustyfix::Dictionary::fix42();
+    let dictionary = rustyfix::Dictionary::fix42().expect("Failed to load FIX 4.2 dictionary");
     let mut decoder = rustyfix::json::Decoder::new(dictionary.clone());
     let mut encoder = rustyfix::tagvalue::Encoder::new();
     let mut buffer = Vec::new();
@@ -36,7 +36,11 @@ fn main() {
 }
 
 #[cfg(test)]
-#[test]
-fn run() {
-    main();
+mod test {
+    use super::*;
+
+    #[test]
+    fn run() {
+        main();
+    }
 }

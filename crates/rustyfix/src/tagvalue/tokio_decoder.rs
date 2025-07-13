@@ -5,6 +5,47 @@ use bytes::{Bytes, BytesMut};
 use rustc_hash::FxHashMap;
 use tokio_util::codec;
 
+/// Parse FIX message header to extract body length and header end position.
+/// Returns (header_end_pos, body_length) if successful.
+fn parse_fix_header(data: &[u8], separator: u8) -> Option<(usize, usize)> {
+    if data.len() < 16 {
+        // Minimum for "8=FIX.4.2|9=NNN|"
+        return None;
+    }
+
+    let mut pos = 0;
+    let find_next = |start: usize, byte: u8| {
+        data[start..]
+            .iter()
+            .position(|&b| b == byte)
+            .map(|i| start + i)
+    };
+
+    // Find first field separator (after BeginString)
+    pos = find_next(pos, b'=')? + 1; // Skip "8="
+    pos = find_next(pos, separator)? + 1; // Skip BeginString value and separator
+
+    // Find BodyLength field start
+    pos = find_next(pos, b'=')? + 1; // Skip "9="
+    let body_len_start = pos;
+
+    // Find BodyLength field end
+    let body_len_end = find_next(pos, separator)?;
+
+    // Parse body length value
+    let mut body_length: usize = 0;
+    for &byte in &data[body_len_start..body_len_end] {
+        if !byte.is_ascii_digit() {
+            return None;
+        }
+        body_length = body_length
+            .wrapping_mul(10)
+            .wrapping_add((byte - b'0') as usize);
+    }
+
+    Some((body_len_end + 1, body_length))
+}
+
 /// A FIX message that owns its data, suitable for use with Tokio codecs.
 #[derive(Debug, Clone)]
 pub struct OwnedMessage {
@@ -151,8 +192,32 @@ impl codec::Decoder for TokioDecoder {
     type Error = DecodeError;
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
-        let raw_bytes = src.split().freeze();
+        // Check if we have enough data for a minimal FIX message
+        if src.len() < crate::tagvalue::utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
+            return Ok(None); // Need more data
+        }
+
+        // Try to parse the header to determine the expected message length
+        let header_info = match parse_fix_header(src, self.decoder.config().separator) {
+            Some((header_end_pos, body_length)) => {
+                // Calculate total expected message length
+                // FIX message format: BeginString=... | BodyLength=N | ... body (N bytes) ... | CheckSum=...
+                let body_start = header_end_pos; // After BodyLength field
+                let expected_total_length = body_start + body_length + 7; // +7 for CheckSum=NNN|
+
+                // Check if we have enough bytes for the complete message
+                if src.len() < expected_total_length {
+                    return Ok(None); // Need more data for complete message
+                }
+                (header_end_pos, body_length)
+            }
+            None => return Ok(None), // Header incomplete, need more data
+        };
+
+        // We have enough data - split off exactly the message we need
+        let raw_bytes = src.split_to(header_info.0 + header_info.1 + 7).freeze();
         let raw_bytes_clone = raw_bytes.clone();
+
         let result = self.decoder.decode(&raw_bytes);
         match result {
             Ok(message) => {
@@ -160,7 +225,10 @@ impl codec::Decoder for TokioDecoder {
                 let owned_message = OwnedMessage::from_message(message, raw_bytes_clone);
                 Ok(Some(owned_message))
             }
-            Err(DecodeError::Invalid { .. }) => Ok(None),
+            Err(DecodeError::Invalid { .. }) => {
+                // Invalid message - skip it and try next bytes
+                Ok(None)
+            }
             Err(e) => Err(e),
         }
     }

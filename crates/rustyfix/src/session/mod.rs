@@ -107,6 +107,11 @@ impl MsgSeqNumCounter {
     /// The initial value of a [`MsgSeqNumCounter`], i.e. 0.
     pub const START: Self = Self(0);
 
+    /// Creates a new [`MsgSeqNumCounter`] with the given starting value.
+    pub fn new() -> Self {
+        Self::START
+    }
+
     /// Increments the counter by one and returns the new value.
     pub fn incr_and_get(&mut self) -> u64 {
         self.0 += 1;
@@ -117,6 +122,13 @@ impl MsgSeqNumCounter {
     pub fn expected(&self) -> u64 {
         self.0 + 1
     }
+
+    /// Sets the expected sequence number (used for sequence reset handling).
+    /// This adjusts the internal counter so that `expected()` will return the given value.
+    pub fn set_expected(&mut self, expected: u64) {
+        // Since expected() returns self.0 + 1, we set self.0 to expected - 1
+        self.0 = expected.saturating_sub(1);
+    }
 }
 
 impl Iterator for MsgSeqNumCounter {
@@ -126,8 +138,3 @@ impl Iterator for MsgSeqNumCounter {
         Some(self.incr_and_get())
     }
 }
-
-// FIXME
-/// A FIX connection.
-#[derive(Debug)]
-pub struct FixConnection;

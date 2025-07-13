@@ -34,7 +34,7 @@ pub enum StaticError {
 
 /// Any error detected when encoding or decoding a FAST stream. Counterparties
 /// MUST signal dynamic errors.
-#[derive(Copy, Clone, Debug, Error)]
+#[derive(Clone, Debug, Error)]
 pub enum DynamicError {
     /// It is a dynamic error if type of a field in a template cannot be
     /// converted to or from the type of the corresponding application field.
@@ -49,6 +49,15 @@ pub enum DynamicError {
         "An integer in the stream does not fall within the bounds of the specific integer type specified on the corresponding field."
     )]
     D2,
+    /// Enhanced version of D2 with specific value details for better debugging.
+    #[error(
+        "Integer value {value} in the stream does not fall within bounds [{min_bound}..{max_bound}] of the specified integer type on field."
+    )]
+    D2WithValue {
+        value: i64,
+        min_bound: i64,
+        max_bound: i64,
+    },
     /// It is a dynamic error if a decimal value cannot be encoded due to
     /// limitations introduced by using individual operators on exponent and
     /// mantissa.
@@ -56,6 +65,11 @@ pub enum DynamicError {
         "A decimal value cannot be encoded due to limitations introduced by using individual operators on exponent and mantissa."
     )]
     D3,
+    /// Enhanced version of D3 with specific decimal details.
+    #[error(
+        "Decimal value (exponent: {exponent}, mantissa: {mantissa}) cannot be encoded due to limitations introduced by using individual operators on exponent and mantissa."
+    )]
+    D3WithValue { exponent: i32, mantissa: i64 },
     /// It is a dynamic error if the type of the previous value is not the same
     /// as the type of the field of the current operator.
     #[error(
@@ -107,7 +121,7 @@ pub enum DynamicError {
 /// Any error detected when encoding or decoding a FAST stream. Contrary to
 /// dynamic errors, counterparties are not obligated to signal dynamic errors an
 /// may choose not to do so, e.g. to improve performance.
-#[derive(Copy, Clone, Debug, Error)]
+#[derive(Clone, Debug, Error)]
 pub enum ReportableError {
     /// It is a reportable error if a decimal cannot be represented by an
     /// exponent in the range [-63 … 63] or if the mantissa does not fit in an
@@ -116,6 +130,11 @@ pub enum ReportableError {
         "A decimal cannot be represented by an exponent in the range [-63 … 63] or if the mantissa does not fit in an int64."
     )]
     R1,
+    /// Enhanced version of R1 with specific decimal details for debugging.
+    #[error(
+        "Decimal cannot be represented: exponent {exponent} is outside range [-63..63] or mantissa {mantissa} does not fit in int64."
+    )]
+    R1WithValue { exponent: i32, mantissa: i64 },
     /// It is a reportable error if the combined value after applying a tail or
     /// delta operator to a Unicode string is not a valid UTF-8 sequence.
     #[error(
@@ -135,6 +154,16 @@ pub enum ReportableError {
         "A value of an integer type cannot be represented in the target integer type in a conversion."
     )]
     R4,
+    /// Enhanced version of R4 with specific conversion details.
+    #[error(
+        "Integer value {value} cannot be represented in target type '{target_type}' (range: {min_target}..{max_target})."
+    )]
+    R4WithValue {
+        value: i64,
+        target_type: &'static str,
+        min_target: i64,
+        max_target: i64,
+    },
     /// It is a reportable error if a decimal being converted to an integer has a
     /// negative exponent or if the resulting integer does not fit the target
     /// integer type.
@@ -142,6 +171,15 @@ pub enum ReportableError {
         "A decimal being converted to an integer has a negative exponent or if the resulting integer does not fit the target integer type."
     )]
     R5,
+    /// Enhanced version of R5 with specific decimal conversion details.
+    #[error(
+        "Decimal (exponent: {exponent}, mantissa: {mantissa}) being converted to integer: {reason}."
+    )]
+    R5WithValue {
+        exponent: i32,
+        mantissa: i64,
+        reason: &'static str, // "negative exponent" or "resulting integer doesn't fit target type"
+    },
     /// It is a reportable error if an integer appears in an overlong encoding.
     #[error("An integer appears in an overlong encoding.")]
     R6,

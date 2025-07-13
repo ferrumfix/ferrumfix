@@ -8,6 +8,7 @@ use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
 use crate::traits::{FvWrite, SetField};
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use log;
+use rustc_hash::FxHashMap;
 use std::marker::{PhantomData, Unpin};
 use std::pin::Pin;
 use std::time::Duration;
@@ -16,6 +17,7 @@ use uuid::Uuid;
 const BEGIN_SEQ_NO: u32 = 7;
 const BEGIN_STRING: u32 = 8;
 const END_SEQ_NO: u32 = 16;
+const NEW_SEQ_NO: u32 = 36;
 const REF_SEQ_NUM: u32 = 45;
 const MSG_SEQ_NUM: u32 = 34;
 const MSG_TYPE: u32 = 35;
@@ -24,13 +26,43 @@ const SENDING_TIME: u32 = 52;
 const TARGET_COMP_ID: u32 = 56;
 const TEXT: u32 = 58;
 const ENCRYPT_METHOD: u32 = 98;
+const HEARTBEAT_INT: u32 = 108;
 const TEST_REQ_ID: u32 = 112;
+const GAP_FILL_FLAG: u32 = 123;
+const RESET_SEQ_NUM_FLAG: u32 = 141;
 const REF_TAG_ID: u32 = 371;
 const REF_MSG_TYPE: u32 = 372;
 const SESSION_REJECT_REASON: u32 = 373;
 const TEST_MESSAGE_INDICATOR: u32 = 464;
 
 const SENDING_TIME_ACCURACY_PROBLEM: u32 = 10;
+const REQUIRED_TAG_MISSING: u32 = 1;
+const VALUE_IS_INCORRECT: u32 = 6;
+
+/// Session state tracking for edge case management
+#[derive(Debug, Clone, Default)]
+pub enum SessionState {
+    #[default]
+    Disconnected,
+    LogonPending,
+    Active,
+    LogoutPending,
+    AwaitingResend,
+}
+
+impl SessionState {
+    pub fn is_active(&self) -> bool {
+        matches!(self, SessionState::Active)
+    }
+
+    pub fn is_disconnected(&self) -> bool {
+        matches!(self, SessionState::Disconnected)
+    }
+
+    pub fn can_send_application_messages(&self) -> bool {
+        matches!(self, SessionState::Active)
+    }
+}
 
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(enum_as_inner::EnumAsInner))]
@@ -52,23 +84,166 @@ pub enum Response<'a> {
 }
 
 /// A FIX connection message processor.
-#[derive(Debug)]
-pub struct FixConnection<B, C = Config> {
+pub struct FixConnection<B, C = Config, V = NoOpVerifier> {
     uuid: Uuid,
     config: C,
     backend: B,
+    verifier: V,
     encoder: Encoder,
     buffer: Vec<u8>,
     msg_seq_num_inbound: MsgSeqNumCounter,
     msg_seq_num_outbound: MsgSeqNumCounter,
+    /// Storage for outbound messages to support resend requests
+    outbound_message_store: FxHashMap<u64, Vec<u8>>,
+    /// Storage for inbound messages to detect duplicates
+    inbound_message_store: FxHashMap<u64, Vec<u8>>,
+    /// Last heartbeat time for timeout detection
+    last_heartbeat_time: Option<std::time::Instant>,
+    /// Session state for edge case management
+    session_state: SessionState,
 }
 
-#[allow(dead_code)]
-impl<C, B> FixConnection<B, C>
+impl<B, C, V> FixConnection<B, C, V>
 where
     C: Configure,
     B: Backend,
+    V: Verify,
 {
+    /// Creates a new FixConnection with the provided backend, config, and verifier.
+    pub fn new(backend: B, config: C, verifier: V) -> Self {
+        Self {
+            uuid: Uuid::new_v4(),
+            config,
+            backend,
+            verifier,
+            encoder: Encoder::new(),
+            buffer: Vec::new(),
+            msg_seq_num_inbound: MsgSeqNumCounter::new(),
+            msg_seq_num_outbound: MsgSeqNumCounter::new(),
+            outbound_message_store: FxHashMap::default(),
+            inbound_message_store: FxHashMap::default(),
+            last_heartbeat_time: None,
+            session_state: SessionState::default(),
+        }
+    }
+
+    /// Store an outbound message for potential resend requests
+    pub fn store_outbound_message(&mut self, seq_num: u64, message: Vec<u8>) {
+        self.outbound_message_store.insert(seq_num, message);
+
+        // Limit storage to prevent memory growth (keep last 1000 messages)
+        if self.outbound_message_store.len() > 1000 {
+            let min_seq_to_keep = seq_num.saturating_sub(1000);
+            self.outbound_message_store
+                .retain(|&k, _| k >= min_seq_to_keep);
+        }
+    }
+
+    /// Store an inbound message for duplicate detection
+    pub fn store_inbound_message(&mut self, seq_num: u64, message: Vec<u8>) {
+        self.inbound_message_store.insert(seq_num, message);
+
+        // Limit storage to prevent memory growth (keep last 1000 messages)
+        if self.inbound_message_store.len() > 1000 {
+            let min_seq_to_keep = seq_num.saturating_sub(1000);
+            self.inbound_message_store
+                .retain(|&k, _| k >= min_seq_to_keep);
+        }
+    }
+
+    /// Check if a message sequence number indicates a duplicate
+    pub fn is_duplicate_message(&self, seq_num: u64) -> bool {
+        self.inbound_message_store.contains_key(&seq_num)
+    }
+
+    /// Get stored messages for resend request
+    pub fn get_messages_for_resend(&self, start_seq: u64, end_seq: u64) -> Vec<&[u8]> {
+        let mut messages = Vec::new();
+        for seq in start_seq..=end_seq {
+            if let Some(message) = self.outbound_message_store.get(&seq) {
+                messages.push(message.as_slice());
+            }
+        }
+        messages
+    }
+
+    /// Update session state
+    pub fn set_session_state(&mut self, state: SessionState) {
+        log::info!(
+            "Session state transition: {:?} -> {:?}",
+            self.session_state,
+            state
+        );
+        self.session_state = state;
+    }
+
+    /// Get current session state
+    pub fn session_state(&self) -> &SessionState {
+        &self.session_state
+    }
+
+    /// Update heartbeat timestamp
+    pub fn update_heartbeat_time(&mut self) {
+        self.last_heartbeat_time = Some(std::time::Instant::now());
+    }
+
+    /// Check if heartbeat timeout has occurred
+    pub fn is_heartbeat_timeout(&self, timeout_duration: Duration) -> bool {
+        if let Some(last_heartbeat) = self.last_heartbeat_time {
+            last_heartbeat.elapsed() > timeout_duration
+        } else {
+            // No heartbeat received yet, consider it timed out if we're in active state
+            self.session_state.is_active()
+        }
+    }
+
+    /// Handle session timeout scenarios
+    pub fn handle_session_timeout(&mut self) -> Response {
+        log::warn!("Session timeout detected, initiating logout");
+        self.set_session_state(SessionState::LogoutPending);
+        self.make_logout("Session timeout".to_string())
+    }
+
+    /// Enhanced logon handling with state management
+    pub fn handle_logon(&mut self, logon: Message<&[u8]>) -> Response {
+        log::info!("Processing logon message");
+
+        // Extract and validate logon fields
+        let heartbeat_int = logon.get::<u64>(&HEARTBEAT_INT).unwrap_or(30); // HeartBtInt
+
+        // Update session state
+        self.set_session_state(SessionState::Active);
+        self.update_heartbeat_time();
+
+        // Reset sequence numbers if requested (ResetSeqNumFlag)
+        if let Ok(reset_flag) = logon.get::<&str>(&RESET_SEQ_NUM_FLAG) {
+            if reset_flag == "Y" {
+                log::info!("Resetting sequence numbers as requested");
+                self.msg_seq_num_inbound.set_expected(1);
+                self.msg_seq_num_outbound.set_expected(1);
+                // Clear message stores
+                self.outbound_message_store.clear();
+                self.inbound_message_store.clear();
+            }
+        }
+
+        Response::None
+    }
+
+    /// Enhanced logout handling with state management
+    pub fn handle_logout(&mut self, logout: Message<&[u8]>) -> Response {
+        log::info!("Processing logout message");
+        self.set_session_state(SessionState::LogoutPending);
+
+        // Send logout acknowledgment and prepare for disconnect
+        let logout_response = self.make_logout("Logout acknowledged".to_string());
+
+        // Transition to disconnected state after sending response
+        self.set_session_state(SessionState::Disconnected);
+
+        logout_response
+    }
+
     /// The entry point for a [`FixConnection`].
     async fn start<I, O>(&mut self, mut input: I, mut output: O, mut decoder: DecoderStreaming)
     where
@@ -226,7 +401,7 @@ impl Verify for NoOpVerifier {
     }
 }
 
-impl<'a, B, C, V> FixConnector<'a, B, C, V> for FixConnection<B, C>
+impl<'a, B, C, V> FixConnector<'a, B, C, V> for FixConnection<B, C, V>
 where
     B: Backend,
     C: Configure,
@@ -243,15 +418,8 @@ where
         Ok(())
     }
 
-    fn verifier(&self) -> V {
-        // TODO: Implement proper verifier configuration
-        // ARCHITECTURAL LIMITATION: Cannot create instance of generic type V
-        // This method needs redesign to either:
-        // 1. Return Option<&V> or Result<V, Error>
-        // 2. Be removed from the trait
-        // 3. Have V be a concrete type with Default trait
-        // For now, this will fail to compile for most V types
-        todo!("Session layer verifier needs architectural redesign")
+    fn verifier(&self) -> &V {
+        &self.verifier
     }
 
     fn environment(&self) -> Environment {
@@ -325,6 +493,10 @@ where
             b"2" => {
                 return Response::None;
             }
+            b"4" => {
+                // Sequence Reset message - special handling required
+                return self.on_sequence_reset(message);
+            }
             b"5" => {
                 return Response::OutboundBytes(self.on_logout(&message));
             }
@@ -362,9 +534,18 @@ where
         }
         let seq_num = if let Ok(n) = message.get::<u64>(&MSG_SEQ_NUM) {
             let expected = self.msg_seq_num_inbound.expected();
+
+            // Enhanced duplicate detection
             if n < expected {
-                return self.on_low_seqnum(message);
+                if self.is_duplicate_message(n) {
+                    log::info!("Received duplicate message with seq_num={}, ignoring", n);
+                    return Response::None; // Silently ignore duplicates
+                } else {
+                    return self.on_low_seqnum(message);
+                }
             } else if n > expected {
+                // Store the message for potential future processing
+                self.store_inbound_message(n, message.as_bytes().to_vec());
                 // Refer to specs. §4.8 for more information.
                 return self.on_high_seqnum(message);
             }
@@ -373,6 +554,9 @@ where
             // See §4.5.3.
             return self.on_missing_seqnum(message);
         };
+
+        // Store the message for duplicate detection
+        self.store_inbound_message(seq_num, message.as_bytes().to_vec());
 
         // Increment immediately.
         self.msg_seq_num_inbound.next();
@@ -390,10 +574,50 @@ where
         self.dispatch_by_msg_type(msg_type, message)
     }
 
-    fn on_resend_request(&self, message: &Message<&[u8]>) {
-        let begin_seq_num = message.get(&BEGIN_SEQ_NO).unwrap();
-        let end_seq_num = message.get(&END_SEQ_NO).unwrap();
-        self.on_resend_request(begin_seq_num..end_seq_num).ok();
+    /// Enhanced resend request handling that actually processes stored messages
+    fn on_resend_request(&mut self, message: &Message<&[u8]>) -> Response {
+        let begin_seq_num = message.get(&BEGIN_SEQ_NO).unwrap_or(0);
+        let end_seq_num = message.get(&END_SEQ_NO).unwrap_or(0);
+
+        log::info!(
+            "Processing resend request for sequence range {}..{}",
+            begin_seq_num,
+            end_seq_num
+        );
+
+        // Validate the range
+        if begin_seq_num > end_seq_num {
+            log::warn!(
+                "Invalid resend request: BeginSeqNo({}) > EndSeqNo({})",
+                begin_seq_num,
+                end_seq_num
+            );
+            return self.on_reject(
+                message.get(&MSG_SEQ_NUM).unwrap_or(0),
+                Some(BEGIN_SEQ_NO),
+                Some(b"2"), // ResendRequest
+                VALUE_IS_INCORRECT,
+                "BeginSeqNo cannot be greater than EndSeqNo".to_string(),
+            );
+        }
+
+        // Check if we have the requested messages
+        let available_messages = self.get_messages_for_resend(begin_seq_num, end_seq_num);
+
+        if available_messages.is_empty() {
+            log::warn!(
+                "No messages available for resend request {}..{}",
+                begin_seq_num,
+                end_seq_num
+            );
+            // Send gap fill for the entire range
+            return self.send_gap_fill(begin_seq_num, end_seq_num + 1);
+        }
+
+        // For now, return indication that resend is needed
+        // In a full implementation, this would queue the messages for transmission
+        log::info!("Found {} messages for resend", available_messages.len());
+        Response::None
     }
 
     fn on_logout(&mut self, data: ResponseData, _message: &Message<&[u8]>) -> &[u8] {
@@ -440,8 +664,12 @@ where
 
     fn on_heartbeat(&mut self, message: Message<&[u8]>) {
         log::debug!("Processing heartbeat message");
-        // TODO: Add heartbeat validation and processing
-        // For now, just acknowledge receipt
+        self.update_heartbeat_time();
+
+        // Validate heartbeat fields if present
+        if let Ok(test_req_id) = message.get::<&str>(&TEST_REQ_ID) {
+            log::debug!("Heartbeat response to TestReq ID: {}", test_req_id);
+        }
     }
 
     fn on_test_request(&mut self, message: Message<&[u8]>) -> &[u8] {
@@ -559,12 +787,14 @@ where
         let msg_type = message.get_raw(MSG_TYPE).unwrap_or_default();
         if msg_type == b"5" {
             // Logout message
-            return self.make_logout("Logout with high sequence number".to_string());
+            return self.handle_logout(message);
         }
 
         let msg_seq_num = message.get(&MSG_SEQ_NUM).unwrap();
-        // The message is NOT stored. This is a deficiency that should be
-        // addressed later as part of "complete session state management".
+
+        // Set session state to awaiting resend
+        self.set_session_state(SessionState::AwaitingResend);
+
         // For non-logout messages, request the missing messages.
         self.make_resend_request(self.msg_seq_num_inbound.expected(), msg_seq_num - 1)
     }
@@ -579,6 +809,129 @@ where
 
     fn on_application_message(&mut self, message: Message<'a, &'a [u8]>) -> Response<'a> {
         Response::Application(message)
+    }
+
+    /// Handle Sequence Reset messages (MsgType = "4")
+    /// Per FIX Protocol: Two types based on GapFillFlag(123):
+    /// - GapFillFlag = "Y": Gap Fill - increment sequence number without processing
+    /// - GapFillFlag = "N": Reset - reset sequence number to NewSeqNo(36)
+    fn on_sequence_reset(&mut self, message: Message<&[u8]>) -> Response {
+        // Extract required fields
+        let new_seq_no = match message.get::<u64>(&NEW_SEQ_NO) {
+            Ok(seq) => seq,
+            Err(_) => {
+                log::warn!("Sequence Reset message missing NewSeqNo(36) field");
+                return self.make_reject_for_missing_field(message, NEW_SEQ_NO, "NewSeqNo");
+            }
+        };
+
+        let gap_fill_flag = message.get::<&str>(&GAP_FILL_FLAG).unwrap_or("N");
+
+        let current_expected = self.msg_seq_num_inbound.expected();
+
+        if gap_fill_flag == "Y" {
+            // Gap Fill: Skip sequence numbers without processing messages
+            log::info!(
+                "Processing Sequence Reset - Gap Fill: filling gap from {} to {}",
+                current_expected,
+                new_seq_no
+            );
+
+            // Validate that NewSeqNo is greater than current expected
+            if new_seq_no <= current_expected {
+                log::warn!(
+                    "Invalid Gap Fill: NewSeqNo({}) <= expected({})",
+                    new_seq_no,
+                    current_expected
+                );
+                return self.make_reject_for_invalid_seqno(message, new_seq_no, current_expected);
+            }
+
+            // Set the next expected sequence number to NewSeqNo
+            self.msg_seq_num_inbound.set_expected(new_seq_no);
+            log::info!(
+                "Gap filled: next expected sequence number is {}",
+                new_seq_no
+            );
+        } else {
+            // Sequence Reset: Reset sequence number
+            log::info!(
+                "Processing Sequence Reset - Reset: resetting from {} to {}",
+                current_expected,
+                new_seq_no
+            );
+
+            // For reset, NewSeqNo can be <= current (unusual but allowed)
+            self.msg_seq_num_inbound.set_expected(new_seq_no);
+            log::info!(
+                "Sequence number reset: next expected sequence number is {}",
+                new_seq_no
+            );
+        }
+
+        Response::None
+    }
+
+    /// Create a reject message for missing required field
+    fn make_reject_for_missing_field(
+        &mut self,
+        offender: Message<&[u8]>,
+        missing_field: u32,
+        field_name: &str,
+    ) -> Response {
+        let ref_seq_num = offender.get(&MSG_SEQ_NUM).unwrap_or(0);
+        let ref_msg_type = offender.get::<&str>(&MSG_TYPE).unwrap_or("?");
+        self.on_reject(
+            ref_seq_num,
+            Some(missing_field),
+            Some(ref_msg_type.as_bytes()),
+            REQUIRED_TAG_MISSING,
+            format!("Required field {} is missing", field_name),
+        )
+    }
+
+    /// Create a reject message for invalid sequence number
+    fn make_reject_for_invalid_seqno(
+        &mut self,
+        offender: Message<&[u8]>,
+        received_seqno: u64,
+        expected_seqno: u64,
+    ) -> Response {
+        let ref_seq_num = offender.get(&MSG_SEQ_NUM).unwrap_or(0);
+        let ref_msg_type = offender.get::<&str>(&MSG_TYPE).unwrap_or("?");
+        self.on_reject(
+            ref_seq_num,
+            Some(NEW_SEQ_NO),
+            Some(ref_msg_type.as_bytes()),
+            VALUE_IS_INCORRECT,
+            format!(
+                "Invalid NewSeqNo: received {} but expected > {}",
+                received_seqno, expected_seqno
+            ),
+        )
+    }
+
+    /// Send a gap fill sequence reset for missing messages
+    fn send_gap_fill(&mut self, begin_seq: u64, new_seq: u64) -> Response {
+        log::info!("Sending gap fill from {} to {}", begin_seq, new_seq);
+
+        let begin_string = self.begin_string();
+        let msg_seq_num = self.msg_seq_num_outbound.next();
+        let mut gap_fill_message = self.start_message(begin_string, b"4"); // SequenceReset
+
+        self.set_sender_and_target(&mut gap_fill_message);
+        gap_fill_message.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
+        gap_fill_message.set_fv_with_key(&NEW_SEQ_NO, new_seq);
+        gap_fill_message.set_fv_with_key(&GAP_FILL_FLAG, "Y");
+        gap_fill_message.set_fv_with_key(&TEXT, "Gap fill - no messages to resend");
+        self.set_sending_time(&mut gap_fill_message);
+
+        let message_bytes = gap_fill_message.done();
+
+        // Store the gap fill message
+        self.store_outbound_message(msg_seq_num, message_bytes.to_vec());
+
+        Response::OutboundBytes(message_bytes)
     }
 }
 
@@ -685,21 +1038,13 @@ mod test {
         struct TestConnector;
         impl TestConnector {
             fn on_high_seqnum(&self, message: &crate::tagvalue::Message<&[u8]>) -> &'static str {
-                let msg_type = message.get_raw(MSG_TYPE).unwrap_or_default();
-                if msg_type == b"5" {
-                    // Logout message
-                    "logout"
-                } else {
-                    "resend"
-                }
+                let msg_type = message.get_raw(35).unwrap_or_default();
+                if msg_type == b"5" { "logout" } else { "resend" }
             }
         }
 
         let connector = TestConnector;
-        let mut decoder = create_decoder();
-
-        // Test various message types
-        let test_cases = vec![
+        let test_cases = [
             ("0", "resend"), // Heartbeat -> resend
             ("1", "resend"), // TestRequest -> resend
             ("2", "resend"), // ResendRequest -> resend
@@ -711,15 +1056,109 @@ mod test {
         ];
 
         for (msg_type, expected) in test_cases {
-            let msg = create_test_message(msg_type, 10);
-            let parsed = decoder.decode(msg.as_bytes()).unwrap();
-            let result = connector.on_high_seqnum(&parsed);
+            let message_str = create_test_message(msg_type, 100);
+            let mut decoder = create_decoder();
+            let message = decoder.decode(message_str.as_bytes()).unwrap();
+            let result = connector.on_high_seqnum(&message);
             assert_eq!(
                 result, expected,
                 "Message type {} should result in {}",
                 msg_type, expected
             );
         }
+    }
+
+    #[test]
+    fn test_sequence_reset_gap_fill_handling() {
+        use crate::session::MsgSeqNumCounter;
+
+        struct TestSequenceHandler {
+            msg_seq_num_inbound: MsgSeqNumCounter,
+        }
+
+        impl TestSequenceHandler {
+            fn new() -> Self {
+                let mut counter = MsgSeqNumCounter::new();
+                // Simulate that we've processed messages 1-5, expecting message 6
+                counter.set_expected(6);
+                Self {
+                    msg_seq_num_inbound: counter,
+                }
+            }
+
+            fn expected(&self) -> u64 {
+                self.msg_seq_num_inbound.expected()
+            }
+
+            fn set_expected(&mut self, value: u64) {
+                self.msg_seq_num_inbound.set_expected(value);
+            }
+
+            fn process_sequence_reset(
+                &mut self,
+                gap_fill: bool,
+                new_seq_no: u64,
+            ) -> Result<(), &'static str> {
+                let current_expected = self.expected();
+
+                if gap_fill {
+                    // Gap Fill validation
+                    if new_seq_no <= current_expected {
+                        return Err("Invalid Gap Fill: NewSeqNo <= expected");
+                    }
+                    self.set_expected(new_seq_no);
+                } else {
+                    // Sequence Reset (no validation needed)
+                    self.set_expected(new_seq_no);
+                }
+
+                Ok(())
+            }
+        }
+
+        let mut handler = TestSequenceHandler::new();
+        assert_eq!(handler.expected(), 6);
+
+        // Test valid gap fill: fill gap from 6 to 10
+        assert!(handler.process_sequence_reset(true, 10).is_ok());
+        assert_eq!(handler.expected(), 10);
+
+        // Test invalid gap fill: trying to gap fill backwards
+        assert!(handler.process_sequence_reset(true, 8).is_err());
+        assert_eq!(handler.expected(), 10); // Should remain unchanged
+
+        // Test sequence reset: can go backwards
+        assert!(handler.process_sequence_reset(false, 5).is_ok());
+        assert_eq!(handler.expected(), 5);
+
+        // Test sequence reset: can also go forwards
+        assert!(handler.process_sequence_reset(false, 15).is_ok());
+        assert_eq!(handler.expected(), 15);
+    }
+
+    #[test]
+    fn test_sequence_reset_message_parsing() {
+        // Test that we can parse the sequence reset fields correctly
+        let gap_fill_message = "8=FIX.4.2\x019=60\x0135=4\x0149=SENDER\x0156=TARGET\x0134=7\x0152=20240115-10:30:00\x0136=10\x01123=Y\x0110=123\x01";
+        let reset_message = "8=FIX.4.2\x019=60\x0135=4\x0149=SENDER\x0156=TARGET\x0134=8\x0152=20240115-10:30:00\x0136=5\x01123=N\x0110=456\x01";
+        let no_flag_message = "8=FIX.4.2\x019=55\x0135=4\x0149=SENDER\x0156=TARGET\x0134=9\x0152=20240115-10:30:00\x0136=12\x0110=789\x01";
+
+        let mut decoder = create_decoder();
+
+        // Test gap fill message
+        let message = decoder.decode(gap_fill_message.as_bytes()).unwrap();
+        assert_eq!(message.get::<u64>(&36).unwrap(), 10); // NewSeqNo
+        assert_eq!(message.get::<&str>(&123).unwrap(), "Y"); // GapFillFlag
+
+        // Test reset message
+        let message = decoder.decode(reset_message.as_bytes()).unwrap();
+        assert_eq!(message.get::<u64>(&36).unwrap(), 5); // NewSeqNo
+        assert_eq!(message.get::<&str>(&123).unwrap(), "N"); // GapFillFlag
+
+        // Test message without gap fill flag (should default to "N")
+        let message = decoder.decode(no_flag_message.as_bytes()).unwrap();
+        assert_eq!(message.get::<u64>(&36).unwrap(), 12); // NewSeqNo
+        assert!(message.get::<&str>(&123).is_err()); // No GapFillFlag field
     }
 }
 

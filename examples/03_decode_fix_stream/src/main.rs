@@ -23,7 +23,7 @@ fn decoder(fix_dictionary: Dictionary) -> Decoder {
 }
 
 fn main() {
-    let fix_dictionary = Dictionary::fix42();
+    let fix_dictionary = Dictionary::fix42().expect("Failed to load FIX 4.2 dictionary");
     let mut fix_decoder = decoder(fix_dictionary).streaming(vec![]);
     let mut stream = Cursor::new(fix_stream());
     for _message in 0..FIX_MESSAGES.len() {
@@ -34,7 +34,7 @@ fn main() {
                 Some(_) => {
                     // we have successfully parsed a message
                     let msg = fix_decoder.message();
-                    assert_eq!(msg.get(fix42::BEGIN_STRING), Ok("FIX.4.2"));
+                    assert_eq!(msg.get(fix42::BEGIN_STRING.tag), Ok("FIX.4.2"));
                     // need to clear the decoder to to begin parsing next mesage
                     fix_decoder.clear();
                     break;
