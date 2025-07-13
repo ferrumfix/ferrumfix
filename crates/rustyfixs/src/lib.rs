@@ -123,7 +123,7 @@ impl FixOverTlsCommon for FixOverTlsV10 {
             .filter_map(|s| match iana2openssl(s) {
                 Some(converted) => Some(converted.to_string()),
                 None => {
-                    eprintln!("Warning: Failed to convert IANA ciphersuite '{s}'");
+                    log::warn!("Failed to convert IANA ciphersuite '{s}'");
                     None
                 }
             })
