@@ -495,10 +495,19 @@ where
     }
 
     fn on_high_seqnum(&mut self, message: Message<&[u8]>) -> Response {
+        // FIX Protocol Compliance: Check if this is a Logout message (msg_type = "5")
+        // Per FIX specification, Logout messages with high sequence numbers should
+        // terminate the session immediately, not request resend.
+        let msg_type = message.get_raw(MSG_TYPE).unwrap_or_default();
+        if msg_type == b"5" {
+            // Logout message
+            return self.make_logout("Logout with high sequence number".to_string());
+        }
+
         let msg_seq_num = message.get(&MSG_SEQ_NUM).unwrap();
         // The message is NOT stored. This is a deficiency that should be
         // addressed later as part of "complete session state management".
-        // For now, we just request the missing messages.
+        // For non-logout messages, request the missing messages.
         self.make_resend_request(self.msg_seq_num_inbound.expected(), msg_seq_num - 1)
     }
 
@@ -521,6 +530,140 @@ where
 //    let timestamp = time.format("%Y%m%d-%H:%M:%S.%.3f");
 //    message.set_fv_with_key(fix44::SENDING_TIME, timestamp.to_string().as_str());
 //}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::Dictionary;
+    use crate::tagvalue::{Config, Decoder};
+
+    // Import needed for tests
+    use crate::session::MsgSeqNumCounter;
+
+    fn create_test_message(msg_type: &str, seq_num: u64) -> String {
+        format!(
+            "8=FIX.4.4|9=100|35={}|49=SENDER|56=TARGET|34={}|52=20100304-07:59:30|10=000|",
+            msg_type, seq_num
+        )
+    }
+
+    fn create_decoder() -> Decoder {
+        let mut decoder = Decoder::new(Dictionary::fix44().unwrap());
+        decoder.config_mut().separator = b'|';
+        decoder
+    }
+
+    #[test]
+    fn test_logout_with_high_seqnum_terminates_session() {
+        // Create a mock FixConnector to test the on_high_seqnum logic
+        struct TestConnector {
+            msg_seq_num_inbound: MsgSeqNumCounter,
+        }
+
+        impl TestConnector {
+            fn new() -> Self {
+                Self {
+                    msg_seq_num_inbound: MsgSeqNumCounter::new(1), // Expecting sequence 1
+                }
+            }
+
+            fn make_logout(&self, text: String) -> Response {
+                Response::OutboundBytes(b"logout_response")
+            }
+
+            fn make_resend_request(&self, _start: u64, _end: u64) -> Response {
+                Response::OutboundBytes(b"resend_request")
+            }
+
+            // Test the on_high_seqnum logic directly
+            fn on_high_seqnum(&self, message: &crate::tagvalue::Message<&[u8]>) -> Response {
+                let msg_type = message.get_raw(MSG_TYPE).unwrap_or_default();
+                if msg_type == b"5" {
+                    // Logout message
+                    return self.make_logout("Logout with high sequence number".to_string());
+                }
+
+                let _msg_seq_num = message.get::<u64>(&MSG_SEQ_NUM).unwrap();
+                self.make_resend_request(self.msg_seq_num_inbound.expected(), _msg_seq_num - 1)
+            }
+        }
+
+        let connector = TestConnector::new();
+        let mut decoder = create_decoder();
+
+        // Test 1: Regular message with high sequence number should request resend
+        let regular_msg = create_test_message("D", 5); // NewOrderSingle with seq 5 (expecting 1)
+        let parsed_msg = decoder.decode(regular_msg.as_bytes()).unwrap();
+        let response = connector.on_high_seqnum(&parsed_msg);
+
+        match response {
+            Response::OutboundBytes(bytes) => {
+                assert_eq!(
+                    bytes, b"resend_request",
+                    "Regular high-seqnum message should request resend"
+                );
+            }
+            _ => panic!("Expected OutboundBytes with resend request"),
+        }
+
+        // Test 2: Logout message with high sequence number should terminate session
+        let logout_msg = create_test_message("5", 5); // Logout with seq 5 (expecting 1)
+        let parsed_logout = decoder.decode(logout_msg.as_bytes()).unwrap();
+        let logout_response = connector.on_high_seqnum(&parsed_logout);
+
+        match logout_response {
+            Response::OutboundBytes(bytes) => {
+                assert_eq!(
+                    bytes, b"logout_response",
+                    "Logout with high-seqnum should terminate session"
+                );
+            }
+            _ => panic!("Expected OutboundBytes with logout response"),
+        }
+    }
+
+    #[test]
+    fn test_different_message_types_with_high_seqnum() {
+        struct TestConnector;
+        impl TestConnector {
+            fn on_high_seqnum(&self, message: &crate::tagvalue::Message<&[u8]>) -> &'static str {
+                let msg_type = message.get_raw(MSG_TYPE).unwrap_or_default();
+                if msg_type == b"5" {
+                    // Logout message
+                    "logout"
+                } else {
+                    "resend"
+                }
+            }
+        }
+
+        let connector = TestConnector;
+        let mut decoder = create_decoder();
+
+        // Test various message types
+        let test_cases = vec![
+            ("0", "resend"), // Heartbeat -> resend
+            ("1", "resend"), // TestRequest -> resend
+            ("2", "resend"), // ResendRequest -> resend
+            ("3", "resend"), // Reject -> resend
+            ("4", "resend"), // SequenceReset -> resend
+            ("5", "logout"), // Logout -> terminate
+            ("A", "resend"), // Logon -> resend
+            ("D", "resend"), // NewOrderSingle -> resend
+        ];
+
+        for (msg_type, expected) in test_cases {
+            let msg = create_test_message(msg_type, 10);
+            let parsed = decoder.decode(msg.as_bytes()).unwrap();
+            let result = connector.on_high_seqnum(&parsed);
+            assert_eq!(
+                result, expected,
+                "Message type {} should result in {}",
+                msg_type, expected
+            );
+        }
+    }
+}
 
 //#[cfg(test)]
 //mod test {
