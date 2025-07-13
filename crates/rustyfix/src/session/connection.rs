@@ -9,7 +9,7 @@ use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use std::marker::{PhantomData, Unpin};
 use std::pin::Pin;
-use quanta::Duration;
+use std::time::Duration;
 use uuid::Uuid;
 
 const BEGIN_SEQ_NO: u32 = 7;
@@ -169,7 +169,10 @@ pub trait Verify {
 
     fn verify_begin_string(&self, begin_string: &[u8]) -> Result<(), Self::Error>;
 
-    fn verify_test_message_indicator(&self, message: &impl FieldMap<u32>) -> Result<(), Self::Error>;
+    fn verify_test_message_indicator(
+        &self,
+        message: &impl FieldMap<u32>,
+    ) -> Result<(), Self::Error>;
 
     fn verify_sending_time(&self, message: &impl FieldMap<u32>) -> Result<(), Self::Error>;
 }
@@ -296,7 +299,11 @@ where
         message: Message<&[u8]>,
         builder: MessageBuilder,
     ) -> Response<'a> {
-        if self.verifier().verify_test_message_indicator(message).is_err() {
+        if self
+            .verifier()
+            .verify_test_message_indicator(message)
+            .is_err()
+        {
             return self.on_wrong_environment(message);
         }
         let seq_num = if let Ok(n) = message.get::<u64>(&MSG_SEQ_NUM) {
@@ -360,9 +367,9 @@ where
         let fix_message = {
             let begin_string = self.begin_string();
             let msg_seq_num = self.msg_seq_num_outbound.next();
-            let mut heartbeat_message = self
-                .encoder
-                .start_message(begin_string, &mut self.buffer, b"0");
+            let mut heartbeat_message =
+                self.encoder
+                    .start_message(begin_string, &mut self.buffer, b"0");
             self.set_sender_and_target(&mut heartbeat_message);
             heartbeat_message.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
             self.set_sending_time(&mut heartbeat_message);
