@@ -8,7 +8,7 @@
 /// Backend implementations for FIX session management.
 pub mod backends;
 mod config;
-//mod connection; FIXME
+//mod connection; // FIXME: Multiple compilation issues - needs architectural fixes
 mod environment;
 mod errs;
 mod event_loop;
@@ -19,7 +19,7 @@ mod seq_numbers;
 use crate::tagvalue::Message;
 use crate::{FieldType, SetField};
 pub use config::{Config, Configure};
-// pub use connection::*; FIXME
+// pub use connection::*; // FIXME: connection module has compilation issues
 pub use environment::Environment;
 pub use event_loop::*;
 pub use heartbeat_rule::HeartbeatRule;

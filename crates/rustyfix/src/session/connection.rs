@@ -1,9 +1,8 @@
-use super::{Backend, Config, Configure, LlEvent, LlEventLoop, errs};
+use super::{Backend, Config, Configure, LlEvent, LlEventLoop, MsgSeqNumCounter, errs};
 use crate::Buffer;
+use crate::FieldMap;
 use crate::FieldType;
 use crate::session::{Environment, SeqNumbers};
-use crate::tagvalue::FieldMap;
-use crate::tagvalue::FvWrite;
 use crate::tagvalue::Message;
 use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
