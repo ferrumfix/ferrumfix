@@ -35,10 +35,11 @@ pub fn generated_code_notice() -> SmartString {
 pub fn codegen_field_type_enum(field: dict::Field, settings: &Settings) -> String {
     let derives = settings.derives_for_allowed_values.join(", ");
     let attributes = settings.attributes_for_allowed_values.join("\n");
+    let mut variant_identifiers = FxHashSet::default();
     let variants = field
         .enums()
         .unwrap()
-        .map(|v| codegen_field_type_enum_variant(v, settings))
+        .map(|v| codegen_field_type_enum_variant(v, settings, &mut variant_identifiers))
         .collect::<Vec<_>>()
         .join("\n");
     formatdoc!(
@@ -60,8 +61,10 @@ pub fn codegen_field_type_enum(field: dict::Field, settings: &Settings) -> Strin
 fn codegen_field_type_enum_variant(
     allowed_value: dict::FieldEnum,
     settings: &Settings,
+    variant_identifiers: &mut FxHashSet<String>,
 ) -> SmartString {
     let mut identifier = allowed_value.description().to_pascal_case();
+    let original_identifier = identifier.clone();
     let identifier_needs_prefix = !allowed_value
         .description()
         .chars()
@@ -73,23 +76,104 @@ fn codegen_field_type_enum_variant(
     }
     // E.g. `TickDirection::PlusTick` -> `TickDirection::Plus`.
     if let Some(s) = identifier.strip_suffix("Tick") {
-        identifier = s.to_string();
+        if !s.is_empty() {
+            identifier = s.to_string();
+        }
     }
     // E.g. `QuoteCancelType::CancelForSymbol` -> `QuoteCancelType::Symbol`
     if let Some(s) = identifier.strip_prefix("CancelFor") {
-        identifier = s.to_string();
+        if !s.is_empty() {
+            identifier = s.to_string();
+        }
     }
     // E.g. `SecurityRequestType::RequestSecurityIdentityAndSpecifications`
     if let Some(s) = identifier.strip_prefix("Request") {
-        identifier = s.to_string();
+        if !s.is_empty() {
+            identifier = s.to_string();
+        }
     }
     // E.g. `MultiLegReportingType::SingleSecurity`
     if let Some(s) = identifier.strip_suffix("Security") {
-        identifier = s.to_string();
+        if !s.is_empty() {
+            identifier = s.to_string();
+        }
     }
     if let Some(s) = identifier.strip_prefix("RelatedTo") {
-        identifier = s.to_string();
+        if !s.is_empty() {
+            identifier = s.to_string();
+        }
     }
+    if let Some(s) = identifier.strip_suffix("Price") {
+        if !s.is_empty() {
+            identifier = s.to_string();
+        }
+    }
+    if let Some(s) = identifier.strip_prefix("No") {
+        if !s.is_empty() {
+            identifier = s.to_string();
+        }
+    }
+    if let Some(s) = identifier.strip_suffix("Trade") {
+        if !s.is_empty() {
+            identifier = s.to_string();
+        }
+    }
+    if let Some(s) = identifier.strip_prefix("At") {
+        if !s.is_empty() {
+            identifier = s.to_string();
+        }
+    }
+    if let Some(s) = identifier.strip_suffix("Deal") {
+        if !s.is_empty() {
+            identifier = s.to_string();
+        }
+    }
+    if let Some(s) = identifier.strip_suffix("Sale") {
+        if !s.is_empty() {
+            identifier = s.to_string();
+        }
+    }
+    if let Some(s) = identifier.strip_prefix("As") {
+        if !s.is_empty() {
+            identifier = s.to_string();
+        }
+    }
+    if let Some(s) = identifier.strip_prefix("Of") {
+        if !s.is_empty() {
+            identifier = s.to_string();
+        }
+    }
+    // Ensure identifier is valid Rust identifier
+    let mut final_identifier = identifier.to_pascal_case();
+    if final_identifier
+        .chars()
+        .next()
+        .is_none_or(|c| !c.is_ascii_alphabetic())
+    {
+        final_identifier = format!("_{final_identifier}");
+    }
+
+    // Handle duplicates on the final identifier
+    if variant_identifiers.contains(&final_identifier) {
+        // Fall back to original identifier if there's a collision
+        final_identifier = original_identifier.to_pascal_case();
+        if final_identifier
+            .chars()
+            .next()
+            .is_none_or(|c| !c.is_ascii_alphabetic())
+        {
+            final_identifier = format!("_{final_identifier}");
+        }
+
+        // If still duplicated, add a suffix
+        let mut counter = 2;
+        let base_identifier = final_identifier.clone();
+        while variant_identifiers.contains(&final_identifier) {
+            final_identifier = format!("{base_identifier}{counter}");
+            counter += 1;
+        }
+    }
+    variant_identifiers.insert(final_identifier.clone());
     let value_literal = allowed_value.value();
     indent_string(
         formatdoc!(
@@ -99,7 +183,7 @@ fn codegen_field_type_enum_variant(
                 {identifier},"#,
             doc = format!("Field variant '{}'.", value_literal),
             value_literal = value_literal,
-            identifier = identifier,
+            identifier = final_identifier,
         )
         .as_str(),
         settings.indentation.as_str(),
