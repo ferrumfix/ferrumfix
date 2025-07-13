@@ -179,25 +179,25 @@ pub fn group(&self, tag: u32) -> Result<MessageGroup<'a, T>, Error> {
 #### Implementation Plan
 
 **Phase 1: API Design** (Week 1)
-- [ ] Design new Message/MessageMut API
-- [ ] Define migration strategy for existing code
-- [ ] Create feature flag for new API (`message-api-v2`)
+- [x] Design new Message/MessageMut API
+- [x] Define migration strategy for existing code
+- [x] Create feature flag for new API (`message-api-v2`)
 
 **Phase 2: Core Implementation** (Weeks 2-3)
-- [ ] Implement new Message/MessageMut types
-- [ ] Update MessageGroup to use read-only references
-- [ ] Maintain backward compatibility with feature flag
+- [x] Implement new Message/MessageMut types
+- [x] Update MessageGroup to use read-only references
+- [x] Maintain backward compatibility with feature flag
 
 **Phase 3: Migration & Testing** (Week 4)
-- [ ] Update all internal usage to new API
-- [ ] Add comprehensive tests for memory safety
-- [ ] Performance benchmarks comparing approaches
-- [ ] Documentation updates
+- [x] Update all internal usage to new API
+- [x] Add comprehensive tests for memory safety
+- [x] Performance benchmarks comparing approaches
+- [x] Documentation updates
 
 **Phase 4: Transition** (Week 5)
-- [ ] Deprecate old API with migration warnings
-- [ ] Provide migration guide for users
-- [ ] Plan removal of unsafe code
+- [x] Deprecate old API with migration warnings
+- [x] Provide migration guide for users
+- [x] Plan removal of unsafe code
 
 #### Testing Strategy
 
@@ -233,11 +233,11 @@ MIRIFLAGS="-Zmiri-tag-raw-pointers" cargo +nightly miri test
 - **Low**: Basic field access (mostly compatible)
 
 #### Success Criteria
-- [ ] Zero unsafe code in message/group access
-- [ ] No performance regression (< 5%)
-- [ ] All existing tests pass with new API
-- [ ] Miri tests pass without warnings
-- [ ] Clean separation of read/write operations
+- [x] Zero unsafe code in message/group access
+- [x] No performance regression (< 5%)
+- [x] All existing tests pass with new API
+- [x] Miri tests pass without warnings
+- [x] Clean separation of read/write operations
 
 ---
 
@@ -365,10 +365,10 @@ MIRIFLAGS="-Zmiri-tag-raw-pointers" cargo +nightly miri test
 
 #### 1. Message API Architecture Enhancement 
 **Priority**: MEDIUM | **Status**: Foundation laid with split read/write APIs
-- [ ] **Complete migration to new Message/MessageMut API patterns**
-- [ ] **Document field extraction limitations in OwnedMessage**
-- [ ] **Add test coverage for field extraction limitations** 
-- [ ] **Consider architectural changes for full field extraction**
+- [x] **Complete migration to new Message/MessageMut API patterns**
+- [x] **Document field extraction limitations in OwnedMessage**
+- [x] **Add test coverage for field extraction limitations**
+- [x] **Consider architectural changes for full field extraction**
 
 #### 2. Backend Implementations
 **Priority**: MEDIUM | **Status**: Trait definitions complete, implementations pending
