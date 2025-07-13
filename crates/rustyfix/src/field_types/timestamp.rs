@@ -107,6 +107,9 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(timestamp: Timestamp) -> bool {
-        crate::field_types::test_utility_verify_serialization_behavior(timestamp)
+        let serialized = timestamp.to_bytes();
+        let deserialized = Timestamp::deserialize(&serialized).unwrap();
+        let deserialized_lossy = Timestamp::deserialize_lossy(&serialized).unwrap();
+        deserialized == timestamp && deserialized_lossy == timestamp
     }
 }

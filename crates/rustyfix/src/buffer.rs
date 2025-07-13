@@ -112,6 +112,35 @@ impl Buffer for bytes::BytesMut {
     }
 }
 
+impl<A> Buffer for smallvec::SmallVec<A>
+where
+    A: smallvec::Array<Item = u8>,
+{
+    fn as_slice(&self) -> &[u8] {
+        self.as_slice()
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [u8] {
+        self.as_mut_slice()
+    }
+
+    fn capacity(&self) -> usize {
+        self.capacity()
+    }
+
+    fn clear(&mut self) {
+        self.clear()
+    }
+
+    fn extend_from_slice(&mut self, extend: &[u8]) {
+        self.extend_from_slice(extend)
+    }
+
+    fn resize(&mut self, new_len: usize, filler: u8) {
+        self.resize(new_len, filler)
+    }
+}
+
 /// A [`Buffer`] wrapper that implements [`std::fmt::Write`].
 #[allow(missing_debug_implementations)]
 pub struct BufferWriter<'a, B>(pub &'a mut B);

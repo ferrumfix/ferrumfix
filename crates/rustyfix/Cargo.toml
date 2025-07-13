@@ -26,26 +26,27 @@ name = "fix_decode"
 harness = false
 
 [features]
-default = [ "utils-chrono", "utils-tokio" ]
-codegen = [ "rustyfix-codegen" ]
+default = ["utils-chrono", "utils-tokio"]
+codegen = ["rustyfix-codegen"]
 derive = []
 json-encoding = []
-fix40 = [ "rustyfix-dictionary/fix40" ]
-fix41 = [ "rustyfix-dictionary/fix41" ]
-fix42 = [ "rustyfix-dictionary/fix42" ]
-fix43 = [ "rustyfix-dictionary/fix43" ]
-fix50 = [ "rustyfix-dictionary/fix50" ]
-fix50sp1 = [ "rustyfix-dictionary/fix50sp1" ]
-fix50sp2 = [ "rustyfix-dictionary/fix50sp2" ]
-fixt11 = [ "rustyfix-dictionary/fixt11" ]
+fix40 = ["rustyfix-dictionary/fix40"]
+fix41 = ["rustyfix-dictionary/fix41"]
+fix42 = ["rustyfix-dictionary/fix42"]
+fix43 = ["rustyfix-dictionary/fix43"]
+fix50 = ["rustyfix-dictionary/fix50"]
+fix50sp1 = ["rustyfix-dictionary/fix50sp1"]
+fix50sp2 = ["rustyfix-dictionary/fix50sp2"]
+fixt11 = ["rustyfix-dictionary/fixt11"]
+simd-optimizations = ["wide", "simd_aligned"]
 # Third-party crate integration.
-utils-bytes = [ "bytes", "smallbytes" ]
+utils-bytes = ["bytes", "smallbytes"]
 utils-chrono = []
-utils-decimal = [ "decimal" ]
-utils-rust-decimal = [ "rust_decimal" ]
-utils-slog = [ "slog" ]
-utils-tokio = [ "smallbytes", "tokio-util" ]
-utils-fastrace = [ "fastrace", "fastrace-macro" ]
+utils-decimal = ["decimal"]
+utils-rust-decimal = ["rust_decimal"]
+utils-slog = ["slog"]
+utils-tokio = ["smallbytes", "tokio-util"]
+utils-fastrace = ["fastrace", "fastrace-macro"]
 
 full = [
 	"codegen",
@@ -66,6 +67,8 @@ full = [
 	"utils-rust-decimal",
 	"utils-slog",
 	"utils-tokio",
+	"utils-fastrace",
+	"simd-optimizations",
 ]
 
 [dependencies]
@@ -76,6 +79,8 @@ decimal = { workspace = true, optional = true }
 log = { workspace = true }
 fastrace = { workspace = true, optional = true }
 fastrace-macro = { workspace = true, optional = true }
+wide = { workspace = true, optional = true }
+simd_aligned = { workspace = true, optional = true }
 rustyfix-codegen = { version = "0.7", path = "../rustyfix-codegen", optional = true }
 rustyfix-derive = { version = "0.7", path = "../rustyfix-derive" }
 rustyfix-dictionary = { version = "0.7", path = "../rustyfix-dictionary" }

@@ -180,8 +180,8 @@ where
     }
 
     /// Serializes `self` to a [`Vec`] of bytes, allocated on the fly.
-    fn to_bytes(&self) -> Vec<u8> {
-        let mut buffer = Vec::new();
+    fn to_bytes(&self) -> smallvec::SmallVec<[u8; 128]> {
+        let mut buffer = smallvec::smallvec![];
         self.serialize(&mut buffer);
         buffer
     }
@@ -195,7 +195,7 @@ where
     /// [`FieldType`] implementors that are guaranteed to be representable with
     /// valid UTF-8 (like numbers with ASCII digits).
     fn to_string(&self) -> smartstring::alias::String {
-        String::from_utf8(self.to_bytes())
+        String::from_utf8(self.to_bytes().into_vec())
             .expect("Invalid UTF-8 representation of FIX field.")
             .into()
     }

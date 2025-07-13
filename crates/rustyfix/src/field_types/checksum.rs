@@ -113,6 +113,9 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(checksum: CheckSum) -> bool {
-        crate::field_types::test_utility_verify_serialization_behavior(checksum)
+        let serialized = checksum.to_bytes();
+        let deserialized = CheckSum::deserialize(&serialized).unwrap();
+        let deserialized_lossy = CheckSum::deserialize_lossy(&serialized).unwrap();
+        deserialized == checksum && deserialized_lossy == checksum
     }
 }

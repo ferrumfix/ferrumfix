@@ -76,7 +76,6 @@ mod utils_decimal;
 #[cfg(feature = "utils-rust-decimal")]
 mod utils_rust_decimal;
 
-use crate::FieldType;
 pub use checksum::CheckSum;
 pub use date::Date;
 pub use monthyear::MonthYear;
@@ -108,25 +107,6 @@ pub(crate) const ERR_DECIMAL: &str = "Invalid decimal number.";
 /// Zero-padding for integers; see [`FieldType::SerializeSettings`].
 #[derive(Debug, Copy, Clone, Default)]
 pub struct ZeroPadding(pub usize);
-
-/// Tries to [`FieldType::serialize`] an `item`, then to
-/// [`FieldType::deserialize`] it, and finally checks for equality with the
-/// initial data. [`FieldType::deserialize_lossy`] is then
-/// tested in the same manner.
-///
-/// # Panics
-/// This function will panic if deserialization fails. This should not happen
-/// on valid inputs.
-pub fn test_utility_verify_serialization_behavior<T>(item: T) -> bool
-where
-    T: for<'a> FieldType<'a> + PartialEq,
-{
-    let serialized = item.to_bytes();
-    let bytes = &serialized[..];
-    let deserialized = T::deserialize(bytes).ok().unwrap();
-    let deserialized_lossy = T::deserialize_lossy(bytes).ok().unwrap();
-    deserialized == item && deserialized_lossy == item
-}
 
 #[cfg(test)]
 mod test {

@@ -251,8 +251,9 @@ impl<'a> FieldType<'a> for &'a [u8] {
     }
 }
 
-// Implement for Vec<u8>
-impl<'a> FieldType<'a> for Vec<u8> {
+// Implement for SmallVec<[u8; N]>
+use smallvec::SmallVec;
+impl<'a, const N: usize> FieldType<'a> for SmallVec<[u8; N]> {
     type Error = std::convert::Infallible;
     type SerializeSettings = ();
 
@@ -265,7 +266,7 @@ impl<'a> FieldType<'a> for Vec<u8> {
     }
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
-        Ok(data.to_vec())
+        Ok(SmallVec::from_slice(data))
     }
 }
 
@@ -370,10 +371,11 @@ impl_fieldtype_for_array!(1, 2, 3, 4, 8, 16, 32, 64, 128, 256);
 #[cfg(test)]
 mod tests {
     use super::*;
+    use smallvec::{SmallVec, smallvec};
 
     #[test]
     fn test_int_serialization() {
-        let mut buffer = Vec::new();
+        let mut buffer: SmallVec<[u8; 4]> = smallvec![];
         assert_eq!(42u32.serialize(&mut buffer), 2);
         assert_eq!(&buffer[..], b"42");
 
@@ -384,7 +386,7 @@ mod tests {
 
     #[test]
     fn test_bool_serialization() {
-        let mut buffer = Vec::new();
+        let mut buffer: SmallVec<[u8; 1]> = smallvec![];
         assert_eq!(true.serialize(&mut buffer), 1);
         assert_eq!(&buffer[..], b"Y");
 
@@ -395,7 +397,7 @@ mod tests {
 
     #[test]
     fn test_byte_slice_serialization() {
-        let mut buffer = Vec::new();
+        let mut buffer: SmallVec<[u8; 5]> = smallvec![];
         let data: &[u8] = b"hello";
         assert_eq!(data.serialize(&mut buffer), 5);
         assert_eq!(&buffer[..], b"hello");

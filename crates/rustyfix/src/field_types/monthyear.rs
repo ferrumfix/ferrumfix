@@ -237,14 +237,9 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(my: MonthYear) -> bool {
-        crate::field_types::test_utility_verify_serialization_behavior(my)
-    }
-
-    #[quickcheck]
-    fn can_deserialize_after_serializing(my: MonthYear) -> bool {
         let serialized = my.to_bytes();
-        let deserialized = MonthYear::deserialize(&serialized[..]).unwrap();
-        let deserialized_lossy = MonthYear::deserialize_lossy(&serialized[..]).unwrap();
+        let deserialized = MonthYear::deserialize(&serialized).unwrap();
+        let deserialized_lossy = MonthYear::deserialize_lossy(&serialized).unwrap();
         deserialized == my && deserialized_lossy == my
     }
 }

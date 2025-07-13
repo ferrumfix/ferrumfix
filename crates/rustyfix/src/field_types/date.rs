@@ -194,7 +194,10 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(date: Date) -> bool {
-        crate::field_types::test_utility_verify_serialization_behavior(date)
+        let serialized = date.to_bytes();
+        let deserialized = Date::deserialize(&serialized).unwrap();
+        let deserialized_lossy = Date::deserialize_lossy(&serialized).unwrap();
+        deserialized == date && deserialized_lossy == date
     }
 
     const VALID_DATES: &[&[u8]] = &[
@@ -258,7 +261,7 @@ mod test {
         for bytes in VALID_DATES {
             let date = Date::deserialize(bytes).unwrap();
             let serialized = date.to_bytes();
-            assert_eq!(**bytes, serialized);
+            assert_eq!(*bytes, serialized.as_slice());
         }
     }
 }

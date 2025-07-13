@@ -254,6 +254,7 @@ mod test {
 
     #[test]
     fn valid_test_cases() {
+        assert!(Time::deserialize(b"12:30:00").is_ok());
         for test_case in VALID_TEST_CASES {
             let dtf = Time::deserialize(test_case.bytes).unwrap();
             assert_eq!(dtf.hour(), test_case.hour);
@@ -265,6 +266,9 @@ mod test {
 
     #[quickcheck]
     fn verify_serialization_behavior(time: Time) -> bool {
-        crate::field_types::test_utility_verify_serialization_behavior(time)
+        let serialized = time.to_bytes();
+        let deserialized = Time::deserialize(&serialized).unwrap();
+        let deserialized_lossy = Time::deserialize_lossy(&serialized).unwrap();
+        deserialized == time && deserialized_lossy == time
     }
 }

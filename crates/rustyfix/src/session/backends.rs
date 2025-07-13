@@ -161,8 +161,8 @@ impl MemoryBackend {
     }
 
     /// Get messages for resend request
-    pub fn get_messages_for_resend(&self, range: Range<u64>) -> Vec<&[u8]> {
-        let mut messages = Vec::new();
+    pub fn get_messages_for_resend(&self, range: Range<u64>) -> SmallVec<[&[u8]; 16]> {
+        let mut messages = SmallVec::new();
         for seq_num in range {
             if let Some(message) = self.outbound_messages.get(&seq_num) {
                 messages.push(message.as_slice());
@@ -233,10 +233,10 @@ impl Backend for MemoryBackend {
             });
         }
 
-        let messages: Vec<Vec<u8>> = self
+        let messages: SmallVec<[SmallVec<[u8; 1024]>; 16]> = self
             .get_messages_for_resend(range.clone())
             .into_iter()
-            .map(|msg| msg.to_vec())
+            .map(SmallVec::from)
             .collect();
         log::info!(
             "Found {} messages for resend in range {:?}",
@@ -462,15 +462,14 @@ impl DatabaseBackend {
 
     /// Query messages from database
     /// Placeholder implementation - would execute SQL SELECT
-    pub fn query_messages_from_db(
-        &self,
-        range: Range<u64>,
-    ) -> Result<Vec<(u64, Vec<u8>)>, BackendError> {
+    pub fn query_messages_from_db(&self, range: Range<u64>) -> Result<QueryResult, BackendError> {
         log::debug!("Database backend: querying messages for range {range:?}");
         // Placeholder for SQL: SELECT seq_num, content FROM messages WHERE seq_num BETWEEN ? AND ? ORDER BY seq_num
-        Ok(Vec::new())
+        Ok(SmallVec::new())
     }
 }
+
+type QueryResult = SmallVec<[(u64, SmallVec<[u8; 1024]>); 16]>;
 
 impl Backend for DatabaseBackend {
     type Error = BackendError;

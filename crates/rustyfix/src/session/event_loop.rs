@@ -3,6 +3,7 @@ use crate::tagvalue::{DecodeError, DecoderStreaming, Message};
 use futures::{AsyncRead, AsyncReadExt, FutureExt, select};
 use futures_timer::Delay;
 use quanta::Instant;
+use smallvec::SmallVec;
 use std::io;
 use std::time::Duration;
 
@@ -13,7 +14,7 @@ use std::time::Duration;
 /// session. See [`LlEvent`] for more information.
 #[derive(Debug)]
 pub struct LlEventLoop<I> {
-    decoder: DecoderStreaming<Vec<u8>>,
+    decoder: DecoderStreaming<SmallVec<[u8; 1024]>>,
     input: I,
     heartbeat: Duration,
     heartbeat_soft_tolerance: Duration,
@@ -29,7 +30,11 @@ where
 {
     /// Creates a new [`LlEventLoop`] with the provided `decoder` and
     /// `heartbeat`. Events will be read from `input`.
-    pub fn new(decoder: DecoderStreaming<Vec<u8>>, input: I, heartbeat: Duration) -> Self {
+    pub fn new(
+        decoder: DecoderStreaming<SmallVec<[u8; 1024]>>,
+        input: I,
+        heartbeat: Duration,
+    ) -> Self {
         let heartbeat_soft_tolerance = heartbeat * 2;
         let heartbeat_hard_tolerance = heartbeat * 3;
         Self {
@@ -151,6 +156,7 @@ pub enum LlEvent<'a> {
 mod test {
     use super::*;
     use crate::tagvalue::Decoder;
+    use smallvec::smallvec;
     use tokio::io::AsyncWriteExt;
     use tokio::net::{TcpListener, TcpStream};
     use tokio_util::compat::*;
@@ -176,7 +182,7 @@ mod test {
         let input = produce_events(events).await;
 
         LlEventLoop::new(
-            Decoder::new(crate::Dictionary::fix44().unwrap()).streaming(vec![]),
+            Decoder::new(crate::Dictionary::fix44().unwrap()).streaming(smallvec![]),
             input.compat(),
             Duration::from_secs(3),
         )
