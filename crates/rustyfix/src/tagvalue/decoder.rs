@@ -115,7 +115,7 @@ impl Decoder {
     /// decoder.config_mut().separator = b'|';
     /// let data = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
     /// let message = decoder.decode(data).unwrap();
-    /// assert_eq!(message.get(fix44::SENDER_COMP_ID), Ok("A"));
+    /// assert_eq!(message.get(fix44::SENDER_COMP_ID.tag), Ok("A"));
     /// ```
     pub fn decode<T>(&mut self, bytes: T) -> Result<Message<'_, T>, DecodeError>
     where
@@ -478,6 +478,7 @@ impl<'a, T> Message<'a, T> {
     ///
     /// ```no_run
     /// # use rustyfix::tagvalue::*;
+    /// # use rustyfix::TagU32;
     /// # let mut decoder = Decoder::new(rustyfix::Dictionary::fix44().unwrap());
     /// # let data = b"";
     /// # let message = decoder.decode(data).unwrap();

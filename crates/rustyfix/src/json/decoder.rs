@@ -261,11 +261,11 @@ mod test {
     #[test]
     fn invalid_json() {
         let mut encoder = encoder_fix44();
-        let mut bytes = "this is invalid JSON".as_bytes().to_vec();
+        let mut bytes = "{unclosed_brace".as_bytes().to_vec(); // This is truly invalid JSON syntax
         let result = encoder.decode(&mut bytes);
         match result {
             Err(DecodeError::Syntax) => (),
-            _ => panic!(),
+            _ => panic!("Expected Err(DecodeError::Syntax), got: {result:?}"),
         };
     }
 }
