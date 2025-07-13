@@ -204,25 +204,26 @@ impl Dictionary {
     /// versions (all that have been enabled via feature flags). This is only
     /// intended for testing purposes.
     pub fn common_dictionaries() -> SmallVec<[Dictionary; 10]> {
+        #[allow(unused_mut)] // mut needed when FIX features are enabled
         let mut dictionaries = SmallVec::new();
         #[cfg(feature = "fix40")]
-        dictionaries.push(Self::fix40().unwrap());
+        dictionaries.push(Self::fix40().expect("Failed to parse FIX 4.0 dictionary"));
         #[cfg(feature = "fix41")]
-        dictionaries.push(Self::fix41().unwrap());
+        dictionaries.push(Self::fix41().expect("Failed to parse FIX 4.1 dictionary"));
         #[cfg(feature = "fix42")]
-        dictionaries.push(Self::fix42().unwrap());
+        dictionaries.push(Self::fix42().expect("Failed to parse FIX 4.2 dictionary"));
         #[cfg(feature = "fix43")]
-        dictionaries.push(Self::fix43().unwrap());
+        dictionaries.push(Self::fix43().expect("Failed to parse FIX 4.3 dictionary"));
         #[cfg(feature = "fix44")]
-        dictionaries.push(Self::fix44().unwrap());
+        dictionaries.push(Self::fix44().expect("Failed to parse FIX 4.4 dictionary"));
         #[cfg(feature = "fix50")]
-        dictionaries.push(Self::fix50().unwrap());
+        dictionaries.push(Self::fix50().expect("Failed to parse FIX 5.0 dictionary"));
         #[cfg(feature = "fix50sp1")]
-        dictionaries.push(Self::fix50sp1().unwrap());
+        dictionaries.push(Self::fix50sp1().expect("Failed to parse FIX 5.0 SP1 dictionary"));
         #[cfg(feature = "fix50sp2")]
-        dictionaries.push(Self::fix50sp2().unwrap());
+        dictionaries.push(Self::fix50sp2().expect("Failed to parse FIX 5.0 SP2 dictionary"));
         #[cfg(feature = "fixt11")]
-        dictionaries.push(Self::fixt11().unwrap());
+        dictionaries.push(Self::fixt11().expect("Failed to parse FIXT 1.1 dictionary"));
         dictionaries
     }
 
