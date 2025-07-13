@@ -47,7 +47,7 @@
 ### 1. Complete Tokio Integration ✅ COMPLETED
 **Priority**: HIGH | **Evidence**: Actual FIXME found in code analysis
 - [x] **Complete TokioDecoder implementation** - Fixed compilation errors and basic functionality
-- [ ] **Add comprehensive streaming codec tests**
+- [x] **Add comprehensive streaming codec tests** - 10 comprehensive tests added and passing
 - [ ] **Implement proper frame-to-message conversion**
 - [ ] **Add tokio example demonstrating usage**
 
@@ -102,8 +102,8 @@
   format!("u64 overflow in FAST decoding: {}", problematic_value)
   ```
 - [ ] **Clean up commented code blocks** - Remove TODO comments for slog::Value and PartialEq
-- [ ] **Remove dead code** - `new_order_single_decoder()` function in validation.rs
-- [ ] **Update deprecated criterion::black_box** - Use `std::hint::black_box()` instead
+- [x] **Remove dead code** - `new_order_single_decoder()` function in validation.rs
+- [x] **Update deprecated criterion::black_box** - Use `std::hint::black_box()` instead
 
 ### 6. Complete Backend Implementations
 **Priority**: MEDIUM | **Evidence**: Trait definitions need implementations
