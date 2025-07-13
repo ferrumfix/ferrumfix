@@ -67,9 +67,6 @@ pub enum DecodeError {
     /// Invalid FIX message syntax, `BodyLength <9>` value mismatch, or similar errors.
     #[error("Invalid FIX message syntax.")]
     Invalid,
-    /// The operation is not supported.
-    #[error("The operation is not supported: {0}")]
-    Unsupported(String),
     /// Invalid `CheckSum <10>` FIX field value.
     #[error("Invalid `CheckSum <10>` FIX field value.")]
     CheckSum,
