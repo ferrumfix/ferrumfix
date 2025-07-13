@@ -2,12 +2,17 @@
 
 use super::Config;
 use crate::Dictionary;
-use crate::{GetConfig, SetField};
+use crate::GetConfig;
 use std::fmt::Debug;
 use std::sync::Arc;
 
 // TODO: `serde_json` is not a very high-performance library.
+/// JSON encoder for FIX messages.
+///
+/// This encoder converts FIX messages to JSON format using the provided dictionary
+/// for message and field definitions.
 pub struct Encoder {
+    #[allow(dead_code)] // TODO: Will be used for encoding implementation
     dictionary: Arc<Dictionary>,
     config: Config,
 }
@@ -21,6 +26,13 @@ impl Debug for Encoder {
 }
 
 impl Encoder {
+    /// Creates a new JSON encoder with the provided dictionary.
+    ///
+    /// # Arguments
+    /// * `dict` - The FIX dictionary containing message and field definitions
+    ///
+    /// # Returns
+    /// A new `Encoder` instance with default configuration
     pub fn new(dict: Dictionary) -> Self {
         Self {
             dictionary: Arc::new(dict),
