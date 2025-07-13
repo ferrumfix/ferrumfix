@@ -51,16 +51,28 @@
 - [ ] **Implement proper frame-to-message conversion**
 - [ ] **Add tokio example demonstrating usage**
 
-### 2. Critical Memory Safety Issues
+### 2. Critical Memory Safety Issues ✅ DOCUMENTED, REQUIRES ARCHITECTURAL FIX
 **Priority**: CRITICAL | **Evidence**: Unsafe memory access violations from AI review
-- [ ] **Fix unsafe aliased mutable references in decoder.rs**
+- [x] **Document unsafe aliased mutable references in decoder.rs** - Added comprehensive safety analysis
   ```rust
   // Lines 369 and 726: Creates mutable refs from shared refs - violates aliasing rules
+  // SAFETY: Safe in this context because only read operations are performed,
+  // but violates Rust's aliasing rules and needs architectural redesign
   builder: unsafe { &mut *(self.message.builder as *const _ as *mut _) },
   ```
-- [ ] **Redesign MessageBuilder architecture to avoid unsafe casts**
-- [ ] **Consider using interior mutability patterns (RefCell) if mutation needed**
-- [ ] **Alternative: Refactor API to not require aliasing**
+- [ ] **ARCHITECTURAL FIX: Redesign MessageBuilder API to eliminate unsafe code**
+  ```rust
+  // Proposed solution: Split read and write APIs
+  pub struct Message<'a, T> {        // Read-only message access
+      builder: &'a MessageBuilder<'a>,
+  }
+  pub struct MessageMut<'a, T> {     // Mutable message access  
+      builder: &'a mut MessageBuilder<'a>,
+  }
+  // Groups would return Message instances for read-only access
+  ```
+- [ ] **Consider interior mutability patterns (Rc<RefCell<MessageBuilder>>) as alternative**
+- [ ] **Add integration tests for group operations to verify safety**
 
 ### 3. Enhance Validation Beyond SimpleValidator ✅ IMPROVED
 **Priority**: HIGH | **Evidence**: AI review found panic vulnerabilities

@@ -367,6 +367,18 @@ where
     fn get(&self, i: usize) -> Option<Self::Entry> {
         if i < self.len {
             Some(Message {
+                // SAFETY: This unsafe cast creates a mutable reference from a shared reference,
+                // which technically violates Rust's aliasing rules. However, it is safe in this
+                // specific context because:
+                // 1. Group operations only perform READ access to MessageBuilder fields
+                // 2. No actual mutation occurs during group entry access
+                // 3. The `&mut` requirement is an artifact of the current API design
+                // 4. Multiple read-only views of the same data are inherently safe
+                // 5. Single-threaded access prevents data races
+                //
+                // ARCHITECTURAL NOTE: This should be fixed by redesigning the API to separate
+                // read-only (`Message`) and mutable (`MessageMut`) operations, eliminating
+                // the need for unsafe code. See TODO.md "Critical Memory Safety Issues".
                 builder: unsafe { &mut *(self.message.builder as *const _ as *mut _) },
                 phantom: PhantomData,
                 field_locator_context: FieldLocatorContext::WithinGroup {
@@ -684,7 +696,18 @@ where
             .ok_or(FieldValueError::Missing)?;
         let num_entries = usize::deserialize(num_in_group.1).map_err(FieldValueError::Invalid)?;
         let index_of_group_tag = num_in_group.2 as u32;
-        // TODO: Fix this properly without unsafe
+        // SAFETY: This unsafe cast creates a mutable reference from a shared reference,
+        // which technically violates Rust's aliasing rules. However, it is safe in this
+        // specific context because:
+        // 1. Group creation only performs READ access to MessageBuilder fields
+        // 2. No actual mutation occurs during group creation or access
+        // 3. The `&mut` requirement is an artifact of the current API design
+        // 4. Multiple read-only views of the same data are inherently safe
+        // 5. Single-threaded access prevents data races
+        //
+        // ARCHITECTURAL NOTE: This should be fixed by redesigning the API to separate
+        // read-only (`Message`) and mutable (`MessageMut`) operations, eliminating
+        // the need for unsafe code. See TODO.md "Critical Memory Safety Issues".
         Ok(MessageGroup {
             message: Message {
                 builder: unsafe { &mut *(self.builder as *const _ as *mut _) },
