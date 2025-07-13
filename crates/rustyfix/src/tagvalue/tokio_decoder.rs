@@ -1,9 +1,10 @@
 use super::{Config, DecodeError, Decoder, Message, RawDecoder, RawFrame};
 use crate::GetConfig;
 use crate::{FieldType, FieldValueError};
-use bytes::{Buf, Bytes, BytesMut};
 use rustc_hash::FxHashMap;
 use smallbytes::SmallBytes;
+use smartstring::alias::String as SmartString;
+use tokio_util::bytes::{Buf, Bytes, BytesMut};
 use tokio_util::codec;
 
 /// Length of FIX checksum field: "CheckSum=NNN|" (10= + 3 digits + separator)
@@ -172,7 +173,7 @@ impl OwnedMessage {
     }
 
     /// Returns the FIX message type of this message.
-    pub fn msg_type(&self) -> Result<String, FieldValueError<std::str::Utf8Error>> {
+    pub fn msg_type(&self) -> Result<SmartString, FieldValueError<std::str::Utf8Error>> {
         self.get(35)
     }
 
@@ -381,8 +382,7 @@ mod tests {
 
         assert_eq!(owned.get_raw(8), Some(b"FIX.4.4" as &[u8]));
         assert_eq!(owned.get_raw(35), Some(b"0" as &[u8]));
-        assert_eq!(owned.get::<String>(35), Ok("0".to_string()));
-        assert!(!owned.is_empty());
+        assert_eq!(owned.get::<SmartString>(35), Ok("0".into()));
         assert!(!owned.is_empty());
     }
 
@@ -398,10 +398,10 @@ mod tests {
         let owned = OwnedMessage::from_message(message, Bytes::from_static(raw_data));
 
         // Test various field types
-        assert_eq!(owned.get::<String>(8), Ok("FIX.4.4".to_string()));
-        assert_eq!(owned.get::<String>(35), Ok("D".to_string()));
+        assert_eq!(owned.get::<SmartString>(8), Ok("FIX.4.4".into()));
+        assert_eq!(owned.get::<SmartString>(35), Ok("D".into()));
         assert_eq!(owned.get::<u32>(34), Ok(215)); // Sequence number in this message
-        assert_eq!(owned.msg_type(), Ok("D".to_string()));
+        assert_eq!(owned.msg_type(), Ok("D".into()));
 
         // Test missing field
         assert!(owned.get_raw(999).is_none());
@@ -565,9 +565,9 @@ mod tests {
         let message = decoder.decode(data).unwrap();
 
         // With borrowed Message, we can iterate fields in original order
-        let original_field_order: Vec<(u32, String)> = message
+        let original_field_order: Vec<(u32, SmartString)> = message
             .fields()
-            .map(|(tag, value)| (tag.get(), String::from_utf8_lossy(value).to_string()))
+            .map(|(tag, value)| (tag.get(), String::from_utf8_lossy(value).to_string().into()))
             .collect();
 
         // Verify we have the expected fields in their original order
@@ -579,9 +579,9 @@ mod tests {
         let owned_message = OwnedMessage::from_message(message, Bytes::from(&data[..]));
 
         // LIMITATION DEMONSTRATED: Field ordering is lost
-        let owned_field_order: Vec<(u32, String)> = owned_message
+        let owned_field_order: Vec<(u32, SmartString)> = owned_message
             .fields()
-            .map(|(tag, value)| (tag, String::from_utf8_lossy(value).to_string()))
+            .map(|(tag, value)| (tag, String::from_utf8_lossy(value).to_string().into()))
             .collect();
 
         let owned_tags: Vec<u32> = owned_field_order.iter().map(|(tag, _)| *tag).collect();
@@ -622,9 +622,9 @@ mod tests {
         // - No way to validate group structure
 
         // We can only access individual fields by tag, without context
-        assert_eq!(owned_message.get::<String>(35).unwrap(), "0"); // MsgType
-        assert_eq!(owned_message.get::<String>(49).unwrap(), "A"); // SenderCompID
-        assert_eq!(owned_message.get::<String>(56).unwrap(), "B"); // TargetCompID
+        assert_eq!(owned_message.get::<SmartString>(35).unwrap(), "0"); // MsgType
+        assert_eq!(owned_message.get::<SmartString>(49).unwrap(), "A"); // SenderCompID
+        assert_eq!(owned_message.get::<SmartString>(56).unwrap(), "B"); // TargetCompID
 
         // But we have no way to know these fields were part of a group structure
     }
@@ -648,8 +648,8 @@ mod tests {
 
         // LIMITATION DEMONSTRATED: All structure is flattened
         // In complex scenarios with groups, only the last occurrence of each tag is preserved
-        assert_eq!(owned_message.get::<String>(35).unwrap(), "0"); // MsgType
-        assert_eq!(owned_message.get::<String>(49).unwrap(), "A"); // SenderCompID
+        assert_eq!(owned_message.get::<SmartString>(35).unwrap(), "0"); // MsgType
+        assert_eq!(owned_message.get::<SmartString>(49).unwrap(), "A"); // SenderCompID
 
         // We've lost:
         // - Any group structure that might have existed
@@ -677,10 +677,10 @@ mod tests {
         let owned_message = OwnedMessage::from_message(message, Bytes::from(&message_data[..]));
 
         // For simple messages without groups, OwnedMessage works perfectly
-        assert_eq!(owned_message.get::<String>(35).unwrap(), "0"); // MsgType
-        assert_eq!(owned_message.get::<String>(49).unwrap(), "A"); // SenderCompID
-        assert_eq!(owned_message.get::<String>(56).unwrap(), "B"); // TargetCompID
-        assert_eq!(owned_message.get::<String>(34).unwrap(), "12"); // MsgSeqNum
+        assert_eq!(owned_message.get::<SmartString>(35).unwrap(), "0"); // MsgType
+        assert_eq!(owned_message.get::<SmartString>(49).unwrap(), "A"); // SenderCompID
+        assert_eq!(owned_message.get::<SmartString>(56).unwrap(), "B"); // TargetCompID
+        assert_eq!(owned_message.get::<SmartString>(34).unwrap(), "12"); // MsgSeqNum
 
         // All fields are accessible and maintain their values correctly
         // This is the ideal use case for OwnedMessage in async contexts

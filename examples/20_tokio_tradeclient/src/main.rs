@@ -7,8 +7,17 @@ use generated_fix42 as strum_fix42;
 use rustyfix::FieldType;
 use rustyfix::definitions::fix42;
 use strum::IntoEnumIterator;
+use thiserror::Error;
 
-fn main() -> anyhow::Result<()> {
+#[derive(Error, Debug)]
+enum AppError {
+    #[error("Input error")]
+    Inquire(#[from] inquire::InquireError),
+}
+
+type Result<T> = std::result::Result<T, AppError>;
+
+fn main() -> Result<()> {
     loop {
         // TODO & FIXME: this example is still incomplete.
 
@@ -43,32 +52,32 @@ enum UserAction {
     Quit,
 }
 
-fn prompt_user_action() -> anyhow::Result<UserAction> {
+fn prompt_user_action() -> Result<UserAction> {
     let s = inquire::Select::new("Select an action", UserAction::iter().collect()).prompt()?;
     Ok(s)
 }
 
-fn prompt_symbol() -> anyhow::Result<String> {
+fn prompt_symbol() -> Result<String> {
     Ok(inquire::Text::new("Symbol").prompt()?)
 }
 
-fn prompt_side() -> anyhow::Result<fix42::Side> {
+fn prompt_side() -> Result<fix42::Side> {
     prompt_fix_enum::<strum_fix42::Side, _>("Side")
 }
 
-fn prompt_order_type() -> anyhow::Result<fix42::OrdType> {
+fn prompt_order_type() -> Result<fix42::OrdType> {
     prompt_fix_enum::<strum_fix42::OrdType, _>("Order type")
 }
 
-fn prompt_time_in_force() -> anyhow::Result<fix42::TimeInForce> {
+fn prompt_time_in_force() -> Result<fix42::TimeInForce> {
     prompt_fix_enum::<strum_fix42::TimeInForce, _>("Time in force")
 }
 
-fn prompt_price() -> anyhow::Result<f32> {
+fn prompt_price() -> Result<f32> {
     Ok(inquire::CustomType::<f32>::new("Price").prompt()?)
 }
 
-fn prompt_fix_enum<Strum, T>(prompt: &str) -> anyhow::Result<T>
+fn prompt_fix_enum<Strum, T>(prompt: &str) -> Result<T>
 where
     T: for<'a> FieldType<'a> + Clone,
     Strum: FieldType<'static> + strum::IntoEnumIterator + Copy,

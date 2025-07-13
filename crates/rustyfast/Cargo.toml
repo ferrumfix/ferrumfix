@@ -5,7 +5,7 @@ edition.workspace = true
 authors.workspace = true
 homepage.workspace = true
 repository.workspace = true
-description.workspace = true
+description = "FIX Adapted for STreaming (FAST) in pure Rust."
 publish.workspace = true
 readme.workspace = true
 keywords.workspace = true
@@ -21,11 +21,17 @@ rustdoc-args = ["--cfg", "doc_cfg"]
 [lib]
 name = "rustyfast"
 
+[features]
+default = []
+utils-fastrace = [ "fastrace", "fastrace-macro" ]
+
 [dependencies]
 bitvec = { workspace = true }
 decimal = { workspace = true, optional = true }
 heck = { workspace = true }
 indoc = { workspace = true }
+fastrace = { workspace = true, optional = true }
+fastrace-macro = { workspace = true, optional = true }
 # For reading XML.
 roxmltree = { workspace = true }
 smallvec = { workspace = true }

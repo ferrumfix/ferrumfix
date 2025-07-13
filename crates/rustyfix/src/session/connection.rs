@@ -9,10 +9,13 @@ use crate::traits::{FvWrite, SetField};
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use log;
 use rustc_hash::FxHashMap;
+use smallvec::SmallVec;
+use smartstring::alias::String as SmartString;
 use std::marker::{PhantomData, Unpin};
 use std::pin::Pin;
 use std::time::Duration;
 use uuid::Uuid;
+use quanta::Instant;
 
 const BEGIN_SEQ_NO: u32 = 7;
 const BEGIN_STRING: u32 = 8;
@@ -116,11 +119,11 @@ pub struct FixConnection<B, C = Config, V = NoOpVerifier> {
     msg_seq_num_inbound: MsgSeqNumCounter,
     msg_seq_num_outbound: MsgSeqNumCounter,
     /// Storage for outbound messages to support resend requests
-    outbound_message_store: FxHashMap<u64, Vec<u8>>,
+    outbound_message_store: FxHashMap<u64, SmallVec<[u8; 1024]>>,
     /// Storage for inbound messages to detect duplicates
-    inbound_message_store: FxHashMap<u64, Vec<u8>>,
+    inbound_message_store: FxHashMap<u64, SmallVec<[u8; 1024]>>,
     /// Last heartbeat time for timeout detection
-    last_heartbeat_time: Option<std::time::Instant>,
+    last_heartbeat_time: Option<Instant>,
     /// Session state for edge case management
     session_state: SessionState,
 }
@@ -150,7 +153,7 @@ where
     }
 
     /// Store an outbound message for potential resend requests
-    pub fn store_outbound_message(&mut self, seq_num: u64, message: Vec<u8>) {
+    pub fn store_outbound_message(&mut self, seq_num: u64, message: SmallVec<[u8; 1024]>) {
         self.outbound_message_store.insert(seq_num, message);
 
         // Limit storage to prevent memory growth (keep last 1000 messages)
@@ -162,7 +165,7 @@ where
     }
 
     /// Store an inbound message for duplicate detection
-    pub fn store_inbound_message(&mut self, seq_num: u64, message: Vec<u8>) {
+    pub fn store_inbound_message(&mut self, seq_num: u64, message: SmallVec<[u8; 1024]>) {
         self.inbound_message_store.insert(seq_num, message);
 
         // Limit storage to prevent memory growth (keep last 1000 messages)
@@ -206,7 +209,7 @@ where
 
     /// Update heartbeat timestamp
     pub fn update_heartbeat_time(&mut self) {
-        self.last_heartbeat_time = Some(quanta::Instant::now());
+        self.last_heartbeat_time = Some(Instant::now());
     }
 
     /// Check if heartbeat timeout has occurred
@@ -223,7 +226,7 @@ where
     pub fn handle_session_timeout(&mut self) -> Response {
         log::warn!("Session timeout detected, initiating logout");
         self.set_session_state(SessionState::LogoutPending);
-        self.make_logout("Session timeout".to_string())
+        self.make_logout("Session timeout".to_string().into())
     }
 
     /// Enhanced logon handling with state management
@@ -258,7 +261,7 @@ where
         self.set_session_state(SessionState::LogoutPending);
 
         // Send logout acknowledgment and prepare for disconnect
-        let logout_response = self.make_logout("Logout acknowledged".to_string());
+        let logout_response = self.make_logout("Logout acknowledged".to_string().into());
 
         // Transition to disconnected state after sending response
         self.set_session_state(SessionState::Disconnected);
@@ -617,7 +620,7 @@ where
                 }
             } else if n > expected {
                 // Store the message for potential future processing
-                self.store_inbound_message(n, message.as_bytes().to_vec());
+                self.store_inbound_message(n, message.as_bytes().into());
                 // Refer to specs. §4.8 for more information.
                 return self.on_high_seqnum(message);
             }
@@ -628,7 +631,7 @@ where
         };
 
         // Store the message for duplicate detection
-        self.store_inbound_message(seq_num, message.as_bytes().to_vec());
+        self.store_inbound_message(seq_num, message.as_bytes().into());
 
         // Increment immediately.
         self.msg_seq_num_inbound.next();
@@ -758,7 +761,7 @@ where
 
     fn on_wrong_environment(&mut self, message: Message<&[u8]>) -> Response {
         log::warn!("Wrong environment detected in message");
-        self.make_logout(errs::production_env())
+        self.make_logout(errs::production_env().into())
     }
 
     fn generate_error_seqnum_too_low(&mut self) -> &[u8] {
@@ -775,12 +778,12 @@ where
 
     fn on_missing_seqnum(&mut self, message: Message<&[u8]>) -> Response {
         log::warn!("Missing sequence number in message");
-        self.make_logout(errs::missing_field("MsgSeqNum", MSG_SEQ_NUM))
+        self.make_logout(errs::missing_field("MsgSeqNum", MSG_SEQ_NUM).into())
     }
 
     fn on_low_seqnum(&mut self, message: Message<&[u8]>) -> Response {
         log::warn!("Received message with low sequence number");
-        self.make_logout(errs::msg_seq_num(self.msg_seq_num_inbound.0 + 1))
+        self.make_logout(errs::msg_seq_num(self.msg_seq_num_inbound.0 + 1).into())
     }
 
     fn on_reject(
@@ -789,7 +792,7 @@ where
         ref_tag: Option<u32>,
         ref_msg_type: Option<&[u8]>,
         reason: u32,
-        err_text: String,
+        err_text: SmartString,
     ) -> Response {
         log::warn!(
             "Rejecting message with seq_num={}, reason={}: {}",
@@ -824,11 +827,11 @@ where
             Some(SENDING_TIME),
             Some(ref_msg_type.as_bytes()),
             SENDING_TIME_ACCURACY_PROBLEM,
-            "Bad SendingTime".to_string(),
+            "Bad SendingTime".to_string().into(),
         )
     }
 
-    fn make_logout(&mut self, text: String) -> Response {
+    fn make_logout(&mut self, text: SmartString) -> Response {
         let fix_message = {
             let begin_string = self.begin_string();
             let sender_comp_id = self.sender_comp_id();
@@ -958,7 +961,7 @@ where
             Some(missing_field),
             Some(ref_msg_type.as_bytes()),
             REQUIRED_TAG_MISSING,
-            format!("Required field {} is missing", field_name),
+            format!("Required field {} is missing", field_name).into(),
         )
     }
 
@@ -979,7 +982,7 @@ where
             format!(
                 "Invalid NewSeqNo: received {} but expected > {}",
                 received_seqno, expected_seqno
-            ),
+            ).into(),
         )
     }
 
@@ -1001,7 +1004,7 @@ where
         let message_bytes = gap_fill_message.done();
 
         // Store the gap fill message
-        self.store_outbound_message(msg_seq_num, message_bytes.to_vec());
+        self.store_outbound_message(msg_seq_num, message_bytes.into());
 
         Response::OutboundBytes(message_bytes)
     }
@@ -1023,11 +1026,12 @@ mod test {
     // Import needed for tests
     use crate::session::MsgSeqNumCounter;
 
-    fn create_test_message(msg_type: &str, seq_num: u64) -> String {
+    fn create_test_message(msg_type: &str, seq_num: u64) -> SmartString {
         format!(
             "8=FIX.4.4|9=100|35={}|49=SENDER|56=TARGET|34={}|52=20100304-07:59:30|10=000|",
             msg_type, seq_num
         )
+        .into()
     }
 
     fn create_decoder() -> Decoder {
@@ -1050,7 +1054,7 @@ mod test {
                 }
             }
 
-            fn make_logout(&self, text: String) -> Response {
+            fn make_logout(&self, text: SmartString) -> Response {
                 Response::OutboundBytes(b"logout_response")
             }
 
@@ -1063,7 +1067,7 @@ mod test {
                 let msg_type = message.get_raw(MSG_TYPE).unwrap_or_default();
                 if msg_type == b"5" {
                     // Logout message
-                    return self.make_logout("Logout with high sequence number".to_string());
+                    return self.make_logout("Logout with high sequence number".to_string().into());
                 }
 
                 let _msg_seq_num = message.get::<u64>(&MSG_SEQ_NUM).unwrap();

@@ -4,6 +4,8 @@ use crate::{
     Buffer, Dictionary, FieldMap, FieldType, FieldValueError, GetConfig, RepeatingGroup,
     StreamingDecoder, TagU32,
 };
+#[cfg(feature = "utils-fastrace")]
+use fastrace::prelude::*;
 use nohash_hasher::IntMap;
 use rustc_hash::FxHashMap;
 use smallvec::SmallVec;
@@ -117,6 +119,7 @@ impl Decoder {
     /// let message = decoder.decode(data).unwrap();
     /// assert_eq!(message.get(fix44::SENDER_COMP_ID.tag), Ok("A"));
     /// ```
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     pub fn decode<T>(&mut self, bytes: T) -> Result<Message<'_, T>, DecodeError>
     where
         T: AsRef<[u8]>,
@@ -144,6 +147,7 @@ impl Decoder {
         unsafe { std::mem::transmute(&mut self.builder) }
     }
 
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn decode_frame<'a, T>(&'a mut self, frame: RawFrame<T>) -> Result<Message<'a, T>, DecodeError>
     where
         T: AsRef<[u8]>,

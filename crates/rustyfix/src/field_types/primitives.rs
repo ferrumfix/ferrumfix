@@ -1,4 +1,5 @@
 use crate::{Buffer, FieldType};
+use smartstring::alias::String as SmartString;
 use std::str;
 
 // Helper function to serialize integers
@@ -283,6 +284,24 @@ impl<'a> FieldType<'a> for String {
 
     fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
         str::from_utf8(data).map(|s| s.to_string())
+    }
+}
+
+// Implement for SmartString
+impl<'a> FieldType<'a> for SmartString {
+    type Error = std::str::Utf8Error;
+    type SerializeSettings = ();
+
+    fn serialize_with<B>(&self, buffer: &mut B, _settings: Self::SerializeSettings) -> usize
+    where
+        B: Buffer,
+    {
+        buffer.extend_from_slice(self.as_bytes());
+        self.len()
+    }
+
+    fn deserialize(data: &'a [u8]) -> Result<Self, Self::Error> {
+        str::from_utf8(data).map(|s| s.into())
     }
 }
 

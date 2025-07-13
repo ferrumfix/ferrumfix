@@ -63,24 +63,24 @@ impl HeartbeatRule {
                 if proposal == expected {
                     Ok(())
                 } else {
-                    Err(errs::heartbeat_exact(expected.as_secs()))
+                    Err(errs::heartbeat_exact(expected.as_secs()).into())
                 }
             }
             HeartbeatRule::Range(range) => {
                 if range.contains(proposal) {
                     Ok(())
                 } else {
-                    Err(errs::heartbeat_range(
-                        range.start().as_secs(),
-                        range.end().as_secs(),
-                    ))
+                    Err(
+                        errs::heartbeat_range(range.start().as_secs(), range.end().as_secs())
+                            .into(),
+                    )
                 }
             }
             HeartbeatRule::Any => {
                 if *proposal != Duration::from_secs(0) {
                     Ok(())
                 } else {
-                    Err(errs::heartbeat_gt_0())
+                    Err(errs::heartbeat_gt_0().into())
                 }
             }
         }

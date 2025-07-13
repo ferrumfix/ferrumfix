@@ -1,4 +1,6 @@
 use bitvec::prelude::*;
+#[cfg(feature = "utils-fastrace")]
+use fastrace::prelude::*;
 use smallvec::{SmallVec, smallvec};
 use std::io;
 
@@ -13,6 +15,7 @@ pub trait Codec {
 }
 
 impl Codec for u32 {
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn serialize(&self, output: &mut impl io::Write) -> io::Result<usize> {
         let num_ignored_bytes = self.leading_zeros() / 7;
         let bytes = [
@@ -27,6 +30,7 @@ impl Codec for u32 {
         Ok(bytes.len() - num_ignored_bytes as usize)
     }
 
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn deserialize(&mut self, input: &mut impl io::Read) -> io::Result<usize> {
         *self = 0;
         let bytes = decode_stop_bit_entity(input)?;
@@ -38,6 +42,7 @@ impl Codec for u32 {
 }
 
 impl Codec for i32 {
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn serialize(&self, output: &mut impl io::Write) -> io::Result<usize> {
         let mut bytes = [0u8; 5];
         let i;
@@ -72,6 +77,7 @@ impl Codec for i32 {
         Ok(i)
     }
 
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn deserialize(&mut self, input: &mut impl io::Read) -> io::Result<usize> {
         let bytes = decode_stop_bit_entity(input)?;
         let is_negative = (bytes[0] & NEGATIVE_SIGN_MASK) != 0;
@@ -84,6 +90,7 @@ impl Codec for i32 {
 }
 
 impl Codec for u64 {
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<usize> {
         let mut value = *self;
         if value == 0 {
@@ -108,6 +115,7 @@ impl Codec for u64 {
         Ok(buf.len() - i)
     }
 
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn deserialize(&mut self, reader: &mut impl io::Read) -> io::Result<usize> {
         let bytes = decode_stop_bit_entity(reader)?;
         *self = 0;
@@ -128,6 +136,7 @@ impl Codec for u64 {
 }
 
 impl Codec for i64 {
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<usize> {
         // ZigZag encoding: Maps signed integers to unsigned integers efficiently.
         //
@@ -146,6 +155,7 @@ impl Codec for i64 {
         (zigzag_encoded as u64).serialize(writer)
     }
 
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn deserialize(&mut self, reader: &mut impl io::Read) -> io::Result<usize> {
         let mut zigzag_encoded = 0u64;
         let bytes_read = zigzag_encoded.deserialize(reader)?;
@@ -164,6 +174,7 @@ impl Codec for i64 {
 }
 
 impl Codec for Vec<u8> {
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn serialize(&self, output: &mut impl io::Write) -> io::Result<usize> {
         let len = self.len() as u32;
         len.serialize(output)?;
@@ -171,6 +182,7 @@ impl Codec for Vec<u8> {
         Ok(len as usize)
     }
 
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn deserialize(&mut self, input: &mut impl io::Read) -> io::Result<usize> {
         let mut len = 0u32;
         len.deserialize(input)?;
@@ -181,6 +193,7 @@ impl Codec for Vec<u8> {
 }
 
 impl Codec for String {
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn serialize(&self, output: &mut impl io::Write) -> io::Result<usize> {
         let len = self.len() as u32;
         let bytes = self.as_bytes();
@@ -189,6 +202,7 @@ impl Codec for String {
         Ok(len as usize)
     }
 
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn deserialize(&mut self, input: &mut impl io::Read) -> io::Result<usize> {
         let mut len = 0u32;
         len.deserialize(input)?;
@@ -228,6 +242,7 @@ impl PresenceMap {
 }
 
 impl Codec for PresenceMap {
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn serialize(&self, output: &mut impl io::Write) -> io::Result<usize> {
         if self.bits.is_empty() {
             output.write_all(&[STOP_BYTE])?;
@@ -253,6 +268,7 @@ impl Codec for PresenceMap {
         Ok(bytes.len())
     }
 
+    #[cfg_attr(feature = "utils-fastrace", trace)]
     fn deserialize(&mut self, input: &mut impl io::Read) -> io::Result<usize> {
         self.bits.clear();
         let mut bytes_read = 0;
@@ -288,6 +304,7 @@ impl Codec for PresenceMap {
 //    }
 //}
 
+#[cfg_attr(feature = "utils-fastrace", trace)]
 pub fn decode_stop_bit_entity(input: &mut impl io::Read) -> io::Result<SmallVec<[u8; 10]>> {
     let mut bytes = smallvec![];
     loop {
@@ -305,6 +322,7 @@ pub fn decode_stop_bit_entity(input: &mut impl io::Read) -> io::Result<SmallVec<
 }
 
 #[allow(dead_code)]
+#[cfg_attr(feature = "utils-fastrace", trace)]
 pub fn decode_stop_bit_bitvec(input: &mut impl io::Read) -> io::Result<BitVec> {
     let mut bits = BitVec::new();
     let mut stop_bit = false;

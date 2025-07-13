@@ -509,7 +509,7 @@ impl<'a> FieldEnum<'a> {
 pub struct Field<'a>(&'a Dictionary, &'a FieldData);
 
 impl<'a> Field<'a> {
-    pub fn doc_url_onixs(&self, version: &str) -> String {
+    pub fn doc_url_onixs(&self, version: &str) -> SmartString {
         let v = match version {
             "FIX.4.0" => "4.0",
             "FIX.4.1" => "4.1",
@@ -527,6 +527,7 @@ impl<'a> Field<'a> {
             v,
             self.1.tag.to_string().as_str()
         )
+        .into()
     }
 
     pub fn is_num_in_group(&self) -> bool {

@@ -2,6 +2,7 @@ use heck::{ToPascalCase, ToShoutySnakeCase};
 use indoc::formatdoc;
 use rustc_hash::FxHashSet;
 use rustyfix_dictionary::{self as dict, TagU32};
+use smartstring::alias::String as SmartString;
 
 const RUSTYFIX_VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -15,7 +16,7 @@ const RUSTYFIX_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// ```text
 /// //! Generated automatically by RustyFix. Do not modify manually.
 /// ```
-pub fn generated_code_notice() -> String {
+pub fn generated_code_notice() -> SmartString {
     formatdoc!(
         r#"
             // Generated automatically by RustyFix {} on {}.
@@ -26,6 +27,7 @@ pub fn generated_code_notice() -> String {
         RUSTYFIX_VERSION,
         chrono::Utc::now().to_rfc2822(),
     )
+    .into()
 }
 
 /// Generates the Rust code for an `enum` that has variants that map 1:1 the
@@ -37,7 +39,7 @@ pub fn codegen_field_type_enum(field: dict::Field, settings: &Settings) -> Strin
         .enums()
         .unwrap()
         .map(|v| codegen_field_type_enum_variant(v, settings))
-        .collect::<Vec<String>>()
+        .collect::<Vec<_>>()
         .join("\n");
     formatdoc!(
         r#"
@@ -55,7 +57,10 @@ pub fn codegen_field_type_enum(field: dict::Field, settings: &Settings) -> Strin
     )
 }
 
-fn codegen_field_type_enum_variant(allowed_value: dict::FieldEnum, settings: &Settings) -> String {
+fn codegen_field_type_enum_variant(
+    allowed_value: dict::FieldEnum,
+    settings: &Settings,
+) -> SmartString {
     let mut identifier = allowed_value.description().to_pascal_case();
     let identifier_needs_prefix = !allowed_value
         .description()
@@ -65,6 +70,25 @@ fn codegen_field_type_enum_variant(allowed_value: dict::FieldEnum, settings: &Se
         .is_ascii_alphabetic();
     if identifier_needs_prefix {
         identifier = format!("_{identifier}");
+    }
+    // E.g. `TickDirection::PlusTick` -> `TickDirection::Plus`.
+    if let Some(s) = identifier.strip_suffix("Tick") {
+        identifier = s.to_string();
+    }
+    // E.g. `QuoteCancelType::CancelForSymbol` -> `QuoteCancelType::Symbol`
+    if let Some(s) = identifier.strip_prefix("CancelFor") {
+        identifier = s.to_string();
+    }
+    // E.g. `SecurityRequestType::RequestSecurityIdentityAndSpecifications`
+    if let Some(s) = identifier.strip_prefix("Request") {
+        identifier = s.to_string();
+    }
+    // E.g. `MultiLegReportingType::SingleSecurity`
+    if let Some(s) = identifier.strip_suffix("Security") {
+        identifier = s.to_string();
+    }
+    if let Some(s) = identifier.strip_prefix("RelatedTo") {
+        identifier = s.to_string();
     }
     let value_literal = allowed_value.value();
     indent_string(
@@ -221,26 +245,33 @@ pub fn gen_definitions(fix_dictionary: &dict::Dictionary, settings: &Settings) -
     code
 }
 
-fn indent_string(s: &str, prefix: &str) -> String {
+fn indent_string(s: &str, prefix: &str) -> SmartString {
     s.lines()
         .map(|line| format!("{prefix}{line}"))
         .collect::<Vec<String>>()
         .join("\n")
+        .into()
 }
 
-fn onixs_link_to_field(fix_version: &str, field: dict::Field) -> Option<String> {
-    Some(format!(
-        "https://www.onixs.biz/fix-dictionary/{}/tagnum_{}.html",
-        onixs_dictionary_id(fix_version)?,
-        field.tag().get()
-    ))
+fn onixs_link_to_field(fix_version: &str, field: dict::Field) -> Option<SmartString> {
+    Some(
+        format!(
+            "https://www.onixs.biz/fix-dictionary/{}/tagnum_{}.html",
+            onixs_dictionary_id(fix_version)?,
+            field.tag().get()
+        )
+        .into(),
+    )
 }
 
-fn onixs_link_to_dictionary(fix_version: &str) -> Option<String> {
-    Some(format!(
-        "https://www.onixs.biz/fix-dictionary/{}/index.html",
-        onixs_dictionary_id(fix_version)?
-    ))
+fn onixs_link_to_dictionary(fix_version: &str) -> Option<SmartString> {
+    Some(
+        format!(
+            "https://www.onixs.biz/fix-dictionary/{}/index.html",
+            onixs_dictionary_id(fix_version)?
+        )
+        .into(),
+    )
 }
 
 fn onixs_dictionary_id(fix_version: &str) -> Option<&str> {

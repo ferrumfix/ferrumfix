@@ -18,6 +18,7 @@ rustyfix-dictionary = { version = "0.7", path = "../rustyfix-dictionary" }
 rustc-hash = { workspace = true }
 heck = { workspace = true }
 indoc = { workspace = true }
+smartstring = { workspace = true }
 
 [dev-dependencies]
 arbitrary = { workspace = true }
