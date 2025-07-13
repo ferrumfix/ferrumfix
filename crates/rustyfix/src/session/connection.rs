@@ -408,15 +408,7 @@ where
         fix_message
     }
 
-    //    fn add_seqnum(&self, message: &mut RawEncoderState) {
-    //        message.add_field(tags::MSG_SEQ_NUM, self.seq_numbers().next_outbound());
-    //    }
-    //
-    //    fn add_sending_time(&self, message: &mut RawEncoderState) {
-    //        message.add_field(tags::SENDING_TIME, DtfTimestamp::utc_now());
-    //    }
-    //
-    //    #[must_use]
+    #[must_use]
     fn on_heartbeat_is_due(&mut self) -> &[u8] {
         let fix_message = {
             let begin_string = self.begin_string();
@@ -555,9 +547,6 @@ where
     fn make_resend_request(&mut self, start: u64, end: u64) -> Response {
         let begin_string = self.begin_string();
         let mut resend_request = self.start_message(begin_string, b"2");
-        //Self::add_comp_id(resend_request);
-        //self.add_sending_time(resend_request);
-        //self.add_seqnum(resend_request);
         resend_request.set_fv_with_key(&BEGIN_SEQ_NO, start);
         resend_request.set_fv_with_key(&END_SEQ_NO, end);
         Response::OutboundBytes(resend_request.done())

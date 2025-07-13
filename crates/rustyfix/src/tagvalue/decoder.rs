@@ -802,28 +802,6 @@ where
 }
 
 // TODO: Re-implement slog::Value without lifetime issues
-// #[cfg(feature = "utils-slog")]
-// #[cfg_attr(docsrs, doc(cfg(feature = "utils-slog")))]
-// impl<'a, T> slog::Value for Message<'a, T>
-// where
-//     T: AsRef<[u8]>,
-// {
-//     fn serialize(
-//         &self,
-//         _rec: &slog::Record,
-//         key: slog::Key,
-//         serializer: &mut dyn slog::Serializer,
-//     ) -> slog::Result {
-//         for (tag, _value) in self.fields() {
-//             serializer.emit_u32(key, tag.get())?;
-//             serializer.emit_char(key, '=')?;
-//             // FIXME
-//             serializer.emit_char(key, '?')?;
-//             serializer.emit_char(key, '|')?;
-//         }
-//         Ok(())
-//     }
-// }
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
