@@ -104,8 +104,22 @@
 - [ ] **Clean up commented code blocks** - Remove TODO comments for slog::Value and PartialEq
 - [x] **Remove dead code** - `new_order_single_decoder()` function in validation.rs
 - [x] **Update deprecated criterion::black_box** - Use `std::hint::black_box()` instead
+- [x] **Fix JSON encoder struct mismatch** - Added missing dictionary field and imports
+- [x] **Enhance TLS cipher conversion error handling** - Replace silent filter_map with explicit error logging
 
-### 6. Complete Backend Implementations
+### 6. Tokio Decoder Field Coverage Limitation
+**Priority**: MEDIUM | **Evidence**: Valid AI review about data completeness  
+- [ ] **Document field extraction limitations in OwnedMessage**
+  ```rust
+  /// Note: Currently extracts only common FIX fields to avoid lifetime issues.
+  /// Full field extraction requires architectural changes to Message struct.
+  /// Fields extracted: [1, 8, 9, 10, 11, 15, 20, 21, 34, 35, 38, 39, 40, 44, 49, 52, 54, 55, 56, 59, 60, 123]
+  fn from_message<T>(message: Message<'_, T>, raw_bytes: Bytes) -> Self
+  ```
+- [ ] **Add test coverage for field extraction limitations**
+- [ ] **Consider architectural changes for full field extraction** (requires Message API redesign)
+
+### 7. Complete Backend Implementations
 **Priority**: MEDIUM | **Evidence**: Trait definitions need implementations
 - [ ] **Complete session backend implementations**
 - [ ] **Add message store backends (File, Memory, Database)**
