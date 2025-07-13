@@ -8,6 +8,7 @@ use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
 use crate::traits::{FvWrite, SetField};
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use log;
+use quanta::Instant;
 use rustc_hash::FxHashMap;
 use smallvec::SmallVec;
 use smartstring::alias::String as SmartString;
@@ -15,7 +16,6 @@ use std::marker::{PhantomData, Unpin};
 use std::pin::Pin;
 use std::time::Duration;
 use uuid::Uuid;
-use quanta::Instant;
 
 const BEGIN_SEQ_NO: u32 = 7;
 const BEGIN_STRING: u32 = 8;
@@ -115,7 +115,7 @@ pub struct FixConnection<B, C = Config, V = NoOpVerifier> {
     backend: B,
     verifier: V,
     encoder: Encoder,
-    buffer: Vec<u8>,
+    buffer: SmallVec<[u8; 1024]>,
     msg_seq_num_inbound: MsgSeqNumCounter,
     msg_seq_num_outbound: MsgSeqNumCounter,
     /// Storage for outbound messages to support resend requests
@@ -142,7 +142,7 @@ where
             backend,
             verifier,
             encoder: Encoder::new(),
-            buffer: Vec::new(),
+            buffer: SmallVec::new(),
             msg_seq_num_inbound: MsgSeqNumCounter::new(),
             msg_seq_num_outbound: MsgSeqNumCounter::new(),
             outbound_message_store: FxHashMap::default(),
@@ -182,8 +182,8 @@ where
     }
 
     /// Get stored messages for resend request
-    pub fn get_messages_for_resend(&self, start_seq: u64, end_seq: u64) -> Vec<&[u8]> {
-        let mut messages = Vec::new();
+    pub fn get_messages_for_resend(&self, start_seq: u64, end_seq: u64) -> SmallVec<[&[u8]; 16]> {
+        let mut messages = SmallVec::new();
         for seq in start_seq..=end_seq {
             if let Some(message) = self.outbound_message_store.get(&seq) {
                 messages.push(message.as_slice());
@@ -353,7 +353,7 @@ where
                 }
                 LlEvent::BadMessage(err) => {
                     log::error!("Received malformed FIX message: {:?}", err);
-                    
+
                     // Implement comprehensive error recovery
                     match self.handle_bad_message_recovery(err).await {
                         RecoveryAction::Continue => {
@@ -367,7 +367,8 @@ where
                         }
                         RecoveryAction::Terminate => {
                             log::error!("Unrecoverable error, terminating session");
-                            let logout = self.create_emergency_logout("Unrecoverable message error");
+                            let logout =
+                                self.create_emergency_logout("Unrecoverable message error");
                             output.write_all(&logout).await.unwrap();
                             return;
                         }
@@ -384,15 +385,15 @@ where
                 }
                 LlEvent::Logout => {
                     log::info!("Logout event received - shutting down connection");
-                    
+
                     // Implement proper logout handling
                     self.handle_logout_sequence().await;
-                    
+
                     // Send logout acknowledgment if needed
                     let logout_ack = self.create_logout_response("Logout acknowledged");
                     output.write_all(&logout_ack).await.unwrap();
                     self.on_outbound_message(&logout_ack).ok();
-                    
+
                     // Set session state and cleanup
                     self.set_session_state(SessionState::Disconnected);
                     log::info!("Session gracefully terminated");
@@ -400,7 +401,7 @@ where
                 }
                 LlEvent::TestRequest => {
                     log::debug!("Test request timeout - connection may be unstable");
-                    
+
                     // Implement comprehensive test request handling
                     match self.handle_test_request_timeout().await {
                         TestRequestAction::SendTestRequest => {
@@ -483,7 +484,7 @@ where
     V: Verify,
 {
     type Error = &'a [u8];
-    type Msg = EncoderHandle<'a, Vec<u8>>;
+    type Msg = EncoderHandle<'a, SmallVec<[u8; 1024]>>;
 
     fn on_inbound_app_message(&mut self, message: Message<&[u8]>) -> Result<(), Self::Error> {
         Ok(())
@@ -521,7 +522,12 @@ pub struct MessageBuiderTuple<'a> {
 }
 
 impl<'a> MessageBuiderTuple<'a> {
-    pub fn get(self) -> (EncoderHandle<'a, Vec<u8>>, &'a mut MessageBuilder) {
+    pub fn get(
+        self,
+    ) -> (
+        EncoderHandle<'a, SmallVec<[u8; 1024]>>,
+        &'a mut MessageBuilder,
+    ) {
         // NOTE: This is a placeholder implementation to prevent runtime panics
         // TODO: Implement proper message building functionality when encoder integration is ready
         unimplemented!("MessageBuilder integration not yet implemented - use encoder directly")
@@ -566,7 +572,7 @@ where
                 return Response::OutboundBytes(test_request_response);
             }
             b"2" => {
-                return Response::None;
+                return self.on_resend_request(&message);
             }
             b"4" => {
                 // Sequence Reset message - special handling required
@@ -982,7 +988,8 @@ where
             format!(
                 "Invalid NewSeqNo: received {} but expected > {}",
                 received_seqno, expected_seqno
-            ).into(),
+            )
+            .into(),
         )
     }
 

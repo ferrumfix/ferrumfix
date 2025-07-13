@@ -138,7 +138,20 @@ impl FixOverTlsCommon for FixOverTlsV10 {
         context.set_options(SslOptions::NO_COMPRESSION);
         context.set_options(SslOptions::NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
         context.set_session_cache_mode(SslSessionCacheMode::SERVER);
-        context.set_cipher_list(self.recommended_cs_openssl(false).join(":").as_str())?;
+
+        // SECURITY: Validate cipher list is not empty to prevent silent fallback to defaults
+        let ciphers = self.recommended_cs_openssl(false).join(":");
+        if ciphers.is_empty() {
+            log::error!(
+                "No valid FIXS cipher suites available - cannot establish secure connection"
+            );
+            // Force an SSL error by setting an invalid cipher list
+            context.set_cipher_list("INVALID_CIPHER_THAT_DOES_NOT_EXIST")?;
+            // This line should never be reached due to the error above
+            unreachable!("Invalid cipher list should have caused an error");
+        }
+
+        context.set_cipher_list(&ciphers)?;
         Ok(context)
     }
 
@@ -151,7 +164,20 @@ impl FixOverTlsCommon for FixOverTlsV10 {
         context.set_options(SslOptions::CIPHER_SERVER_PREFERENCE);
         context.set_options(SslOptions::NO_COMPRESSION);
         context.set_options(SslOptions::NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
-        context.set_cipher_list(self.recommended_cs_openssl(false).join(":").as_str())?;
+
+        // SECURITY: Validate cipher list is not empty to prevent silent fallback to defaults
+        let ciphers = self.recommended_cs_openssl(false).join(":");
+        if ciphers.is_empty() {
+            log::error!(
+                "No valid FIXS cipher suites available - cannot establish secure connection"
+            );
+            // Force an SSL error by setting an invalid cipher list
+            context.set_cipher_list("INVALID_CIPHER_THAT_DOES_NOT_EXIST")?;
+            // This line should never be reached due to the error above
+            unreachable!("Invalid cipher list should have caused an error");
+        }
+
+        context.set_cipher_list(&ciphers)?;
         Ok(context)
     }
 }
