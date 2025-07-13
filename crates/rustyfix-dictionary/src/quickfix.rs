@@ -1,5 +1,6 @@
 use self::builder::DictionaryBuilder;
 use super::*;
+use smallvec::SmallVec;
 
 pub struct QuickFixReader<'a> {
     node_with_header: roxmltree::Node<'a, 'a>,
@@ -202,7 +203,7 @@ fn import_datatype(builder: &mut DictionaryBuilder, node: roxmltree::Node) -> Sm
         let dt = DatatypeData {
             datatype,
             description: String::new(),
-            examples: Vec::new(),
+            examples: SmallVec::new(),
         };
         builder.add_datatype(dt);
     }
@@ -212,8 +213,8 @@ fn import_datatype(builder: &mut DictionaryBuilder, node: roxmltree::Node) -> Sm
 fn value_restrictions_from_node(
     node: roxmltree::Node,
     _datatype_name: SmartString,
-) -> ParseResult<Option<Vec<FieldEnumData>>> {
-    let mut values = Vec::new();
+) -> ParseResult<Option<SmallVec<[FieldEnumData; 16]>>> {
+    let mut values = SmallVec::new();
     for child in node.children() {
         if child.is_element() {
             let variant = child

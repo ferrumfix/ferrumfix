@@ -34,14 +34,16 @@ fn main() {
     assert_eq!(msg.get(fix42::MD_REQ_ID.tag), Ok("A"));
 
     // Repeating groups!
-    let md_entries = msg.group(fix42::NO_MD_ENTRIES.tag).unwrap();
+    let md_entries = msg
+        .group(fix42::NO_MD_ENTRIES.tag)
+        .expect("NO_MD_ENTRIES group not found in message");
     assert_eq!(md_entries.len(), 2);
 
     for entry in md_entries.entries() {
         assert_eq!(entry.get(fix42::CURRENCY.tag), Ok("EUR"));
     }
 
-    let md0 = md_entries.get(0).unwrap();
+    let md0 = md_entries.get(0).expect("First MD entry not found");
     assert_eq!(
         md0.get(fix42::MD_UPDATE_ACTION.tag),
         Ok(fix42::MdUpdateAction::New)
@@ -54,7 +56,7 @@ fn main() {
     assert_eq!(md0.get(fix42::MD_ENTRY_SIZE.tag), Ok(2_500_000));
     assert_eq!(md0.get(fix42::NUMBER_OF_ORDERS.tag), Ok(1));
 
-    let md1 = md_entries.get(1).unwrap();
+    let md1 = md_entries.get(1).expect("Second MD entry not found");
     assert_eq!(
         md1.get(fix42::MD_UPDATE_ACTION.tag),
         Ok(fix42::MdUpdateAction::New)

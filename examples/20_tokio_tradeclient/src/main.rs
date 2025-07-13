@@ -76,7 +76,9 @@ where
 {
     let choices: Vec<FixEnum<Strum>> = Strum::iter().map(FixEnum).collect();
     let selection = inquire::Select::new(prompt, choices).prompt()?;
-    let result = T::deserialize(&selection.0.to_bytes()).ok().unwrap();
+    let result = T::deserialize(&selection.0.to_bytes())
+        .ok()
+        .expect("Failed to deserialize FIX enum value");
 
     Ok(result)
 }

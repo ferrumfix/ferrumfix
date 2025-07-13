@@ -1,6 +1,7 @@
 //! A builder API for creating a [`Dictionary`] from scratch.
 
 use crate::{Dictionary, FixDatatype, FixmlComponentAttributes};
+use smallvec::SmallVec;
 use smartstring::alias::String as SmartString;
 
 /// A public API for building a [`Dictionary`] from scratch.
@@ -83,7 +84,7 @@ pub struct FieldData {
     /// The associated data field. If given, this field represents the length of
     /// the referenced data field
     pub associated_data_tag: Option<usize>,
-    pub value_restrictions: Option<Vec<FieldEnumData>>,
+    pub value_restrictions: Option<SmallVec<[FieldEnumData; 16]>>,
     /// Abbreviated form of the Name, typically to specify the element name when
     /// the field is used in an XML message. Can be overridden by BaseCategory /
     /// BaseCategoryAbbrName.
@@ -113,7 +114,7 @@ pub struct DatatypeData {
     /// Human readable description of this Datatype.
     pub description: String,
     /// A string that contains examples values for a datatype
-    pub examples: Vec<String>,
+    pub examples: SmallVec<[String; 4]>,
     // TODO: 'XML'.
 }
 

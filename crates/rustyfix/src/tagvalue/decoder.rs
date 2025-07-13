@@ -6,6 +6,7 @@ use crate::{
 };
 use nohash_hasher::IntMap;
 use rustc_hash::FxHashMap;
+use smallvec::SmallVec;
 use std::convert::TryInto;
 use std::fmt::Debug;
 use std::iter::FusedIterator;
@@ -529,6 +530,7 @@ impl<'a, T> Message<'a, T> {
     }
 }
 
+#[allow(dead_code)] // Public API methods may not be used in internal codebase
 impl<'a, T> MessageMut<'a, T> {
     /// Converts this mutable message to a read-only message view.
     ///
@@ -633,7 +635,7 @@ struct DecoderStateNewGroup {
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
 struct DecoderState {
-    group_information: Vec<DecoderGroupState>,
+    group_information: SmallVec<[DecoderGroupState; 8]>,
     new_group: Option<DecoderStateNewGroup>,
     data_field_length: Option<usize>,
 }
@@ -683,7 +685,7 @@ struct MessageBuilder<'a> {
     state: DecoderState,
     raw: &'a [u8],
     fields: FxHashMap<FieldLocator, (TagU32, &'a [u8], usize)>,
-    field_locators: Vec<FieldLocator>,
+    field_locators: SmallVec<[FieldLocator; 32]>,
     i_first_cell: usize,
     i_last_cell: usize,
     len_end_header: usize,
@@ -696,12 +698,12 @@ impl<'a> Default for MessageBuilder<'a> {
     fn default() -> Self {
         Self {
             state: DecoderState {
-                group_information: Vec::new(),
+                group_information: SmallVec::new(),
                 new_group: None,
                 data_field_length: None,
             },
             raw: b"",
-            field_locators: Vec::new(),
+            field_locators: SmallVec::new(),
             fields: FxHashMap::default(),
             i_first_cell: 0,
             i_last_cell: 0,
@@ -716,12 +718,6 @@ impl<'a> Default for MessageBuilder<'a> {
 impl<'a> MessageBuilder<'a> {
     fn clear(&mut self) {
         *self = Self::default();
-    }
-
-    fn remove(&mut self, tag: TagU32) {
-        let field_locator = self.state.current_field_locator(tag);
-        self.fields.remove(&field_locator);
-        self.field_locators.retain(|l| l.tag != tag);
     }
 
     fn add_field(

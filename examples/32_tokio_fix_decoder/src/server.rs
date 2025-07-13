@@ -26,10 +26,6 @@ type Result<T> = std::result::Result<T, ServerError>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize fastrace with console reporter
-    let reporter = fastrace::collector::ConsoleReporter {};
-    fastrace::set_reporter(reporter, fastrace::collector::Config::default());
-
     // Initialize simple logger for this example
     env_logger::init();
 

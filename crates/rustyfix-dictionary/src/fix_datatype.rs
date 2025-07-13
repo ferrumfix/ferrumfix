@@ -343,12 +343,12 @@ impl FixDatatype {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::collections::HashSet;
+    use rustc_hash::FxHashSet;
 
     #[test]
     fn iter_all_unique() {
         let as_vec = FixDatatype::iter_all().collect::<Vec<FixDatatype>>();
-        let as_set = FixDatatype::iter_all().collect::<HashSet<FixDatatype>>();
+        let as_set = FixDatatype::iter_all().collect::<FxHashSet<FixDatatype>>();
         assert_eq!(as_vec.len(), as_set.len());
     }
 
@@ -367,7 +367,7 @@ mod test {
             .collect::<Vec<&str>>();
         let as_set = FixDatatype::iter_all()
             .map(|dt| dt.name())
-            .collect::<HashSet<&str>>();
+            .collect::<FxHashSet<&str>>();
         assert_eq!(as_vec.len(), as_set.len());
     }
 

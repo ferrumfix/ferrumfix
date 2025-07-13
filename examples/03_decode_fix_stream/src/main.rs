@@ -29,8 +29,13 @@ fn main() {
     for _message in 0..FIX_MESSAGES.len() {
         loop {
             // You *must* use `std::io::Read::read_exact`.
-            stream.read_exact(fix_decoder.fillable()).unwrap();
-            match fix_decoder.try_parse().unwrap() {
+            stream
+                .read_exact(fix_decoder.fillable())
+                .expect("Failed to read FIX message data from stream");
+            match fix_decoder
+                .try_parse()
+                .expect("Failed to parse FIX message")
+            {
                 Some(_) => {
                     // we have successfully parsed a message
                     let msg = fix_decoder.message();

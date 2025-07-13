@@ -743,7 +743,7 @@ pub struct Section {}
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::collections::HashSet;
+    use rustc_hash::FxHashSet;
 
     #[test]
     fn fix44_quickfix_is_ok() {
@@ -764,7 +764,7 @@ mod test {
     fn all_datatypes_are_used_at_least_once() {
         for dict in Dictionary::common_dictionaries().iter() {
             let datatypes_count = dict.datatypes().len();
-            let mut datatypes: HashSet<SmartString> = HashSet::new();
+            let mut datatypes: FxHashSet<SmartString> = FxHashSet::default();
             for field in dict.fields() {
                 datatypes.insert(field.data_type().name().into());
             }

@@ -82,6 +82,7 @@ rust_decimal = { workspace = true, optional = true }
 serde = { workspace = true }
 simd-json = { workspace = true }
 slog = { workspace = true, optional = true }
+smallvec = { workspace = true }
 smartstring = { workspace = true }
 thiserror = { workspace = true }
 quanta = { workspace = true }

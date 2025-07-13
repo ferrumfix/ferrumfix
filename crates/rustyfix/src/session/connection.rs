@@ -184,7 +184,7 @@ where
 
     /// Update heartbeat timestamp
     pub fn update_heartbeat_time(&mut self) {
-        self.last_heartbeat_time = Some(std::time::Instant::now());
+        self.last_heartbeat_time = Some(quanta::Instant::now());
     }
 
     /// Check if heartbeat timeout has occurred

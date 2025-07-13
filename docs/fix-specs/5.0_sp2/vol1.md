@@ -703,7 +703,7 @@ Version 5.0 Service Pack 2 - Errata   VOLUME 1                                  
 | FIX Session          |                      | Web Services         | Transport            | Multicast            | Other Transport      |
 | -------------------- | -------------------- | -------------------- | -------------------- | -------------------- | -------------------- |
 | Layer                |                      | HTTP                 | MQSeries             | UDP                  | Transport            |
-| FKXLL                | 4ransport            |                      |                      |                      |                      |
+| FKXLL                | Transport            |                      |                      |                      |                      |
 | FIX 4.0              | FIX 4.1              | FIX 4.2              | FIX 4.3              | FIX 4.4              | FIX 5.0              |
 | Application Messages | Application Messages | Application Messages | Application Messages | Application Messages | Application Messages |
 

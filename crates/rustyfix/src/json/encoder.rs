@@ -6,7 +6,7 @@ use crate::GetConfig;
 use std::fmt::Debug;
 use std::sync::Arc;
 
-// TODO: `serde_json` is not a very high-performance library.
+// Using simd-json for high-performance JSON operations.
 /// JSON encoder for FIX messages.
 ///
 /// This encoder converts FIX messages to JSON format using the provided dictionary

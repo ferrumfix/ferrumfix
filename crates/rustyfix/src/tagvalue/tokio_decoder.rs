@@ -3,6 +3,7 @@ use crate::GetConfig;
 use crate::{FieldType, FieldValueError};
 use bytes::{Buf, Bytes, BytesMut};
 use rustc_hash::FxHashMap;
+use smallbytes::SmallBytes;
 use tokio_util::codec;
 
 /// Length of FIX checksum field: "CheckSum=NNN|" (10= + 3 digits + separator)
@@ -10,6 +11,9 @@ const CHECKSUM_FIELD_LEN: usize = 7;
 
 /// Minimum data threshold to consider potential malformed data vs incomplete data
 const MALFORMED_DATA_THRESHOLD: usize = 64;
+
+/// Minimum FIX message header length for "8=FIX.4.2|9=NNN|" pattern
+const MIN_FIX_HEADER_LEN: usize = 16;
 
 /// Parse FIX message header to extract body length and header end position.
 /// Searches for the next potential start of a FIX message (8=FIX pattern).
@@ -25,7 +29,7 @@ fn find_next_fix_start(data: &[u8]) -> Option<usize> {
 
 /// Returns (header_end_pos, body_length) if successful.
 fn parse_fix_header(data: &[u8], separator: u8) -> Option<(usize, usize)> {
-    if data.len() < 16 {
+    if data.len() < MIN_FIX_HEADER_LEN {
         // Minimum for "8=FIX.4.2|9=NNN|"
         return None;
     }
@@ -68,13 +72,13 @@ fn parse_fix_header(data: &[u8], separator: u8) -> Option<(usize, usize)> {
 pub struct OwnedMessage {
     /// The raw message bytes
     raw_bytes: Bytes,
-    /// Parsed fields stored as owned data
-    fields: FxHashMap<u32, Bytes>,
+    /// Parsed fields stored as owned data (using SmallBytes for typical small field values)
+    fields: FxHashMap<u32, SmallBytes<64>>,
 }
 
 impl OwnedMessage {
     /// Create an OwnedMessage from raw bytes with pre-parsed fields
-    fn new(raw_bytes: Bytes, fields: FxHashMap<u32, Bytes>) -> Self {
+    fn new(raw_bytes: Bytes, fields: FxHashMap<u32, SmallBytes<64>>) -> Self {
         Self { raw_bytes, fields }
     }
 
@@ -88,7 +92,9 @@ impl OwnedMessage {
         // Extract ALL fields from the message by iterating over them
         // This ensures no fields are lost during conversion to OwnedMessage
         for (tag, value) in message.fields() {
-            fields.insert(tag.get(), Bytes::copy_from_slice(value));
+            let mut small_bytes = SmallBytes::<64>::new();
+            small_bytes.extend_from_slice(value);
+            fields.insert(tag.get(), small_bytes);
         }
 
         Self::new(raw_bytes, fields)

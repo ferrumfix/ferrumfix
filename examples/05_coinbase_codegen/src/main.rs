@@ -31,7 +31,8 @@ fn main() {
 }
 
 fn fix_decoder() -> Decoder {
-    let fix_dictionary = Dictionary::from_quickfix_spec(QUICKFIX_SPEC).unwrap();
+    let fix_dictionary = Dictionary::from_quickfix_spec(QUICKFIX_SPEC)
+        .expect("Failed to load Coinbase QuickFIX dictionary");
     Decoder::new(fix_dictionary)
 }
 

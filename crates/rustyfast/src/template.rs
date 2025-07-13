@@ -1,6 +1,7 @@
 use super::Decimal;
 use super::errors::{Error, StaticError};
 use super::field_operators::FieldOperatorInstruction;
+use smallvec::SmallVec;
 use std::num::ParseIntError;
 
 #[derive(Clone, Debug)]
@@ -22,9 +23,9 @@ pub enum OwnedPrimitiveValue {
     I64(i64),
     U64(u64),
     Decimal(Decimal),
-    AsciiString(Vec<u8>),
+    AsciiString(SmallVec<[u8; 32]>),
     Utf8String(String),
-    Bytes(Vec<u8>),
+    Bytes(SmallVec<[u8; 32]>),
 }
 
 #[derive(Clone, Debug, Copy)]
@@ -123,7 +124,7 @@ pub struct Template {
     id: Option<u32>,
     /// Used for code generation.
     name: String,
-    instructions: Vec<FieldInstruction>,
+    instructions: SmallVec<[FieldInstruction; 16]>,
 }
 
 impl Template {
@@ -149,7 +150,7 @@ impl Template {
                 None => None,
             }
         };
-        let mut instructions = Vec::new();
+        let mut instructions = SmallVec::new();
         for node in root.children() {
             if node.is_element() {
                 match node.tag_name().name() {

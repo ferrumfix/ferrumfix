@@ -1,6 +1,6 @@
-use fnv::FnvHashSet;
 use heck::{ToPascalCase, ToShoutySnakeCase};
 use indoc::formatdoc;
+use rustc_hash::FxHashSet;
 use rustyfix_dictionary::{self as dict, TagU32};
 
 const RUSTYFIX_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -147,8 +147,8 @@ pub fn codegen_field_definition_struct(
     fix_dictionary: &dict::Dictionary,
     field: dict::Field,
 ) -> String {
-    let mut header = FnvHashSet::default();
-    let mut trailer = FnvHashSet::default();
+    let mut header = FxHashSet::default();
+    let mut trailer = FxHashSet::default();
     for item in fix_dictionary
         .component_by_name("StandardHeader")
         .unwrap()
@@ -260,8 +260,8 @@ fn onixs_dictionary_id(fix_version: &str) -> Option<&str> {
 
 fn gen_field_definition_with_hashsets(
     fix_dictionary: &dict::Dictionary,
-    header_tags: &FnvHashSet<TagU32>,
-    trailer_tags: &FnvHashSet<TagU32>,
+    header_tags: &FxHashSet<TagU32>,
+    trailer_tags: &FxHashSet<TagU32>,
     field: dict::Field,
 ) -> String {
     let name = field.name().to_shouty_snake_case();

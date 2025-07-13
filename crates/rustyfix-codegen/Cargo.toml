@@ -15,7 +15,7 @@ license.workspace = true
 [dependencies]
 chrono = { workspace = true, features = ["std"] }
 rustyfix-dictionary = { version = "0.7", path = "../rustyfix-dictionary" }
-fnv = { workspace = true }
+rustc-hash = { workspace = true }
 heck = { workspace = true }
 indoc = { workspace = true }
 
