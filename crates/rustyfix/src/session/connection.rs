@@ -39,6 +39,28 @@ const SENDING_TIME_ACCURACY_PROBLEM: u32 = 10;
 const REQUIRED_TAG_MISSING: u32 = 1;
 const VALUE_IS_INCORRECT: u32 = 6;
 
+/// Recovery actions for handling bad messages
+#[derive(Debug, Clone)]
+pub enum RecoveryAction {
+    /// Continue processing despite the error
+    Continue,
+    /// Request resend for a specific range of sequence numbers
+    RequestResend(u64, u64),
+    /// Terminate the session due to unrecoverable error
+    Terminate,
+}
+
+/// Actions to take when handling test request timeouts
+#[derive(Debug, Clone)]
+pub enum TestRequestAction {
+    /// Send a test request message
+    SendTestRequest,
+    /// Initiate logout sequence
+    InitiateLogout,
+    /// Terminate connection immediately
+    TerminateConnection,
+}
+
 /// Session state tracking for edge case management
 #[derive(Debug, Clone, Default)]
 pub enum SessionState {
@@ -328,7 +350,25 @@ where
                 }
                 LlEvent::BadMessage(err) => {
                     log::error!("Received malformed FIX message: {:?}", err);
-                    // TODO: Implement proper error recovery and logging
+                    
+                    // Implement comprehensive error recovery
+                    match self.handle_bad_message_recovery(err).await {
+                        RecoveryAction::Continue => {
+                            log::info!("Recovered from bad message, continuing session");
+                        }
+                        RecoveryAction::RequestResend(start, end) => {
+                            log::warn!("Requesting resend for sequence range {}..{}", start, end);
+                            let resend_request = self.create_resend_request(start, end);
+                            output.write_all(&resend_request).await.unwrap();
+                            self.on_outbound_message(&resend_request).ok();
+                        }
+                        RecoveryAction::Terminate => {
+                            log::error!("Unrecoverable error, terminating session");
+                            let logout = self.create_emergency_logout("Unrecoverable message error");
+                            output.write_all(&logout).await.unwrap();
+                            return;
+                        }
+                    }
                 }
                 LlEvent::IoError(err) => {
                     log::error!("I/O error in FIX connection: {:?}", err);
@@ -341,11 +381,43 @@ where
                 }
                 LlEvent::Logout => {
                     log::info!("Logout event received - shutting down connection");
-                    // TODO: Implement proper logout handling
+                    
+                    // Implement proper logout handling
+                    self.handle_logout_sequence().await;
+                    
+                    // Send logout acknowledgment if needed
+                    let logout_ack = self.create_logout_response("Logout acknowledged");
+                    output.write_all(&logout_ack).await.unwrap();
+                    self.on_outbound_message(&logout_ack).ok();
+                    
+                    // Set session state and cleanup
+                    self.set_session_state(SessionState::Disconnected);
+                    log::info!("Session gracefully terminated");
+                    return;
                 }
                 LlEvent::TestRequest => {
                     log::debug!("Test request timeout - connection may be unstable");
-                    // TODO: Implement test request handling
+                    
+                    // Implement comprehensive test request handling
+                    match self.handle_test_request_timeout().await {
+                        TestRequestAction::SendTestRequest => {
+                            log::info!("Sending test request to verify connection");
+                            let test_request = self.create_test_request();
+                            output.write_all(&test_request).await.unwrap();
+                            self.on_outbound_message(&test_request).ok();
+                        }
+                        TestRequestAction::InitiateLogout => {
+                            log::warn!("Connection appears dead, initiating logout");
+                            let logout = self.create_emergency_logout("Connection timeout");
+                            output.write_all(&logout).await.unwrap();
+                            self.set_session_state(SessionState::LogoutPending);
+                        }
+                        TestRequestAction::TerminateConnection => {
+                            log::error!("Connection is unresponsive, terminating");
+                            self.set_session_state(SessionState::Disconnected);
+                            return;
+                        }
+                    }
                 }
             }
         }
