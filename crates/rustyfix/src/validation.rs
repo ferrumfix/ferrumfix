@@ -55,11 +55,6 @@ mod test {
     use crate::prelude::fix44;
     use crate::tagvalue::Decoder;
 
-    fn new_order_single_decoder() -> Decoder {
-        let dict = Dictionary::fix44().unwrap();
-        Decoder::new(dict)
-    }
-
     #[test]
     fn test_missing_required_field() {
         let validator = SimpleValidator::default();
