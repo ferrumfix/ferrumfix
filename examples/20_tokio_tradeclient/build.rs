@@ -1,4 +1,4 @@
-use rustyfix::{codegen, Dictionary};
+use rustyfix::{Dictionary, codegen};
 use std::fs::File;
 use std::io;
 use std::io::Write;

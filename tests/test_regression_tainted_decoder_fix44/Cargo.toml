@@ -1,7 +1,0 @@
-[package]
-name = "test_regression_tainted_decoder_fix44"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-rustyfix = { path = "../../crates/rustyfix", features = ["codegen"] }
