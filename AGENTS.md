@@ -22,7 +22,7 @@
 - **Auto commit and push after each individual task is done.**
 - **NEVER use --no-verify when committing. Instead, fix the issues properly instead of bypassing the pre-commit hooks.**
 - **Always look for @docs/external-libraries/ when implementing APIs or designing exchange abstractions.**
-- **Periodically renew @TODO.md for saving current progress and updating the pending tasks.**
+- **Periodically renew `TODO.md` for saving current progress and updating the pending tasks.**
 
 ---
 
@@ -514,7 +514,7 @@ Append the following to the existing "Performance Considerations" section:
 - `FxHashMap`/`FxHashSet` from `rustc-hash` instead of std `HashMap`/`HashSet`
   - Also consider using `dashmap` for concurrent access
 - `simd-json` instead of `serde_json` (for all JSON operations)
-- `parking_lot::Mutex` instead of `std::sync::Mutex`
+- `parking_lot` instead of `std::sync`
 - `tachyonix` channels instead of `tokio::sync::mpsc`
 - `simd_aligned` for SIMD usage
 - `zerocopy` for zero-copy manipulations

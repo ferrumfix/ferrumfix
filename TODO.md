@@ -717,6 +717,139 @@ MIRIFLAGS="-Zmiri-tag-raw-pointers" cargo +nightly miri test
 
 ---
 
+### 🤖 **LATEST AI REVIEW FINDINGS (January 2025 - OVERHAUL PR)**
+
+**📅 REVIEW DATE**: January 2025 - Post-Rust 2024 Edition Migration  
+**🔍 REVIEWERS**: Copilot AI, Gemini-code-assist bot  
+**📊 SCOPE**: 104 changed files - Comprehensive codebase overhaul  
+**🎯 STATUS**: 🔄 **13 CRITICAL/HIGH PRIORITY ISSUES IDENTIFIED**
+
+#### **🚨 CRITICAL ISSUES (Must Fix Immediately)**
+
+1. **Infinite loop in malformed FIX data handling** - `crates/rustyfix/src/tagvalue/tokio_decoder.rs`
+   - **Issue**: When `parse_fix_header` returns None for malformed data, decoder doesn't consume bytes causing infinite loop
+   - **Impact**: Runtime hang - decoder keeps receiving same malformed data without advancing buffer
+   - **Solution**: Add buffer advancement and search for next "8=FIX" pattern to recover
+   - **Reviewer**: Gemini-code-assist ✅ VALID CRITICAL
+
+2. **TestRequest handling protocol violations** - `crates/rustyfix/src/session/connection.rs:747-757`
+   - **Issue A**: Potential panic on missing TestReqID field (using `.unwrap()`)
+   - **Issue B**: Incorrect response message type (creates TestRequest instead of Heartbeat)
+   - **Impact**: Protocol non-compliance and potential runtime crashes
+   - **Solution**: Return `make_reject_for_missing_field()` for missing ID, create Heartbeat (MsgType 0) response
+   - **Reviewer**: Gemini-code-assist ✅ VALID CRITICAL
+
+3. **ResendRequest handling incomplete** - `crates/rustyfix/src/session/connection.rs:568-570`
+   - **Issue**: Incoming ResendRequest (MsgType 2) messages ignored with `Response::None`
+   - **Impact**: FIX session recovery mechanism non-functional
+   - **Solution**: Implement `on_resend_request()` method to re-transmit requested messages
+   - **Reviewer**: Gemini-code-assist ✅ VALID CRITICAL
+
+4. **TLS cipher suite security vulnerability** - `crates/rustyfixs/src/lib.rs:135-143`
+   - **Issue**: Empty cipher list causes OpenSSL to fall back to default (potentially weak) ciphers
+   - **Impact**: Potential use of non-FIXS compliant or weak cipher suites
+   - **Solution**: Validate cipher list not empty before `set_cipher_list()`, return error if empty
+   - **Reviewer**: Gemini-code-assist ✅ VALID CRITICAL
+
+5. **FixConnector trait design flaw** - `crates/rustyfix/src/session/connection.rs:608-656`
+   - **Issue**: Default `on_inbound_message()` calls methods (`is_duplicate_message`, `store_inbound_message`) not defined on trait
+   - **Impact**: Compilation error for other types implementing FixConnector
+   - **Solution**: Add required methods to FixConnector trait definition or remove default implementation
+   - **Reviewer**: Gemini-code-assist ✅ VALID CRITICAL
+
+#### **🔥 HIGH PRIORITY (Memory Safety & API Compatibility)**
+
+6. **Unsafe transmute with lifetime coercion** - `crates/rustyfix/src/tagvalue/decoder.rs`
+   - **Issue**: `unsafe { std::mem::transmute(&mut self.builder) }` changing lifetimes is unsound
+   - **Impact**: Potential use-after-free vulnerabilities, memory safety violations
+   - **Solution**: Redesign MessageBuilder with explicit lifetime management or use zerocopy for safe transmutation
+   - **Reviewer**: Multiple AI reviewers ✅ VALID HIGH
+
+7. **API compatibility breakage** - `crates/rustyfix/src/tagvalue/decoder.rs:354-358`
+   - **Issue**: Changing `message()` from immutable to mutable reference breaks existing code
+   - **Impact**: Breaking change affecting downstream users
+   - **Solution**: Maintain both `message()` (immutable) and `message_mut()` (mutable) methods
+   - **Reviewer**: Copilot AI ✅ VALID HIGH
+
+8. **TODO in production code path** - `crates/rustyfix/src/session/connection.rs:450-452`
+   - **Issue**: `todo!()` macro in production code causes runtime panic when called
+   - **Impact**: Application crash in production
+   - **Solution**: Replace with actual implementation or `unimplemented!()` with clear documentation
+   - **Reviewer**: Copilot AI ✅ VALID HIGH
+
+#### **🔧 MEDIUM PRIORITY (Code Quality & Performance)**
+
+9. **Magic number constant** - `crates/rustyfix/src/tagvalue/tokio_decoder.rs`
+   - **Issue**: Hard-coded `7` for checksum field length lacks context
+   - **Solution**: Replace with `CHECKSUM_FIELD_LEN` constant
+   - **Reviewer**: Copilot AI ✅ VALID MEDIUM
+
+10. **Performance optimization opportunity** - `crates/rustyfix/src/tagvalue/tokio_decoder.rs:95-97`
+    - **Issue**: Field iteration and SmallBytes copying could be expensive for large messages
+    - **Note**: Review suggestion to remove SmallBytes is questionable as it defeats stack optimization
+    - **Solution**: Consider lazy evaluation or zero-copy approaches while preserving SmallBytes benefits
+    - **Reviewer**: Copilot AI ⚠️ PARTIALLY VALID (optimization good, suggested change questionable)
+
+11. **Dependency cleanup** - `Cargo.toml:74-89`
+    - **Issue**: `anyhow` and `fnv` dependencies contradict coding guidelines (prefer `thiserror`, `rustc-hash`)
+    - **Solution**: Remove unused dependencies to align with performance guidelines
+    - **Reviewer**: Gemini-code-assist ✅ VALID MEDIUM
+
+12. **Error message improvements** - Multiple files in `crates/rustyfast/src/`
+    - **Issue**: Error messages could include actual problematic values for better debugging
+    - **Solution**: Enhance error variants with specific values, bounds, and context
+    - **Reviewer**: Gemini-code-assist ✅ VALID MEDIUM
+
+13. **Documentation duplication** - `AGENTS.md`, `CLAUDE.md`, `.cursorrules`
+    - **Issue**: Multiple files contain identical agent instructions, maintenance burden
+    - **Solution**: Consolidate into single source of truth or clearly differentiate purposes
+    - **Reviewer**: Gemini-code-assist ✅ VALID MEDIUM
+
+#### **❌ REJECTED SUGGESTIONS**
+- Remove SmallBytes optimization (defeats performance purpose)
+- Example code style changes (non-critical)
+- Test assertion improvements (not core functionality)
+
+#### **🔄 ZEROCOPY INTEGRATION OPPORTUNITIES**
+
+Based on zerocopy.md documentation, critical unsafe issues can be addressed:
+
+ 14. **Replace unsafe transmute with zerocopy** - `crates/rustyfix/src/tagvalue/decoder.rs:146`
+     - **Current**: `unsafe { std::mem::transmute(&mut self.builder) }` - coercing `&mut MessageBuilder<'static>` to `&mut MessageBuilder<'_>`
+     - **Root Issue**: MessageBuilder uses `'static` placeholder but needs dynamic lifetimes per decode operation
+     - **Zerocopy Solution**: Redesign MessageBuilder to eliminate lifetime coercion need
+     - **Implementation Approach**:
+       ```rust
+       // Option 1: Use zerocopy for field storage instead of raw references
+       #[derive(FromBytes, IntoBytes, KnownLayout, Immutable)]
+       struct FieldData {
+           tag: u32,
+           value: [u8; MAX_FIELD_SIZE], // Fixed-size for zerocopy
+       }
+       
+       // Option 2: Use Ref<B, T> for safe byte slice access
+       struct MessageBuilder {
+           fields: FxHashMap<u32, zerocopy::Ref<&[u8], FieldData>>,
+           // Remove lifetime parameter entirely
+       }
+       
+       // Option 3: Use dynamic lifetime management
+       struct MessageBuilder {
+           fields: FxHashMap<u32, Box<[u8]>>, // Owned data
+           // No lifetime parameter needed
+       }
+       ```
+     - **Benefits**: Eliminate all unsafe transmute operations, compile-time safety guarantees
+
+15. **Zero-copy message parsing** - Throughout tagvalue module
+    - **Opportunity**: Use `zerocopy::FromBytes` trait for safe byte-to-struct conversion
+    - **Benefits**: Eliminate manual unsafe operations, better performance
+    - **Implementation**: Derive zerocopy traits on FIX message structures
+
+**🎯 IMMEDIATE ACTION REQUIRED**: Critical issues #1-5 must be fixed before production deployment. High priority issues #6-8 require architectural review for memory safety and API stability.
+
+---
+
 ## 🏗️ **QUICKFIX-INSPIRED ENHANCEMENTS (Production Readiness)**
 
 ### Session State Management (QuickFIX Pattern)

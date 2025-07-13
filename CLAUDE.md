@@ -514,7 +514,7 @@ Append the following to the existing "Performance Considerations" section:
 - `FxHashMap`/`FxHashSet` from `rustc-hash` instead of std `HashMap`/`HashSet`
   - Also consider using `dashmap` for concurrent access
 - `simd-json` instead of `serde_json` (for all JSON operations)
-- `parking_lot::Mutex` instead of `std::sync::Mutex`
+- `parking_lot` instead of `std::sync`
 - `tachyonix` channels instead of `tokio::sync::mpsc`
 - `simd_aligned` for SIMD usage
 - `zerocopy` for zero-copy manipulations
