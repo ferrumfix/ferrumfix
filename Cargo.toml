@@ -90,9 +90,9 @@ futures = "0.3"
 futures-timer = "3"
 futures-util = "0.3"
 heck = "0.5"
-inquire = "0.6"
+inquire = "0.7"
 indoc = "2"
-lazy_static = "1.4.0"
+lazy_static = "1.5.0"
 log = "0.4"
 nohash-hasher = "0.2"
 openssl = "0.10"
@@ -108,7 +108,7 @@ quote = "1"
 rayon = "1"
 roxmltree = "0.20"
 rust_decimal = { version = "1.37", features = ["macros"] }
-rust_decimal_macros = "1.33.1"
+rust_decimal_macros = "1.37.1"
 rustc-hash = "2.1"
 serde = { version = "1.0", features = ["derive"] }
 simd-json = "0.15"
@@ -119,12 +119,12 @@ slog-term = "2"
 smallbytes = "0.1"
 smallvec = { version = "1.15", features = ["serde"] }
 smartstring = { version = "1.0", features = ["serde"] }
-strum = { version = "0.25", features = ["derive"] }
-strum_macros = "0.26"
+strum = { version = "0.27", features = ["derive"] }
+strum_macros = "0.27"
 syn = { version = "2", features = ["full", "parsing", "derive"] }
 tachyonix = "0.3.1"
 thiserror = "2.0"
-tokio = { version = "1.42", features = ["full"] }
+tokio = { version = "1.46", features = ["full"] }
 tokio-util = { version = "0.7", features = ["codec", "compat"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
