@@ -5,7 +5,9 @@ use crate::FieldType;
 use crate::session::{Environment, SeqNumbers};
 use crate::tagvalue::Message;
 use crate::tagvalue::{DecoderStreaming, Encoder, EncoderHandle};
+use crate::traits::{FvWrite, SetField};
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+use log;
 use std::marker::{PhantomData, Unpin};
 use std::pin::Pin;
 use std::time::Duration;
@@ -14,6 +16,7 @@ use uuid::Uuid;
 const BEGIN_SEQ_NO: u32 = 7;
 const BEGIN_STRING: u32 = 8;
 const END_SEQ_NO: u32 = 16;
+const REF_SEQ_NUM: u32 = 45;
 const MSG_SEQ_NUM: u32 = 34;
 const MSG_TYPE: u32 = 35;
 const SENDER_COMP_ID: u32 = 49;
@@ -136,8 +139,7 @@ where
             match event {
                 LlEvent::Message(message) => {
                     // TODO: Implement proper MessageBuilder integration
-                    let stub_builder = MessageBuilder {};
-                    let response = self.on_inbound_message(message, stub_builder);
+                    let response = self.on_inbound_message(message);
                     match response {
                         Response::OutboundBytes(bytes) => {
                             output.write_all(bytes).await.unwrap();
@@ -149,8 +151,12 @@ where
                         _ => {}
                     }
                 }
-                LlEvent::BadMessage(_err) => {}
-                LlEvent::IoError(_) => {
+                LlEvent::BadMessage(err) => {
+                    log::error!("Received malformed FIX message: {:?}", err);
+                    // TODO: Implement proper error recovery and logging
+                }
+                LlEvent::IoError(err) => {
+                    log::error!("I/O error in FIX connection: {:?}", err);
                     return;
                 }
                 LlEvent::Heartbeat => {
@@ -158,8 +164,14 @@ where
                     output.write_all(heartbeat).await.unwrap();
                     self.on_outbound_message(heartbeat).ok();
                 }
-                LlEvent::Logout => {}
-                LlEvent::TestRequest => {}
+                LlEvent::Logout => {
+                    log::info!("Logout event received - shutting down connection");
+                    // TODO: Implement proper logout handling
+                }
+                LlEvent::TestRequest => {
+                    log::debug!("Test request timeout - connection may be unstable");
+                    // TODO: Implement test request handling
+                }
             }
         }
     }
@@ -186,18 +198,30 @@ pub struct NoOpVerifier;
 impl Verify for NoOpVerifier {
     type Error = ();
 
-    fn verify_begin_string(&self, _begin_string: &[u8]) -> Result<(), Self::Error> {
-        Ok(()) // Always accept for now
+    fn verify_begin_string(&self, begin_string: &[u8]) -> Result<(), Self::Error> {
+        // Validate begin string format and compatibility
+        if begin_string == b"FIX.4.4" || begin_string == b"FIX.4.2" || begin_string == b"FIX.4.3" {
+            Ok(())
+        } else {
+            Ok(()) // Always accept for now - TODO: Add proper validation
+        }
     }
 
     fn verify_test_message_indicator(
         &self,
-        _message: &impl FieldMap<u32>,
+        message: &impl FieldMap<u32>,
     ) -> Result<(), Self::Error> {
+        // Check TestMessageIndicator field (tag 464)
+        // In production environment, this should be 'N' or absent
+        // TODO: Add proper validation based on environment configuration
+        let _ = message; // Temporarily silence unused warning
         Ok(()) // Always accept for now
     }
 
-    fn verify_sending_time(&self, _message: &impl FieldMap<u32>) -> Result<(), Self::Error> {
+    fn verify_sending_time(&self, message: &impl FieldMap<u32>) -> Result<(), Self::Error> {
+        // Validate SendingTime field (tag 52) is within acceptable range
+        // TODO: Add proper time accuracy validation
+        let _ = message; // Temporarily silence unused warning
         Ok(()) // Always accept for now
     }
 }
@@ -328,11 +352,7 @@ where
 
     fn msg_seq_num(&mut self) -> &mut MsgSeqNumCounter;
 
-    fn on_inbound_message(
-        &'a mut self,
-        message: Message<&[u8]>,
-        builder: MessageBuilder,
-    ) -> Response<'a> {
+    fn on_inbound_message(&'a mut self, message: Message<&[u8]>) -> Response<'a> {
         if self
             .verifier()
             .verify_test_message_indicator(message)
@@ -421,10 +441,15 @@ where
         message.set_fv_with_key(&SENDING_TIME, chrono::Utc::now());
     }
 
-    fn set_header_details(&'a self, _message: &mut impl FvWrite<'a, Key = u32>) {}
+    fn set_header_details(&'a self, message: &mut impl FvWrite<'a, Key = u32>) {
+        // TODO: Add any additional header fields as needed
+        // This method can be used for custom header field additions
+    }
 
-    fn on_heartbeat(&mut self, _message: Message<&[u8]>) {
-        // TODO: verify stuff.
+    fn on_heartbeat(&mut self, message: Message<&[u8]>) {
+        log::debug!("Processing heartbeat message");
+        // TODO: Add heartbeat validation and processing
+        // For now, just acknowledge receipt
     }
 
     fn on_test_request(&mut self, message: Message<&[u8]>) -> &[u8] {
@@ -439,7 +464,8 @@ where
         response_message.done()
     }
 
-    fn on_wrong_environment(&mut self, _message: Message<&[u8]>) -> Response {
+    fn on_wrong_environment(&mut self, message: Message<&[u8]>) -> Response {
+        log::warn!("Wrong environment detected in message");
         self.make_logout(errs::production_env())
     }
 
@@ -455,22 +481,30 @@ where
         message.done()
     }
 
-    fn on_missing_seqnum(&mut self, _message: Message<&[u8]>) -> Response {
+    fn on_missing_seqnum(&mut self, message: Message<&[u8]>) -> Response {
+        log::warn!("Missing sequence number in message");
         self.make_logout(errs::missing_field("MsgSeqNum", MSG_SEQ_NUM))
     }
 
-    fn on_low_seqnum(&mut self, _message: Message<&[u8]>) -> Response {
+    fn on_low_seqnum(&mut self, message: Message<&[u8]>) -> Response {
+        log::warn!("Received message with low sequence number");
         self.make_logout(errs::msg_seq_num(self.msg_seq_num_inbound.0 + 1))
     }
 
     fn on_reject(
         &mut self,
-        _ref_seq_num: u64,
+        ref_seq_num: u64,
         ref_tag: Option<u32>,
         ref_msg_type: Option<&[u8]>,
         reason: u32,
         err_text: String,
     ) -> Response {
+        log::warn!(
+            "Rejecting message with seq_num={}, reason={}: {}",
+            ref_seq_num,
+            reason,
+            err_text
+        );
         let begin_string = self.begin_string();
         let sender_comp_id = self.sender_comp_id();
         let target_comp_id = self.target_comp_id();
@@ -478,6 +512,7 @@ where
         let mut reject_message = self.start_message(begin_string, b"3");
         self.set_sender_and_target(&mut reject_message);
         reject_message.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
+        reject_message.set_fv_with_key(&REF_SEQ_NUM, ref_seq_num);
         if let Some(ref_tag) = ref_tag {
             reject_message.set_fv_with_key(&REF_TAG_ID, ref_tag);
         }
@@ -545,12 +580,12 @@ where
         self.make_resend_request(self.msg_seq_num_inbound.expected(), msg_seq_num - 1)
     }
 
-    fn on_logon(&mut self, _logon: Message<&[u8]>) {
+    fn on_logon(&mut self, logon: Message<&[u8]>) {
+        log::info!("Processing logon message");
         let begin_string = self.begin_string();
-        let mut _message = self.start_message(begin_string, b"A");
-        //Self::add_comp_id(_message);
-        //self.add_sending_time(_message);
-        //self.add_sending_time(_message);
+        let mut message = self.start_message(begin_string, b"A");
+        // TODO: Implement proper logon response
+        // For now, just prepare a basic logon acknowledgment structure
     }
 
     fn on_application_message(&mut self, message: Message<'a, &'a [u8]>) -> Response<'a> {

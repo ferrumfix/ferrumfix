@@ -27,14 +27,10 @@ impl OwnedMessage {
     {
         let mut fields = FxHashMap::default();
 
-        // Extract all available fields by trying common FIX field tags
-        // This covers most standard FIX message fields
-        for tag in [
-            1, 8, 9, 10, 11, 15, 20, 21, 34, 35, 38, 39, 40, 44, 49, 52, 54, 55, 56, 59, 60, 123,
-        ] {
-            if let Some(value) = message.get_raw(tag) {
-                fields.insert(tag, Bytes::copy_from_slice(value));
-            }
+        // Extract ALL fields from the message by iterating over them
+        // This ensures no fields are lost during conversion to OwnedMessage
+        for (tag, value) in message.fields() {
+            fields.insert(tag.get(), Bytes::copy_from_slice(value));
         }
 
         Self::new(raw_bytes, fields)

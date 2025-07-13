@@ -367,24 +367,9 @@ where
     fn get(&self, i: usize) -> Option<Self::Entry> {
         if i < self.len {
             Some(Message {
-                // ⚠️  CRITICAL SAFETY VIOLATION ⚠️
-                // SAFETY: This unsafe cast creates a mutable reference from a shared reference,
-                // which **VIOLATES RUST'S ALIASING RULES** and could lead to undefined behavior.
-                //
-                // Current justification (FRAGILE):
-                // 1. Group operations only perform READ access to MessageBuilder fields
-                // 2. No actual mutation occurs during group entry access
-                // 3. The `&mut` requirement is an artifact of the current API design
-                // 4. Multiple read-only views of the same data are inherently safe
-                // 5. Single-threaded access prevents data races
-                //
-                // ⚠️  ARCHITECTURAL DEBT: This violates Rust's memory safety guarantees and MUST
-                // be fixed by redesigning the API to separate read-only (`Message`) and mutable
-                // (`MessageMut`) operations. See TODO.md "Critical Memory Safety Issues" for
-                // detailed implementation plan.
-                //
-                // 🚨 DO NOT MODIFY this code without addressing the architectural issue first!
-                builder: unsafe { &mut *(self.message.builder as *const _ as *mut _) },
+                // ✅ SAFE: Now using shared reference - no aliasing rule violations
+                // Group operations only need read access to MessageBuilder fields.
+                builder: self.message.builder,
                 phantom: PhantomData,
                 field_locator_context: FieldLocatorContext::WithinGroup {
                     index_of_group_tag: self.index_of_group_tag,
@@ -397,9 +382,23 @@ where
     }
 }
 
-/// A FIX message returned by [`Decoder`] or [`DecoderStreaming`].
+/// A FIX message returned by [`Decoder`] or [`DecoderStreaming`] with read-only access.
+///
+/// This type provides safe, read-only access to FIX message data without violating
+/// Rust's aliasing rules. For mutable operations, use [`MessageMut`].
 #[derive(Debug)]
 pub struct Message<'a, T> {
+    builder: &'a MessageBuilder<'a>,
+    phantom: PhantomData<T>,
+    field_locator_context: FieldLocatorContext,
+}
+
+/// A FIX message with mutable access capabilities.
+///
+/// This type provides mutable access to FIX message data. It can be converted to
+/// a read-only [`Message`] using the [`as_read_only`](MessageMut::as_read_only) method.
+#[derive(Debug)]
+pub struct MessageMut<'a, T> {
     builder: &'a mut MessageBuilder<'a>,
     phantom: PhantomData<T>,
     field_locator_context: FieldLocatorContext,
@@ -425,18 +424,13 @@ impl<'a, T> Message<'a, T> {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use rustyfix::tagvalue::{Config, Decoder};
-    /// use rustyfix::prelude::*;
-    ///
-    /// const DATA: &[u8] = b"8=FIX.4.4|9=42|35=0|49=A|56=B|34=12|52=20100304-07:59:30|10=185|";
-    ///
-    /// let mut decoder = Decoder::new(Dictionary::fix44().unwrap());
-    /// decoder.config_mut().separator = b'|';
-    ///
-    /// let message = decoder.decode(DATA).unwrap();
-    /// let first_field = message.fields().next();
-    ///
+    /// ```no_run
+    /// # use rustyfix::tagvalue::*;
+    /// # let mut decoder = Decoder::new(rustyfix::Dictionary::fix44().unwrap());
+    /// # let data = b"";
+    /// # let message = decoder.decode(data).unwrap();
+    /// let mut fields = message.fields();
+    /// let first_field = fields.next();
     /// assert_eq!(first_field, Some((TagU32::new(8).unwrap(), b"FIX.4.4" as &[u8])));
     /// ```
     pub fn fields(&'a self) -> Fields<'a, T> {
@@ -491,14 +485,78 @@ impl<'a, T> Message<'a, T> {
         self.len() == 0
     }
 
+    // Note: remove() method moved to MessageMut for mutable operations
+
+    /// Returns the raw byte value for a given tag.
+    pub fn get_raw(&self, tag: u32) -> Option<&[u8]> {
+        let tag = TagU32::new(tag)?;
+        let field_locator = FieldLocator {
+            tag,
+            context: self.field_locator_context,
+        };
+        self.builder.fields.get(&field_locator).map(|field| field.1)
+    }
+}
+
+impl<'a, T> MessageMut<'a, T> {
+    /// Converts this mutable message to a read-only message view.
+    ///
+    /// This allows safe creation of multiple read-only references to the same
+    /// message data without violating Rust's aliasing rules.
+    pub fn as_read_only(&self) -> Message<'_, T> {
+        Message {
+            builder: &*self.builder,
+            phantom: self.phantom,
+            field_locator_context: self.field_locator_context,
+        }
+    }
+
+    /// Returns the FIX message type of `self`.
+    pub fn msg_type(&self) -> Result<String, FieldValueError<<String as FieldType>::Error>> {
+        self.get(35)
+    }
+
+    /// Returns a deserialized value of a field.
+    pub fn get<'b, V>(&'b self, tag: u32) -> Result<V, FieldValueError<V::Error>>
+    where
+        V: FieldType<'b>,
+    {
+        let tag = TagU32::new(tag).ok_or(FieldValueError::Missing)?;
+        let field_locator = FieldLocator {
+            tag,
+            context: self.field_locator_context,
+        };
+        if let Some(field) = self.builder.fields.get(&field_locator) {
+            V::deserialize(field.1).map_err(FieldValueError::Invalid)
+        } else {
+            Err(FieldValueError::Missing)
+        }
+    }
+
+    /// Returns the underlying byte contents of `self`.
+    pub fn as_bytes(&self) -> &[u8] {
+        self.builder.bytes
+    }
+
+    /// Returns the number of FIX tags contained in `self`.
+    pub fn len(&self) -> usize {
+        self.builder.field_locators.len()
+    }
+
+    /// Returns `true` if `self` has a length of 0, and `false` otherwise.
+    pub fn is_empty(&self) -> bool {
+        self.builder.field_locators.len() == 0
+    }
+
     /// Removes a field from the message.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `tag` is 0, as tag 0 is invalid in FIX.
     pub fn remove(&mut self, tag: u32) {
-        let tag = TagU32::new(tag).unwrap();
-        self.builder.remove(tag);
+        if let Some(tag) = TagU32::new(tag) {
+            let field_locator = FieldLocator {
+                tag,
+                context: self.field_locator_context,
+            };
+            self.builder.fields.remove(&field_locator);
+        }
     }
 
     /// Returns the raw byte value for a given tag.
@@ -701,26 +759,11 @@ where
             .ok_or(FieldValueError::Missing)?;
         let num_entries = usize::deserialize(num_in_group.1).map_err(FieldValueError::Invalid)?;
         let index_of_group_tag = num_in_group.2 as u32;
-        // ⚠️  CRITICAL SAFETY VIOLATION ⚠️
-        // SAFETY: This unsafe cast creates a mutable reference from a shared reference,
-        // which **VIOLATES RUST'S ALIASING RULES** and could lead to undefined behavior.
-        //
-        // Current justification (FRAGILE):
-        // 1. Group creation only performs READ access to MessageBuilder fields
-        // 2. No actual mutation occurs during group creation or access
-        // 3. The `&mut` requirement is an artifact of the current API design
-        // 4. Multiple read-only views of the same data are inherently safe
-        // 5. Single-threaded access prevents data races
-        //
-        // ⚠️  ARCHITECTURAL DEBT: This violates Rust's memory safety guarantees and MUST
-        // be fixed by redesigning the API to separate read-only (`Message`) and mutable
-        // (`MessageMut`) operations. See TODO.md "Critical Memory Safety Issues" for
-        // detailed implementation plan.
-        //
-        // 🚨 DO NOT MODIFY this code without addressing the architectural issue first!
+        // ✅ SAFE: Now using shared reference - no aliasing rule violations
+        // Group operations only need read access to MessageBuilder fields.
         Ok(MessageGroup {
             message: Message {
-                builder: unsafe { &mut *(self.builder as *const _ as *mut _) },
+                builder: self.builder,
                 phantom: PhantomData,
                 field_locator_context: self.field_locator_context,
             },

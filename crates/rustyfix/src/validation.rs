@@ -1,5 +1,6 @@
 //! Message validation.
 
+use crate::dict::FixDatatype;
 use crate::tagvalue::Message;
 use crate::{Dictionary, TagU32};
 
@@ -167,19 +168,48 @@ impl AdvancedValidator {
         // Get field datatype from dictionary
         let field_spec = dict.field_by_tag(tag);
         if let Some(field) = field_spec {
-            match field.name() {
-                // Common field format validations
-                name if name.contains("Time") || name.contains("SendingTime") => {
-                    self.validate_time_format(tag, value_str)
+            // Use the actual FIX datatype from dictionary metadata instead of substring matching
+            match field.data_type().basetype() {
+                FixDatatype::UtcTimestamp => self.validate_time_format(tag, value_str),
+                FixDatatype::UtcDateOnly => self.validate_date_format(tag, value_str),
+                FixDatatype::Float
+                | FixDatatype::Amt
+                | FixDatatype::Price
+                | FixDatatype::PriceOffset
+                | FixDatatype::Quantity => self.validate_numeric_format(tag, value_str),
+                FixDatatype::SeqNum => self.validate_sequence_number_format(tag, value_str),
+                FixDatatype::Int | FixDatatype::Length | FixDatatype::NumInGroup => {
+                    // Validate as integer
+                    if value_str.parse::<i64>().is_err() {
+                        return Err(ValidationError::InvalidFieldFormat {
+                            tag,
+                            reason: "Field must be a valid integer".to_string(),
+                        });
+                    }
+                    Ok(())
                 }
-                name if name.contains("Date") => self.validate_date_format(tag, value_str),
-                name if name.contains("Price") || name.contains("Qty") => {
-                    self.validate_numeric_format(tag, value_str)
+                FixDatatype::Char => {
+                    // Single character validation
+                    if value_str.len() != 1 {
+                        return Err(ValidationError::InvalidFieldFormat {
+                            tag,
+                            reason: "Char field must be exactly one character".to_string(),
+                        });
+                    }
+                    Ok(())
                 }
-                name if name.contains("SeqNum") => {
-                    self.validate_sequence_number_format(tag, value_str)
+                FixDatatype::Boolean => {
+                    // Boolean must be Y or N
+                    match value_str {
+                        "Y" | "N" => Ok(()),
+                        _ => Err(ValidationError::InvalidFieldFormat {
+                            tag,
+                            reason: "Boolean field must be 'Y' or 'N'".to_string(),
+                        }),
+                    }
                 }
-                _ => Ok(()), // Allow other fields to pass for now
+                // For other datatypes (String, MultipleCharValue, etc.), we allow any valid UTF-8
+                _ => Ok(()),
             }
         } else if self.reject_unknown_fields {
             Err(ValidationError::InvalidFieldFormat {
@@ -231,7 +261,7 @@ impl AdvancedValidator {
         &self,
         tag: u32,
         value: &[u8],
-        _dict: &Dictionary,
+        dict: &Dictionary,
     ) -> Result<(), ValidationError> {
         if !self.validate_value_ranges {
             return Ok(());
@@ -244,62 +274,145 @@ impl AdvancedValidator {
                 reason: "Field value is not valid UTF-8".to_string(),
             })?;
 
-        match tag {
-            // Message sequence number must be positive
-            34 => {
-                let seq_num: u64 =
-                    value_str
-                        .parse()
-                        .map_err(|_| ValidationError::ValueOutOfRange {
+        // Get field specification from dictionary for comprehensive validation
+        let field_spec = dict.field_by_tag(tag);
+        if let Some(field) = field_spec {
+            // Use dictionary-based validation when possible
+            match field.data_type().basetype() {
+                FixDatatype::SeqNum => {
+                    // All sequence number fields must be positive
+                    let seq_num: u64 =
+                        value_str
+                            .parse()
+                            .map_err(|_| ValidationError::ValueOutOfRange {
+                                tag,
+                                value: value_str.to_string(),
+                                reason: "Sequence number must be a positive integer".to_string(),
+                            })?;
+                    if seq_num == 0 {
+                        return Err(ValidationError::ValueOutOfRange {
                             tag,
                             value: value_str.to_string(),
-                            reason: "Sequence number must be a positive integer".to_string(),
-                        })?;
-                if seq_num == 0 {
-                    return Err(ValidationError::ValueOutOfRange {
-                        tag,
-                        value: value_str.to_string(),
-                        reason: "Sequence number must be greater than 0".to_string(),
-                    });
+                            reason: "Sequence number must be greater than 0".to_string(),
+                        });
+                    }
+                }
+                FixDatatype::Boolean => {
+                    // Boolean fields must be Y or N
+                    match value_str {
+                        "Y" | "N" => {}
+                        _ => {
+                            return Err(ValidationError::ValueOutOfRange {
+                                tag,
+                                value: value_str.to_string(),
+                                reason: "Boolean field must be 'Y' or 'N'".to_string(),
+                            });
+                        }
+                    }
+                }
+                FixDatatype::Char => {
+                    // Single character fields - validate against known values for critical fields
+                    match tag {
+                        54 => {
+                            // Side field validation
+                            match value_str {
+                                "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "A" | "B"
+                                | "C" => {}
+                                _ => {
+                                    return Err(ValidationError::ValueOutOfRange {
+                                        tag,
+                                        value: value_str.to_string(),
+                                        reason: "Invalid Side value".to_string(),
+                                    });
+                                }
+                            }
+                        }
+                        40 => {
+                            // OrderType field validation
+                            match value_str {
+                                "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "A" | "B"
+                                | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L"
+                                | "M" | "N" | "O" | "P" => {}
+                                _ => {
+                                    return Err(ValidationError::ValueOutOfRange {
+                                        tag,
+                                        value: value_str.to_string(),
+                                        reason: "Invalid OrderType value".to_string(),
+                                    });
+                                }
+                            }
+                        }
+                        59 => {
+                            // TimeInForce field validation
+                            match value_str {
+                                "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "A"
+                                | "B" => {}
+                                _ => {
+                                    return Err(ValidationError::ValueOutOfRange {
+                                        tag,
+                                        value: value_str.to_string(),
+                                        reason: "Invalid TimeInForce value".to_string(),
+                                    });
+                                }
+                            }
+                        }
+                        _ => {
+                            // For other character fields, just validate length
+                            if value_str.len() != 1 {
+                                return Err(ValidationError::ValueOutOfRange {
+                                    tag,
+                                    value: value_str.to_string(),
+                                    reason: "Character field must be exactly one character"
+                                        .to_string(),
+                                });
+                            }
+                        }
+                    }
+                }
+                FixDatatype::Int | FixDatatype::Length | FixDatatype::NumInGroup => {
+                    // Integer fields should be non-negative
+                    let int_val: i64 =
+                        value_str
+                            .parse()
+                            .map_err(|_| ValidationError::ValueOutOfRange {
+                                tag,
+                                value: value_str.to_string(),
+                                reason: "Field must be a valid integer".to_string(),
+                            })?;
+                    if int_val < 0 {
+                        return Err(ValidationError::ValueOutOfRange {
+                            tag,
+                            value: value_str.to_string(),
+                            reason: "Integer field cannot be negative".to_string(),
+                        });
+                    }
+                }
+                FixDatatype::Quantity
+                | FixDatatype::Amt
+                | FixDatatype::Price
+                | FixDatatype::PriceOffset => {
+                    // Numeric fields should be valid numbers
+                    let _: f64 =
+                        value_str
+                            .parse()
+                            .map_err(|_| ValidationError::ValueOutOfRange {
+                                tag,
+                                value: value_str.to_string(),
+                                reason: "Numeric field must be a valid number".to_string(),
+                            })?;
+                    // Additional validations could be added here (e.g., positive prices, etc.)
+                }
+                _ => {
+                    // For other data types, skip advanced validation for now
+                    // This allows extension for future field type validations
                 }
             }
-            // Side must be valid
-            54 => match value_str {
-                "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "A" | "B" | "C" => {}
-                _ => {
-                    return Err(ValidationError::ValueOutOfRange {
-                        tag,
-                        value: value_str.to_string(),
-                        reason: "Invalid Side value".to_string(),
-                    });
-                }
-            },
-            // OrderType validation
-            40 => match value_str {
-                "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "A" | "B" | "C" | "D"
-                | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" => {}
-                _ => {
-                    return Err(ValidationError::ValueOutOfRange {
-                        tag,
-                        value: value_str.to_string(),
-                        reason: "Invalid OrderType value".to_string(),
-                    });
-                }
-            },
-            // TimeInForce validation
-            59 => match value_str {
-                "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "A" | "B" => {}
-                _ => {
-                    return Err(ValidationError::ValueOutOfRange {
-                        tag,
-                        value: value_str.to_string(),
-                        reason: "Invalid TimeInForce value".to_string(),
-                    });
-                }
-            },
-            _ => {
-                // For other fields, we could add more validations as needed
-            }
+        } else if self.reject_unknown_fields {
+            return Err(ValidationError::ValueOutOfRange {
+                tag,
+                value: value_str.to_string(),
+                reason: "Unknown field tag".to_string(),
+            });
         }
 
         Ok(())
@@ -368,34 +481,17 @@ impl Validator for AdvancedValidator {
         // 2. Validate required fields
         self.validate_required_fields(msg, dict)?;
 
-        // 3. For now, we'll focus on validating the most critical fields manually
-        // to avoid lifetime issues with the fields() iterator
-        // This validates key fields that are always present in FIX messages
+        // 3. Validate field formats and values in a single iteration over all fields
+        // This avoids O(n²) behavior from multiple get_raw() calls
+        for (tag, value) in msg.fields() {
+            let tag_u32 = tag.get();
 
-        // Validate sequence number format and value (tag 34)
-        if let Some(seq_num_value) = msg.get_raw(34) {
-            self.validate_field_format(34, seq_num_value, dict)?;
-            self.validate_field_values(34, seq_num_value, dict)?;
-        }
+            // Validate field format for all fields
+            self.validate_field_format(tag_u32, value, dict)?;
 
-        // Validate sending time format (tag 52)
-        if let Some(sending_time_value) = msg.get_raw(52) {
-            self.validate_field_format(52, sending_time_value, dict)?;
-        }
-
-        // Validate side field if present (tag 54)
-        if let Some(side_value) = msg.get_raw(54) {
-            self.validate_field_values(54, side_value, dict)?;
-        }
-
-        // Validate order type if present (tag 40)
-        if let Some(order_type_value) = msg.get_raw(40) {
-            self.validate_field_values(40, order_type_value, dict)?;
-        }
-
-        // Validate time in force if present (tag 59)
-        if let Some(tif_value) = msg.get_raw(59) {
-            self.validate_field_values(59, tif_value, dict)?;
+            // Validate field values for all fields using dictionary-based validation
+            // This is now comprehensive instead of hardcoded for specific fields
+            self.validate_field_values(tag_u32, value, dict)?;
         }
 
         Ok(())
