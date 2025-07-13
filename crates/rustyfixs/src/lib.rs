@@ -120,7 +120,13 @@ impl FixOverTlsCommon for FixOverTlsV10 {
     fn recommended_cs_openssl(&self, psk: bool) -> Vec<String> {
         self.recommended_cs_iana(psk)
             .iter()
-            .filter_map(|s| iana2openssl(s).map(|s| s.to_string()))
+            .filter_map(|s| match iana2openssl(s) {
+                Some(converted) => Some(converted.to_string()),
+                None => {
+                    eprintln!("Warning: Failed to convert IANA ciphersuite '{s}'");
+                    None
+                }
+            })
             .collect()
     }
 

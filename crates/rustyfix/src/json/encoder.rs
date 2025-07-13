@@ -1,11 +1,14 @@
 //! FIX JSON encoding.
 
 use super::Config;
+use crate::Dictionary;
 use crate::{GetConfig, SetField};
 use std::fmt::Debug;
+use std::sync::Arc;
 
 // TODO: `serde_json` is not a very high-performance library.
 pub struct Encoder {
+    dictionary: Arc<Dictionary>,
     config: Config,
 }
 
