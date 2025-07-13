@@ -267,20 +267,36 @@ MIRIFLAGS="-Zmiri-tag-raw-pointers" cargo +nightly miri test
 - [ ] **Implement proper frame-to-message conversion**
 - [ ] **Add tokio example demonstrating usage**
 
-### 2. Enhanced Validation Beyond SimpleValidator ✅ COMPLETED
+### 2. Session Layer Runtime Issues 🚨 NEW CRITICAL ISSUES
+**Priority**: HIGH | **Evidence**: Latest AI code reviews January 2025
+- [ ] **Fix session verifier todo!() panic** - `connection.rs:246-254` has `todo!()` that will crash at runtime
+  ```rust
+  // ISSUE: Will panic when verifier() is called
+  fn verifier(&self) -> V {
+      todo!("Session layer verifier needs architectural redesign")
+  }
+  ```
+- [ ] **Fix buffer draining logic in TokioDecoder** - `tokio_decoder.rs:154-156` unconditionally drains buffer causing data loss
+  ```rust
+  // ISSUE: src.split() drains entire buffer even for incomplete/invalid messages
+  let raw_bytes = src.split().freeze();
+  // Should use split_to(frame_length) or peek without consuming until full frame decoded
+  ```
+
+### 3. Enhanced Validation Beyond SimpleValidator ✅ COMPLETED
 **Priority**: HIGH | **Evidence**: AI review found panic vulnerabilities
 - [x] **Fix validator panics on unknown message types** - Replaced unwrap() with proper error handling
 - [x] **Implement AdvancedValidator with QuickFIX patterns** ✅ IMPLEMENTED
 - [x] **Add comprehensive validation test suite** ✅ 10 TEST CASES
 - [x] **Implement field presence validation per message type** ✅ IMPLEMENTED
 
-### 3. FIX Protocol Compliance Issues ✅ LOGICAL FIX IMPLEMENTED
+### 4. FIX Protocol Compliance Issues ✅ LOGICAL FIX IMPLEMENTED
 **Priority**: HIGH | **Evidence**: AI review found protocol violations
 - [x] **Fix Logout message handling with high sequence numbers** ✅ IMPLEMENTED
 - [ ] **Implement Sequence Reset-GapFill special handling**
 - [ ] **Add session state management for edge cases**
 
-### 4. Code Quality and Maintenance ✅ MAJOR IMPROVEMENTS COMPLETED
+### 5. Code Quality and Maintenance ✅ MAJOR IMPROVEMENTS COMPLETED
 **Priority**: MEDIUM | **Evidence**: AI review suggestions
 - [x] **Remove dead code** - Cleaned up unused functions
 - [x] **Fix JSON encoder issues** - Resolved struct mismatches and imports
@@ -288,20 +304,39 @@ MIRIFLAGS="-Zmiri-tag-raw-pointers" cargo +nightly miri test
 - [x] **Improve error messages with more context**
 - [x] **Clean up commented code blocks**
 - [ ] **Make AdvancedValidator Data-Driven** - Replace hardcoded enum validation in `validation.rs:313-371` with `field.enums()` from dictionary for maintainable validation
-- [ ] **Remove Unused Error Variant** - Either implement or remove `Unsupported(String)` error variant in `tagvalue/mod.rs:70-72`
+- [x] **Remove Unused Error Variant** - Either implement or remove `Unsupported(String)` error variant in `tagvalue/mod.rs:70-72` ✅ COMPLETED
 - [x] **Fix validation performance O(n²) issue** - Replace repeated get_raw() calls with single field iteration
 - [x] **Improve field validation robustness** - Replace substring matching with dictionary metadata-based validation
 - [x] **Remove unused parameters** - Clean up builder parameter in on_inbound_message() function  
 - [x] **Fix OwnedMessage completeness** - Replace hardcoded field list in tokio_decoder.rs with iteration over all message fields
 - [x] **Fix AdvancedValidator completeness** - Replace hardcoded field validation with comprehensive dictionary-based validation of all fields
 
-### 5. Tokio Decoder Field Coverage Limitation
+### 🆕 **NEW CODE QUALITY ISSUES FROM AI REVIEWS (January 2025)**
+**Priority**: MEDIUM | **Evidence**: Latest AI code reviews
+- [ ] **Fix redundant Option return in decoder** - `decoder.rs:84-85` always returns `Some(&self.dict)` but method signature is `Option<&Dictionary>`
+  ```rust
+  // ISSUE: Redundant Option wrapper
+  pub fn dictionary(&self) -> Option<&Dictionary> {
+      Some(&self.dict)  // Always returns Some, should just return &Dictionary
+  }
+  ```
+- [ ] **Clean up commented code with FIXME** - `session/mod.rs:10` has commented-out module declarations cluttering codebase
+- [ ] **Remove leftover documentation line** - `.cursorrules` has leftover line "4. Update edition in `Cargo.toml`:" that should be removed
+- [ ] **Improve markdown links** - `.github/copilot-instructions.md` should use proper markdown link for `docs/external-libraries/` reference
+- [ ] **Enhance FAST codec error messages** - `rustyfast/src/codec.rs:116-120` should include overflow value in error message for better debugging
+  ```rust
+  // SUGGESTED: Add the value that caused overflow
+  format!("u64 overflow in FAST decoding: value {}", byte)
+  ```
+- [ ] **Enhance session logging** - `session/connection.rs:155-157` should include raw message bytes in malformed message logs for better analysis
+
+### 6. Tokio Decoder Field Coverage Limitation
 **Priority**: MEDIUM | **Evidence**: Valid AI review about data completeness  
 - [ ] **Document field extraction limitations in OwnedMessage**
 - [ ] **Add test coverage for field extraction limitations**
 - [ ] **Consider architectural changes for full field extraction** (requires Message API redesign)
 
-### 6. Complete Backend Implementations
+### 7. Complete Backend Implementations
 **Priority**: MEDIUM | **Evidence**: Trait definitions need implementations
 - [ ] **Complete session backend implementations**
 - [ ] **Add message store backends (File, Memory, Database)**
@@ -368,7 +403,7 @@ MIRIFLAGS="-Zmiri-tag-raw-pointers" cargo +nightly miri test
 
 **Key Achievement**: All valid AI code review issues have been successfully resolved, significantly improving code quality, safety documentation, and maintainability.
 
-### 🔄 **FOLLOW-UP AI REVIEWS (January 2025)**
+### �� **FOLLOW-UP AI REVIEWS (January 2025)**
 
 **Additional Reviews Analyzed**: Multiple follow-up reviews from Cursor, Gemini, and Copilot bots  
 **Status**: Most issues already resolved, 3 new minor issues identified
@@ -433,6 +468,35 @@ MIRIFLAGS="-Zmiri-tag-raw-pointers" cargo +nightly miri test
   - **Assessment**: ✅ Valid but already known placeholder - low priority
 
 **📈 AI REVIEW ACCURACY**: 67% of issues were already tracked, with 2 new valid architectural improvements identified for data-driven validation and code cleanup.
+
+### 🆕 **LATEST AI REVIEWS ANALYSIS (January 2025)**
+
+**Reviews Analyzed**: Latest Copilot AI and Gemini reviews on PR overhaul  
+**Status**: ✅ **8 NEW VALID ISSUES IDENTIFIED** for TODO tracking
+
+#### ✅ **VALID ISSUES REQUIRING ACTION**
+
+**🚨 HIGH PRIORITY (Runtime Safety):**
+- Session verifier `todo!()` panic in `connection.rs:246-254`
+- Buffer draining data loss in `tokio_decoder.rs:154-156`
+
+**📋 MEDIUM PRIORITY (Code Quality):**
+- Redundant Option return in `decoder.rs:84-85`
+- Commented code cleanup in `session/mod.rs:10`
+- Documentation cleanup in `.cursorrules`
+- Markdown link improvement in `.github/copilot-instructions.md`
+
+**🔧 LOW PRIORITY (Enhancements):**
+- FAST codec error message enhancement
+- Session logging with raw message bytes
+
+#### ❌ **NON-ISSUES (PRAISE COMMENTS)**
+- I/O error propagation (✅ improvement acknowledged)
+- Cipher suite error handling (✅ improvement acknowledged)
+- thiserror usage patterns (✅ good practice confirmed)
+- Language setting alignment (✅ configuration improvement)
+
+**🎯 RESULT**: All 8 valid issues have been properly categorized and added to appropriate TODO sections above.
 
 ---
 
