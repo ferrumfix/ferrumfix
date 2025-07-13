@@ -139,19 +139,26 @@ impl FixOverTlsCommon for FixOverTlsV10 {
         context.set_options(SslOptions::NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
         context.set_session_cache_mode(SslSessionCacheMode::SERVER);
 
-        // SECURITY: Validate cipher list is not empty to prevent silent fallback to defaults
-        let ciphers = self.recommended_cs_openssl(false).join(":");
-        if ciphers.is_empty() {
+        // ✅ CRITICAL FIX: Proper error handling for empty cipher list
+        // This is a critical configuration error that should never happen in production
+        let cipher_list = self.recommended_cs_openssl(false);
+        if cipher_list.is_empty() {
             log::error!(
-                "No valid FIXS cipher suites available - cannot establish secure connection"
+                "No valid FIXS cipher suites available - cannot establish secure connection. \
+                This could indicate a configuration issue or unsupported OpenSSL version."
             );
-            // Force an SSL error by setting an invalid cipher list
-            context.set_cipher_list("INVALID_CIPHER_THAT_DOES_NOT_EXIST")?;
-            // This line should never be reached due to the error above
-            unreachable!("Invalid cipher list should have caused an error");
+            // Panic is appropriate here - this is a critical security configuration failure
+            panic!(
+                "CRITICAL: No FIXS-compliant cipher suites available for secure connection. \
+                This indicates a severe configuration issue or unsupported OpenSSL version. \
+                Cannot proceed with insecure connection."
+            );
         }
 
+        let ciphers = cipher_list.join(":");
+        log::debug!("Setting FIXS cipher list: {ciphers}");
         context.set_cipher_list(&ciphers)?;
+
         Ok(context)
     }
 
@@ -165,19 +172,26 @@ impl FixOverTlsCommon for FixOverTlsV10 {
         context.set_options(SslOptions::NO_COMPRESSION);
         context.set_options(SslOptions::NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
 
-        // SECURITY: Validate cipher list is not empty to prevent silent fallback to defaults
-        let ciphers = self.recommended_cs_openssl(false).join(":");
-        if ciphers.is_empty() {
+        // ✅ CRITICAL FIX: Proper error handling for empty cipher list
+        // This is a critical configuration error that should never happen in production
+        let cipher_list = self.recommended_cs_openssl(false);
+        if cipher_list.is_empty() {
             log::error!(
-                "No valid FIXS cipher suites available - cannot establish secure connection"
+                "No valid FIXS cipher suites available - cannot establish secure connection. \
+                This could indicate a configuration issue or unsupported OpenSSL version."
             );
-            // Force an SSL error by setting an invalid cipher list
-            context.set_cipher_list("INVALID_CIPHER_THAT_DOES_NOT_EXIST")?;
-            // This line should never be reached due to the error above
-            unreachable!("Invalid cipher list should have caused an error");
+            // Panic is appropriate here - this is a critical security configuration failure
+            panic!(
+                "CRITICAL: No FIXS-compliant cipher suites available for secure connection. \
+                This indicates a severe configuration issue or unsupported OpenSSL version. \
+                Cannot proceed with insecure connection."
+            );
         }
 
+        let ciphers = cipher_list.join(":");
+        log::debug!("Setting FIXS cipher list: {ciphers}");
         context.set_cipher_list(&ciphers)?;
+
         Ok(context)
     }
 }

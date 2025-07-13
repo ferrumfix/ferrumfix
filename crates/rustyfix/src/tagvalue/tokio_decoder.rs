@@ -287,66 +287,76 @@ impl codec::Decoder for TokioDecoder {
     type Error = DecodeError;
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
-        // Check if we have enough data for a minimal FIX message
-        if src.len() < crate::tagvalue::utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
-            return Ok(None); // Need more data
-        }
-
-        // Try to parse the header to determine the expected message length
-        let header_info = match parse_fix_header(src, self.decoder.config().separator) {
-            Some((header_end_pos, body_length)) => {
-                // Calculate total expected message length
-                // FIX message format: BeginString=... | BodyLength=N | ... body (N bytes) ... | CheckSum=...
-                let body_start = header_end_pos; // After BodyLength field
-                let expected_total_length = body_start + body_length + CHECKSUM_FIELD_LEN; // for CheckSum=NNN|
-
-                // Check if we have enough bytes for the complete message
-                if src.len() < expected_total_length {
-                    return Ok(None); // Need more data for complete message
-                }
-                (header_end_pos, body_length)
+        // ✅ CRITICAL FIX: Replace recursion with loop to prevent stack overflow
+        // This addresses the infinite loop/stack overflow issue identified in AI review
+        loop {
+            // Check if we have enough data for a minimal FIX message
+            if src.len() < crate::tagvalue::utils::MIN_FIX_MESSAGE_LEN_IN_BYTES {
+                return Ok(None); // Need more data
             }
-            None => {
-                // Header parsing failed - could be incomplete or malformed data
-                // If we have substantial data, try to skip past malformed data to prevent infinite loops
-                if src.len() >= MALFORMED_DATA_THRESHOLD {
-                    // Sufficient data suggests malformed rather than incomplete
-                    // Search for next potential FIX message start (8=FIX pattern)
-                    if let Some(next_fix_start) = find_next_fix_start(&src[1..]) {
-                        // Skip past malformed data to next potential FIX message
-                        src.advance(next_fix_start + 1);
-                        // Try again with the new position
-                        return self.decode(src);
-                    } else {
-                        // No FIX pattern found, consume a byte to avoid infinite loop
-                        src.advance(1);
-                        return self.decode(src);
+
+            // Try to parse the header to determine the expected message length
+            let header_info = match parse_fix_header(src, self.decoder.config().separator) {
+                Some((header_end_pos, body_length)) => {
+                    // Calculate total expected message length
+                    // FIX message format: BeginString=... | BodyLength=N | ... body (N bytes) ... | CheckSum=...
+                    let body_start = header_end_pos; // After BodyLength field
+                    let expected_total_length = body_start + body_length + CHECKSUM_FIELD_LEN; // for CheckSum=NNN|
+
+                    // Check if we have enough bytes for the complete message
+                    if src.len() < expected_total_length {
+                        return Ok(None); // Need more data for complete message
                     }
-                } else {
-                    // Likely incomplete data, wait for more
-                    return Ok(None);
+                    (header_end_pos, body_length)
                 }
-            }
-        };
+                None => {
+                    // Header parsing failed - could be incomplete or malformed data
+                    // If we have substantial data, try to skip past malformed data to prevent infinite loops
+                    if src.len() >= MALFORMED_DATA_THRESHOLD {
+                        // Sufficient data suggests malformed rather than incomplete
+                        // Search for next potential FIX message start (8=FIX pattern)
+                        if let Some(next_fix_start) = find_next_fix_start(&src[1..]) {
+                            // ✅ IMPROVED: Skip past malformed data to next potential FIX message
+                            // Add 1 to account for the [1..] slice offset
+                            let advance_bytes = next_fix_start + 1;
+                            src.advance(advance_bytes);
+                            // ✅ CRITICAL FIX: Continue loop instead of recursive call
+                            continue;
+                        } else {
+                            // ✅ IMPROVED: No FIX pattern found, advance more aggressively to avoid repeated scanning
+                            // Instead of advancing 1 byte, advance by MIN_FIX_HEADER_LEN to skip obviously bad data
+                            let advance_bytes = std::cmp::min(MIN_FIX_HEADER_LEN, src.len());
+                            src.advance(advance_bytes);
+                            // ✅ CRITICAL FIX: Continue loop instead of recursive call
+                            continue;
+                        }
+                    } else {
+                        // Likely incomplete data, wait for more
+                        return Ok(None);
+                    }
+                }
+            };
 
-        // We have enough data - split off exactly the message we need
-        let raw_bytes = src
-            .split_to(header_info.0 + header_info.1 + CHECKSUM_FIELD_LEN)
-            .freeze();
-        let raw_bytes_clone = raw_bytes.clone();
+            // We have enough data - split off exactly the message we need
+            let raw_bytes = src
+                .split_to(header_info.0 + header_info.1 + CHECKSUM_FIELD_LEN)
+                .freeze();
+            let raw_bytes_clone = raw_bytes.clone();
 
-        let result = self.decoder.decode(&raw_bytes);
-        match result {
-            Ok(message) => {
-                // Convert the borrowed Message to an owned OwnedMessage
-                let owned_message = OwnedMessage::from_message(message, raw_bytes_clone);
-                Ok(Some(owned_message))
+            let result = self.decoder.decode(&raw_bytes);
+            match result {
+                Ok(message) => {
+                    // Convert the borrowed Message to an owned OwnedMessage
+                    let owned_message = OwnedMessage::from_message(message, raw_bytes_clone);
+                    return Ok(Some(owned_message));
+                }
+                Err(DecodeError::Invalid { .. }) => {
+                    // ✅ IMPROVED: Invalid message after header parsing - this shouldn't happen often
+                    // but if it does, advance past this message and continue looking
+                    continue;
+                }
+                Err(e) => return Err(e),
             }
-            Err(DecodeError::Invalid { .. }) => {
-                // Invalid message - skip it and try next bytes
-                Ok(None)
-            }
-            Err(e) => Err(e),
         }
     }
 }
@@ -367,7 +377,7 @@ impl GetConfig for TokioDecoder {
 mod tests {
     use super::*;
     use crate::Dictionary;
-    use bytes::{Bytes, BytesMut};
+    use tokio_util::bytes::{Bytes, BytesMut}; // Use tokio_util::bytes instead of direct bytes
     use tokio_util::codec::Decoder;
 
     #[test]

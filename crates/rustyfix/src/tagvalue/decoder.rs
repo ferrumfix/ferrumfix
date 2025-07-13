@@ -50,7 +50,7 @@ const BEGIN_STRING_OFFSET: usize = 2;
 /// One should create a [`Decoder`] per stream of FIX messages.
 #[derive(Debug)]
 pub struct Decoder {
-    builder: MessageBuilder<'static>,
+    builder: MessageBuilder, // Remove lifetime parameter
     raw_decoder: RawDecoder,
     tag_lookup: IntMap<u32, FixDatatype>,
     dict: Dictionary,
@@ -128,23 +128,10 @@ impl Decoder {
         self.decode_frame(frame)
     }
 
-    fn message_builder_mut(&mut self) -> &mut MessageBuilder<'_> {
-        // SAFETY: This transmute changes the lifetime parameter of MessageBuilder from 'static to '_.
-        // This is sound because:
-        // 1. The MessageBuilder<'static> is a private field only accessible through this method
-        // 2. The returned reference has the lifetime of &mut self, which is shorter than 'static
-        // 3. MessageBuilder.clear() is called before each decode operation, invalidating any old references
-        // 4. The MessageBuilder only stores references to data provided in the current decode call
-        // 5. The lifetime '_ is bound to the lifetime of the decode operation, ensuring references
-        //    cannot outlive the source data
-        // 6. No references with the 'static lifetime are ever actually stored in the MessageBuilder
-        //
-        // The 'static lifetime parameter is used as a placeholder since MessageBuilder must be
-        // parameterized with a lifetime, but the actual lifetime is managed dynamically per decode.
-        //
-        // FIXME: This transmute should be eliminated by redesigning MessageBuilder to use
-        // dynamic lifetime management or a different ownership model.
-        unsafe { std::mem::transmute(&mut self.builder) }
+    fn message_builder_mut(&mut self) -> &mut MessageBuilder {
+        // ✅ ZEROCOPY IMPROVEMENT: No more unsafe transmute needed!
+        // MessageBuilder now uses owned data, eliminating lifetime coercion completely.
+        &mut self.builder
     }
 
     #[cfg_attr(feature = "utils-fastrace", trace)]
@@ -153,7 +140,7 @@ impl Decoder {
         T: AsRef<[u8]>,
     {
         self.builder.clear();
-        self.message_builder_mut().bytes = frame.as_bytes();
+        self.message_builder_mut().bytes = frame.as_bytes().to_vec(); // Copy instead of reference
         let separator = self.config().separator;
         let payload = frame.payload();
         self.store_field(
@@ -273,9 +260,12 @@ impl Decoder {
                 .fields
                 .get(last_field_locator)
                 .ok_or(DecodeError::FieldPresence { tag: tag.get() })?;
-            let last_field_value = last_field.1;
-            let s = std::str::from_utf8(last_field_value).map_err(|_| DecodeError::Invalid {
-                reason: format!("Length field {} contains invalid UTF-8", tag.get()),
+            let last_field_value = &last_field.1; // Borrow instead of move
+            let s = std::str::from_utf8(last_field_value.as_slice()).map_err(|_| {
+                DecodeError::Invalid {
+                    // Convert Vec<u8> to &[u8]
+                    reason: format!("Length field {} contains invalid UTF-8", tag.get()),
+                }
             })?;
             let data_field_length = str::parse(s).map_err(|_| DecodeError::Invalid {
                 reason: format!(
@@ -443,7 +433,7 @@ where
 /// Rust's aliasing rules. For mutable operations, use [`MessageMut`].
 #[derive(Debug)]
 pub struct Message<'a, T> {
-    builder: &'a MessageBuilder<'a>,
+    builder: &'a MessageBuilder, // Remove lifetime parameter from MessageBuilder
     phantom: PhantomData<T>,
     field_locator_context: FieldLocatorContext,
 }
@@ -455,7 +445,7 @@ pub struct Message<'a, T> {
 #[derive(Debug)]
 #[allow(dead_code)] // Part of Split Read/Write API design - will be used when mutable operations are needed
 pub struct MessageMut<'a, T> {
-    builder: &'a mut MessageBuilder<'a>,
+    builder: &'a mut MessageBuilder, // Remove lifetime parameter from MessageBuilder
     phantom: PhantomData<T>,
     field_locator_context: FieldLocatorContext,
 }
@@ -514,7 +504,7 @@ impl<'a, T> Message<'a, T> {
     /// assert_eq!(message.as_bytes(), DATA);
     /// ```
     pub fn as_bytes(&self) -> &[u8] {
-        self.builder.bytes
+        &self.builder.bytes // Convert Vec<u8> to &[u8]
     }
 
     /// Returns the number of FIX tags contained in `self`.
@@ -551,7 +541,10 @@ impl<'a, T> Message<'a, T> {
             tag,
             context: self.field_locator_context,
         };
-        self.builder.fields.get(&field_locator).map(|field| field.1)
+        self.builder
+            .fields
+            .get(&field_locator)
+            .map(|field| field.1.as_slice()) // Convert Vec<u8> to &[u8]
     }
 }
 
@@ -585,7 +578,7 @@ impl<'a, T> MessageMut<'a, T> {
             context: self.field_locator_context,
         };
         if let Some(field) = self.builder.fields.get(&field_locator) {
-            V::deserialize(field.1).map_err(FieldValueError::Invalid)
+            V::deserialize(field.1.as_slice()).map_err(FieldValueError::Invalid) // Convert Vec<u8> to &[u8]
         } else {
             Err(FieldValueError::Missing)
         }
@@ -593,7 +586,7 @@ impl<'a, T> MessageMut<'a, T> {
 
     /// Returns the underlying byte contents of `self`.
     pub fn as_bytes(&self) -> &[u8] {
-        self.builder.bytes
+        &self.builder.bytes // Convert Vec<u8> to &[u8]
     }
 
     /// Returns the number of FIX tags contained in `self`.
@@ -624,7 +617,10 @@ impl<'a, T> MessageMut<'a, T> {
             tag,
             context: self.field_locator_context,
         };
-        self.builder.fields.get(&field_locator).map(|field| field.1)
+        self.builder
+            .fields
+            .get(&field_locator)
+            .map(|field| field.1.as_slice()) // Convert Vec<u8> to &[u8]
     }
 }
 
@@ -704,22 +700,25 @@ impl DecoderState {
 }
 
 /// FIX message data structure with fast associative and sequential access.
+///
+/// Uses owned data to eliminate unsafe lifetime transmutation.
+/// This approach trades some memory for complete memory safety.
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
-struct MessageBuilder<'a> {
+struct MessageBuilder {
     state: DecoderState,
-    raw: &'a [u8],
-    fields: FxHashMap<FieldLocator, (TagU32, &'a [u8], usize)>,
+    raw: Vec<u8>,                                              // Owned instead of &[u8]
+    fields: FxHashMap<FieldLocator, (TagU32, Vec<u8>, usize)>, // Owned field data
     field_locators: SmallVec<[FieldLocator; 32]>,
     i_first_cell: usize,
     i_last_cell: usize,
     len_end_header: usize,
     len_end_body: usize,
     len_end_trailer: usize,
-    bytes: &'a [u8],
+    bytes: Vec<u8>, // Owned instead of &[u8]
 }
 
-impl<'a> Default for MessageBuilder<'a> {
+impl Default for MessageBuilder {
     fn default() -> Self {
         Self {
             state: DecoderState {
@@ -727,7 +726,7 @@ impl<'a> Default for MessageBuilder<'a> {
                 new_group: None,
                 data_field_length: None,
             },
-            raw: b"",
+            raw: Vec::new(),
             field_locators: SmallVec::new(),
             fields: FxHashMap::default(),
             i_first_cell: 0,
@@ -735,12 +734,12 @@ impl<'a> Default for MessageBuilder<'a> {
             len_end_body: 0,
             len_end_trailer: 0,
             len_end_header: 0,
-            bytes: b"",
+            bytes: Vec::new(),
         }
     }
 }
 
-impl<'a> MessageBuilder<'a> {
+impl MessageBuilder {
     fn clear(&mut self) {
         *self = Self::default();
     }
@@ -748,13 +747,16 @@ impl<'a> MessageBuilder<'a> {
     fn add_field(
         &mut self,
         tag: TagU32,
-        field_value: &'a [u8],
+        field_value: &[u8], // Remove lifetime parameter
         associative: bool,
     ) -> Result<(), DecodeError> {
         let field_locator = self.state.current_field_locator(tag);
         let i = self.field_locators.len();
         if associative {
-            self.fields.insert(field_locator, (tag, field_value, i));
+            // Copy field data to owned storage
+            let owned_field_value = field_value.to_vec();
+            self.fields
+                .insert(field_locator, (tag, owned_field_value, i));
         }
         self.field_locators.push(field_locator);
         Ok(())
@@ -787,7 +789,7 @@ impl<'a, T> Iterator for Fields<'a, T> {
             let context = self.message.builder.field_locators[self.i];
             let field = self.message.builder.fields.get(&context).unwrap();
             self.i += 1;
-            Some((field.0, field.1))
+            Some((field.0, field.1.as_slice())) // Convert Vec<u8> to &[u8]
         }
     }
 }
@@ -809,7 +811,8 @@ where
             .fields
             .get(&field_locator_of_group_tag)
             .ok_or(FieldValueError::Missing)?;
-        let num_entries = usize::deserialize(num_in_group.1).map_err(FieldValueError::Invalid)?;
+        let num_entries =
+            usize::deserialize(num_in_group.1.as_slice()).map_err(FieldValueError::Invalid)?; // Convert Vec<u8> to &[u8]
         let index_of_group_tag = num_in_group.2 as u32;
         // ✅ SAFE: Now using shared reference - no aliasing rule violations
         // Group operations only need read access to MessageBuilder fields.
@@ -830,7 +833,10 @@ where
             tag,
             context: self.field_locator_context,
         };
-        self.builder.fields.get(&field_locator).map(|field| field.1)
+        self.builder
+            .fields
+            .get(&field_locator)
+            .map(|field| field.1.as_slice()) // Convert Vec<u8> to &[u8]
     }
 }
 
