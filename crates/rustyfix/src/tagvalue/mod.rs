@@ -68,8 +68,8 @@ pub enum DecodeError {
     #[error("Invalid FIX message syntax.")]
     Invalid,
     /// The operation is not supported.
-    #[error("The operation is not supported.")]
-    Unsupported,
+    #[error("The operation is not supported: {0}")]
+    Unsupported(String),
     /// Invalid `CheckSum <10>` FIX field value.
     #[error("Invalid `CheckSum <10>` FIX field value.")]
     CheckSum,

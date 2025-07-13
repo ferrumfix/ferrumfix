@@ -77,7 +77,7 @@ impl FieldInstruction {
             attr == "true"
         };
         let type_name = node.tag_name().name();
-        let operator = Self::operator_from_node(node).unwrap_or(FieldOperatorInstruction::None);
+        let operator = Self::operator_from_node(node)?.unwrap_or(FieldOperatorInstruction::None);
         let instruction = FieldInstruction {
             field_type: Template::xml_tag_to_instruction(type_name)?,
             name: name.to_string(),
@@ -88,18 +88,20 @@ impl FieldInstruction {
         Ok(instruction)
     }
 
-    fn operator_from_node(node: roxmltree::Node) -> Option<FieldOperatorInstruction> {
-        node.children()
-            .find(|n| n.is_element())
-            .map(|n| n.tag_name().name())
-            .map(|name| match name {
-                "copy" => FieldOperatorInstruction::Copy,
-                "constant" => FieldOperatorInstruction::Constant,
-                "delta" => FieldOperatorInstruction::Delta,
-                "tail" => FieldOperatorInstruction::Tail,
-                "increment" => FieldOperatorInstruction::Increment,
-                _ => FieldOperatorInstruction::None,
-            })
+    fn operator_from_node(
+        node: roxmltree::Node,
+    ) -> Result<Option<FieldOperatorInstruction>, Error> {
+        match node.children().find(|n| n.is_element()) {
+            Some(op_node) => match op_node.tag_name().name() {
+                "copy" => Ok(Some(FieldOperatorInstruction::Copy)),
+                "constant" => Ok(Some(FieldOperatorInstruction::Constant)),
+                "delta" => Ok(Some(FieldOperatorInstruction::Delta)),
+                "tail" => Ok(Some(FieldOperatorInstruction::Tail)),
+                "increment" => Ok(Some(FieldOperatorInstruction::Increment)),
+                _ => Err(Error::Static(StaticError::S1)),
+            },
+            None => Ok(None),
+        }
     }
 }
 

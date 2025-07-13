@@ -50,6 +50,7 @@ pub struct Decoder {
     builder: MessageBuilder<'static>,
     raw_decoder: RawDecoder,
     tag_lookup: IntMap<u32, FixDatatype>,
+    dict: Dictionary,
 }
 
 impl Decoder {
@@ -75,7 +76,13 @@ impl Decoder {
                     }
                 })
                 .collect(),
+            dict,
         }
+    }
+
+    /// Returns a reference to the [`Dictionary`] used by `self`.
+    pub fn dictionary(&self) -> Option<&Dictionary> {
+        Some(&self.dict)
     }
 
     /// Adds a [`Buffer`] to `self`, turning it into a [`StreamingDecoder`].
@@ -313,11 +320,11 @@ where
     /// # Panics
     ///
     /// Panics if [`DecoderStreaming::try_parse()`] didn't return [`Ok(Some(()))`].
-    pub fn message(&self) -> Message<&[u8]> {
+    pub fn message(&mut self) -> Message<&[u8]> {
         assert!(self.is_ready);
 
         Message {
-            builder: &self.decoder.builder,
+            builder: self.decoder.message_builder_mut(),
             phantom: PhantomData,
             field_locator_context: FieldLocatorContext::TopLevel,
         }
@@ -337,7 +344,7 @@ impl<B> GetConfig for DecoderStreaming<B> {
 }
 
 /// A repeating group within a [`Message`].
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct MessageGroup<'a, T>
 where
     T: AsRef<[u8]>,
@@ -360,7 +367,7 @@ where
     fn get(&self, i: usize) -> Option<Self::Entry> {
         if i < self.len {
             Some(Message {
-                builder: self.message.builder,
+                builder: unsafe { &mut *(self.message.builder as *const _ as *mut _) },
                 phantom: PhantomData,
                 field_locator_context: FieldLocatorContext::WithinGroup {
                     index_of_group_tag: self.index_of_group_tag,
@@ -374,14 +381,28 @@ where
 }
 
 /// A FIX message returned by [`Decoder`] or [`DecoderStreaming`].
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Message<'a, T> {
-    builder: &'a MessageBuilder<'a>,
+    builder: &'a mut MessageBuilder<'a>,
     phantom: PhantomData<T>,
     field_locator_context: FieldLocatorContext,
 }
 
 impl<'a, T> Message<'a, T> {
+    /// Returns the FIX message type of `self`.
+    pub fn msg_type(&self) -> Result<String, FieldValueError<<String as FieldType>::Error>> {
+        self.get(35)
+    }
+
+    /// Returns a deserialized value of a field.
+    pub fn get<'b, V>(&'b self, tag: u32) -> Result<V, FieldValueError<V::Error>>
+    where
+        V: FieldType<'b>,
+    {
+        let bytes = self.get_raw(tag).ok_or(FieldValueError::Missing)?;
+        V::deserialize(bytes).map_err(FieldValueError::Invalid)
+    }
+
     /// Returns an [`Iterator`] over all fields in `self`, in sequential order
     /// starting from the very first field.
     ///
@@ -452,18 +473,39 @@ impl<'a, T> Message<'a, T> {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
-}
 
-impl<'a, T> PartialEq for Message<'a, T> {
-    fn eq(&self, other: &Self) -> bool {
-        // Two messages are equal *if and only if* messages are exactly the
-        // same. Fields must also have the same order (things get complicated
-        // when you allow for different order of fields).
-        self.fields().eq(other.fields())
+    /// Removes a field from the message.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `tag` is 0, as tag 0 is invalid in FIX.
+    pub fn remove(&mut self, tag: u32) {
+        let tag = TagU32::new(tag).unwrap();
+        self.builder.remove(tag);
+    }
+
+    /// Returns the raw byte value for a given tag.
+    pub fn get_raw(&self, tag: u32) -> Option<&[u8]> {
+        let tag = TagU32::new(tag)?;
+        let field_locator = FieldLocator {
+            tag,
+            context: self.field_locator_context,
+        };
+        self.builder.fields.get(&field_locator).map(|field| field.1)
     }
 }
 
-impl<'a, T> Eq for Message<'a, T> {}
+// TODO: Re-implement PartialEq without lifetime issues
+// impl<'a, T> PartialEq for Message<'a, T> {
+//     fn eq(&self, other: &Self) -> bool {
+//         // Two messages are equal *if and only if* messages are exactly the
+//         // same. Fields must also have the same order (things get complicated
+//         // when you allow for different order of fields).
+//         self.fields().eq(other.fields())
+//     }
+// }
+//
+// impl<'a, T> Eq for Message<'a, T> {}
 
 #[derive(Debug, Copy, Clone)]
 #[allow(dead_code)]
@@ -570,6 +612,12 @@ impl<'a> MessageBuilder<'a> {
         *self = Self::default();
     }
 
+    fn remove(&mut self, tag: TagU32) {
+        let field_locator = self.state.current_field_locator(tag);
+        self.fields.remove(&field_locator);
+        self.field_locators.retain(|l| l.tag != tag);
+    }
+
     fn add_field(
         &mut self,
         tag: TagU32,
@@ -636,11 +684,12 @@ where
             .ok_or(FieldValueError::Missing)?;
         let num_entries = usize::deserialize(num_in_group.1).map_err(FieldValueError::Invalid)?;
         let index_of_group_tag = num_in_group.2 as u32;
+        // TODO: Fix this properly without unsafe
         Ok(MessageGroup {
             message: Message {
-                builder: self.builder,
+                builder: unsafe { &mut *(self.builder as *const _ as *mut _) },
                 phantom: PhantomData,
-                field_locator_context: FieldLocatorContext::TopLevel,
+                field_locator_context: self.field_locator_context,
             },
             index_of_group_tag,
             len: num_entries,
@@ -676,28 +725,29 @@ where
     }
 }
 
-#[cfg(feature = "utils-slog")]
-#[cfg_attr(docsrs, doc(cfg(feature = "utils-slog")))]
-impl<'a, T> slog::Value for Message<'a, T>
-where
-    T: AsRef<[u8]>,
-{
-    fn serialize(
-        &self,
-        _rec: &slog::Record,
-        key: slog::Key,
-        serializer: &mut dyn slog::Serializer,
-    ) -> slog::Result {
-        for (tag, _value) in self.fields() {
-            serializer.emit_u32(key, tag.get())?;
-            serializer.emit_char(key, '=')?;
-            // FIXME
-            serializer.emit_char(key, '?')?;
-            serializer.emit_char(key, '|')?;
-        }
-        Ok(())
-    }
-}
+// TODO: Re-implement slog::Value without lifetime issues
+// #[cfg(feature = "utils-slog")]
+// #[cfg_attr(docsrs, doc(cfg(feature = "utils-slog")))]
+// impl<'a, T> slog::Value for Message<'a, T>
+// where
+//     T: AsRef<[u8]>,
+// {
+//     fn serialize(
+//         &self,
+//         _rec: &slog::Record,
+//         key: slog::Key,
+//         serializer: &mut dyn slog::Serializer,
+//     ) -> slog::Result {
+//         for (tag, _value) in self.fields() {
+//             serializer.emit_u32(key, tag.get())?;
+//             serializer.emit_char(key, '=')?;
+//             // FIXME
+//             serializer.emit_char(key, '?')?;
+//             serializer.emit_char(key, '|')?;
+//         }
+//         Ok(())
+//     }
+// }
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]

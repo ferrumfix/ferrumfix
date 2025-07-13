@@ -26,25 +26,25 @@ name = "fix_decode"
 harness = false
 
 [features]
-default = [ "utils-chrono", "utils-tokio" ]
-codegen = [ "rustyfix-codegen" ]
+default = ["utils-chrono", "utils-tokio"]
+codegen = ["rustyfix-codegen"]
 derive = []
 json-encoding = []
-fix40 = [ "rustyfix-dictionary/fix40" ]
-fix41 = [ "rustyfix-dictionary/fix41" ]
-fix42 = [ "rustyfix-dictionary/fix42" ]
-fix43 = [ "rustyfix-dictionary/fix43" ]
-fix50 = [ "rustyfix-dictionary/fix50" ]
-fix50sp1 = [ "rustyfix-dictionary/fix50sp1" ]
-fix50sp2 = [ "rustyfix-dictionary/fix50sp2" ]
-fixt11 = [ "rustyfix-dictionary/fixt11" ]
+fix40 = ["rustyfix-dictionary/fix40"]
+fix41 = ["rustyfix-dictionary/fix41"]
+fix42 = ["rustyfix-dictionary/fix42"]
+fix43 = ["rustyfix-dictionary/fix43"]
+fix50 = ["rustyfix-dictionary/fix50"]
+fix50sp1 = ["rustyfix-dictionary/fix50sp1"]
+fix50sp2 = ["rustyfix-dictionary/fix50sp2"]
+fixt11 = ["rustyfix-dictionary/fixt11"]
 # Third-party crate integration.
-utils-bytes = [ "bytes" ]
+utils-bytes = ["bytes"]
 utils-chrono = []
-utils-decimal = [ "decimal" ]
-utils-rust-decimal = [ "rust_decimal" ]
-utils-slog = [ "slog" ]
-utils-tokio = [ "tokio-util", "utils-bytes" ]
+utils-decimal = ["decimal"]
+utils-rust-decimal = ["rust_decimal"]
+utils-slog = ["slog"]
+utils-tokio = ["tokio-util", "utils-bytes"]
 
 full = [
 	"codegen",
@@ -108,3 +108,4 @@ quickcheck_macros = "1"
 tokio = { version = "1", features = ["full"] }
 tokio-util = { version = "0.7", features = ["codec", "compat"] }
 syn = { version = "2", features = ["parsing"] }
+rust_decimal_macros = "1.33.1"

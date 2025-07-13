@@ -56,8 +56,12 @@ impl codec::Decoder for TokioDecoder {
         let result = self.raw_decoder.decode(split);
         match result {
             Ok(_raw_frame) => {
-                // FIXME
-                Err(DecodeError::Unsupported)
+                // This operation is currently unsupported because the `Message` type does
+                // not own its underlying buffer, which is a requirement for Tokio
+                // codecs.
+                Err(DecodeError::Unsupported(
+                    "The Message type does not support owning its buffer, which is required for a Tokio codec. This needs a redesign of the Message struct.".to_string()
+                ))
             }
             Err(DecodeError::Invalid) => Ok(None),
             Err(e) => Err(e),

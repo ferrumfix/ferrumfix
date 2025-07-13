@@ -1,12 +1,20 @@
-use super::{Config, EncodeError};
-use crate::GetConfig;
-use rustyfix_dictionary::Dictionary;
-use std::sync::Arc;
+//! FIX JSON encoding.
 
-#[derive(Debug, Clone)]
+use super::Config;
+use crate::{GetConfig, SetField};
+use std::fmt::Debug;
+
+// TODO: `serde_json` is not a very high-performance library.
 pub struct Encoder {
-    dictionary: Arc<Dictionary>,
     config: Config,
+}
+
+impl Debug for Encoder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Encoder")
+            .field("config", &self.config)
+            .finish()
+    }
 }
 
 impl Encoder {

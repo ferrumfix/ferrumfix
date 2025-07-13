@@ -4,10 +4,10 @@ resolver = "2"
 
 [workspace.package]
 authors = ["cognitive-glitch", "Team Rusty Trading", "Filippo Neysofu Costa"]
-version = "0.7.1"
+version = "0.7.2"
 edition = "2024"
-homepage = "https://github.com/rusty-engine/rustyfix"
-repository = "https://github.com/rusty-engine/rustyfix"
+homepage = "https://github.com/rusty-trading/rusty-fix-engine"
+repository = "https://github.com/rusty-trading/rusty-fix-engine"
 description = "FIX & FAST (FIX Adapted for STreaming) in pure Rust"
 publish = true
 readme = "README.md"
