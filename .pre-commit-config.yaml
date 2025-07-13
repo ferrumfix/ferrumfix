@@ -8,12 +8,6 @@ repos:
 
   - repo: local # Run cargo check locally
     hooks:
-      - id: cargo-fmt
-        name: Cargo Fmt
-        language: system
-        entry: cargo fmt --all --
-        files: \.rs$
-
       - id: cargo-check
         name: Cargo Check
         language: system
@@ -25,5 +19,12 @@ repos:
         name: Cargo Clippy
         language: system
         entry: cargo clippy --all-targets --all-features --workspace --fix --allow-dirty --
+        files: \.rs$
+        pass_filenames: false # Always run, regardless of changed files
+
+      - id: cargo-fmt
+        name: Cargo Fmt
+        language: system
+        entry: cargo fmt --all
         files: \.rs$
         pass_filenames: false # Always run, regardless of changed files

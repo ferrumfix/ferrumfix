@@ -13,16 +13,16 @@ categories.workspace = true
 license.workspace = true
 
 [dependencies]
-chrono = { version = "0.4", features = ["std"] }
+chrono = { workspace = true, features = ["std"] }
 rustyfix-dictionary = { version = "0.7", path = "../rustyfix-dictionary" }
-fnv = "1"
-heck = "0.5"
-indoc = "2"
+fnv = { workspace = true }
+heck = { workspace = true }
+indoc = { workspace = true }
 
 [dev-dependencies]
-arbitrary = { version = "1.4", features = ["derive"] }
-criterion = { version = "0.6", features = ["html_reports"] }
-enum-as-inner = "0.6"
+arbitrary = { workspace = true }
+criterion = { workspace = true, features = ["html_reports"] }
+enum-as-inner = { workspace = true }
 rustyfix-dictionary = { version = "0.7", path = "../rustyfix-dictionary", features = [
     "fix40",
     "fix41",
@@ -30,8 +30,8 @@ rustyfix-dictionary = { version = "0.7", path = "../rustyfix-dictionary", featur
     "fix43",
     "fix50",
 ] }
-quickcheck = "1"
-quickcheck_derive = "0.3"
-quickcheck_macros = "1"
-syn = { version = "2", features = ["parsing", "full"] }
-tokio = { version = "1", features = ["full"] }
+quickcheck = { workspace = true }
+quickcheck_derive = { workspace = true }
+quickcheck_macros = { workspace = true }
+syn = { workspace = true, features = ["parsing", "full"] }
+tokio = { workspace = true }

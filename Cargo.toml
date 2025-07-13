@@ -126,6 +126,7 @@ tachyonix = "0.3.1"
 thiserror = "2.0"
 tokio = { version = "1.42", features = ["full"] }
 tokio-util = { version = "0.7", features = ["codec", "compat"] }
+tracing = "0.1"
 tracing-subscriber = "0.3"
 uuid = { version = "1", features = ["v4"] }
 wide = "0.7"

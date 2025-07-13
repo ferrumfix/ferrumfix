@@ -31,20 +31,20 @@ fix50sp2 = []
 fixt11 = []
 
 [dependencies]
-roxmltree = "0.20"
-smartstring = "1"
-strum = "0.25"
-strum_macros = "0.26"
+roxmltree = { workspace = true }
+smartstring = { workspace = true }
+strum = { workspace = true }
+strum_macros = { workspace = true }
 rustc-hash = { workspace = true }
-smallvec = { version = "1.11.0", features = ["serde"] }
-thiserror = "1.0"
+smallvec = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
-arbitrary = { version = "1.4", features = ["derive"] }
-criterion = { version = "0.3", features = ["html_reports"] }
-enum-as-inner = "0.6"
-quickcheck = "1"
-quickcheck_derive = "0.3"
-quickcheck_macros = "1"
-tokio = { version = "1", features = ["full"] }
-syn = { version = "2", features = ["parsing"] }
+arbitrary = { workspace = true }
+criterion = { workspace = true, features = ["html_reports"] }
+enum-as-inner = { workspace = true }
+quickcheck = { workspace = true }
+quickcheck_derive = { workspace = true }
+quickcheck_macros = { workspace = true }
+tokio = { workspace = true }
+syn = { workspace = true, features = ["parsing"] }

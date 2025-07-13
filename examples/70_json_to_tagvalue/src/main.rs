@@ -9,11 +9,13 @@ fn main() {
     let mut encoder = rustyfix::tagvalue::Encoder::new();
     let mut buffer = Vec::new();
 
-    let json_msg = decoder.decode(JSON_FIX_MESSAGE.as_bytes()).unwrap();
-    let msg_type = json_msg.get(fix42::MSG_TYPE).unwrap();
-    let begin_string = json_msg.get(fix42::BEGIN_STRING).unwrap();
+    let mut json_bytes = JSON_FIX_MESSAGE.as_bytes().to_vec();
+    let json_msg = decoder.decode(&mut json_bytes).unwrap();
+    let msg_type: &str = json_msg.get(fix42::MSG_TYPE).unwrap();
+    let begin_string: &str = json_msg.get(fix42::BEGIN_STRING).unwrap();
 
-    let mut fix_msg_builder = encoder.start_message(begin_string, &mut buffer, msg_type);
+    let mut fix_msg_builder =
+        encoder.start_message(begin_string.as_bytes(), &mut buffer, msg_type.as_bytes());
 
     for (field_name, field_value) in json_msg.iter_fields() {
         let field = dictionary

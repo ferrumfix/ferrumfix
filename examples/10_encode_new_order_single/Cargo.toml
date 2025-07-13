@@ -7,10 +7,10 @@ edition = "2021"
 ignored = ["rust_decimal"] # False positive
 
 [dependencies]
-decimal = "2"
+decimal = { workspace = true }
 rustyfix = { path = "../../crates/rustyfix", features = [
     "utils-decimal",
     "utils-rust-decimal",
 ] }
-rust_decimal = "1"
-rust_decimal_macros = "1"
+rust_decimal = { workspace = true }
+rust_decimal_macros = { workspace = true }

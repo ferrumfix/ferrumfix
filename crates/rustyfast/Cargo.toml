@@ -22,31 +22,31 @@ rustdoc-args = ["--cfg", "doc_cfg"]
 name = "rustyfast"
 
 [dependencies]
-bitvec = "1.0.1"
-decimal = { version = "2", optional = true }
-heck = "0.5"
-indoc = "2"
+bitvec = { workspace = true }
+decimal = { workspace = true, optional = true }
+heck = { workspace = true }
+indoc = { workspace = true }
 # For reading XML.
-roxmltree = "0.20"
-smallvec = { version = "1.15.1", features = ["serde"] }
-thiserror = "2.0"
+roxmltree = { workspace = true }
+smallvec = { workspace = true }
+thiserror = { workspace = true }
 
 [build-dependencies]
-chrono = "0.4"
-heck = "0.5"
-indoc = "2"
-lazy_static = "1"
-quick-xml = "0.38"
-roxmltree = "0.20"
-rayon = "1"
-strum = "0.27"
-strum_macros = "0.27"
+chrono = { workspace = true }
+heck = { workspace = true }
+indoc = { workspace = true }
+lazy_static = { workspace = true }
+quick-xml = { workspace = true }
+roxmltree = { workspace = true }
+rayon = { workspace = true }
+strum = { workspace = true }
+strum_macros = { workspace = true }
 
 [dev-dependencies]
-arbitrary = { version = "1.4", features = ["derive"] }
-criterion = { version = "0.6", features = ["html_reports"] }
-enum-as-inner = "0.6"
-quickcheck = "1"
-quickcheck_derive = "0.3"
-quickcheck_macros = "1"
-syn = { version = "2", features = ["parsing"] }
+arbitrary = { workspace = true }
+criterion = { workspace = true, features = ["html_reports"] }
+enum-as-inner = { workspace = true }
+quickcheck = { workspace = true }
+quickcheck_derive = { workspace = true }
+quickcheck_macros = { workspace = true }
+syn = { workspace = true, features = ["parsing"] }

@@ -25,6 +25,7 @@ async fn main() -> Result<()> {
         });
     }
 
+    info!("Client disconnected");
     Ok(())
 }
 

@@ -17,8 +17,8 @@ name = "rustyfix_derive"
 proc-macro = true
 
 [dependencies]
-darling = "0.21"
-proc-macro-crate = "3"
-proc-macro2 = "1"
-quote = "1"
-syn = { version = "2", features = ["derive", "parsing"] }
+darling = { workspace = true }
+proc-macro-crate = { workspace = true }
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+syn = { workspace = true, features = ["derive", "parsing"] }

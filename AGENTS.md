@@ -483,7 +483,7 @@ Append the following to the existing "Performance Considerations" section:
 
 **ALWAYS use these high-performance alternatives:**
 
-- `SmallVec` instead of `Vec`
+- `smallvec`/`arrayvec` – Stack-allocated dynamic arrays (**MANDATORY**: Always use SmallVec instead of Vec for collections < 32 items)
 - `smartstring` instead of `String` (for short text data)
 - `FxHashMap`/`FxHashSet` from `rustc-hash` instead of std `HashMap`/`HashSet`
   - Also consider using `dashmap` for concurrent access
@@ -493,8 +493,8 @@ Append the following to the existing "Performance Considerations" section:
 - `simd_aligned` for SIMD usage
 - `zerocopy` for zero-copy manipulations
 - `quanta` for high-resolution timekeeping (instead of `chrono`)
-- Use `smallbytes` instead of `bytes` crate from tokio team
-- Use `fastrace` instead of `tracing` if logging is needed
+- `smallbytes` instead of `bytes` crate from tokio team
+- `fastrace` instead of `tracing` if logging is needed
 
 * Look for @docs/external-libraries/ for crates' information
 

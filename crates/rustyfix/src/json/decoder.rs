@@ -141,20 +141,23 @@ impl Decoder {
     }
 
     /// Decodes `data` and returns a [`Message`].
-    pub fn decode<'a>(&'a mut self, data: &'a [u8]) -> Result<Message<'a>, DecodeError> {
-        let mut deserilizer = serde_json::Deserializer::from_slice(data);
+    pub fn decode<'a>(&'a mut self, data: &'a mut [u8]) -> Result<Message<'a>, DecodeError> {
         let message = self.message_builder();
-        MessageInternal::deserialize_in_place(&mut deserilizer, message).map_err(|err| {
-            if err.is_syntax() || err.is_eof() || err.is_io() {
-                DecodeError::Syntax
-            } else {
-                DecodeError::Schema
-            }
-        })?;
-        Ok(Message {
-            internal: message,
-            group_map: None,
-        })
+        simd_json::from_slice(data)
+            .map_err(|err| {
+                if err.is_syntax() || err.is_eof() || err.is_io() {
+                    DecodeError::Syntax
+                } else {
+                    DecodeError::Schema
+                }
+            })
+            .map(|x| {
+                *message = x;
+                Message {
+                    internal: message,
+                    group_map: None,
+                }
+            })
     }
 
     fn message_builder<'a>(&'a mut self) -> &'a mut MessageInternal<'a> {
@@ -230,7 +233,8 @@ mod test {
     #[test]
     fn message_without_header() {
         let mut encoder = encoder_fix44();
-        let result = encoder.decode(MESSAGE_WITHOUT_HEADER.as_bytes());
+        let mut bytes = MESSAGE_WITHOUT_HEADER.as_bytes().to_vec();
+        let result = encoder.decode(&mut bytes);
         match result {
             Err(DecodeError::Schema) => (),
             _ => panic!(),
@@ -240,14 +244,16 @@ mod test {
     #[test]
     fn simple_message() {
         let mut encoder = encoder_fix44();
-        let result = encoder.decode(MESSAGE_SIMPLE.as_bytes());
+        let mut bytes = MESSAGE_SIMPLE.as_bytes().to_vec();
+        let result = encoder.decode(&mut bytes);
         assert!(result.is_ok());
     }
 
     #[test]
     fn invalid_json() {
         let mut encoder = encoder_fix44();
-        let result = encoder.decode("this is invalid JSON".as_bytes());
+        let mut bytes = "this is invalid JSON".as_bytes().to_vec();
+        let result = encoder.decode(&mut bytes);
         match result {
             Err(DecodeError::Syntax) => (),
             _ => panic!(),

@@ -4,8 +4,8 @@ mod generated_fix42;
 
 use core::fmt;
 use generated_fix42 as strum_fix42;
-use rustyfix::FieldType;
 use rustyfix::definitions::fix42;
+use rustyfix::FieldType;
 use strum::IntoEnumIterator;
 
 fn main() -> anyhow::Result<()> {

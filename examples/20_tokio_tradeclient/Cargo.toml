@@ -4,15 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1"
+anyhow = { workspace = true }
 rustyfix = { path = "../../crates/rustyfix", features = ["fix42"] }
-inquire = "0.6"
-slog = "2"
-slog-term = "2"
-slog-async = "2"
-strum = { version = "0.25", features = ["derive"] }
-tokio = { version = "1", features = ["net", "io-util", "macros"] }
-tokio-util = { version = "0.7", features = ["compat"] }
+inquire = { workspace = true }
+slog = { workspace = true }
+slog-term = { workspace = true }
+slog-async = { workspace = true }
+strum = { workspace = true }
+tokio = { workspace = true, features = ["net", "io-util", "macros"] }
+tokio-util = { workspace = true, features = ["compat"] }
 
 [build-dependencies]
 rustyfix = { path = "../../crates/rustyfix", features = ["fix42", "codegen"] }
