@@ -554,7 +554,7 @@ MIRIFLAGS="-Zmiri-tag-raw-pointers" cargo +nightly miri test
 
 **📅 REVIEW DATE**: January 2025 - Post-Overhaul PR Analysis  
 **🔍 REVIEWERS**: Gemini-code-assist bot, Copilot AI  
-**📊 STATUS**: ✅ **8 VALID ISSUES IDENTIFIED** for follow-up implementation
+**📊 STATUS**: ✅ **13 VALID ISSUES IDENTIFIED** (8 previous + 5 new from latest reviews)
 
 #### **🚨 HIGH PRIORITY (Safety & Performance)**
 
@@ -572,6 +572,12 @@ MIRIFLAGS="-Zmiri-tag-raw-pointers" cargo +nightly miri test
    - **Issue**: `valid_values.iter().any()` creates unnecessary Vec allocation
    - **Solution**: Use `enums.map(|e| e.value()).any(|v| v == value_str)` directly
    - **Reviewer**: Gemini-code-assist ✅ VALID
+
+4. **Fix infinite loop in malformed data handling** - `crates/rustyfix/src/tagvalue/tokio_decoder.rs`
+   - **Issue**: `parse_fix_header` returns None for malformed data without consuming bytes, causing infinite loop
+   - **Impact**: Runtime hang - decoder doesn't advance buffer, tokio keeps calling decode with same data
+   - **Solution**: Advance buffer when malformed header detected, search for next "8=FIX" pattern
+   - **Reviewer**: Gemini-code-assist ✅ VALID CRITICAL
 
 #### **🔧 MEDIUM PRIORITY (Maintainability)**
 
@@ -599,18 +605,41 @@ MIRIFLAGS="-Zmiri-tag-raw-pointers" cargo +nightly miri test
    - **Impact**: Improved debugging experience
    - **Reviewer**: Gemini-code-assist ✅ VALID
 
+8. **Add #[non_exhaustive] to additional error enums** - `crates/rustyfast/src/errors.rs`
+   - **Issue**: `StaticError`, `DynamicError`, and `ReportableError` enums should be non_exhaustive
+   - **Impact**: Allows adding new error variants without breaking changes
+   - **Solution**: Add `#[non_exhaustive]` attribute to all public error enums
+   - **Reviewer**: Gemini-code-assist ✅ VALID
+
+9. **Add logging for invalid messages** - `crates/rustyfix/src/tagvalue/tokio_decoder.rs`
+   - **Issue**: `DecodeError::Invalid` silently dropped, making debugging difficult
+   - **Impact**: Better observability for production debugging
+   - **Solution**: Add `log::warn!("Skipping invalid FIX message: {}", reason);`
+   - **Reviewer**: Gemini-code-assist ✅ VALID
+
+10. **Replace magic number 16 with named constant** - `crates/rustyfix/src/tagvalue/tokio_decoder.rs`
+    - **Issue**: Hard-coded value `16` for minimum header length lacks context
+    - **Solution**: Define `MIN_HEADER_LEN` constant  
+    - **Reviewer**: Copilot AI ✅ VALID
+
+11. **Update issue numbering for checksum constant** - Previously listed as #6
+    - **Issue**: Hard-coded value `7` for checksum field length
+    - **Solution**: Define `CHECKSUM_FIELD_LEN` constant
+    - **Reviewer**: Copilot AI ✅ VALID
+
 #### **📝 LOW PRIORITY**
 
-8. **Fix documentation typo** - `docs/fix-specs/5.0_sp2/vol2.md`
-   - **Issue**: "Lranspot" should be "Transport" in table header
-   - **Reviewer**: Both Copilot and Gemini ✅ VALID
+12. **Fix documentation typo** - `docs/fix-specs/5.0_sp2/vol2.md`
+    - **Issue**: "Lranspot" should be "Transport" in table header
+    - **Reviewer**: Both Copilot and Gemini ✅ VALID
 
-#### **❌ REJECTED SUGGESTIONS**
-- Stylistic error message formatting changes (existing multi-line format is fine)
-- println! vs logging in example code (minor style issue)
-- Various low-confidence suggestions filtered out by AI reviewers
+#### **❌ REJECTED SUGGESTIONS (Latest Reviews)**
+- JSON example memory allocation optimization (nitpicking example code)
+- Test assertion improvements in examples (not core functionality)
+- Previous: Stylistic error message formatting changes (existing multi-line format is fine)
+- Previous: println! vs logging in example code (minor style issue)
 
-**🎯 NEXT STEPS**: These 8 valid issues represent genuine improvements to code safety, performance, and maintainability that should be implemented during the next maintenance cycle.
+**🎯 NEXT STEPS**: These 13 valid issues (8 previous + 5 new) represent genuine improvements to code safety, performance, and maintainability that should be implemented during the next maintenance cycle.
 
 ---
 

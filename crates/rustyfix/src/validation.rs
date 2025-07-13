@@ -312,18 +312,15 @@ impl AdvancedValidator {
                 }
                 FixDatatype::Char => {
                     // Data-driven validation using dictionary enums for maintainable validation
-                    if let Some(enums) = field.enums() {
+                    if let Some(mut enums) = field.enums() {
                         // Field has defined enum values - validate against them
-                        let valid_values: Vec<String> =
-                            enums.map(|e| e.value().to_string()).collect();
-                        if !valid_values.iter().any(|v| v == value_str) {
+                        if !enums.any(|e| e.value() == value_str) {
                             return Err(ValidationError::ValueOutOfRange {
                                 tag,
                                 value: value_str.to_string(),
                                 reason: format!(
-                                    "Value not in the list of valid values for field '{}'. Valid values: {:?}",
-                                    field.name(),
-                                    valid_values
+                                    "Value not in the list of valid values for field '{}'",
+                                    field.name()
                                 ),
                             });
                         }

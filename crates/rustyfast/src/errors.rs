@@ -5,6 +5,7 @@ use thiserror::Error;
 /// even before receiving any data stream. Counterparties MUST signal static
 /// errors and the template where the original error occurred must be discarded.
 #[derive(Copy, Clone, Debug, Error)]
+#[non_exhaustive]
 pub enum StaticError {
     /// It is a static error if templates encoded in the concrete XML syntax are
     /// in fact not well-formed, do not follow the rules of XML namespaces or are
@@ -35,6 +36,7 @@ pub enum StaticError {
 /// Any error detected when encoding or decoding a FAST stream. Counterparties
 /// MUST signal dynamic errors.
 #[derive(Clone, Debug, Error)]
+#[non_exhaustive]
 pub enum DynamicError {
     /// It is a dynamic error if type of a field in a template cannot be
     /// converted to or from the type of the corresponding application field.
@@ -122,6 +124,7 @@ pub enum DynamicError {
 /// dynamic errors, counterparties are not obligated to signal dynamic errors an
 /// may choose not to do so, e.g. to improve performance.
 #[derive(Clone, Debug, Error)]
+#[non_exhaustive]
 pub enum ReportableError {
     /// It is a reportable error if a decimal cannot be represented by an
     /// exponent in the range [-63 … 63] or if the mantissa does not fit in an

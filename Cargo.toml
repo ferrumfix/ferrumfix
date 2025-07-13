@@ -83,6 +83,7 @@ darling = "0.21"
 dashmap = { version = "6.1", features = ["serde"] }
 decimal = "2"
 enum-as-inner = "0.6"
+env_logger = "0.11"
 fastrace = "0.7"
 fastrace-macro = "0.7"
 fnv = "1"

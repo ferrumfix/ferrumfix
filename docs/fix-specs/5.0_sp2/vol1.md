@@ -700,7 +700,7 @@ Version 5.0 Service Pack 2 - Errata   VOLUME 1                                  
 
 # Transport Independence Framework
 
-| FIX Session          |                      | Web Services         | Lranspot             | Multicast            | Other Transport      |
+| FIX Session          |                      | Web Services         | Transport            | Multicast            | Other Transport      |
 | -------------------- | -------------------- | -------------------- | -------------------- | -------------------- | -------------------- |
 | Layer                |                      | HTTP                 | MQSeries             | UDP                  | Transport            |
 | FKXLL                | 4ransport            |                      |                      |                      |                      |

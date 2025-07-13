@@ -12,9 +12,10 @@ rustyfix-dictionary = { path = "../../crates/rustyfix-dictionary", features = [
 tokio = { workspace = true }
 tokio-util = { workspace = true, features = ["codec"] }
 futures-util = { workspace = true }
-anyhow = { workspace = true }
-tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
+thiserror = { workspace = true }
+fastrace = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
 
 [[bin]]
 name = "fix_server"

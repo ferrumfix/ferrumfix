@@ -39,7 +39,7 @@ fix50sp1 = ["rustyfix-dictionary/fix50sp1"]
 fix50sp2 = ["rustyfix-dictionary/fix50sp2"]
 fixt11 = ["rustyfix-dictionary/fixt11"]
 # Third-party crate integration.
-utils-bytes = ["bytes"]
+utils-bytes = ["bytes", "smallbytes"]
 utils-chrono = []
 utils-decimal = ["decimal"]
 utils-rust-decimal = ["rust_decimal"]
@@ -68,6 +68,7 @@ full = [
 
 [dependencies]
 bytes = { workspace = true, optional = true }
+smallbytes = { workspace = true, optional = true }
 chrono = { workspace = true }
 decimal = { workspace = true, optional = true }
 rustyfix-codegen = { version = "0.7", path = "../rustyfix-codegen", optional = true }

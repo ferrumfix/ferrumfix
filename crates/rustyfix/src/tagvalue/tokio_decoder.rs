@@ -1,11 +1,28 @@
 use super::{Config, DecodeError, Decoder, Message, RawDecoder, RawFrame};
 use crate::GetConfig;
 use crate::{FieldType, FieldValueError};
-use bytes::{Bytes, BytesMut};
+use bytes::{Buf, Bytes, BytesMut};
 use rustc_hash::FxHashMap;
 use tokio_util::codec;
 
+/// Length of FIX checksum field: "CheckSum=NNN|" (10= + 3 digits + separator)
+const CHECKSUM_FIELD_LEN: usize = 7;
+
+/// Minimum data threshold to consider potential malformed data vs incomplete data
+const MALFORMED_DATA_THRESHOLD: usize = 64;
+
 /// Parse FIX message header to extract body length and header end position.
+/// Searches for the next potential start of a FIX message (8=FIX pattern).
+/// Returns the position offset from the start of the search data.
+fn find_next_fix_start(data: &[u8]) -> Option<usize> {
+    for (i, window) in data.windows(5).enumerate() {
+        if window.starts_with(b"8=FIX") {
+            return Some(i);
+        }
+    }
+    None
+}
+
 /// Returns (header_end_pos, body_length) if successful.
 fn parse_fix_header(data: &[u8], separator: u8) -> Option<(usize, usize)> {
     if data.len() < 16 {
@@ -203,7 +220,7 @@ impl codec::Decoder for TokioDecoder {
                 // Calculate total expected message length
                 // FIX message format: BeginString=... | BodyLength=N | ... body (N bytes) ... | CheckSum=...
                 let body_start = header_end_pos; // After BodyLength field
-                let expected_total_length = body_start + body_length + 7; // +7 for CheckSum=NNN|
+                let expected_total_length = body_start + body_length + CHECKSUM_FIELD_LEN; // for CheckSum=NNN|
 
                 // Check if we have enough bytes for the complete message
                 if src.len() < expected_total_length {
@@ -211,7 +228,27 @@ impl codec::Decoder for TokioDecoder {
                 }
                 (header_end_pos, body_length)
             }
-            None => return Ok(None), // Header incomplete, need more data
+            None => {
+                // Header parsing failed - could be incomplete or malformed data
+                // If we have substantial data, try to skip past malformed data to prevent infinite loops
+                if src.len() >= MALFORMED_DATA_THRESHOLD {
+                    // Sufficient data suggests malformed rather than incomplete
+                    // Search for next potential FIX message start (8=FIX pattern)
+                    if let Some(next_fix_start) = find_next_fix_start(&src[1..]) {
+                        // Skip past malformed data to next potential FIX message
+                        src.advance(next_fix_start + 1);
+                        // Try again with the new position
+                        return self.decode(src);
+                    } else {
+                        // No FIX pattern found, consume a byte to avoid infinite loop
+                        src.advance(1);
+                        return self.decode(src);
+                    }
+                } else {
+                    // Likely incomplete data, wait for more
+                    return Ok(None);
+                }
+            }
         };
 
         // We have enough data - split off exactly the message we need

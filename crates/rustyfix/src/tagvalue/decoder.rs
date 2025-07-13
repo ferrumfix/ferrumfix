@@ -125,6 +125,18 @@ impl Decoder {
     }
 
     fn message_builder_mut(&mut self) -> &mut MessageBuilder<'_> {
+        // SAFETY: This transmute changes the lifetime parameter of MessageBuilder from 'static to '_.
+        // This is sound because:
+        // 1. The MessageBuilder<'static> is a private field only accessible through this method
+        // 2. The returned reference has the lifetime of &mut self, which is shorter than 'static
+        // 3. MessageBuilder.clear() is called before each decode operation, invalidating any old references
+        // 4. The MessageBuilder only stores references to data provided in the current decode call
+        // 5. The lifetime '_ is bound to the lifetime of the decode operation, ensuring references
+        //    cannot outlive the source data
+        // 6. No references with the 'static lifetime are ever actually stored in the MessageBuilder
+        //
+        // The 'static lifetime parameter is used as a placeholder since MessageBuilder must be
+        // parameterized with a lifetime, but the actual lifetime is managed dynamically per decode.
         unsafe { std::mem::transmute(&mut self.builder) }
     }
 

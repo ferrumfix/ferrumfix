@@ -1,17 +1,33 @@
-use anyhow::Result;
+use log::info;
 use rustyfix::SetField;
 use rustyfix::tagvalue::Encoder;
 use rustyfix_dictionary::Dictionary;
 use std::time::Duration;
+use thiserror::Error;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use tokio::time::sleep;
-use tracing::info;
+
+#[derive(Error, Debug)]
+pub enum ClientError {
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("Other error: {0}")]
+    Other(String),
+}
+
+impl From<Box<dyn std::error::Error>> for ClientError {
+    fn from(err: Box<dyn std::error::Error>) -> Self {
+        ClientError::Other(err.to_string())
+    }
+}
+
+type Result<T> = std::result::Result<T, ClientError>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize tracing
-    tracing_subscriber::fmt::init();
+    // Initialize simple logger for this example
+    env_logger::init();
 
     info!("Starting FIX Client - connecting to 127.0.0.1:8888");
 
@@ -20,7 +36,7 @@ async fn main() -> Result<()> {
     info!("Connected to FIX server");
 
     // Create encoder for FIX messages
-    let dict = Dictionary::fix42()?;
+    let dict = Dictionary::fix42().map_err(|e| ClientError::Other(e.to_string()))?;
     let mut encoder = Encoder::new();
 
     // Send a Logon message

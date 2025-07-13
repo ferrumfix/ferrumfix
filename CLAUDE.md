@@ -493,8 +493,9 @@ Append the following to the existing "Performance Considerations" section:
 - `simd_aligned` for SIMD usage
 - `zerocopy` for zero-copy manipulations
 - `quanta` for high-resolution timekeeping (instead of `chrono`)
-- `smallbytes` instead of `bytes` crate from tokio team
-- `fastrace` instead of `tracing` if logging is needed
+- `smallbytes` instead of `bytes` crate from tokio team (**MANDATORY**: For small buffers, use smallbytes for better stack allocation)
+- `fastrace` instead of `tracing` (**MANDATORY**: Never use tracing, it's too slow for high-performance applications)
+- `thiserror` instead of `anyhow` (**PREFERRED**: Use thiserror for structured error handling, avoid anyhow)
 
 * Look for @docs/external-libraries/ for crates' information
 
