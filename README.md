@@ -29,7 +29,7 @@ You don't have to understand the whole tech stack to use a single layer; in fact
 
 **Core features:**
 
-- [X] Code generation (Rust, possibly others).
+- [X] Code generation (Rust).
 - [X] FIX 4.2.
 - [X] FIX 4.4.
 - [X] FIX 5.0 Service Pack 2.
@@ -37,12 +37,12 @@ You don't have to understand the whole tech stack to use a single layer; in fact
 **Encodings:**
 
 - [X] Tagvalue (classic FIX).
-- [ ] FIXML.
-- [ ] Simple Binary Encoding (SBE).
-- [ ] Google Protocol Buffers (GPB).
+- [x] FIXML. [Working on validations]
+- [x] Simple Binary Encoding (SBE). [Working on validations]
+- [x] Google Protocol Buffers (GPB). [Working on validations]
 - [X] JavaScript Object Notation (JSON).
 - [ ] Abstract Syntax Notation (ASN.1).
-- [ ] FIX Adapted for STreaming (FAST).
+- [x] FIX Adapted for STreaming (FAST).
 
 ## Legal
 
