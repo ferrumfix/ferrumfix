@@ -158,9 +158,9 @@ where
 
         // Limit storage to prevent memory growth (keep last 1000 messages)
         if self.outbound_message_store.len() > 1000 {
-            let min_seq_to_keep = seq_num.saturating_sub(1000);
-            self.outbound_message_store
-                .retain(|&k, _| k >= min_seq_to_keep);
+            if let Some(min_key) = self.outbound_message_store.keys().min().cloned() {
+                self.outbound_message_store.remove(&min_key);
+            }
         }
     }
 
@@ -170,9 +170,9 @@ where
 
         // Limit storage to prevent memory growth (keep last 1000 messages)
         if self.inbound_message_store.len() > 1000 {
-            let min_seq_to_keep = seq_num.saturating_sub(1000);
-            self.inbound_message_store
-                .retain(|&k, _| k >= min_seq_to_keep);
+            if let Some(min_key) = self.inbound_message_store.keys().min().cloned() {
+                self.inbound_message_store.remove(&min_key);
+            }
         }
     }
 
