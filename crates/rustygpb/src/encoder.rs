@@ -154,18 +154,18 @@ impl GpbEncoder {
                 message.validate()?;
             }
 
-            // Encode message length first
-            let msg_start = self.writer.buffer().len();
-            self.encode_message_header(message)?;
-            self.encode_fields(message)?;
-            let msg_end = self.writer.buffer().len();
+            // Encode message to a temporary buffer to get its length
+            let mut temp_encoder = GpbEncoder::new();
+            temp_encoder.encode_message_header(message)?;
+            temp_encoder.encode_fields(message)?;
+            let msg_data = temp_encoder.writer.as_bytes();
+            let msg_len = msg_data.len();
 
-            // Encode length prefix
-            let msg_len = msg_end - msg_start;
-            let _length_bytes = BufferUtils::encode_varint(msg_len as u64);
+            // Encode length prefix first
+            self.encode_varint(msg_len as u64)?;
 
-            // Insert length at beginning (this is simplified - real implementation would be more efficient)
-            // For now, we'll append and reorder in a production implementation
+            // Then encode the message data
+            self.write_bytes(msg_data)?;
         }
 
         if self.config.include_checksums {

@@ -244,8 +244,12 @@ impl GpbDecoder {
                 })
             })?;
 
-            // Decode the individual message
-            let message = self.decode(&msg_data)?;
+            // Decode the individual message with relaxed checksum validation
+            // (individual messages in batch don't have checksums)
+            let mut batch_config = self.config.clone();
+            batch_config.validate_checksums = false;
+            let batch_decoder = GpbDecoder::with_config(batch_config);
+            let message = batch_decoder.decode(&msg_data)?;
             messages.push(message);
         }
 
@@ -263,10 +267,13 @@ impl GpbDecoder {
             t if t == WireType::Varint as u8 => {
                 let value = self.decode_varint(reader)?;
                 // Try to determine if this is signed (zigzag encoded)
-                // For simplicity, we'll treat large values as signed
-                if value > (i64::MAX as u64) {
-                    let decoded = self.decode_zigzag(value);
-                    Ok(FieldValue::Int(decoded))
+                // Check if the zigzag decode produces a negative number that makes sense
+                let zigzag_decoded = self.decode_zigzag(value);
+
+                // If the zigzag decoding produces a negative number or the value is odd
+                // (which indicates a negative number in zigzag encoding), treat as signed
+                if zigzag_decoded < 0 || (value & 1) == 1 {
+                    Ok(FieldValue::Int(zigzag_decoded))
                 } else {
                     Ok(FieldValue::UInt(value))
                 }

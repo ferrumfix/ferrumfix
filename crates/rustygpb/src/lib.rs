@@ -16,16 +16,23 @@
 //! ```rust
 //! use rustygpb::{GpbEncoder, GpbDecoder, FixMessage};
 //!
-//! let encoder = GpbEncoder::new();
-//! let message = FixMessage::new_order_single(/* fields */);
-//! let bytes = encoder.encode(&message)?;
+//! fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     let mut encoder = GpbEncoder::new();
+//!     let message = FixMessage::new_order_single(
+//!         "BTCUSD".to_string(),
+//!         50000.0,
+//!         1.0,
+//!         "1".to_string()
+//!     );
+//!     let bytes = encoder.encode(&message)?;
 //!
-//! let decoder = GpbDecoder::new();
-//! let decoded = decoder.decode(&bytes)?;
+//!     let decoder = GpbDecoder::new();
+//!     let decoded = decoder.decode(bytes)?;
+//!     Ok(())
+//! }
 //! ```
 
 #![doc(html_root_url = "https://docs.rs/rustygpb/")]
-#![warn(rustdoc::missing_doc_code_examples)]
 #![deny(
     unused,
     missing_debug_implementations,

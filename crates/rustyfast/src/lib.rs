@@ -2,7 +2,6 @@
 //! ([FAST](https://www.fixtrading.org/standards/fast/)) support.
 
 #![doc(html_root_url = "https://docs.rs/rustyfast/")]
-#![warn(rustdoc::missing_doc_code_examples)]
 #![deny(
     unused,
     missing_debug_implementations,

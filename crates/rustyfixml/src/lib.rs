@@ -17,16 +17,23 @@
 //! ```rust
 //! use rustyfixml::{FixmlEncoder, FixmlDecoder, FixmlMessage};
 //!
-//! let encoder = FixmlEncoder::new();
-//! let message = FixmlMessage::new_order_single(/* fields */);
-//! let xml = encoder.encode(&message)?;
+//! fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     let encoder = FixmlEncoder::new();
+//!     let message = FixmlMessage::new_order_single(
+//!         "BTCUSD".to_string(),
+//!         50000.0,
+//!         1.0,
+//!         "1".to_string()
+//!     );
+//!     let xml = encoder.encode(&message)?;
 //!
-//! let decoder = FixmlDecoder::new();
-//! let decoded = decoder.decode(&xml)?;
+//!     let decoder = FixmlDecoder::new();
+//!     let decoded = decoder.decode(&xml)?;
+//!     Ok(())
+//! }
 //! ```
 
 #![doc(html_root_url = "https://docs.rs/rustyfixml/")]
-#![warn(rustdoc::missing_doc_code_examples)]
 #![allow(unused, missing_docs, dead_code)]
 #![deny(
     unsafe_op_in_unsafe_fn,
