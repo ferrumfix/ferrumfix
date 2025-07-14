@@ -1,16 +1,15 @@
 [package]
 name = "rustyfixs"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
-homepage.workspace = true
-repository.workspace = true
-description.workspace = true
-publish.workspace = true
-readme.workspace = true
-keywords.workspace = true
-categories.workspace = true
-license.workspace = true
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+description = "FIX-over-TLS (FIXS) support for `rustyfix`"
+keywords = { workspace = true }
+categories = { workspace = true }
+publish = { workspace = true }
 
 # https://stackoverflow.com/q/61417452/
 # Test locally using `RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features`.
@@ -19,8 +18,10 @@ all-features = true
 rustdoc-args = ["--cfg", "doc_cfg"]
 
 [features]
-utils-openssl = [ "openssl" ]
+default = []
+utils-openssl = [ "openssl", "thiserror" ]
 
 [dependencies]
 log = { workspace = true }
 openssl = { workspace = true, optional = true }
+thiserror = { workspace = true, optional = true }

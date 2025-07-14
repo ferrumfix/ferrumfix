@@ -155,9 +155,11 @@ impl OwnedMessage {
     where
         T: AsRef<[u8]>,
     {
-        // Extract ALL fields from the message by iterating over them
-        // This ensures no fields are lost during conversion to OwnedMessage
-        // Pre-allocate HashMap capacity to reduce reallocations during insertion
+        // Extract all fields from the message. Note that this flattens repeating
+        // groups, and if there are duplicate tags, the HashMap will only store
+        // the last value for each tag. See struct-level documentation for details
+        // on this limitation.
+        // Pre-allocate HashMap capacity to reduce reallocations.
         let field_count = message.fields().count();
         let mut fields = FxHashMap::with_capacity_and_hasher(field_count, Default::default());
 

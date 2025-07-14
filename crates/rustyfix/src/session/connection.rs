@@ -569,7 +569,7 @@ where
 
     fn verifier(&self) -> &Z;
 
-    fn dispatch_by_msg_type(&self, msg_type: &[u8], message: Message<&[u8]>) -> Response {
+    fn dispatch_by_msg_type(&mut self, msg_type: &[u8], message: Message<&[u8]>) -> Response {
         match msg_type {
             b"A" => {
                 self.on_logon(message);
@@ -699,8 +699,16 @@ where
 
     /// Enhanced resend request handling that actually processes stored messages
     fn on_resend_request(&mut self, message: &Message<&[u8]>) -> Response {
-        let begin_seq_num = message.get(&BEGIN_SEQ_NO).unwrap_or(0);
-        let end_seq_num = message.get(&END_SEQ_NO).unwrap_or(0);
+        let begin_seq_num = if let Ok(seq) = message.get(&BEGIN_SEQ_NO) {
+            seq
+        } else {
+            return self.make_reject_for_missing_field(message, BEGIN_SEQ_NO, "BeginSeqNo");
+        };
+        let end_seq_num = if let Ok(seq) = message.get(&END_SEQ_NO) {
+            seq
+        } else {
+            return self.make_reject_for_missing_field(message, END_SEQ_NO, "EndSeqNo");
+        };
 
         log::info!(
             "Processing resend request for sequence range {}..{}",
@@ -774,7 +782,7 @@ where
 
     fn on_logout(&mut self, data: ResponseData, _message: &Message<&[u8]>) -> &[u8] {
         let fix_message = {
-            let msg_seq_num = self.next();
+            let msg_seq_num = self.msg_seq_num_outbound().next();
             let mut logout_message = self.start_message(data.begin_string, b"5");
             self.set_sender_and_target(&mut logout_message);
             logout_message.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
@@ -849,7 +857,7 @@ where
 
     fn on_wrong_environment(&mut self, message: Message<&[u8]>) -> Response {
         log::warn!("Wrong environment detected in message");
-        self.make_logout(errs::production_env().into())
+        self.make_logout(errs::production_env())
     }
 
     fn generate_error_seqnum_too_low(&mut self) -> &[u8] {
@@ -893,12 +901,12 @@ where
 
     fn on_missing_seqnum(&mut self, message: Message<&[u8]>) -> Response {
         log::warn!("Missing sequence number in message");
-        self.make_logout(errs::missing_field("MsgSeqNum", MSG_SEQ_NUM).into())
+        self.make_logout(errs::missing_field("MsgSeqNum", MSG_SEQ_NUM))
     }
 
     fn on_low_seqnum(&mut self, message: Message<&[u8]>) -> Response {
         log::warn!("Received message with low sequence number");
-        self.make_logout(errs::msg_seq_num(self.msg_seq_num_inbound.0 + 1).into())
+        self.make_logout(errs::msg_seq_num(self.msg_seq_num_inbound.0 + 1))
     }
 
     fn on_reject(

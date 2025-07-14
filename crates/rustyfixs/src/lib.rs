@@ -10,6 +10,23 @@ use iana2openssl::iana2openssl;
 use openssl::error::ErrorStack as SslError;
 #[cfg(feature = "utils-openssl")]
 use openssl::ssl::*;
+#[cfg(feature = "utils-openssl")]
+use thiserror::Error;
+
+/// Error types for FIX-over-TLS operations.
+#[derive(Debug, Error)]
+#[cfg(feature = "utils-openssl")]
+pub enum FixsError {
+    /// An error from the underlying OpenSSL library.
+    #[error("OpenSSL error: {0}")]
+    Ssl(#[from] SslError),
+    /// No valid FIXS cipher suites are available. This often indicates a
+    /// configuration issue or an unsupported OpenSSL version.
+    #[error(
+        "No valid FIXS cipher suites are available. This could indicate a configuration issue or an unsupported OpenSSL version."
+    )]
+    NoCiphers,
+}
 
 /// A common interface to the TLS parameters specified by a FIXS release.
 pub trait FixOverTlsCommon {
@@ -52,12 +69,12 @@ pub trait FixOverTlsCommon {
     /// Creates an [`SslConnectorBuilder`] with fhe FIXS recommended settings.
     #[cfg(feature = "utils-openssl")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-openssl")))]
-    fn recommended_connector_builder(&self) -> Result<SslConnectorBuilder, SslError>;
+    fn recommended_connector_builder(&self) -> Result<SslConnectorBuilder, FixsError>;
 
     /// Creates an [`SslAcceptorBuilder`] with fhe FIXS recommended settings.
     #[cfg(feature = "utils-openssl")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-openssl")))]
-    fn recommended_acceptor_builder(&self) -> Result<SslAcceptorBuilder, SslError>;
+    fn recommended_acceptor_builder(&self) -> Result<SslAcceptorBuilder, FixsError>;
 }
 
 /// FIX-over-TLS v1.0.
@@ -132,27 +149,16 @@ impl FixOverTlsCommon for FixOverTlsV10 {
 
     #[cfg(feature = "utils-openssl")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-openssl")))]
-    fn recommended_connector_builder(&self) -> Result<SslConnectorBuilder, SslError> {
+    fn recommended_connector_builder(&self) -> Result<SslConnectorBuilder, FixsError> {
         let mut context = SslConnector::builder(SslMethod::tls())?;
         context.set_min_proto_version(Some(SslVersion::TLS1_2))?;
         context.set_options(SslOptions::NO_COMPRESSION);
         context.set_options(SslOptions::NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
         context.set_session_cache_mode(SslSessionCacheMode::SERVER);
 
-        // ✅ CRITICAL FIX: Proper error handling for empty cipher list
-        // This is a critical configuration error that should never happen in production
         let cipher_list = self.recommended_cs_openssl(false);
         if cipher_list.is_empty() {
-            log::error!(
-                "No valid FIXS cipher suites available - cannot establish secure connection. \
-                This could indicate a configuration issue or unsupported OpenSSL version."
-            );
-            // Panic is appropriate here - this is a critical security configuration failure
-            panic!(
-                "CRITICAL: No FIXS-compliant cipher suites available for secure connection. \
-                This indicates a severe configuration issue or unsupported OpenSSL version. \
-                Cannot proceed with insecure connection."
-            );
+            return Err(FixsError::NoCiphers);
         }
 
         let ciphers = cipher_list.join(":");
@@ -164,7 +170,7 @@ impl FixOverTlsCommon for FixOverTlsV10 {
 
     #[cfg(feature = "utils-openssl")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "utils-openssl")))]
-    fn recommended_acceptor_builder(&self) -> Result<SslAcceptorBuilder, SslError> {
+    fn recommended_acceptor_builder(&self) -> Result<SslAcceptorBuilder, FixsError> {
         let mut context = SslAcceptor::mozilla_intermediate_v5(SslMethod::tls())?;
         context.set_min_proto_version(Some(SslVersion::TLS1_2))?;
         context.set_session_cache_mode(SslSessionCacheMode::SERVER);
@@ -172,20 +178,9 @@ impl FixOverTlsCommon for FixOverTlsV10 {
         context.set_options(SslOptions::NO_COMPRESSION);
         context.set_options(SslOptions::NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
 
-        // ✅ CRITICAL FIX: Proper error handling for empty cipher list
-        // This is a critical configuration error that should never happen in production
         let cipher_list = self.recommended_cs_openssl(false);
         if cipher_list.is_empty() {
-            log::error!(
-                "No valid FIXS cipher suites available - cannot establish secure connection. \
-                This could indicate a configuration issue or unsupported OpenSSL version."
-            );
-            // Panic is appropriate here - this is a critical security configuration failure
-            panic!(
-                "CRITICAL: No FIXS-compliant cipher suites available for secure connection. \
-                This indicates a severe configuration issue or unsupported OpenSSL version. \
-                Cannot proceed with insecure connection."
-            );
+            return Err(FixsError::NoCiphers);
         }
 
         let ciphers = cipher_list.join(":");
