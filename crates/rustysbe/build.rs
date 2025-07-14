@@ -395,7 +395,8 @@ fn main() -> Result<()> {
         }
     }
 
-    println!("cargo:warning=Parsed SBE schema: {schema:#?}");
+    // Debug output removed - was causing noisy build warnings
+    // println!("cargo:warning=Parsed SBE schema: {schema:#?}");
 
     let out_dir = env::var_os("OUT_DIR").unwrap();
     let dest_path = Path::new(&out_dir).join("sbe.rs");
