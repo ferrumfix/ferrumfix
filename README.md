@@ -8,8 +8,6 @@ RustyFix is a free and open source FIX engine implementation forked from [Ferrum
 
 - [RustyFix](#rustyfix)
 	- [About](#about)
-	- [Sponsors](#sponsors)
-	- [Contributing](#contributing)
 	- [Legal](#legal)
 
 ## About
