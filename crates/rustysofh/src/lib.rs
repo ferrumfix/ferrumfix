@@ -14,7 +14,10 @@
 //! [`TokioCodec`].
 
 #![doc(html_root_url = "https://docs.rs/rustysofh/")]
-#![warn(missing_docs, rustdoc::missing_doc_code_examples)]
+#![cfg_attr(feature = "unstable", feature(test))]
+#![warn(missing_docs)]
+// Note: rustdoc::missing_doc_code_examples is unstable
+// #![warn(rustdoc::missing_doc_code_examples)]
 #![deny(
     unused,
     missing_debug_implementations,
