@@ -34,7 +34,11 @@ pub fn generated_code_notice() -> SmartString {
 /// available values for `field`.
 pub fn codegen_field_type_enum(field: dict::Field, settings: &Settings) -> String {
     let derives = settings.derives_for_allowed_values.join(", ");
-    let attributes = settings.attributes_for_allowed_values.join("\n");
+    let attributes_str = if settings.attributes_for_allowed_values.is_empty() {
+        String::new()
+    } else {
+        format!("{}\n", settings.attributes_for_allowed_values.join("\n"))
+    };
     let mut variant_identifiers = FxHashSet::default();
     let variants = field
         .enums()
@@ -46,13 +50,13 @@ pub fn codegen_field_type_enum(field: dict::Field, settings: &Settings) -> Strin
         r#"
             /// Field type variants for [`{field_name}`].
             #[derive({derives})]
-            {attributes}
-            pub enum {identifier} {{
+            #[allow(clippy::enum_variant_names)]
+            {attributes}pub enum {identifier} {{
             {variants}
             }}"#,
         field_name = field.name().to_pascal_case(),
         derives = derives,
-        attributes = attributes,
+        attributes = attributes_str,
         identifier = field.name().to_pascal_case(),
         variants = variants,
     )
@@ -75,73 +79,73 @@ fn codegen_field_type_enum_variant(
         identifier = format!("_{identifier}");
     }
     // E.g. `TickDirection::PlusTick` -> `TickDirection::Plus`.
-    if let Some(s) = identifier.strip_suffix("Tick") {
-        if !s.is_empty() {
-            identifier = s.to_string();
-        }
+    if let Some(s) = identifier.strip_suffix("Tick")
+        && !s.is_empty()
+    {
+        identifier = s.to_string();
     }
     // E.g. `QuoteCancelType::CancelForSymbol` -> `QuoteCancelType::Symbol`
-    if let Some(s) = identifier.strip_prefix("CancelFor") {
-        if !s.is_empty() {
-            identifier = s.to_string();
-        }
+    if let Some(s) = identifier.strip_prefix("CancelFor")
+        && !s.is_empty()
+    {
+        identifier = s.to_string();
     }
     // E.g. `SecurityRequestType::RequestSecurityIdentityAndSpecifications`
-    if let Some(s) = identifier.strip_prefix("Request") {
-        if !s.is_empty() {
-            identifier = s.to_string();
-        }
+    if let Some(s) = identifier.strip_prefix("Request")
+        && !s.is_empty()
+    {
+        identifier = s.to_string();
     }
     // E.g. `MultiLegReportingType::SingleSecurity`
-    if let Some(s) = identifier.strip_suffix("Security") {
-        if !s.is_empty() {
-            identifier = s.to_string();
-        }
+    if let Some(s) = identifier.strip_suffix("Security")
+        && !s.is_empty()
+    {
+        identifier = s.to_string();
     }
-    if let Some(s) = identifier.strip_prefix("RelatedTo") {
-        if !s.is_empty() {
-            identifier = s.to_string();
-        }
+    if let Some(s) = identifier.strip_prefix("RelatedTo")
+        && !s.is_empty()
+    {
+        identifier = s.to_string();
     }
-    if let Some(s) = identifier.strip_suffix("Price") {
-        if !s.is_empty() {
-            identifier = s.to_string();
-        }
+    if let Some(s) = identifier.strip_suffix("Price")
+        && !s.is_empty()
+    {
+        identifier = s.to_string();
     }
-    if let Some(s) = identifier.strip_prefix("No") {
-        if !s.is_empty() {
-            identifier = s.to_string();
-        }
+    if let Some(s) = identifier.strip_prefix("No")
+        && !s.is_empty()
+    {
+        identifier = s.to_string();
     }
-    if let Some(s) = identifier.strip_suffix("Trade") {
-        if !s.is_empty() {
-            identifier = s.to_string();
-        }
+    if let Some(s) = identifier.strip_suffix("Trade")
+        && !s.is_empty()
+    {
+        identifier = s.to_string();
     }
-    if let Some(s) = identifier.strip_prefix("At") {
-        if !s.is_empty() {
-            identifier = s.to_string();
-        }
+    if let Some(s) = identifier.strip_prefix("At")
+        && !s.is_empty()
+    {
+        identifier = s.to_string();
     }
-    if let Some(s) = identifier.strip_suffix("Deal") {
-        if !s.is_empty() {
-            identifier = s.to_string();
-        }
+    if let Some(s) = identifier.strip_suffix("Deal")
+        && !s.is_empty()
+    {
+        identifier = s.to_string();
     }
-    if let Some(s) = identifier.strip_suffix("Sale") {
-        if !s.is_empty() {
-            identifier = s.to_string();
-        }
+    if let Some(s) = identifier.strip_suffix("Sale")
+        && !s.is_empty()
+    {
+        identifier = s.to_string();
     }
-    if let Some(s) = identifier.strip_prefix("As") {
-        if !s.is_empty() {
-            identifier = s.to_string();
-        }
+    if let Some(s) = identifier.strip_prefix("As")
+        && !s.is_empty()
+    {
+        identifier = s.to_string();
     }
-    if let Some(s) = identifier.strip_prefix("Of") {
-        if !s.is_empty() {
-            identifier = s.to_string();
-        }
+    if let Some(s) = identifier.strip_prefix("Of")
+        && !s.is_empty()
+    {
+        identifier = s.to_string();
     }
     // Ensure identifier is valid Rust identifier
     let mut final_identifier = identifier.to_pascal_case();

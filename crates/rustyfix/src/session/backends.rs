@@ -364,12 +364,12 @@ impl FileBackend {
 
         let contents = std::fs::read_to_string(&self.storage_path)?;
         for line in contents.lines() {
-            if let Some((seq_str, message)) = line.split_once(':') {
-                if let Ok(seq_num) = seq_str.parse::<u64>() {
-                    let message_bytes = message.as_bytes();
-                    self.memory_cache
-                        .store_outbound_message(seq_num, message_bytes)?;
-                }
+            if let Some((seq_str, message)) = line.split_once(':')
+                && let Ok(seq_num) = seq_str.parse::<u64>()
+            {
+                let message_bytes = message.as_bytes();
+                self.memory_cache
+                    .store_outbound_message(seq_num, message_bytes)?;
             }
         }
         Ok(())

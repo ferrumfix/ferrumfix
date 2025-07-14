@@ -62,6 +62,16 @@ pub enum DecodeError {
     #[error("Unknown message type: {message_type}")]
     UnknownMessageType { message_type: String },
 
+    /// Invalid field value for expected type
+    #[error(
+        "Invalid field value for field '{field_name}': got '{value}', expected {expected_type}"
+    )]
+    InvalidFieldValue {
+        field_name: String,
+        value: String,
+        expected_type: String,
+    },
+
     /// Field validation failed
     #[error("Field validation failed: {field_name}")]
     FieldValidationFailed { field_name: String },

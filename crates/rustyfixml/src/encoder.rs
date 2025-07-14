@@ -46,15 +46,10 @@ impl FixmlEncoder {
         let message_tag = self.get_message_tag(&message.message_type)?;
         let mut msg_start = BytesStart::new(message_tag);
 
-        // Add fields as attributes
+        // Add fields as attributes with type hints
         for (name, value) in &message.fields {
-            let value_str = match value {
-                FieldValue::String(s) => s.clone(),
-                FieldValue::Integer(i) => i.to_string(),
-                FieldValue::Decimal(d) => d.to_string(),
-                FieldValue::Boolean(b) => b.to_string(),
-            };
-            msg_start.push_attribute((name.as_str(), value_str.as_str()));
+            let (attr_name, value_str) = self.format_field_with_type_hint(name, value);
+            msg_start.push_attribute((attr_name.as_str(), value_str.as_str()));
         }
 
         writer.write_event(Event::Empty(msg_start))?;
@@ -64,6 +59,15 @@ impl FixmlEncoder {
 
         let result = writer.into_inner().into_inner();
         String::from_utf8(result).map_err(FixmlError::from)
+    }
+
+    fn format_field_with_type_hint(&self, name: &str, value: &FieldValue) -> (String, String) {
+        match value {
+            FieldValue::String(s) => (format!("{name}:String"), s.clone()),
+            FieldValue::Integer(i) => (format!("{name}:Integer"), i.to_string()),
+            FieldValue::Decimal(d) => (format!("{name}:Decimal"), d.to_string()),
+            FieldValue::Boolean(b) => (format!("{name}:Boolean"), b.to_string()),
+        }
     }
 
     fn get_message_tag(&self, msg_type: &MessageType) -> Result<&'static str, EncodeError> {
