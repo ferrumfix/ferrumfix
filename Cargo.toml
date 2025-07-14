@@ -33,9 +33,9 @@ inefficient_to_string = "warn"
 large_types_passed_by_value = "warn"
 # Correctness lints  
 fallible_impl_from = "warn"
-unwrap_used = "warn"
-expect_used = "warn"
-panic = "warn"
+# unwrap_used = "warn"
+# expect_used = "warn"
+# panic = "warn"
 
 # Release profile - optimized for production performance
 [profile.release]

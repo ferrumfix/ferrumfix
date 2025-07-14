@@ -13,9 +13,9 @@ publish = { workspace = true }
 
 [dependencies]
 roxmltree = { workspace = true, optional = true }
-zerocopy = { workspace = true, optional = true }
+zerocopy = { workspace = true }
 
 [build-dependencies]
-roxmltree = { workspace = true, optional = true }
-anyhow = { workspace = true, optional = true }
-heck = { workspace = true, optional = true }
+roxmltree = { workspace = true }
+anyhow = { workspace = true }
+heck = { workspace = true }
