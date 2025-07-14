@@ -26,27 +26,27 @@ name = "fix_decode"
 harness = false
 
 [features]
-default = ["utils-chrono", "utils-tokio"]
-codegen = ["rustyfix-codegen"]
+default = [ "utils-chrono", "utils-tokio" ]
+codegen = [ "rustyfix-codegen" ]
 derive = []
-json-encoding = ["simd-json"]
-fix40 = ["rustyfix-dictionary/fix40"]
-fix41 = ["rustyfix-dictionary/fix41"]
-fix42 = ["rustyfix-dictionary/fix42"]
-fix43 = ["rustyfix-dictionary/fix43"]
-fix50 = ["rustyfix-dictionary/fix50"]
-fix50sp1 = ["rustyfix-dictionary/fix50sp1"]
-fix50sp2 = ["rustyfix-dictionary/fix50sp2"]
-fixt11 = ["rustyfix-dictionary/fixt11"]
-simd-optimizations = ["wide", "simd_aligned"]
+json-encoding = [ "simd-json" ]
+fix40 = [ "rustyfix-dictionary/fix40" ]
+fix41 = [ "rustyfix-dictionary/fix41" ]
+fix42 = [ "rustyfix-dictionary/fix42" ]
+fix43 = [ "rustyfix-dictionary/fix43" ]
+fix50 = [ "rustyfix-dictionary/fix50" ]
+fix50sp1 = [ "rustyfix-dictionary/fix50sp1" ]
+fix50sp2 = [ "rustyfix-dictionary/fix50sp2" ]
+fixt11 = [ "rustyfix-dictionary/fixt11" ]
+simd-optimizations = [ "simd_aligned", "wide" ]
 # Third-party crate integration.
-utils-bytes = ["bytes", "smallbytes"]
+utils-bytes = [ "bytes", "smallbytes" ]
 utils-chrono = []
-utils-decimal = ["decimal"]
-utils-rust-decimal = ["rust_decimal"]
-utils-slog = ["slog"]
-utils-tokio = ["smallbytes", "tokio-util"]
-utils-fastrace = ["fastrace", "fastrace-macro"]
+utils-decimal = [ "decimal" ]
+utils-rust-decimal = [ "rust_decimal" ]
+utils-slog = [ "slog" ]
+utils-tokio = [ "smallbytes", "tokio-util" ]
+utils-fastrace = [ "fastrace", "fastrace-macro" ]
 
 full = [
 	"codegen",
@@ -60,6 +60,7 @@ full = [
 	"fix50sp2",
 	"fixt11",
 	"json-encoding",
+	"simd-optimizations",
 	"utils-bytes",
 	"utils-chrono",
 	"utils-decimal",
@@ -67,8 +68,6 @@ full = [
 	"utils-rust-decimal",
 	"utils-slog",
 	"utils-tokio",
-	"utils-fastrace",
-	"simd-optimizations",
 ]
 
 [dependencies]

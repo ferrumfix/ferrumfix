@@ -745,39 +745,8 @@ where
             return self.send_gap_fill(begin_seq_num, end_seq_num + 1);
         }
 
-        // ✅ CRITICAL FIX: Actually resend the requested messages instead of returning None
-        // This implements the core FIX session recovery mechanism
-        log::info!("Resending {} messages for range {}..{}", available_messages.len(), begin_seq_num, end_seq_num);
-        
-        // For now, we'll create a resend response that indicates what should be sent
-        // In a real implementation, this would typically queue multiple messages for transmission
-        // or use a batch response mechanism
-        
-        // Create a sequence reset message to acknowledge the resend request
-        // and indicate the range being processed
-        let begin_string = self.begin_string();
-        let msg_seq_num = self.msg_seq_num_outbound.next();
-        let mut resend_ack = self.start_message(begin_string, b"4"); // SequenceReset
-        
-        self.set_sender_and_target(&mut resend_ack);
-        resend_ack.set_fv_with_key(&MSG_SEQ_NUM, msg_seq_num);
-        resend_ack.set_fv_with_key(&NEW_SEQ_NO, end_seq_num + 1);
-        resend_ack.set_fv_with_key(&GAP_FILL_FLAG, "N"); // Reset, not gap fill
-        resend_ack.set_fv_with_key(&TEXT, format!("Resending messages {}-{}", begin_seq_num, end_seq_num).as_str());
-        self.set_sending_time(&mut resend_ack);
-        
-        let message_bytes = resend_ack.done();
-        
-        // Store the acknowledgment message
-        self.store_outbound_message(msg_seq_num, message_bytes.into());
-        
-        // TODO: In a complete implementation, this would also trigger:
-        // 1. Retransmission of all stored messages in the range
-        // 2. Proper PossDupFlag(43) marking on resent messages  
-        // 3. Sequence number management for resent vs new messages
-        // For now, we return the acknowledgment that resend is being processed
-        
-        Response::OutboundBytes(message_bytes)
+        // TODO: Implement actual message resending. For now, we are sending a GapFill message.
+        self.send_gap_fill(begin_seq_num, end_seq_num + 1)
     }
 
     fn on_logout(&mut self, data: ResponseData, _message: &Message<&[u8]>) -> &[u8] {
