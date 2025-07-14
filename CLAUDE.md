@@ -21,7 +21,7 @@
 - **Maintain disciplined scope** - Execute only ordered tasks; avoid scope creep that can introduce instability
 - **Auto commit and push after each individual task is done.**
 - **NEVER use --no-verify when committing. Instead, fix the issues properly instead of bypassing the pre-commit hooks.**
-- **Always look for @docs/external-libraries/ when implementing APIs or designing exchange abstractions.**
+- **Always look for @docs/external-libraries/ and @docs/fix-specs/ when implementing APIs or designing exchange abstractions.**
 - **Periodically renew `TODO.md` for saving current progress and updating the pending tasks.**
 
 ---

@@ -20,8 +20,28 @@ repository = "https://github.com/rusty-trading/rusty-fix-engine"
 description = "FIX & FAST (FIX Adapted for STreaming) in pure Rust"
 publish = true
 readme = "README.md"
-keywords = ["fix", "fast", "protocol", "finance", "fintech"]
-categories = ["network-programming", "parser-implementations", "encoding"]
+keywords = [
+    "fix",
+    "fix-protocol",
+    "quickfix",
+    "fix-engine",
+    "fix-parser",
+    "fast",
+    "protocol",
+    "trading",
+    "finance",
+    "fintech",
+]
+categories = [
+    "network-programming",
+    "parser-implementations",
+    "encoding",
+    "fix-engine",
+    "fix-parser",
+    "fix-protocol",
+    "quickfix",
+    "fast",
+]
 license = "Apache-2.0"
 
 # Workspace-wide linting configuration
