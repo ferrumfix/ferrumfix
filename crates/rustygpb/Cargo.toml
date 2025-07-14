@@ -1,6 +1,6 @@
 [package]
 name = "rustygpb"
-version = "0.1.0"
+version = { workspace = true }
 edition = "2021"
 description = "Protocol Buffers encoding for FIX messages in RustyFix"
 license = "MIT OR Apache-2.0"
@@ -35,4 +35,4 @@ criterion = { version = "0.5", features = ["html_reports"] }
 
 [features]
 default = []
-serde = ["dep:serde"]
+serde = [ "dep:serde" ]
