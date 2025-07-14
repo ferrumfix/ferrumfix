@@ -1043,12 +1043,18 @@ Comparing to previous AI reviews:
 
 #### **🚨 CRITICAL PRIORITY (Protocol Compliance & Logic Bugs)**
 
-**22. Message Cleanup Fails with Non-Contiguous Sequence Numbers** ❌ **PENDING**
+**22. Message Cleanup Fails with Non-Contiguous Sequence Numbers** ✅ **COMPLETED**
 - **Issue**: Message storage cleanup logic incorrectly assumes FIX sequence numbers are contiguous
 - **Impact**: `saturating_sub(1000)` can prematurely remove recently stored messages if sequence numbers have gaps
 - **Root Cause**: Logic assumes sequence numbers 1000, 1001, 1002... but FIX allows gaps (e.g., 1000, 1005, 1010...)
-- **Location**: `crates/rustyfix/src/session/connection.rs:159-164` (outbound) & `171-176` (inbound)
-- **Solution**: Replace sequence-based cleanup with LRU-based cleanup or count-based retention
+- **Location**: `crates/rustyfix/src/session/backends.rs:127` (outbound) & `145` (inbound) - **FIXED**
+- **Solution**: ✅ **IMPLEMENTED** - Replaced flawed `saturating_sub()` logic with count-based retention:
+  - **New Implementation**: `cleanup_outbound_messages()` and `cleanup_inbound_messages()` helper methods
+  - **Count-Based Strategy**: Collects and sorts all sequence numbers, removes oldest N messages by sequence order
+  - **Non-Contiguous Safe**: Works correctly with gaps (e.g., 1000, 1005, 1010) by sorting actual sequence numbers
+  - **Performance Optimized**: Uses `SmallVec<[u64; 32]>` for temporary storage and `sort_unstable()` for efficiency
+  - **Memory Management**: Reduces from max capacity to 75% target size to prevent frequent cleanup cycles
+  - **Debug Logging**: Added comprehensive logging for cleanup operations monitoring
 - **Reviewer**: Cursor Bot ✅ **VALID CRITICAL**
 
 **23. ResendRequest Protocol Violation** ✅ **COMPLETED**

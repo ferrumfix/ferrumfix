@@ -2,7 +2,7 @@
 # Financial Information eXchange (FIX) protocol implementation in pure Rust
 
 [workspace]
-members = ["crates/*", "examples/*"]
+members = ["crates/*", "examples/*", "crates/rustysbe"]
 resolver = "2"
 
 [workspace.package]

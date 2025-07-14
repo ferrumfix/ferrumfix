@@ -1,0 +1,21 @@
+[package]
+name = "rustysbe"
+version = "0.1.0"
+edition = { workspace = true }
+authors = { workspace = true }
+license = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+description = "FIX Simple Binary Encoding (SBE) support for `rustyfix`"
+keywords = { workspace = true }
+categories = { workspace = true }
+publish = { workspace = true }
+
+[dependencies]
+roxmltree = { workspace = true, optional = true }
+zerocopy = { workspace = true, optional = true }
+
+[build-dependencies]
+roxmltree = { workspace = true, optional = true }
+anyhow = { workspace = true, optional = true }
+heck = { workspace = true, optional = true }

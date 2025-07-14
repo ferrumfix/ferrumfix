@@ -124,9 +124,10 @@ impl MemoryBackend {
         message: &[u8],
     ) -> Result<(), BackendError> {
         if self.outbound_messages.len() >= self.max_stored_messages {
-            // Remove oldest messages to prevent memory growth
-            let min_seq_to_keep = seq_num.saturating_sub(self.max_stored_messages as u64 / 2);
-            self.outbound_messages.retain(|&k, _| k >= min_seq_to_keep);
+            // ✅ CRITICAL FIX: Use count-based retention instead of sequence-based to handle non-contiguous sequence numbers
+            // FIX protocol allows gaps in sequence numbers (e.g., 1000, 1005, 1010), so we cannot assume contiguity
+            let target_size = self.max_stored_messages * 3 / 4; // Reduce to 75% capacity
+            self.cleanup_outbound_messages(target_size);
         }
 
         let mut buffer = SmallVec::new();
@@ -142,15 +143,66 @@ impl MemoryBackend {
         message: &[u8],
     ) -> Result<(), BackendError> {
         if self.inbound_messages.len() >= self.max_stored_messages {
-            // Remove oldest messages to prevent memory growth
-            let min_seq_to_keep = seq_num.saturating_sub(self.max_stored_messages as u64 / 2);
-            self.inbound_messages.retain(|&k, _| k >= min_seq_to_keep);
+            // ✅ CRITICAL FIX: Use count-based retention instead of sequence-based to handle non-contiguous sequence numbers
+            // FIX protocol allows gaps in sequence numbers (e.g., 1000, 1005, 1010), so we cannot assume contiguity
+            let target_size = self.max_stored_messages * 3 / 4; // Reduce to 75% capacity
+            self.cleanup_inbound_messages(target_size);
         }
 
         let mut buffer = SmallVec::new();
         buffer.extend_from_slice(message);
         self.inbound_messages.insert(seq_num, buffer);
         Ok(())
+    }
+
+    /// Clean up outbound message store using count-based retention (handles non-contiguous sequence numbers)
+    fn cleanup_outbound_messages(&mut self, target_size: usize) {
+        if self.outbound_messages.len() <= target_size {
+            return;
+        }
+
+        // Collect and sort sequence numbers to find the oldest messages
+        let mut seq_nums: SmallVec<[u64; 32]> = self.outbound_messages.keys().cloned().collect();
+        seq_nums.sort_unstable();
+
+        // Calculate how many messages to remove
+        let messages_to_remove = self.outbound_messages.len() - target_size;
+
+        // Remove the oldest messages by sequence number (regardless of gaps)
+        for &seq_num in seq_nums.iter().take(messages_to_remove) {
+            self.outbound_messages.remove(&seq_num);
+        }
+
+        log::debug!(
+            "Cleaned up outbound message store: removed {} oldest messages, {} messages remaining",
+            messages_to_remove,
+            self.outbound_messages.len()
+        );
+    }
+
+    /// Clean up inbound message store using count-based retention (handles non-contiguous sequence numbers)
+    fn cleanup_inbound_messages(&mut self, target_size: usize) {
+        if self.inbound_messages.len() <= target_size {
+            return;
+        }
+
+        // Collect and sort sequence numbers to find the oldest messages
+        let mut seq_nums: SmallVec<[u64; 32]> = self.inbound_messages.keys().cloned().collect();
+        seq_nums.sort_unstable();
+
+        // Calculate how many messages to remove
+        let messages_to_remove = self.inbound_messages.len() - target_size;
+
+        // Remove the oldest messages by sequence number (regardless of gaps)
+        for &seq_num in seq_nums.iter().take(messages_to_remove) {
+            self.inbound_messages.remove(&seq_num);
+        }
+
+        log::debug!(
+            "Cleaned up inbound message store: removed {} oldest messages, {} messages remaining",
+            messages_to_remove,
+            self.inbound_messages.len()
+        );
     }
 
     /// Queue a message for sending

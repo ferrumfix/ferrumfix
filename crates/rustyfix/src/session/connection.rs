@@ -157,10 +157,9 @@ where
         self.outbound_message_store.insert(seq_num, message);
 
         // Limit storage to prevent memory growth (keep last 1000 messages)
+        // Use count-based retention instead of sequence-based to handle non-contiguous sequence numbers
         if self.outbound_message_store.len() > 1000 {
-            if let Some(min_key) = self.outbound_message_store.keys().min().cloned() {
-                self.outbound_message_store.remove(&min_key);
-            }
+            self.cleanup_message_store(&mut self.outbound_message_store, 800);
         }
     }
 
@@ -169,16 +168,46 @@ where
         self.inbound_message_store.insert(seq_num, message);
 
         // Limit storage to prevent memory growth (keep last 1000 messages)
+        // Use count-based retention instead of sequence-based to handle non-contiguous sequence numbers
         if self.inbound_message_store.len() > 1000 {
-            if let Some(min_key) = self.inbound_message_store.keys().min().cloned() {
-                self.inbound_message_store.remove(&min_key);
-            }
+            self.cleanup_message_store(&mut self.inbound_message_store, 800);
         }
     }
 
     /// Check if a message sequence number indicates a duplicate
     pub fn is_duplicate_message(&self, seq_num: u64) -> bool {
         self.inbound_message_store.contains_key(&seq_num)
+    }
+
+    /// Clean up message store using count-based retention to handle non-contiguous sequence numbers.
+    /// Removes the oldest messages (by sequence number) until the store size is reduced to target_size.
+    /// This approach correctly handles FIX protocol scenarios where sequence numbers may have gaps.
+    fn cleanup_message_store(
+        &mut self,
+        store: &mut FxHashMap<u64, SmallVec<[u8; 1024]>>,
+        target_size: usize,
+    ) {
+        if store.len() <= target_size {
+            return;
+        }
+
+        // Collect and sort sequence numbers to find the oldest messages
+        let mut seq_nums: SmallVec<[u64; 32]> = store.keys().cloned().collect();
+        seq_nums.sort_unstable();
+
+        // Calculate how many messages to remove
+        let messages_to_remove = store.len() - target_size;
+
+        // Remove the oldest messages by sequence number
+        for &seq_num in seq_nums.iter().take(messages_to_remove) {
+            store.remove(&seq_num);
+        }
+
+        log::debug!(
+            "Cleaned up message store: removed {} oldest messages, {} messages remaining",
+            messages_to_remove,
+            store.len()
+        );
     }
 
     /// Get stored messages for resend request
