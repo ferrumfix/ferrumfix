@@ -1,0 +1,38 @@
+[package]
+name = "rustygpb"
+version = "0.1.0"
+edition = "2021"
+description = "Protocol Buffers encoding for FIX messages in RustyFix"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rustyfix/rustyfix"
+documentation = "https://docs.rs/rustygpb"
+keywords = ["fix", "protocol-buffers", "protobuf", "trading", "hft"]
+categories = ["encoding", "finance", "network-programming"]
+
+[dependencies]
+# High-performance core dependencies
+smallvec = { workspace = true }
+fastrace = { workspace = true }
+thiserror = { workspace = true }
+zerocopy = { workspace = true }
+simd_aligned = { workspace = true }
+
+# Protocol Buffers
+prost = "0.13"
+prost-types = "0.13"
+bytes = "1.7"
+crc32c = "0.6"
+
+# Optional serialization
+serde = { workspace = true, optional = true }
+
+[build-dependencies]
+prost-build = "0.13"
+
+[dev-dependencies]
+proptest = "1.5"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[features]
+default = []
+serde = ["dep:serde"]

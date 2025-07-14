@@ -557,7 +557,7 @@ mod tests {
         encoder.write_u16(1, 65535).unwrap();
         encoder.write_u32(3, 4294967295).unwrap();
         encoder.write_u64(7, 18446744073709551615).unwrap();
-        encoder.write_f32(15, 3.14159).unwrap();
+        encoder.write_f32(15, std::f32::consts::PI).unwrap();
         encoder.write_string(19, 5, "TEST").unwrap();
 
         let message = encoder.finalize().unwrap();
@@ -570,7 +570,7 @@ mod tests {
         assert_eq!(decoder.read_u16(1).unwrap(), 65535);
         assert_eq!(decoder.read_u32(3).unwrap(), 4294967295);
         assert_eq!(decoder.read_u64(7).unwrap(), 18446744073709551615);
-        assert!((decoder.read_f32(15).unwrap() - 3.14159).abs() < 0.001);
+        assert!((decoder.read_f32(15).unwrap() - std::f32::consts::PI).abs() < 0.001);
         assert_eq!(
             decoder.read_string(19, 5).unwrap().trim_end_matches('\0'),
             "TEST"

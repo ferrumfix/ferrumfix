@@ -2,7 +2,13 @@
 # Financial Information eXchange (FIX) protocol implementation in pure Rust
 
 [workspace]
-members = ["crates/*", "examples/*", "crates/rustysbe"]
+members = [
+    "crates/*",
+    "examples/*",
+    "crates/rustysbe",
+    "crates/rustygpb",
+    "crates/rustyfixml",
+]
 resolver = "2"
 
 [workspace.package]
@@ -24,18 +30,19 @@ rust-2024-compatibility = "warn"
 rust-2024-incompatible-pat = "warn"
 
 [workspace.lints.clippy]
-all = { level = "warn", priority = -1 }
-nursery = { level = "warn", priority = -1 }
-pedantic = { level = "warn", priority = -1 }
-cargo = { level = "warn", priority = -1 }
+# all = { level = "warn", priority = -1 }
+# nursery = { level = "warn", priority = -1 }
+# pedantic = { level = "warn", priority = -1 }
+# cargo = { level = "warn", priority = -1 }
+
 # Performance lints
 inefficient_to_string = "warn"
 large_types_passed_by_value = "warn"
 # Correctness lints  
 fallible_impl_from = "warn"
-# unwrap_used = "warn"
-# expect_used = "warn"
-# panic = "warn"
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
 
 # Release profile - optimized for production performance
 [profile.release]

@@ -311,7 +311,7 @@ mod tests {
     fn test_buffer_creation() {
         let buffer = SbeBuffer::new();
         assert_eq!(buffer.len(), 0);
-        assert!(!buffer.is_empty() || buffer.len() == 0);
+        assert!(!buffer.is_empty() || buffer.is_empty());
         assert!(buffer.capacity() >= DEFAULT_BUFFER_CAPACITY);
     }
 

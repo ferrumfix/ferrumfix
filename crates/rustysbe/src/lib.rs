@@ -84,7 +84,7 @@ mod integration_tests {
         encoder.write_u64(0, 1234567890).unwrap();
         encoder.write_u32(8, 42).unwrap();
         encoder.write_string(12, 16, "TEST_STRING").unwrap();
-        encoder.write_f32(28, 3.14159).unwrap();
+        encoder.write_f32(28, std::f32::consts::PI).unwrap();
 
         let message = encoder.finalize().unwrap();
 
@@ -98,7 +98,7 @@ mod integration_tests {
             decoder.read_string(12, 16).unwrap().trim_end_matches('\0'),
             "TEST_STRING"
         );
-        assert!((decoder.read_f32(28).unwrap() - 3.14159).abs() < 0.001);
+        assert!((decoder.read_f32(28).unwrap() - std::f32::consts::PI).abs() < 0.001);
     }
 
     #[test]
