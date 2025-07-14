@@ -13,7 +13,10 @@ publish = { workspace = true }
 
 [dependencies]
 roxmltree = { workspace = true, optional = true }
-zerocopy = { workspace = true }
+zerocopy = { workspace = true, features = ["derive"] }
+smallvec = { workspace = true }
+simd_aligned = { workspace = true }
+thiserror = { workspace = true }
 
 [build-dependencies]
 roxmltree = { workspace = true }
