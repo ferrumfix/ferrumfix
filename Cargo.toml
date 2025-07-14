@@ -13,7 +13,7 @@ resolver = "2"
 
 [workspace.package]
 authors = ["cognitive-glitch", "Team Rusty Trading", "Filippo Neysofu Costa"]
-version = "0.7.3"
+version = "0.7.4"
 edition = "2024"
 homepage = "https://github.com/rusty-trading/rusty-fix-engine"
 repository = "https://github.com/rusty-trading/rusty-fix-engine"
