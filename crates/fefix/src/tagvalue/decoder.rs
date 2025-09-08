@@ -202,11 +202,30 @@ impl Decoder {
             // We are entering a new group, but we still don't know which tag
             // will be the first one in each entry.
             self.builder.state.set_new_group(tag);
-        } else if let Some(group_info) = self.builder.state.group_information.last_mut() {
-            if group_info.current_entry_i >= group_info.num_entries {
-                self.builder.state.group_information.pop();
-            } else if tag == group_info.first_tag_of_every_group_entry {
-                group_info.current_entry_i += 1;
+        } else {
+            // Check all groups from innermost to outermost to see if we need to:
+            // 1. Exit a completed group
+            // 2. Move to the next entry in a group
+            let mut i = self.builder.state.group_information.len();
+            while i > 0 {
+                i -= 1;
+                let should_pop = {
+                    let group_info = &self.builder.state.group_information[i];
+                    group_info.current_entry_i >= group_info.num_entries
+                };
+
+                if should_pop {
+                    self.builder.state.group_information.remove(i);
+                } else {
+                    let group_info = &mut self.builder.state.group_information[i];
+                    if tag == group_info.first_tag_of_every_group_entry {
+                        group_info.current_entry_i += 1;
+                        // Once we've found the group that this tag starts a new entry for,
+                        // we need to pop any inner groups
+                        self.builder.state.group_information.truncate(i + 1);
+                        break;
+                    }
+                }
             }
         }
         self.message_builder_mut()
