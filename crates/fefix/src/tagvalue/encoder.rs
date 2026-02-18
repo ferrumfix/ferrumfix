@@ -3,7 +3,6 @@ use crate::dict::IsFieldDefinition;
 use crate::field_types::CheckSum;
 use crate::{Buffer, BufferWriter, FieldType, GetConfig, SetField, TagU32};
 use std::fmt::Write;
-use std::ops::Range;
 
 /// A buffered, content-agnostic FIX encoder.
 ///
@@ -111,21 +110,39 @@ where
         (self.buffer.as_slice(), self.initial_buffer_len)
     }
 
-    fn body_length_writable_range(&self) -> Range<usize> {
-        self.body_start_i - 9..self.body_start_i - 1
-    }
-
     fn body_length(&self) -> usize {
         self.buffer.as_slice().len() - self.body_start_i
     }
 
     fn write_body_length(&mut self) {
-        use std::io::Write;
-
         let body_length = self.body_length();
-        let body_length_range = self.body_length_writable_range();
-        let mut slice = &mut self.buffer.as_mut_slice()[body_length_range];
-        write!(slice, "{:08}", body_length).unwrap();
+        let body_length_ascii = format!("{}", body_length);
+        let body_length_width = body_length_ascii.len();
+        let reserved_width = 8;
+
+        assert!(
+            body_length_width <= reserved_width,
+            "BodyLength exceeds encoder reservation width"
+        );
+
+        let writable_start = self.body_start_i - 9;
+        let shrink_by = reserved_width - body_length_width;
+
+        if shrink_by != 0 {
+            let body_start = self.body_start_i;
+            let old_len = self.buffer.len();
+            let move_start = body_start - 1; // include SOH after tag 9 value
+            let move_target = move_start - shrink_by;
+            self.buffer
+                .as_mut_slice()
+                .copy_within(move_start..old_len, move_target);
+            self.buffer.resize(old_len - shrink_by, 0);
+            self.body_start_i -= shrink_by;
+        }
+
+        let body_length_end = writable_start + body_length_width;
+        self.buffer.as_mut_slice()[writable_start..body_length_end]
+            .copy_from_slice(body_length_ascii.as_bytes());
     }
 
     fn write_checksum(&mut self) {

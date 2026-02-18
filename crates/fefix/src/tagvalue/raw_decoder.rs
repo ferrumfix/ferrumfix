@@ -128,20 +128,37 @@ impl RawDecoder {
         let header_info =
             HeaderInfo::parse(data, self.config().separator).ok_or(DecodeError::Invalid)?;
 
-        utils::verify_body_length(
-            data,
-            header_info.field_1.end + 1,
-            header_info.nominal_body_len,
-        )?;
+        let payload_start = header_info.field_1.end + 1;
+        let payload_end = payload_start
+            .checked_add(header_info.nominal_body_len)
+            .ok_or(DecodeError::Invalid)?;
+        if payload_end > data.len() {
+            return Err(DecodeError::Invalid);
+        }
+        let trailer = &data[payload_end..];
+        if !trailer.starts_with(b"10=") {
+            return Err(DecodeError::Invalid);
+        }
+        let trailer_sep_pos = trailer[3..]
+            .iter()
+            .position(|b| *b == self.config().separator)
+            .ok_or(DecodeError::Invalid)?;
+        let trailer_end = 3 + trailer_sep_pos + 1;
+        if trailer_end != trailer.len() {
+            return Err(DecodeError::Invalid);
+        }
 
         if self.config.verify_checksum && self.config.separator == b'\x01' {
+            if trailer_sep_pos != 3 {
+                return Err(DecodeError::CheckSum);
+            }
             utils::verify_checksum(data)?;
         }
 
         Ok(RawFrame {
             data: src,
             begin_string: header_info.field_0,
-            payload: header_info.field_1.end + 1..len - utils::FIELD_CHECKSUM_LEN_IN_BYTES,
+            payload: payload_start..payload_end,
         })
     }
 }
@@ -206,7 +223,7 @@ where
                     let expected_len_of_frame = header_info.field_1.end
                         + 1
                         + header_info.nominal_body_len
-                        + utils::FIELD_CHECKSUM_LEN_IN_BYTES;
+                        + 5;
 
                     self.state = ParserState::Header(header_info, expected_len_of_frame);
                     Ok(None)
@@ -214,7 +231,32 @@ where
                     Err(DecodeError::Invalid)
                 }
             }
-            ParserState::Header(_, _) => Ok(Some(())),
+            ParserState::Header(ref header_info, ref mut expected_len) => {
+                let separator = self.config.separator;
+                let checksum_start = header_info.field_1.end + 1 + header_info.nominal_body_len;
+                if self.buffer.as_slice().len() < checksum_start + 4 {
+                    *expected_len = checksum_start + 4;
+                    return Ok(None);
+                }
+
+                let data = self.buffer.as_slice();
+                if &data[checksum_start..checksum_start + 3] != b"10=" {
+                    return Err(DecodeError::Invalid);
+                }
+                let checksum_end_rel = data[checksum_start + 3..]
+                    .iter()
+                    .position(|b| *b == separator);
+                let Some(checksum_end_rel) = checksum_end_rel else {
+                    *expected_len = data.len() + 1;
+                    return Ok(None);
+                };
+                let frame_len = checksum_start + 3 + checksum_end_rel + 1;
+                *expected_len = frame_len;
+                if data.len() < frame_len {
+                    return Ok(None);
+                }
+                Ok(Some(()))
+            }
             ParserState::Failed => panic!("Failed state"),
         }
     }
@@ -230,12 +272,13 @@ where
     pub fn raw_frame(&self) -> RawFrame<&[u8]> {
         if let ParserState::Header(header_info, _len) = &self.state {
             let data = &self.buffer.as_slice();
+            let payload_start = header_info.field_1.end + 1;
+            let payload_end = payload_start + header_info.nominal_body_len;
 
             RawFrame {
                 data,
                 begin_string: header_info.field_0.clone(),
-                payload: header_info.field_1.end + 1
-                    ..data.len() - utils::FIELD_CHECKSUM_LEN_IN_BYTES,
+                payload: payload_start..payload_end,
             }
         } else {
             panic!("The message is not fully decoded. Check `try_parse` return value.");
@@ -264,35 +307,58 @@ struct HeaderInfo {
 
 impl HeaderInfo {
     fn parse(data: &[u8], separator: u8) -> Option<Self> {
-        let mut info = Self {
-            field_0: 0..1,
-            field_1: 0..1,
-            nominal_body_len: 0,
-        };
-
-        let mut iterator = data.iter();
-        let mut find_byte = |byte| iterator.position(|b| *b == byte);
-        let mut i = 0;
-
-        i += find_byte(b'=')? + 1;
-        info.field_0.start = i;
-        i += find_byte(separator)?;
-        info.field_0.end = i;
-        i += 1;
-
-        i += find_byte(b'=')? + 1;
-        info.field_1.start = i;
-        i += find_byte(separator)?;
-        info.field_1.end = i;
-
-        for byte in &data[info.field_1.clone()] {
-            info.nominal_body_len = info
-                .nominal_body_len
-                .wrapping_mul(10)
-                .wrapping_add(byte.wrapping_sub(b'0') as usize);
+        if data.len() < 4 {
+            return None;
         }
 
-        Some(info)
+        let first_eq = data.iter().position(|b| *b == b'=')?;
+        if first_eq != 1 || data.first() != Some(&b'8') {
+            return None;
+        }
+        let first_sep = data[first_eq + 1..]
+            .iter()
+            .position(|b| *b == separator)?
+            + first_eq
+            + 1;
+        if first_sep <= first_eq + 1 {
+            return None;
+        }
+
+        let second_tag_start = first_sep + 1;
+        if data.get(second_tag_start) != Some(&b'9') {
+            return None;
+        }
+        let second_eq_rel = data[second_tag_start..]
+            .iter()
+            .position(|b| *b == b'=')?;
+        let second_eq = second_tag_start + second_eq_rel;
+        if second_eq != second_tag_start + 1 {
+            return None;
+        }
+        let second_sep = data[second_eq + 1..]
+            .iter()
+            .position(|b| *b == separator)?
+            + second_eq
+            + 1;
+        if second_sep <= second_eq + 1 {
+            return None;
+        }
+
+        let mut nominal_body_len = 0usize;
+        for byte in &data[second_eq + 1..second_sep] {
+            if !byte.is_ascii_digit() {
+                return None;
+            }
+            nominal_body_len = nominal_body_len
+                .wrapping_mul(10)
+                .wrapping_add((byte - b'0') as usize);
+        }
+
+        Some(Self {
+            field_0: first_eq + 1..first_sep,
+            field_1: second_eq + 1..second_sep,
+            nominal_body_len,
+        })
     }
 }
 

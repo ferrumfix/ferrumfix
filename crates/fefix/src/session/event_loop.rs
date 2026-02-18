@@ -2,6 +2,7 @@ use crate::tagvalue::{DecodeError, DecoderStreaming, Message};
 use crate::StreamingDecoder;
 use futures::{select, AsyncRead, AsyncReadExt, FutureExt};
 use futures_timer::Delay;
+use std::env;
 use std::io;
 use std::time::{Duration, Instant};
 
@@ -20,12 +21,52 @@ pub struct LlEventLoop<I> {
     last_reset: Instant,
     last_heartbeat: Instant,
     is_alive: bool,
+    must_clear_decoder: bool,
+    stashed_bytes: Vec<u8>,
 }
 
 impl<I> LlEventLoop<I>
 where
     I: AsyncRead + std::marker::Unpin,
 {
+    fn resync_after_parse_error(&mut self) {
+        let snapshot = self.decoder.buffer().to_vec();
+        if trace_io_enabled() {
+            eprintln!(
+                "[fefix/session] parse error, buffer='{}'",
+                render_fix(snapshot.as_slice())
+            );
+        }
+        // If parsing started from a candidate frame boundary (`8=` at offset 0),
+        // avoid promoting embedded payload bytes as a fresh frame start.
+        let restart_from = if snapshot.starts_with(b"8=") {
+            None
+        } else {
+            find_embedded_message_start(snapshot.as_slice())
+        };
+        if trace_io_enabled() {
+            eprintln!(
+                "[fefix/session] resync start offset={}",
+                restart_from
+                    .map(|offset| offset.to_string())
+                    .unwrap_or_else(|| "none".to_string())
+            );
+        }
+        self.decoder.clear();
+        if let Some(start) = restart_from {
+            self.decoder.buffer().extend_from_slice(&snapshot[start..]);
+        } else {
+            // Keep a small trailing suffix so the next read can bridge into a
+            // potential embedded `8=` message boundary split across packets.
+            let keep = snapshot.len().min(8);
+            if keep != 0 {
+                self.decoder
+                    .buffer()
+                    .extend_from_slice(&snapshot[snapshot.len() - keep..]);
+            }
+        }
+    }
+
     /// Creates a new [`LlEventLoop`] with the provided `decoder` and
     /// `heartbeat`. Events will be read from `input`.
     pub fn new(decoder: DecoderStreaming<Vec<u8>>, input: I, heartbeat: Duration) -> Self {
@@ -40,6 +81,8 @@ where
             last_reset: Instant::now(),
             last_heartbeat: Instant::now(),
             is_alive: true,
+            must_clear_decoder: false,
+            stashed_bytes: Vec::new(),
         }
     }
 
@@ -54,13 +97,94 @@ where
         self.heartbeat_hard_tolerance = hard_tolerance;
     }
 
-    pub async fn next_event<'a>(&'a mut self) -> Option<LlEvent<'a>> {
-        let mut buf_filled_len = 0;
-        let mut buf = self.decoder.fillable();
+    /// Sets the expected heartbeat interval used for timeout and scheduling.
+    pub fn set_heartbeat(&mut self, heartbeat: Duration) {
+        self.heartbeat = heartbeat;
+    }
 
+    /// Waits for the next low-level session event.
+    pub async fn next_event<'a>(&'a mut self) -> Option<LlEvent<'a>> {
+        if self.must_clear_decoder {
+            self.decoder.clear();
+            if !self.stashed_bytes.is_empty() {
+                self.decoder.buffer().extend_from_slice(&self.stashed_bytes);
+                self.stashed_bytes.clear();
+            }
+            self.must_clear_decoder = false;
+        }
+
+        let mut read_window: Option<(usize, usize)> = None;
+        let mut read_cursor = 0usize;
         loop {
             if !self.is_alive {
-                return None;
+                if self.decoder.buffer().is_empty() {
+                    return Some(LlEvent::IoError(io::Error::new(
+                        io::ErrorKind::UnexpectedEof,
+                        "connection closed by peer",
+                    )));
+                }
+                let result = self.decoder.try_parse();
+                return match result {
+                    Ok(Some(())) => {
+                        self.must_clear_decoder = true;
+                        Some(LlEvent::Message(self.decoder.message()))
+                    }
+                    Ok(None) => Some(LlEvent::IoError(io::Error::new(
+                        io::ErrorKind::UnexpectedEof,
+                        "connection closed by peer",
+                    ))),
+                    Err(err) => Some(LlEvent::BadMessage(err)),
+                };
+            }
+
+            if read_window.is_none() {
+                let mut current_len = self.decoder.buffer().len();
+                let required_len = self.decoder.num_bytes_required();
+                if trace_io_enabled() {
+                    eprintln!(
+                        "[fefix/session] window current_len={} required_len={} stashed={}",
+                        current_len,
+                        required_len,
+                        self.stashed_bytes.len()
+                    );
+                }
+                if current_len > required_len {
+                    let overflow = self.decoder.buffer().split_off(required_len);
+                    if !overflow.is_empty() {
+                        if self.stashed_bytes.is_empty() {
+                            self.stashed_bytes = overflow;
+                        } else {
+                            let mut merged = overflow;
+                            merged.extend_from_slice(&self.stashed_bytes);
+                            self.stashed_bytes = merged;
+                        }
+                    }
+                    current_len = required_len;
+                }
+                self.decoder.buffer().resize(required_len, 0);
+                let start = current_len;
+                read_cursor = start;
+                read_window = Some((start, required_len));
+            }
+
+            let (_start, end) = read_window.expect("read window must exist");
+            if read_cursor >= end {
+                let result = self.decoder.try_parse();
+                if trace_io_enabled() {
+                    eprintln!("[fefix/session] parse attempt (pre-read) result={:?}", result);
+                }
+                read_window = None;
+                match result {
+                    Ok(Some(())) => {
+                        self.must_clear_decoder = true;
+                        return Some(LlEvent::Message(self.decoder.message()));
+                    }
+                    Ok(None) => continue,
+                    Err(err) => {
+                        self.resync_after_parse_error();
+                        return Some(LlEvent::BadMessage(err));
+                    }
+                }
             }
 
             let now = Instant::now();
@@ -69,7 +193,11 @@ where
                 Delay::new(now - self.last_reset + self.heartbeat_soft_tolerance).fuse();
             let mut timer_logout =
                 Delay::new(now - self.last_reset + self.heartbeat_hard_tolerance).fuse();
-            let mut read_result = self.input.read(buf).fuse();
+
+            let mut read_result = {
+                let read_buf = &mut self.decoder.buffer().as_mut_slice()[read_cursor..end];
+                self.input.read(read_buf).fuse()
+            };
 
             select! {
                 read_result = read_result => {
@@ -78,17 +206,33 @@ where
                             return Some(LlEvent::IoError(e));
                         }
                         Ok(num_bytes) => {
-                            buf_filled_len += num_bytes;
-                            if buf_filled_len < buf.len() {
+                            if num_bytes == 0 {
+                                self.is_alive = false;
+                                continue;
+                            }
+                            if trace_io_enabled() {
+                                let read_start = read_cursor;
+                                let read_end = read_cursor + num_bytes;
+                                let bytes = &self.decoder.buffer()[read_start..read_end];
+                                eprintln!(
+                                    "[fefix/session] read bytes='{}'",
+                                    render_fix(bytes)
+                                );
+                            }
+                            read_cursor += num_bytes;
+                            if read_cursor < end {
                                 continue;
                             }
 
                             let result = self.decoder.try_parse();
-                            buf_filled_len = 0;
-                            buf = &mut self.decoder.fillable()[buf_filled_len..];
+                            if trace_io_enabled() {
+                                eprintln!("[fefix/session] parse attempt (post-read) result={:?}", result);
+                            }
+                            read_window = None;
 
                             match result {
                                 Ok(Some(())) => {
+                                    self.must_clear_decoder = true;
                                     let msg = self.decoder.message();
                                     return Some(LlEvent::Message(msg));
                                 }
@@ -96,8 +240,8 @@ where
                                     continue;
                                 }
                                 Err(err) => {
-                                    self.is_alive = false;
-                                    return Some(LlEvent::BadMessage(err))
+                                    self.resync_after_parse_error();
+                                    return Some(LlEvent::BadMessage(err));
                                 }
                             }
                         }
@@ -122,6 +266,36 @@ where
     pub fn ping_heartbeat(&mut self) {
         self.last_reset = Instant::now();
     }
+}
+
+fn find_embedded_message_start(raw: &[u8]) -> Option<usize> {
+    let mut i = 1usize;
+    while i + 1 < raw.len() {
+        let preceded_by_delimiter = matches!(raw[i - 1], 0x01 | b'\n' | b'\r');
+        if preceded_by_delimiter && raw[i] == b'8' && raw[i + 1] == b'=' {
+            return Some(i);
+        }
+        i += 1;
+    }
+    None
+}
+
+
+fn trace_io_enabled() -> bool {
+    env::var_os("FEFIX_SESSION_TRACE_IO").is_some()
+}
+
+fn render_fix(bytes: &[u8]) -> String {
+    let mut out = String::with_capacity(bytes.len());
+    for b in bytes {
+        match *b {
+            0x01 => out.push('|'),
+            b'\n' => out.push_str("\\n"),
+            b'\r' => out.push_str("\\r"),
+            other => out.push(other as char),
+        }
+    }
+    out
 }
 
 /// A low level event produced by a [`LlEventLoop`].
@@ -190,5 +364,17 @@ mod test {
             matches!(event, Some(LlEvent::Heartbeat))
                 || matches!(event, Some(LlEvent::TestRequest))
         );
+    }
+
+    #[tokio::test]
+    async fn eof_input_triggers_io_error() {
+        let mut event_loop = new_event_loop(vec![]).await;
+        let event = event_loop.next_event().await;
+        match event {
+            Some(LlEvent::IoError(err)) => {
+                assert_eq!(err.kind(), io::ErrorKind::UnexpectedEof);
+            }
+            other => panic!("expected EOF io error, got {:?}", other),
+        }
     }
 }

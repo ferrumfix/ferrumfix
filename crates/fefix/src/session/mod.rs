@@ -7,7 +7,7 @@
 
 pub mod backends;
 mod config;
-//mod connection; FIXME
+mod connection;
 mod environment;
 mod errs;
 mod event_loop;
@@ -16,9 +16,9 @@ mod resend_request_range;
 mod seq_numbers;
 
 use crate::tagvalue::Message;
-use crate::{FieldType, SetField};
-pub use config::{Config, Configure};
-// pub use connection::*; FIXME
+use crate::SetField;
+pub use config::{Config, Configure, SessionRole};
+pub use connection::{FixConnection, RunError, RunOutcome, SessionState, SessionStatus};
 pub use environment::Environment;
 pub use event_loop::*;
 pub use heartbeat_rule::HeartbeatRule;
@@ -28,26 +28,32 @@ use std::ops::Range;
 
 /// The owner of a [`FixConnection`]. It can react to events, store incoming
 /// messages, send messages, etc..
-pub trait Backend: Clone {
+pub trait Backend {
     /// The type of errors that can arise during a [`FixConnection`].
-    type Error: for<'a> FieldType<'a>;
+    type Error;
 
+    /// Returns this session's `SenderCompID <49>`.
     fn sender_comp_id(&self) -> &[u8];
+    /// Returns this session's `TargetCompID <56>`.
     fn target_comp_id(&self) -> &[u8];
 
+    /// Optional `MessageEncoding <347>`.
     fn message_encoding(&self) -> Option<&[u8]> {
         None
     }
 
+    /// Writes sender and target IDs into an outbound message.
     fn set_sender_and_target(&self, msg: &mut impl SetField<u32>) {
         msg.set(49, self.sender_comp_id());
         msg.set(56, self.target_comp_id());
     }
 
+    /// Returns this backend's environment mode.
     fn environment(&self) -> Environment {
         Environment::Production { allow_test: false }
     }
 
+    /// Callback triggered when a heartbeat deadline is hit.
     fn on_heartbeat_is_due(&mut self) -> Result<(), Self::Error> {
         Ok(())
     }
@@ -78,41 +84,11 @@ pub trait Backend: Clone {
     /// is established with the counterparty.
     fn on_successful_handshake(&mut self) -> Result<(), Self::Error>;
 
-    fn fetch_messages(&mut self) -> Result<&[&[u8]], Self::Error>;
-
-    fn pending_message(&mut self) -> Option<&[u8]>;
-}
-
-#[derive(Debug, Clone)]
-pub struct State {
-    next_inbound: u64,
-    next_outbound: u64,
-}
-
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct MsgSeqNumCounter(u64);
-
-impl MsgSeqNumCounter {
-    pub const START: Self = Self(0);
-
-    pub fn next(&mut self) -> u64 {
-        self.0 += 1;
-        self.0
-    }
-
-    pub fn expected(&self) -> u64 {
-        self.0 + 1
+    /// Polls one outbound message to be sent on the wire.
+    ///
+    /// Outbound messages returned by this callback are expected to be complete,
+    /// serialized FIX messages. The engine sends the bytes as-is.
+    fn poll_outbound(&mut self) -> Result<Option<Vec<u8>>, Self::Error> {
+        Ok(None)
     }
 }
-
-impl Iterator for MsgSeqNumCounter {
-    type Item = u64;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        Some(MsgSeqNumCounter::next(self))
-    }
-}
-
-// FIXME
-#[derive(Debug)]
-pub struct FixConnection;

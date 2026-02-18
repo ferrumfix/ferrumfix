@@ -1,0 +1,5 @@
+PASS definitions/server/fix44/2m_BodyLengthValueNotCorrect.def
+TOTAL 1
+PASS 1
+FAIL 0
+TIMEOUT 0

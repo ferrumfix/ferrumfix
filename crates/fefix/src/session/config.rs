@@ -1,84 +1,116 @@
-use super::{Environment, MsgSeqNumCounter, SeqNumbers};
-use std::marker::PhantomData;
-use std::num::NonZeroU64;
+use super::{Environment, HeartbeatRule, SeqNumbers};
 use std::time::Duration;
 
-/// Collection of configuration options related to
-/// [`FixConnection`](super::FixConnection).
+/// Role assumed by the session engine at connection start.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum SessionRole {
+    /// Send `Logon <A>` first.
+    Initiator,
+    /// Wait for an incoming `Logon <A>` before sending one back.
+    Acceptor,
+}
+
+/// Collection of configuration options related to [`FixConnection`](super::FixConnection).
 ///
-/// # Naming conventions
-///
-/// Implementors of this trait should start with `Config`. Implementors MUST
-/// have [`Default`] behavior that is consistent with the provided default
-/// return values of this trait.
+/// Implementors must provide defaults that are coherent with the trait default
+/// methods.
 pub trait Configure: Clone + Default {
-    /// Asks the FIX connector to verify `TestMessageIndicator <464>` fields and
-    /// refuse messages if the value is invalid. `true` by default.
+    /// Session role.
+    fn role(&self) -> SessionRole {
+        SessionRole::Initiator
+    }
+
+    /// Asks the session engine to verify `TestMessageIndicator <464>` fields.
     fn verify_test_indicator(&self) -> bool {
         true
     }
 
-    /// Returns the maximum allowed latency based on the sending time. Three
-    /// seconds by default.
+    /// Asks the session engine to verify `SendingTime <52>` freshness.
+    fn verify_sending_time(&self) -> bool {
+        true
+    }
+
+    /// Returns the maximum allowed latency based on `SendingTime <52>`.
     fn max_allowed_latency(&self) -> Duration {
         Duration::from_secs(3)
     }
 
+    /// Whether to enforce `BeginString <8>` exact matching.
+    fn enforce_begin_string(&self) -> bool {
+        true
+    }
+
+    /// Whether to enforce `SenderCompID <49>` / `TargetCompID <56>` checks.
+    fn enforce_comp_id(&self) -> bool {
+        true
+    }
+
+    /// Begin string used for outbound session messages.
     fn begin_string(&self) -> &[u8] {
         b"FIX.4.4"
     }
 
-    fn sender_comp_id(&self) -> &[u8] {
-        b"SENDER_COMP"
-    }
-
-    fn target_comp_id(&self) -> &[u8] {
-        b"TARGET_COMP"
-    }
-
+    /// Environment mode.
     fn environment(&self) -> Environment {
         Environment::Production { allow_test: true }
     }
 
+    /// Default heartbeat interval used before negotiation completes.
     fn heartbeat(&self) -> Duration {
         Duration::from_secs(30)
     }
+
+    /// Validation rule applied to peer's negotiated heartbeat (`HeartBtInt <108>`).
+    fn heartbeat_rule(&self) -> HeartbeatRule {
+        HeartbeatRule::Exact(self.heartbeat())
+    }
+
+    /// Initial sequence numbers.
+    fn seq_numbers(&self) -> SeqNumbers {
+        SeqNumbers::default()
+    }
 }
 
-/// The canonical implementor of [`Configure`]. Every setting can be changed.
-/// Most fields simply mirror the methods of the [`Configure`] trait.
+/// Canonical implementor of [`Configure`].
 #[derive(Debug, Clone)]
 #[allow(missing_docs)]
 pub struct Config {
-    phantom: PhantomData<()>,
-
+    pub role: SessionRole,
     pub verify_test_indicator: bool,
+    pub verify_sending_time: bool,
     pub max_allowed_latency: Duration,
+    pub enforce_begin_string: bool,
+    pub enforce_comp_id: bool,
     pub begin_string: String,
     pub environment: Environment,
     pub heartbeat: Duration,
+    pub heartbeat_rule: HeartbeatRule,
     pub seq_numbers: SeqNumbers,
-    pub msg_seq_num_inbound: MsgSeqNumCounter,
-    pub msg_seq_num_outbound: MsgSeqNumCounter,
-    pub sender_comp_id: String,
-    pub target_comp_id: String,
 }
 
 impl Configure for Config {
+    fn role(&self) -> SessionRole {
+        self.role
+    }
+
     fn verify_test_indicator(&self) -> bool {
         self.verify_test_indicator
+    }
+
+    fn verify_sending_time(&self) -> bool {
+        self.verify_sending_time
     }
 
     fn max_allowed_latency(&self) -> Duration {
         self.max_allowed_latency
     }
 
-    fn sender_comp_id(&self) -> &[u8] {
-        self.sender_comp_id.as_bytes()
+    fn enforce_begin_string(&self) -> bool {
+        self.enforce_begin_string
     }
 
-    fn target_comp_id(&self) -> &[u8] {
-        self.target_comp_id.as_bytes()
+    fn enforce_comp_id(&self) -> bool {
+        self.enforce_comp_id
     }
 
     fn begin_string(&self) -> &[u8] {
@@ -92,22 +124,31 @@ impl Configure for Config {
     fn heartbeat(&self) -> Duration {
         self.heartbeat
     }
+
+    fn heartbeat_rule(&self) -> HeartbeatRule {
+        self.heartbeat_rule.clone()
+    }
+
+    fn seq_numbers(&self) -> SeqNumbers {
+        self.seq_numbers
+    }
 }
 
 impl Default for Config {
     fn default() -> Self {
+        let heartbeat = Duration::from_secs(30);
         Self {
-            phantom: PhantomData,
+            role: SessionRole::Initiator,
             verify_test_indicator: true,
+            verify_sending_time: true,
             max_allowed_latency: Duration::from_secs(3),
+            enforce_begin_string: true,
+            enforce_comp_id: true,
             begin_string: "FIX.4.4".to_string(),
             environment: Environment::Production { allow_test: true },
-            heartbeat: Duration::from_secs(30),
-            seq_numbers: SeqNumbers::new(NonZeroU64::new(1).unwrap(), NonZeroU64::new(1).unwrap()),
-            msg_seq_num_inbound: MsgSeqNumCounter::START,
-            msg_seq_num_outbound: MsgSeqNumCounter::START,
-            sender_comp_id: "SENDER_COMP".to_string(),
-            target_comp_id: "TARGET_COMP".to_string(),
+            heartbeat,
+            heartbeat_rule: HeartbeatRule::Exact(heartbeat),
+            seq_numbers: SeqNumbers::default(),
         }
     }
 }
@@ -123,16 +164,15 @@ mod test {
     impl Configure for ConfigDefault {}
 
     #[test]
-    fn config_defaults() {
+    fn config_defaults_match_trait_defaults() {
         let config = Config::default();
-        assert_eq!(
-            config.max_allowed_latency(),
-            ConfigDefault.max_allowed_latency()
-        );
-        assert_eq!(
-            config.verify_test_indicator(),
-            ConfigDefault.verify_test_indicator()
-        );
+        assert_eq!(config.role(), ConfigDefault.role());
+        assert_eq!(config.max_allowed_latency(), ConfigDefault.max_allowed_latency());
+        assert_eq!(config.verify_test_indicator(), ConfigDefault.verify_test_indicator());
+        assert_eq!(config.verify_sending_time(), ConfigDefault.verify_sending_time());
+        assert_eq!(config.enforce_begin_string(), ConfigDefault.enforce_begin_string());
+        assert_eq!(config.enforce_comp_id(), ConfigDefault.enforce_comp_id());
+        assert_eq!(config.heartbeat(), ConfigDefault.heartbeat());
     }
 
     #[quickcheck]

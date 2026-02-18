@@ -1,0 +1,10 @@
+<at>
+<test name='definitions/server/fix44/1b_DuplicateIdentity.def' result='failure' >
+  <message>
+    Connection hangs after ten seconds.
+    <line>14</line>
+  </message>
+</test>
+
+<results total='1' failures='1'/>
+</at>

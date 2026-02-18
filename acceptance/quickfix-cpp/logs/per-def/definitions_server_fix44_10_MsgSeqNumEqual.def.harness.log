@@ -1,0 +1,39 @@
+[harness] listening on 127.0.0.1:7001 as Acceptor begin_string=FIX.4.4 sender=ISLD target=TW max_sessions=0
+[harness] accepted session 1 from 127.0.0.1:58327
+[harness] session 1 stats: handshakes=0 inbound_app_messages=0 resend_requests=0
+[harness] session 1 outcome: ProtocolViolation(MalformedInboundMessage)
+[harness] accepted session 2 from 127.0.0.1:58328
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 8, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 34, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 35, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 43, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 52, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 49, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 56, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 464, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 108, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 8, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 34, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 35, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 123, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 43, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 52, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 49, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 56, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 464, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 36, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 8, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 34, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 35, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 43, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 52, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 49, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 56, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 464, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 112, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 8, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 34, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 35, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 43, context: TopLevel }
+[harness] session 2 stats: handshakes=1 inbound_app_messages=0 resend_requests=0
+[harness] session 2 outcome: PeerLogout

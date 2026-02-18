@@ -158,26 +158,42 @@ impl Decoder {
                 }
                 len.unwrap()
             };
+            let next_index = index_of_next_equal_sign + 1 + field_value_len + 1;
             let tag_num = {
                 let mut tag = 0u32;
+                let mut valid = true;
+                let mut has_digits = false;
                 for byte in payload[i..index_of_next_equal_sign].iter().copied() {
-                    tag = tag * 10 + (byte as u32 - b'0' as u32);
+                    if !byte.is_ascii_digit() {
+                        valid = false;
+                        break;
+                    }
+                    has_digits = true;
+                    let digit = (byte - b'0') as u32;
+                    let Some(new_tag) = tag.checked_mul(10).and_then(|n| n.checked_add(digit))
+                    else {
+                        valid = false;
+                        break;
+                    };
+                    tag = new_tag;
                 }
-                if let Some(tag) = TagU32::new(tag) {
-                    tag
+                if valid && has_digits {
+                    TagU32::new(tag)
                 } else {
-                    break;
+                    None
                 }
             };
-            self.store_field(
-                tag_num,
-                frame.payload(),
-                index_of_next_equal_sign + 1,
-                field_value_len,
-            )?;
+            if let Some(tag_num) = tag_num {
+                self.store_field(
+                    tag_num,
+                    frame.payload(),
+                    index_of_next_equal_sign + 1,
+                    field_value_len,
+                )?;
+            }
             // Equal sign                ~~~
             // Separator                                       ~~~
-            i = index_of_next_equal_sign + 1 + field_value_len + 1;
+            i = next_index;
         }
         Ok(Message {
             builder: self.message_builder_mut(),
@@ -640,7 +656,6 @@ where
             tag,
             context: self.field_locator_context,
         };
-        dbglog!("looking for {:?}", field_locator);
         self.builder.fields.get(&field_locator).map(|field| field.1)
     }
 }
