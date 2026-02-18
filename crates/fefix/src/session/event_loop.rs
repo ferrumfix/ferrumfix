@@ -171,7 +171,10 @@ where
             if read_cursor >= end {
                 let result = self.decoder.try_parse();
                 if trace_io_enabled() {
-                    eprintln!("[fefix/session] parse attempt (pre-read) result={:?}", result);
+                    eprintln!(
+                        "[fefix/session] parse attempt (pre-read) result={:?}",
+                        result
+                    );
                 }
                 read_window = None;
                 match result {
@@ -203,10 +206,12 @@ where
                 read_result = read_result => {
                     match read_result {
                         Err(e) => {
+                            self.decoder.buffer().truncate(read_cursor);
                             return Some(LlEvent::IoError(e));
                         }
                         Ok(num_bytes) => {
                             if num_bytes == 0 {
+                                self.decoder.buffer().truncate(read_cursor);
                                 self.is_alive = false;
                                 continue;
                             }
@@ -248,13 +253,16 @@ where
                     };
                 },
                 () = timer_heartbeat => {
+                    self.decoder.buffer().truncate(read_cursor);
                     self.last_heartbeat = Instant::now();
                     return Some(LlEvent::Heartbeat);
                 },
                 () = timer_test_request => {
+                    self.decoder.buffer().truncate(read_cursor);
                     return Some(LlEvent::TestRequest);
                 },
                 () = timer_logout => {
+                    self.decoder.buffer().truncate(read_cursor);
                     self.is_alive = false;
                     return Some(LlEvent::Logout);
                 }
@@ -279,7 +287,6 @@ fn find_embedded_message_start(raw: &[u8]) -> Option<usize> {
     }
     None
 }
-
 
 fn trace_io_enabled() -> bool {
     env::var_os("FEFIX_SESSION_TRACE_IO").is_some()
@@ -323,28 +330,23 @@ pub enum LlEvent<'a> {
 mod test {
     use super::*;
     use crate::tagvalue::Decoder;
-    use tokio::io::AsyncWriteExt;
-    use tokio::net::{TcpListener, TcpStream};
+    use tokio::io::{duplex, AsyncWriteExt, DuplexStream};
     use tokio_util::compat::*;
 
-    async fn produce_events(events: Vec<(&'static [u8], Duration)>) -> TcpStream {
-        let tcp_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let local_addr = tcp_listener.local_addr().unwrap();
-
+    async fn produce_events(events: Vec<(&'static [u8], Duration)>) -> DuplexStream {
+        let (mut tx, rx) = duplex(4096);
         tokio::spawn(async move {
-            let mut stream = TcpStream::connect(local_addr).await.unwrap();
             for (event_bytes, delay) in events.iter() {
-                stream.write(event_bytes).await.unwrap();
+                tx.write_all(event_bytes).await.unwrap();
                 tokio::time::sleep(*delay).await;
             }
         });
-
-        tcp_listener.accept().await.unwrap().0
+        rx
     }
 
     async fn new_event_loop(
         events: Vec<(&'static [u8], Duration)>,
-    ) -> LlEventLoop<Compat<TcpStream>> {
+    ) -> LlEventLoop<Compat<DuplexStream>> {
         let input = produce_events(events).await;
 
         LlEventLoop::new(

@@ -1,10 +1,12 @@
-use super::{Backend, Configure, LlEvent, LlEventLoop, SessionRole};
+use super::{
+    Backend, Configure, LlEvent, LlEventLoop, SessionKey, SessionRole, SessionStore,
+    StoredAppMessage,
+};
 use crate::field_types::Timestamp;
 use crate::tagvalue::{Decoder, Encoder, Message};
 use crate::{Dictionary, FieldMap, SetField, TagU32};
 use futures::{AsyncRead, AsyncWrite, AsyncWriteExt};
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::ops::Range;
 use std::time::Duration;
 
 const BEGIN_STRING: u32 = 8;
@@ -211,6 +213,8 @@ enum EngineError<E> {
 #[derive(Default)]
 struct InboundActions {
     outbound: Vec<Vec<u8>>,
+    resend_requests: Vec<(u64, u64)>,
+    reset_store: bool,
     reset_heartbeat: bool,
     heartbeat_update: Option<Duration>,
     terminate: Option<RunOutcome>,
@@ -235,30 +239,37 @@ struct ProtocolResolution {
 ///
 /// - This engine enforces strict sequence monotonicity and issues
 ///   `ResendRequest <2>` when gaps are detected.
-/// - It does not yet implement persistent message-store replay semantics
-///   (e.g. full poss-dup orchestration), so counterparties requiring full
-///   durable recovery flows must layer a store-backed outbound strategy in
-///   `Backend::poll_outbound` and `Backend::on_resend_request`.
+/// - Persistent outbound replay semantics are managed via [`SessionStore`].
 #[derive(Debug)]
-pub struct FixConnection<B, C = super::Config> {
+pub struct FixConnection<B, S, C = super::Config> {
     backend: B,
+    store: S,
     config: C,
+    session_key: SessionKey,
     state: SessionState,
     encoder: Encoder,
     encode_buffer: Vec<u8>,
 }
 
-impl<B, C> FixConnection<B, C>
+impl<B, S, C> FixConnection<B, S, C>
 where
     B: Backend,
+    S: SessionStore<Error = B::Error>,
     C: Configure,
 {
     /// Creates a new session engine.
-    pub fn new(backend: B, config: C) -> Self {
+    pub fn new(backend: B, store: S, config: C) -> Self {
+        let session_key = SessionKey {
+            begin_string: config.begin_string().to_vec(),
+            sender_comp_id: backend.sender_comp_id().to_vec(),
+            target_comp_id: backend.target_comp_id().to_vec(),
+        };
         Self {
             backend,
+            store,
             state: SessionState::new(&config),
             config,
+            session_key,
             encoder: Encoder::new(),
             encode_buffer: Vec::new(),
         }
@@ -274,25 +285,52 @@ where
         &mut self.backend
     }
 
+    /// Returns immutable access to the session store.
+    pub fn store(&self) -> &S {
+        &self.store
+    }
+
+    /// Returns mutable access to the session store.
+    pub fn store_mut(&mut self) -> &mut S {
+        &mut self.store
+    }
+
     /// Returns immutable access to runtime session state.
     pub fn state(&self) -> &SessionState {
         &self.state
     }
 
     /// Runs the session state machine over an arbitrary async transport.
-    pub async fn run<I, O>(&mut self, input: I, mut output: O) -> Result<RunOutcome, RunError<B::Error>>
+    pub async fn run<I, O>(
+        &mut self,
+        input: I,
+        mut output: O,
+    ) -> Result<RunOutcome, RunError<B::Error>>
     where
         I: AsyncRead + Unpin,
         O: AsyncWrite + Unpin,
     {
         self.state.status = SessionStatus::AwaitingLogon;
-        let decoder = Decoder::new(default_dictionary_for_begin_string(self.config.begin_string()))
-            .streaming(Vec::new());
+        if let Some(seq_numbers) = self
+            .store
+            .load_seq_numbers(&self.session_key)
+            .await
+            .map_err(RunError::Backend)?
+        {
+            self.state.seq_numbers = seq_numbers;
+        }
+        let decoder = Decoder::new(default_dictionary_for_begin_string(
+            self.config.begin_string(),
+        ))
+        .streaming(Vec::new());
         let mut event_loop = LlEventLoop::new(decoder, input, self.state.negotiated_heartbeat);
 
         if self.config.role() == SessionRole::Initiator {
             let logon = self.build_logon_message(false);
             self.send_raw(&mut output, &logon).await?;
+            self.persist_seq_numbers()
+                .await
+                .map_err(RunError::Backend)?;
             self.state.logon_sent = true;
         }
 
@@ -308,52 +346,88 @@ where
             };
 
             match event {
-                LlEvent::Message(msg) => match self.handle_inbound_message(msg) {
-                    Ok(actions) => {
-                        for outbound in &actions.outbound {
-                            self.send_raw(&mut output, outbound).await?;
-                        }
-                        if let Some(heartbeat) = actions.heartbeat_update {
-                            event_loop.set_heartbeat(heartbeat);
-                        }
-                        if actions.reset_heartbeat {
-                            event_loop.ping_heartbeat();
-                        }
-                        if let Some(outcome) = actions.terminate {
-                            self.state.status = SessionStatus::Terminated;
-                            return Ok(outcome);
-                        }
-                    }
-                    Err(EngineError::Backend(err)) => return Err(RunError::Backend(err)),
-                    Err(EngineError::Protocol(protocol_error)) => {
-                        if self.state.status == SessionStatus::AwaitingLogon {
-                            self.state.status = SessionStatus::Terminated;
-                            return Ok(RunOutcome::ProtocolViolation(protocol_error));
-                        }
-
-                        if let Some(resolution) =
-                            self.protocol_resolution_for_active_error(msg, &protocol_error)
-                        {
-                            for outbound in resolution.outbound.iter() {
+                LlEvent::Message(msg) => {
+                    let inbound_before = self.state.seq_numbers.next_inbound();
+                    match self.handle_inbound_message(msg) {
+                        Ok(mut actions) => {
+                            if actions.reset_store {
+                                self.store
+                                    .reset_session(&self.session_key, self.state.seq_numbers)
+                                    .await
+                                    .map_err(RunError::Backend)?;
+                            }
+                            for (begin_seq_no, end_seq_no) in actions.resend_requests.drain(..) {
+                                let replay_outbound = self
+                                    .build_resend_reply_messages(begin_seq_no, end_seq_no)
+                                    .await
+                                    .map_err(|err| match err {
+                                        EngineError::Backend(e) => RunError::Backend(e),
+                                        EngineError::Protocol(_) => RunError::Io(
+                                            std::io::Error::other("failed to build resend reply"),
+                                        ),
+                                    })?;
+                                actions.outbound.extend(replay_outbound);
+                            }
+                            for outbound in &actions.outbound {
                                 self.send_raw(&mut output, outbound).await?;
                             }
-                            if resolution.reset_heartbeat {
+                            if !actions.outbound.is_empty()
+                                || self.state.seq_numbers.next_inbound() != inbound_before
+                            {
+                                self.persist_seq_numbers()
+                                    .await
+                                    .map_err(RunError::Backend)?;
+                            }
+                            if let Some(heartbeat) = actions.heartbeat_update {
+                                event_loop.set_heartbeat(heartbeat);
+                            }
+                            if actions.reset_heartbeat {
                                 event_loop.ping_heartbeat();
                             }
-                            if resolution.terminate {
+                            if let Some(outcome) = actions.terminate {
+                                self.state.status = SessionStatus::Terminated;
+                                return Ok(outcome);
+                            }
+                        }
+                        Err(EngineError::Backend(err)) => return Err(RunError::Backend(err)),
+                        Err(EngineError::Protocol(protocol_error)) => {
+                            if self.state.status == SessionStatus::AwaitingLogon {
                                 self.state.status = SessionStatus::Terminated;
                                 return Ok(RunOutcome::ProtocolViolation(protocol_error));
                             }
-                            continue;
-                        }
 
-                        let logout_text = protocol_logout_text(&protocol_error);
-                        let logout = self.build_logout_message(logout_text.as_deref());
-                        self.send_raw(&mut output, &logout).await?;
-                        self.state.status = SessionStatus::Terminated;
-                        return Ok(RunOutcome::ProtocolViolation(protocol_error));
+                            if let Some(resolution) =
+                                self.protocol_resolution_for_active_error(msg, &protocol_error)
+                            {
+                                for outbound in resolution.outbound.iter() {
+                                    self.send_raw(&mut output, outbound).await?;
+                                }
+                                if !resolution.outbound.is_empty() {
+                                    self.persist_seq_numbers()
+                                        .await
+                                        .map_err(RunError::Backend)?;
+                                }
+                                if resolution.reset_heartbeat {
+                                    event_loop.ping_heartbeat();
+                                }
+                                if resolution.terminate {
+                                    self.state.status = SessionStatus::Terminated;
+                                    return Ok(RunOutcome::ProtocolViolation(protocol_error));
+                                }
+                                continue;
+                            }
+
+                            let logout_text = protocol_logout_text(&protocol_error);
+                            let logout = self.build_logout_message(logout_text.as_deref());
+                            self.send_raw(&mut output, &logout).await?;
+                            self.persist_seq_numbers()
+                                .await
+                                .map_err(RunError::Backend)?;
+                            self.state.status = SessionStatus::Terminated;
+                            return Ok(RunOutcome::ProtocolViolation(protocol_error));
+                        }
                     }
-                },
+                }
                 LlEvent::BadMessage(_decode_error) => {
                     let protocol_error = SessionProtocolError::MalformedInboundMessage;
                     if self.state.status == SessionStatus::AwaitingLogon {
@@ -371,17 +445,26 @@ where
                             .map_err(RunError::Backend)?;
                         let heartbeat = self.build_heartbeat_message(None);
                         self.send_raw(&mut output, &heartbeat).await?;
+                        self.persist_seq_numbers()
+                            .await
+                            .map_err(RunError::Backend)?;
                     }
                 }
                 LlEvent::TestRequest => {
                     if self.state.status == SessionStatus::Active {
                         let test_request = self.build_test_request_message();
                         self.send_raw(&mut output, &test_request).await?;
+                        self.persist_seq_numbers()
+                            .await
+                            .map_err(RunError::Backend)?;
                     }
                 }
                 LlEvent::Logout => {
                     let logout = self.build_logout_message(Some(b"Heartbeat timeout"));
                     self.send_raw(&mut output, &logout).await?;
+                    self.persist_seq_numbers()
+                        .await
+                        .map_err(RunError::Backend)?;
                     self.state.status = SessionStatus::Terminated;
                     return Ok(RunOutcome::HeartbeatTimeout);
                 }
@@ -413,7 +496,9 @@ where
             Err(SessionProtocolError::InvalidField {
                 tag: MSG_SEQ_NUM, ..
             })
-            | Err(SessionProtocolError::MissingField { tag: MSG_SEQ_NUM, .. }) => {
+            | Err(SessionProtocolError::MissingField {
+                tag: MSG_SEQ_NUM, ..
+            }) => {
                 if let Some(recovered) = self.recover_embedded_message(message.as_bytes())? {
                     return Ok(recovered);
                 }
@@ -434,12 +519,12 @@ where
                     reset_heartbeat: false,
                     heartbeat_update: None,
                     terminate: None,
+                    ..InboundActions::default()
                 });
             }
             Err(err) => return Err(EngineError::Protocol(err)),
         };
-        let msg_type =
-            required_raw(message, MSG_TYPE, "MsgType").map_err(EngineError::Protocol)?;
+        let msg_type = required_raw(message, MSG_TYPE, "MsgType").map_err(EngineError::Protocol)?;
         let is_sequence_reset = msg_type.as_slice() == b"4";
         let gap_fill = if is_sequence_reset {
             message
@@ -499,8 +584,10 @@ where
             self.validate_possdup_orig_sending_time(message)?;
         }
 
+        let mut reset_store = false;
         if reset_seq_num && msg_type.as_slice() == b"A" {
             self.reset_session_state();
+            reset_store = true;
         }
 
         let expected_inbound_seq = self.state.seq_numbers.next_inbound();
@@ -514,7 +601,8 @@ where
                 self.state.resend_request_pending = false;
             }
             Err(super::SeqNumberError::Recover) => {
-                if self.state.status == SessionStatus::AwaitingLogon && msg_type.as_slice() == b"A" {
+                if self.state.status == SessionStatus::AwaitingLogon && msg_type.as_slice() == b"A"
+                {
                     recover_on_logon = true;
                     self.state.seq_numbers.next_inbound = inbound_seq_num.saturating_add(1);
                     self.validate_sending_time(message)?;
@@ -525,11 +613,14 @@ where
                         reset_heartbeat: false,
                         heartbeat_update: None,
                         terminate: Some(RunOutcome::PeerLogout),
+                        ..InboundActions::default()
                     });
                 } else if msg_type.as_slice() == b"2" {
                     if !self.state.resend_request_pending {
-                        pre_outbound
-                            .push(self.build_resend_request_message(self.state.seq_numbers.next_inbound(), 0));
+                        pre_outbound.push(self.build_resend_request_message(
+                            self.state.seq_numbers.next_inbound(),
+                            0,
+                        ));
                         self.state.resend_request_pending = true;
                     }
                     should_increment_inbound = false;
@@ -556,6 +647,7 @@ where
                         reset_heartbeat: false,
                         heartbeat_update: None,
                         terminate: None,
+                        ..InboundActions::default()
                     });
                 }
             }
@@ -567,6 +659,7 @@ where
                         reset_heartbeat: false,
                         heartbeat_update: None,
                         terminate: Some(RunOutcome::PeerLogout),
+                        ..InboundActions::default()
                     });
                 }
                 if poss_dup {
@@ -576,10 +669,12 @@ where
                     should_increment_inbound = false;
                     should_validate_sending_time = true;
                 } else {
-                    return Err(EngineError::Protocol(SessionProtocolError::MsgSeqNumTooLow {
-                        expected: self.state.seq_numbers.next_inbound(),
-                        actual: inbound_seq_num,
-                    }));
+                    return Err(EngineError::Protocol(
+                        SessionProtocolError::MsgSeqNumTooLow {
+                            expected: self.state.seq_numbers.next_inbound(),
+                            actual: inbound_seq_num,
+                        },
+                    ));
                 }
             }
             Err(super::SeqNumberError::NoSeqNum) => {
@@ -616,6 +711,7 @@ where
 
         let mut actions = InboundActions {
             outbound: pre_outbound,
+            reset_store,
             ..InboundActions::default()
         };
         match msg_type.as_slice() {
@@ -663,17 +759,11 @@ where
                 actions.reset_heartbeat = true;
             }
             b"2" => {
-                let begin_seq_no =
-                    required_u64(message, BEGIN_SEQ_NO, "BeginSeqNo").map_err(EngineError::Protocol)?;
+                let begin_seq_no = required_u64(message, BEGIN_SEQ_NO, "BeginSeqNo")
+                    .map_err(EngineError::Protocol)?;
                 let end_seq_no =
                     required_u64(message, END_SEQ_NO, "EndSeqNo").map_err(EngineError::Protocol)?;
-                let range_end = if end_seq_no == 0 { u64::MAX } else { end_seq_no };
-                self.backend
-                    .on_resend_request(Range {
-                        start: begin_seq_no,
-                        end: range_end,
-                    })
-                    .map_err(EngineError::Backend)?;
+                actions.resend_requests.push((begin_seq_no, end_seq_no));
             }
             b"4" => {
                 let new_seq_no =
@@ -705,9 +795,9 @@ where
         }
 
         if recover_on_logon {
-            actions.outbound.push(
-                self.build_resend_request_message(expected_inbound_seq, 0),
-            );
+            actions
+                .outbound
+                .push(self.build_resend_request_message(expected_inbound_seq, 0));
         }
 
         Ok(actions)
@@ -722,10 +812,12 @@ where
             let Some(raw) = self.state.queued_inbound.remove(&expected) else {
                 break;
             };
-            let mut decoder = Decoder::new(default_dictionary_for_begin_string(self.config.begin_string()));
-            let queued_message = decoder
-                .decode(raw.as_slice())
-                .map_err(|_| EngineError::Protocol(SessionProtocolError::MalformedInboundMessage))?;
+            let mut decoder = Decoder::new(default_dictionary_for_begin_string(
+                self.config.begin_string(),
+            ));
+            let queued_message = decoder.decode(raw.as_slice()).map_err(|_| {
+                EngineError::Protocol(SessionProtocolError::MalformedInboundMessage)
+            })?;
             let queued_actions = self.handle_inbound_message_inner(queued_message)?;
             Self::merge_inbound_actions(actions, queued_actions);
         }
@@ -755,6 +847,8 @@ where
 
     fn merge_inbound_actions(acc: &mut InboundActions, next: InboundActions) {
         acc.outbound.extend(next.outbound);
+        acc.resend_requests.extend(next.resend_requests);
+        acc.reset_store |= next.reset_store;
         acc.reset_heartbeat |= next.reset_heartbeat;
         if next.heartbeat_update.is_some() {
             acc.heartbeat_update = next.heartbeat_update;
@@ -770,21 +864,205 @@ where
         self.state.queued_inbound.clear();
     }
 
-    fn validate_begin_string(
-        &self,
-        message: Message<&[u8]>,
-    ) -> Result<(), EngineError<B::Error>> {
+    async fn persist_seq_numbers(&mut self) -> Result<(), B::Error> {
+        self.store
+            .save_seq_numbers(&self.session_key, self.state.seq_numbers)
+            .await
+    }
+
+    async fn build_resend_reply_messages(
+        &mut self,
+        begin_seq_no: u64,
+        end_seq_no: u64,
+    ) -> Result<Vec<Vec<u8>>, EngineError<B::Error>> {
+        let last_sent = self.state.seq_numbers.next_outbound().saturating_sub(1);
+        let start = begin_seq_no.max(1);
+        let capped_end = if end_seq_no == 0 || end_seq_no == u64::MAX {
+            last_sent
+        } else {
+            end_seq_no.min(last_sent)
+        };
+        if last_sent == 0 {
+            return Ok(vec![self.build_gap_fill_message(start)]);
+        }
+        if start > capped_end {
+            return Ok(vec![self.build_gap_fill_message(start)]);
+        }
+
+        let stored = self
+            .store
+            .load_outbound_app_range(&self.session_key, start, capped_end)
+            .await
+            .map_err(EngineError::Backend)?;
+        let mut stored_by_seq = BTreeMap::<u64, Vec<u8>>::new();
+        for message in stored {
+            if message.seq_num < start || message.seq_num > capped_end {
+                continue;
+            }
+            if extract_msg_seq_num(message.raw_message.as_slice()) != Some(message.seq_num) {
+                continue;
+            }
+            let Some(msg_type) = extract_msg_type(message.raw_message.as_slice()) else {
+                continue;
+            };
+            if is_session_message_type(msg_type.as_slice()) {
+                continue;
+            }
+            if extract_raw_field_value(message.raw_message.as_slice(), SENDING_TIME).is_none() {
+                continue;
+            }
+            if extract_raw_field_value(message.raw_message.as_slice(), SENDER_COMP_ID).is_none() {
+                continue;
+            }
+            if extract_raw_field_value(message.raw_message.as_slice(), TARGET_COMP_ID).is_none() {
+                continue;
+            }
+            stored_by_seq.insert(message.seq_num, message.raw_message);
+        }
+
+        let mut outbound = Vec::new();
+        let mut current = start;
+        let mut gap_start: Option<u64> = None;
+        while current <= capped_end {
+            if let Some(raw) = stored_by_seq.get(&current) {
+                if gap_start.is_some() {
+                    outbound.push(self.build_gap_fill_message(current));
+                    gap_start = None;
+                }
+                let replay = self
+                    .build_possdup_replay_from_stored(raw.as_slice())
+                    .map_err(EngineError::Protocol)?;
+                outbound.push(replay);
+            } else if gap_start.is_none() {
+                gap_start = Some(current);
+            }
+            current = current.saturating_add(1);
+            if current == 0 {
+                break;
+            }
+        }
+
+        if gap_start.is_some() {
+            outbound.push(self.build_gap_fill_message(capped_end.saturating_add(1)));
+        }
+
+        Ok(outbound)
+    }
+
+    fn build_possdup_replay_from_stored(
+        &mut self,
+        raw: &[u8],
+    ) -> Result<Vec<u8>, SessionProtocolError> {
+        let fields = parse_raw_fields(raw);
+        let begin_string = fields
+            .iter()
+            .find(|field| field.tag_i64 == i64::from(BEGIN_STRING))
+            .map(|field| field.value)
+            .ok_or(SessionProtocolError::MissingField {
+                tag: BEGIN_STRING,
+                name: "BeginString",
+            })?;
+        let msg_type = fields
+            .iter()
+            .find(|field| field.tag_i64 == i64::from(MSG_TYPE))
+            .map(|field| field.value)
+            .ok_or(SessionProtocolError::MissingField {
+                tag: MSG_TYPE,
+                name: "MsgType",
+            })?;
+        let msg_seq_num = fields
+            .iter()
+            .find(|field| field.tag_i64 == i64::from(MSG_SEQ_NUM))
+            .and_then(|field| std::str::from_utf8(field.value).ok())
+            .and_then(|value| value.parse::<u64>().ok())
+            .ok_or(SessionProtocolError::InvalidField {
+                tag: MSG_SEQ_NUM,
+                name: "MsgSeqNum",
+                reason: "invalid integer",
+            })?;
+        let sender_comp_id = fields
+            .iter()
+            .find(|field| field.tag_i64 == i64::from(SENDER_COMP_ID))
+            .map(|field| field.value)
+            .ok_or(SessionProtocolError::MissingField {
+                tag: SENDER_COMP_ID,
+                name: "SenderCompID",
+            })?;
+        let target_comp_id = fields
+            .iter()
+            .find(|field| field.tag_i64 == i64::from(TARGET_COMP_ID))
+            .map(|field| field.value)
+            .ok_or(SessionProtocolError::MissingField {
+                tag: TARGET_COMP_ID,
+                name: "TargetCompID",
+            })?;
+        let orig_sending_time = fields
+            .iter()
+            .find(|field| field.tag_i64 == i64::from(SENDING_TIME))
+            .map(|field| field.value)
+            .ok_or(SessionProtocolError::MissingField {
+                tag: SENDING_TIME,
+                name: "SendingTime",
+            })?;
+
+        self.encode_buffer.clear();
+        let mut replay =
+            self.encoder
+                .start_message(begin_string, &mut self.encode_buffer, msg_type);
+        replay.set(MSG_SEQ_NUM, msg_seq_num);
+        replay.set(POSS_DUP_FLAG, true);
+        replay.set(SENDER_COMP_ID, sender_comp_id);
+        replay.set(SENDING_TIME, Timestamp::utc_now());
+        replay.set(TARGET_COMP_ID, target_comp_id);
+        replay.set(ORIG_SENDING_TIME, orig_sending_time);
+
+        for field in fields {
+            let tag = field.tag_as_u32();
+            if matches!(
+                tag,
+                BEGIN_STRING
+                    | 9
+                    | 10
+                    | MSG_SEQ_NUM
+                    | MSG_TYPE
+                    | POSS_DUP_FLAG
+                    | SENDER_COMP_ID
+                    | SENDING_TIME
+                    | TARGET_COMP_ID
+                    | ORIG_SENDING_TIME
+            ) {
+                continue;
+            }
+            replay.set(tag, field.value);
+        }
+
+        let (all_bytes, offset) = replay.done();
+        Ok(all_bytes[offset..].to_vec())
+    }
+
+    fn build_gap_fill_message(&mut self, new_seq_no: u64) -> Vec<u8> {
+        self.build_admin_message(b"4", |message| {
+            message.set(GAP_FILL_FLAG, true);
+            message.set(NEW_SEQ_NO, new_seq_no);
+        })
+    }
+
+    fn validate_begin_string(&self, message: Message<&[u8]>) -> Result<(), EngineError<B::Error>> {
         if !self.config.enforce_begin_string() {
             return Ok(());
         }
 
-        let begin_string = required_raw(message, BEGIN_STRING, "BeginString")
-            .map_err(EngineError::Protocol)?;
+        let begin_string =
+            required_raw(message, BEGIN_STRING, "BeginString").map_err(EngineError::Protocol)?;
         if begin_string.as_slice() != self.config.begin_string() {
             if begin_string.starts_with(b"FIX.") {
-                return Err(EngineError::Protocol(SessionProtocolError::BeginStringMismatch));
+                return Err(EngineError::Protocol(
+                    SessionProtocolError::BeginStringMismatch,
+                ));
             }
-            return Err(EngineError::Protocol(SessionProtocolError::MalformedInboundMessage));
+            return Err(EngineError::Protocol(
+                SessionProtocolError::MalformedInboundMessage,
+            ));
         }
         Ok(())
     }
@@ -794,10 +1072,10 @@ where
             return Ok(());
         }
 
-        let sender = required_raw(message, SENDER_COMP_ID, "SenderCompID")
-            .map_err(EngineError::Protocol)?;
-        let target = required_raw(message, TARGET_COMP_ID, "TargetCompID")
-            .map_err(EngineError::Protocol)?;
+        let sender =
+            required_raw(message, SENDER_COMP_ID, "SenderCompID").map_err(EngineError::Protocol)?;
+        let target =
+            required_raw(message, TARGET_COMP_ID, "TargetCompID").map_err(EngineError::Protocol)?;
         if sender.is_empty() {
             return Err(EngineError::Protocol(SessionProtocolError::InvalidField {
                 tag: SENDER_COMP_ID,
@@ -839,28 +1117,25 @@ where
             .unwrap_or(false);
 
         if is_test && !self.config.environment().allows_testing() {
-            return Err(EngineError::Protocol(SessionProtocolError::TestingNotAllowed));
+            return Err(EngineError::Protocol(
+                SessionProtocolError::TestingNotAllowed,
+            ));
         }
         Ok(())
     }
 
-    fn validate_sending_time(
-        &self,
-        message: Message<&[u8]>,
-    ) -> Result<(), EngineError<B::Error>> {
+    fn validate_sending_time(&self, message: Message<&[u8]>) -> Result<(), EngineError<B::Error>> {
         if !self.config.verify_sending_time() {
             return Ok(());
         }
 
-        let sending_time = message
-            .get::<Timestamp>(SENDING_TIME)
-            .map_err(|_| {
-                EngineError::Protocol(SessionProtocolError::InvalidField {
-                    tag: SENDING_TIME,
-                    name: "SendingTime",
-                    reason: "invalid UTC timestamp",
-                })
-            })?;
+        let sending_time = message.get::<Timestamp>(SENDING_TIME).map_err(|_| {
+            EngineError::Protocol(SessionProtocolError::InvalidField {
+                tag: SENDING_TIME,
+                name: "SendingTime",
+                reason: "invalid UTC timestamp",
+            })
+        })?;
 
         #[cfg(feature = "utils-chrono")]
         {
@@ -872,7 +1147,10 @@ where
                 })
             })?;
             let now = chrono::Utc::now();
-            let delta = now.signed_duration_since(sending_time).num_milliseconds().abs();
+            let delta = now
+                .signed_duration_since(sending_time)
+                .num_milliseconds()
+                .abs();
             let max_allowed_ms: i64 = self.config.max_allowed_latency().as_millis() as i64;
             if delta > max_allowed_ms {
                 return Err(EngineError::Protocol(SessionProtocolError::InvalidField {
@@ -895,30 +1173,26 @@ where
         &self,
         message: Message<&[u8]>,
     ) -> Result<(), EngineError<B::Error>> {
-        let sending_time = message
-            .get::<Timestamp>(SENDING_TIME)
-            .map_err(|_| {
-                EngineError::Protocol(SessionProtocolError::InvalidField {
-                    tag: SENDING_TIME,
-                    name: "SendingTime",
-                    reason: "invalid UTC timestamp",
-                })
-            })?;
+        let sending_time = message.get::<Timestamp>(SENDING_TIME).map_err(|_| {
+            EngineError::Protocol(SessionProtocolError::InvalidField {
+                tag: SENDING_TIME,
+                name: "SendingTime",
+                reason: "invalid UTC timestamp",
+            })
+        })?;
         if message.get_raw(ORIG_SENDING_TIME).is_none() {
             return Err(EngineError::Protocol(SessionProtocolError::MissingField {
                 tag: ORIG_SENDING_TIME,
                 name: "OrigSendingTime",
             }));
         }
-        let orig_sending_time = message
-            .get::<Timestamp>(ORIG_SENDING_TIME)
-            .map_err(|_| {
-                EngineError::Protocol(SessionProtocolError::InvalidField {
-                    tag: ORIG_SENDING_TIME,
-                    name: "OrigSendingTime",
-                    reason: "invalid UTC timestamp",
-                })
-            })?;
+        let orig_sending_time = message.get::<Timestamp>(ORIG_SENDING_TIME).map_err(|_| {
+            EngineError::Protocol(SessionProtocolError::InvalidField {
+                tag: ORIG_SENDING_TIME,
+                name: "OrigSendingTime",
+                reason: "invalid UTC timestamp",
+            })
+        })?;
 
         #[cfg(feature = "utils-chrono")]
         {
@@ -975,15 +1249,13 @@ where
         })?;
 
         let dict = default_dictionary_for_begin_string(self.config.begin_string());
-        let message_def = dict
-            .message_by_msgtype(msg_type_str)
-            .ok_or_else(|| {
-                EngineError::Protocol(SessionProtocolError::InvalidField {
-                    tag: MSG_TYPE,
-                    name: "MsgType",
-                    reason: "invalid msg type",
-                })
-            })?;
+        let message_def = dict.message_by_msgtype(msg_type_str).ok_or_else(|| {
+            EngineError::Protocol(SessionProtocolError::InvalidField {
+                tag: MSG_TYPE,
+                name: "MsgType",
+                reason: "invalid msg type",
+            })
+        })?;
         let raw_fields = parse_raw_fields(message.as_bytes());
 
         if let Some(raw) = raw_fields.iter().find(|raw| raw.value.is_empty()) {
@@ -996,19 +1268,19 @@ where
 
         for raw in raw_fields.iter() {
             if raw.tag_i64 <= 0 {
-                return Err(EngineError::Protocol(SessionProtocolError::InvalidTagNumber(
-                    raw.tag_i64,
-                )));
+                return Err(EngineError::Protocol(
+                    SessionProtocolError::InvalidTagNumber(raw.tag_i64),
+                ));
             }
             if raw.tag_i64 > 4999 {
-                return Err(EngineError::Protocol(SessionProtocolError::InvalidTagNumber(
-                    raw.tag_i64,
-                )));
+                return Err(EngineError::Protocol(
+                    SessionProtocolError::InvalidTagNumber(raw.tag_i64),
+                ));
             }
             if dict.field_by_tag(raw.tag_as_u32()).is_none() {
-                return Err(EngineError::Protocol(SessionProtocolError::InvalidTagNumber(
-                    raw.tag_i64,
-                )));
+                return Err(EngineError::Protocol(
+                    SessionProtocolError::InvalidTagNumber(raw.tag_i64),
+                ));
             }
         }
 
@@ -1055,7 +1327,9 @@ where
             let first_body_index = raw_fields
                 .iter()
                 .position(|raw| !is_standard_header_or_trailer_tag(raw.tag_as_u32()));
-            let seq_num_index = raw_fields.iter().position(|raw| raw.tag_as_u32() == MSG_SEQ_NUM);
+            let seq_num_index = raw_fields
+                .iter()
+                .position(|raw| raw.tag_as_u32() == MSG_SEQ_NUM);
             if let (Some(body_index), Some(seq_index)) = (first_body_index, seq_num_index) {
                 if seq_index > body_index {
                     return Err(EngineError::Protocol(SessionProtocolError::InvalidField {
@@ -1341,10 +1615,34 @@ where
             let Some(bytes) = next else {
                 break;
             };
-            self.send_raw(output, &bytes).await?;
-            if extract_msg_seq_num(bytes.as_slice()) == Some(self.state.seq_numbers.next_outbound())
-            {
+            let msg_seq_num = extract_msg_seq_num(bytes.as_slice());
+            let msg_type = extract_msg_type(bytes.as_slice());
+            let should_advance_seq = msg_seq_num == Some(self.state.seq_numbers.next_outbound());
+            if should_advance_seq {
+                if let (Some(seq_num), Some(msg_type)) = (msg_seq_num, msg_type.as_deref()) {
+                    if !is_session_message_type(msg_type) {
+                        self.store
+                            .save_outbound_app(
+                                &self.session_key,
+                                StoredAppMessage {
+                                    seq_num,
+                                    raw_message: bytes.clone(),
+                                },
+                            )
+                            .await
+                            .map_err(RunError::Backend)?;
+                    }
+                }
+            }
+            let send_result = self.send_raw(output, &bytes).await;
+            if should_advance_seq && matches!(send_result, Ok(()) | Err(RunError::Backend(_))) {
                 self.state.seq_numbers.incr_outbound();
+                self.persist_seq_numbers()
+                    .await
+                    .map_err(RunError::Backend)?;
+            }
+            if let Err(err) = send_result {
+                return Err(err);
             }
         }
         Ok(())
@@ -1367,9 +1665,11 @@ where
     {
         self.encode_buffer.clear();
         let outbound_seq_num = self.state.seq_numbers.next_outbound();
-        let mut message =
-            self.encoder
-                .start_message(self.config.begin_string(), &mut self.encode_buffer, msg_type);
+        let mut message = self.encoder.start_message(
+            self.config.begin_string(),
+            &mut self.encode_buffer,
+            msg_type,
+        );
         message.set(MSG_SEQ_NUM, outbound_seq_num);
         message.set(SENDER_COMP_ID, self.backend.sender_comp_id());
         message.set(SENDING_TIME, Timestamp::utc_now());
@@ -1553,7 +1853,12 @@ fn protocol_logout_text(error: &SessionProtocolError) -> Option<Vec<u8>> {
 
 fn reverse_route_fields(message: Message<&[u8]>) -> Vec<(u32, Vec<u8>)> {
     let mut fields = Vec::new();
-    push_route_field(message, ON_BEHALF_OF_COMP_ID, DELIVER_TO_COMP_ID, &mut fields);
+    push_route_field(
+        message,
+        ON_BEHALF_OF_COMP_ID,
+        DELIVER_TO_COMP_ID,
+        &mut fields,
+    );
     push_route_field(message, ON_BEHALF_OF_SUB_ID, DELIVER_TO_SUB_ID, &mut fields);
     push_route_field(
         message,
@@ -1561,7 +1866,12 @@ fn reverse_route_fields(message: Message<&[u8]>) -> Vec<(u32, Vec<u8>)> {
         DELIVER_TO_LOCATION_ID,
         &mut fields,
     );
-    push_route_field(message, DELIVER_TO_COMP_ID, ON_BEHALF_OF_COMP_ID, &mut fields);
+    push_route_field(
+        message,
+        DELIVER_TO_COMP_ID,
+        ON_BEHALF_OF_COMP_ID,
+        &mut fields,
+    );
     push_route_field(message, DELIVER_TO_SUB_ID, ON_BEHALF_OF_SUB_ID, &mut fields);
     push_route_field(
         message,
@@ -1588,7 +1898,11 @@ fn push_route_field(
 }
 
 fn has_malformed_tag_token(bytes: &[u8]) -> bool {
-    let separator = if bytes.contains(&b'\x01') { b'\x01' } else { b'|' };
+    let separator = if bytes.contains(&b'\x01') {
+        b'\x01'
+    } else {
+        b'|'
+    };
     bytes
         .split(|byte| *byte == separator)
         .filter(|raw| !raw.is_empty())
@@ -1612,8 +1926,14 @@ fn has_malformed_tag_token(bytes: &[u8]) -> bool {
 }
 
 fn has_ordered_session_header_prefix(bytes: &[u8]) -> bool {
-    let separator = if bytes.contains(&b'\x01') { b'\x01' } else { b'|' };
-    let mut fields = bytes.split(|byte| *byte == separator).filter(|raw| !raw.is_empty());
+    let separator = if bytes.contains(&b'\x01') {
+        b'\x01'
+    } else {
+        b'|'
+    };
+    let mut fields = bytes
+        .split(|byte| *byte == separator)
+        .filter(|raw| !raw.is_empty());
     let Some(first) = fields.next() else {
         return false;
     };
@@ -1623,7 +1943,9 @@ fn has_ordered_session_header_prefix(bytes: &[u8]) -> bool {
     let Some(third) = fields.next() else {
         return false;
     };
-    raw_tag_number(first) == Some(8) && raw_tag_number(second) == Some(9) && raw_tag_number(third) == Some(35)
+    raw_tag_number(first) == Some(8)
+        && raw_tag_number(second) == Some(9)
+        && raw_tag_number(third) == Some(35)
 }
 
 fn raw_tag_number(field: &[u8]) -> Option<u32> {
@@ -1635,12 +1957,16 @@ fn raw_tag_number(field: &[u8]) -> Option<u32> {
 }
 
 fn has_valid_checksum(bytes: &[u8]) -> bool {
-    let separator = if bytes.contains(&b'\x01') { b'\x01' } else { b'|' };
+    let separator = if bytes.contains(&b'\x01') {
+        b'\x01'
+    } else {
+        b'|'
+    };
     let marker = [separator, b'1', b'0', b'='];
     let Some(checksum_field_start) = bytes
         .windows(marker.len())
-        .rposition(|window| window == marker) else
-    {
+        .rposition(|window| window == marker)
+    else {
         return false;
     };
     let value_start = checksum_field_start + marker.len();
@@ -1679,7 +2005,11 @@ impl<'a> RawField<'a> {
 }
 
 fn parse_raw_fields(bytes: &[u8]) -> Vec<RawField<'_>> {
-    let separator = if bytes.contains(&b'\x01') { b'\x01' } else { b'|' };
+    let separator = if bytes.contains(&b'\x01') {
+        b'\x01'
+    } else {
+        b'|'
+    };
     bytes
         .split(|byte| *byte == separator)
         .filter_map(|raw| {
@@ -1704,6 +2034,20 @@ fn extract_msg_seq_num(bytes: &[u8]) -> Option<u64> {
         .find(|field| field.tag_i64 == i64::from(MSG_SEQ_NUM))
         .and_then(|field| std::str::from_utf8(field.value).ok())
         .and_then(|value| value.parse::<u64>().ok())
+}
+
+fn extract_msg_type(bytes: &[u8]) -> Option<Vec<u8>> {
+    parse_raw_fields(bytes)
+        .into_iter()
+        .find(|field| field.tag_i64 == i64::from(MSG_TYPE))
+        .map(|field| field.value.to_vec())
+}
+
+fn extract_raw_field_value(bytes: &[u8], tag: u32) -> Option<Vec<u8>> {
+    parse_raw_fields(bytes)
+        .into_iter()
+        .find(|field| field.tag_i64 == i64::from(tag))
+        .map(|field| field.value.to_vec())
 }
 
 fn collect_allowed_and_repeating_tags(
@@ -1787,11 +2131,16 @@ mod test {
     use super::*;
     use crate::tagvalue::Decoder;
     use crate::GetConfig;
+    use futures::executor::block_on;
+    use futures::io::{sink, Cursor};
+    use std::collections::VecDeque;
+    use std::num::NonZeroU64;
 
     #[derive(Debug, Default)]
     struct TestBackend {
         inbound_app_count: usize,
-        resend_ranges: Vec<Range<u64>>,
+        fail_on_outbound: bool,
+        outbound_queue: VecDeque<Vec<u8>>,
     }
 
     impl Backend for TestBackend {
@@ -1805,25 +2154,24 @@ mod test {
             b"TARGET"
         }
 
-        fn on_inbound_app_message(
-            &mut self,
-            _message: Message<&[u8]>,
-        ) -> Result<(), Self::Error> {
+        fn on_inbound_app_message(&mut self, _message: Message<&[u8]>) -> Result<(), Self::Error> {
             self.inbound_app_count += 1;
             Ok(())
         }
 
         fn on_outbound_message(&mut self, _message: &[u8]) -> Result<(), Self::Error> {
-            Ok(())
-        }
-
-        fn on_resend_request(&mut self, range: Range<u64>) -> Result<(), Self::Error> {
-            self.resend_ranges.push(range);
+            if self.fail_on_outbound {
+                return Err(());
+            }
             Ok(())
         }
 
         fn on_successful_handshake(&mut self) -> Result<(), Self::Error> {
             Ok(())
+        }
+
+        fn poll_outbound(&mut self) -> Result<Option<Vec<u8>>, Self::Error> {
+            Ok(self.outbound_queue.pop_front())
         }
     }
 
@@ -1838,7 +2186,11 @@ mod test {
         f(message)
     }
 
-    fn make_message(msg_type: &[u8], seq_num: u64, extra_fields: &[(u32, &[u8])]) -> Vec<u8> {
+    fn make_inbound_message(
+        msg_type: &[u8],
+        seq_num: u64,
+        extra_fields: &[(u32, &[u8])],
+    ) -> Vec<u8> {
         let mut encoder = Encoder::new();
         encoder.config_mut().separator = b'|';
         let mut buffer = Vec::new();
@@ -1854,13 +2206,50 @@ mod test {
         all[offset..].to_vec()
     }
 
+    fn make_outbound_app_message(seq_num: u64) -> Vec<u8> {
+        let mut encoder = Encoder::new();
+        let mut buffer = Vec::new();
+        let mut message = encoder.start_message(b"FIX.4.4", &mut buffer, b"D");
+        message.set(MSG_SEQ_NUM, seq_num);
+        message.set(SENDER_COMP_ID, b"SENDER" as &[u8]);
+        message.set(SENDING_TIME, Timestamp::utc_now());
+        message.set(TARGET_COMP_ID, b"TARGET" as &[u8]);
+        message.set(11, b"ID" as &[u8]);
+        message.set(21, b"3" as &[u8]);
+        message.set(40, b"1" as &[u8]);
+        message.set(54, b"1" as &[u8]);
+        message.set(55, b"INTC" as &[u8]);
+        message.set(60, Timestamp::utc_now());
+        let (all, offset) = message.done();
+        all[offset..].to_vec()
+    }
+
+    fn default_session_key() -> super::super::SessionKey {
+        super::super::SessionKey {
+            begin_string: b"FIX.4.4".to_vec(),
+            sender_comp_id: b"SENDER".to_vec(),
+            target_comp_id: b"TARGET".to_vec(),
+        }
+    }
+
+    fn new_connection(
+        backend: TestBackend,
+    ) -> FixConnection<TestBackend, super::super::InMemorySessionStore<()>, super::super::Config>
+    {
+        FixConnection::new(
+            backend,
+            super::super::InMemorySessionStore::default(),
+            super::super::Config::default(),
+        )
+    }
+
     #[test]
     fn high_seqnum_triggers_resend_request() {
-        let mut connection = FixConnection::new(TestBackend::default(), super::super::Config::default());
+        let mut connection = new_connection(TestBackend::default());
         connection.state.status = SessionStatus::Active;
         connection.state.seq_numbers = super::super::SeqNumbers::default();
 
-        let inbound = make_message(b"0", 3, &[]);
+        let inbound = make_inbound_message(b"0", 3, &[]);
         let actions = with_decoded_message(&inbound, b'|', |message| {
             connection.handle_inbound_message(message)
         })
@@ -1876,11 +2265,11 @@ mod test {
 
     #[test]
     fn test_request_generates_heartbeat_with_test_id() {
-        let mut connection = FixConnection::new(TestBackend::default(), super::super::Config::default());
+        let mut connection = new_connection(TestBackend::default());
         connection.state.status = SessionStatus::Active;
         connection.state.seq_numbers = super::super::SeqNumbers::default();
 
-        let inbound = make_message(b"1", 1, &[(TEST_REQ_ID, b"abc")]);
+        let inbound = make_inbound_message(b"1", 1, &[(TEST_REQ_ID, b"abc")]);
         let actions = with_decoded_message(&inbound, b'|', |message| {
             connection.handle_inbound_message(message)
         })
@@ -1894,18 +2283,12 @@ mod test {
 
     #[test]
     fn logon_transitions_to_active() {
-        let mut connection = FixConnection::new(TestBackend::default(), super::super::Config::default());
+        let mut connection = new_connection(TestBackend::default());
         connection.state.status = SessionStatus::AwaitingLogon;
         connection.state.seq_numbers = super::super::SeqNumbers::default();
 
-        let inbound = make_message(
-            b"A",
-            1,
-            &[
-                (ENCRYPT_METHOD, b"0"),
-                (HEARTBT_INT, b"30"),
-            ],
-        );
+        let inbound =
+            make_inbound_message(b"A", 1, &[(ENCRYPT_METHOD, b"0"), (HEARTBT_INT, b"30")]);
 
         let actions = with_decoded_message(&inbound, b'|', |message| {
             connection.handle_inbound_message(message)
@@ -1913,5 +2296,289 @@ mod test {
         .unwrap();
         assert_eq!(connection.state.status, SessionStatus::Active);
         assert!(actions.reset_heartbeat);
+    }
+
+    #[test]
+    fn resend_request_replays_stored_app_message_as_possdup() {
+        let mut connection = new_connection(TestBackend::default());
+        connection.state.status = SessionStatus::Active;
+        connection.state.seq_numbers =
+            super::super::SeqNumbers::new(NonZeroU64::new(1).unwrap(), NonZeroU64::new(2).unwrap());
+        let stored = make_outbound_app_message(1);
+        block_on(connection.store.save_outbound_app(
+            &connection.session_key,
+            StoredAppMessage {
+                seq_num: 1,
+                raw_message: stored,
+            },
+        ))
+        .unwrap();
+
+        let inbound = make_inbound_message(b"2", 1, &[(BEGIN_SEQ_NO, b"1"), (END_SEQ_NO, b"1")]);
+        let mut actions = with_decoded_message(&inbound, b'|', |message| {
+            connection.handle_inbound_message(message)
+        })
+        .unwrap();
+        assert_eq!(actions.resend_requests, vec![(1, 1)]);
+        let mut replay_outbound = Vec::new();
+        for (begin_seq_no, end_seq_no) in actions.resend_requests.drain(..) {
+            replay_outbound.extend(
+                block_on(connection.build_resend_reply_messages(begin_seq_no, end_seq_no)).unwrap(),
+            );
+        }
+
+        assert_eq!(replay_outbound.len(), 1);
+        with_decoded_message(&replay_outbound[0], b'\x01', |outbound| {
+            assert_eq!(outbound.get::<&[u8]>(MSG_TYPE).unwrap(), b"D");
+            assert_eq!(outbound.get::<u64>(MSG_SEQ_NUM).unwrap(), 1);
+            assert!(outbound.get::<bool>(POSS_DUP_FLAG).unwrap());
+            assert!(outbound.get_raw(ORIG_SENDING_TIME).is_some());
+        });
+    }
+
+    #[test]
+    fn resend_request_missing_admin_seq_emits_gapfill() {
+        let mut connection = new_connection(TestBackend::default());
+        connection.state.status = SessionStatus::Active;
+        connection.state.seq_numbers =
+            super::super::SeqNumbers::new(NonZeroU64::new(1).unwrap(), NonZeroU64::new(2).unwrap());
+
+        let inbound = make_inbound_message(b"2", 1, &[(BEGIN_SEQ_NO, b"1"), (END_SEQ_NO, b"1")]);
+        let mut actions = with_decoded_message(&inbound, b'|', |message| {
+            connection.handle_inbound_message(message)
+        })
+        .unwrap();
+        assert_eq!(actions.resend_requests, vec![(1, 1)]);
+        let mut replay_outbound = Vec::new();
+        for (begin_seq_no, end_seq_no) in actions.resend_requests.drain(..) {
+            replay_outbound.extend(
+                block_on(connection.build_resend_reply_messages(begin_seq_no, end_seq_no)).unwrap(),
+            );
+        }
+
+        assert_eq!(replay_outbound.len(), 1);
+        with_decoded_message(&replay_outbound[0], b'\x01', |outbound| {
+            assert_eq!(outbound.get::<&[u8]>(MSG_TYPE).unwrap(), b"4");
+            assert!(outbound.get::<bool>(GAP_FILL_FLAG).unwrap());
+            assert_eq!(outbound.get::<u64>(NEW_SEQ_NO).unwrap(), 2);
+        });
+    }
+
+    #[test]
+    fn resend_request_mixed_range_interleaves_gapfill_and_replay_correctly() {
+        let mut connection = new_connection(TestBackend::default());
+        connection.state.status = SessionStatus::Active;
+        connection.state.seq_numbers =
+            super::super::SeqNumbers::new(NonZeroU64::new(1).unwrap(), NonZeroU64::new(5).unwrap());
+        for seq in [1_u64, 3_u64] {
+            block_on(connection.store.save_outbound_app(
+                &connection.session_key,
+                StoredAppMessage {
+                    seq_num: seq,
+                    raw_message: make_outbound_app_message(seq),
+                },
+            ))
+            .unwrap();
+        }
+
+        let inbound = make_inbound_message(b"2", 1, &[(BEGIN_SEQ_NO, b"1"), (END_SEQ_NO, b"4")]);
+        let mut actions = with_decoded_message(&inbound, b'|', |message| {
+            connection.handle_inbound_message(message)
+        })
+        .unwrap();
+        assert_eq!(actions.resend_requests, vec![(1, 4)]);
+        let mut replay_outbound = Vec::new();
+        for (begin_seq_no, end_seq_no) in actions.resend_requests.drain(..) {
+            replay_outbound.extend(
+                block_on(connection.build_resend_reply_messages(begin_seq_no, end_seq_no)).unwrap(),
+            );
+        }
+
+        assert_eq!(replay_outbound.len(), 4);
+        with_decoded_message(&replay_outbound[0], b'\x01', |outbound| {
+            assert_eq!(outbound.get::<&[u8]>(MSG_TYPE).unwrap(), b"D");
+            assert_eq!(outbound.get::<u64>(MSG_SEQ_NUM).unwrap(), 1);
+        });
+        with_decoded_message(&replay_outbound[1], b'\x01', |outbound| {
+            assert_eq!(outbound.get::<&[u8]>(MSG_TYPE).unwrap(), b"4");
+            assert_eq!(outbound.get::<u64>(NEW_SEQ_NO).unwrap(), 3);
+        });
+        with_decoded_message(&replay_outbound[2], b'\x01', |outbound| {
+            assert_eq!(outbound.get::<&[u8]>(MSG_TYPE).unwrap(), b"D");
+            assert_eq!(outbound.get::<u64>(MSG_SEQ_NUM).unwrap(), 3);
+        });
+        with_decoded_message(&replay_outbound[3], b'\x01', |outbound| {
+            assert_eq!(outbound.get::<&[u8]>(MSG_TYPE).unwrap(), b"4");
+            assert_eq!(outbound.get::<u64>(NEW_SEQ_NO).unwrap(), 5);
+        });
+    }
+
+    #[test]
+    fn resend_request_endseqno_zero_caps_to_last_sent() {
+        let mut connection = new_connection(TestBackend::default());
+        connection.state.status = SessionStatus::Active;
+        connection.state.seq_numbers =
+            super::super::SeqNumbers::new(NonZeroU64::new(1).unwrap(), NonZeroU64::new(5).unwrap());
+        block_on(connection.store.save_outbound_app(
+            &connection.session_key,
+            StoredAppMessage {
+                seq_num: 2,
+                raw_message: make_outbound_app_message(2),
+            },
+        ))
+        .unwrap();
+
+        let inbound = make_inbound_message(b"2", 1, &[(BEGIN_SEQ_NO, b"2"), (END_SEQ_NO, b"0")]);
+        let mut actions = with_decoded_message(&inbound, b'|', |message| {
+            connection.handle_inbound_message(message)
+        })
+        .unwrap();
+        assert_eq!(actions.resend_requests, vec![(2, 0)]);
+        let mut replay_outbound = Vec::new();
+        for (begin_seq_no, end_seq_no) in actions.resend_requests.drain(..) {
+            replay_outbound.extend(
+                block_on(connection.build_resend_reply_messages(begin_seq_no, end_seq_no)).unwrap(),
+            );
+        }
+
+        assert_eq!(replay_outbound.len(), 2);
+        with_decoded_message(&replay_outbound[0], b'\x01', |outbound| {
+            assert_eq!(outbound.get::<&[u8]>(MSG_TYPE).unwrap(), b"D");
+            assert_eq!(outbound.get::<u64>(MSG_SEQ_NUM).unwrap(), 2);
+        });
+        with_decoded_message(&replay_outbound[1], b'\x01', |outbound| {
+            assert_eq!(outbound.get::<&[u8]>(MSG_TYPE).unwrap(), b"4");
+            assert_eq!(outbound.get::<u64>(NEW_SEQ_NO).unwrap(), 5);
+        });
+    }
+
+    #[test]
+    fn restart_loads_seq_numbers_from_store() {
+        let mut store = super::super::InMemorySessionStore::<()>::default();
+        let restored =
+            super::super::SeqNumbers::new(NonZeroU64::new(7).unwrap(), NonZeroU64::new(9).unwrap());
+        block_on(store.save_seq_numbers(&default_session_key(), restored)).unwrap();
+
+        let mut connection = FixConnection::new(
+            TestBackend::default(),
+            store,
+            super::super::Config::default(),
+        );
+        let result = block_on(connection.run(Cursor::new(Vec::<u8>::new()), sink()));
+        assert!(!matches!(result, Err(RunError::Backend(_))));
+        assert_eq!(connection.state.seq_numbers.next_inbound(), 7);
+        assert_eq!(
+            connection.state.seq_numbers.next_outbound(),
+            restored.next_outbound() + 1
+        );
+    }
+
+    #[test]
+    fn reset_seqnum_flag_resets_store_and_runtime_seq() {
+        let mut connection = new_connection(TestBackend::default());
+        connection.state.status = SessionStatus::AwaitingLogon;
+        connection.state.seq_numbers = super::super::SeqNumbers::new(
+            NonZeroU64::new(11).unwrap(),
+            NonZeroU64::new(13).unwrap(),
+        );
+        block_on(connection.store.save_outbound_app(
+            &connection.session_key,
+            StoredAppMessage {
+                seq_num: 11,
+                raw_message: make_outbound_app_message(11),
+            },
+        ))
+        .unwrap();
+        block_on(
+            connection
+                .store
+                .save_seq_numbers(&connection.session_key, connection.state.seq_numbers),
+        )
+        .unwrap();
+
+        let inbound = make_inbound_message(
+            b"A",
+            1,
+            &[
+                (ENCRYPT_METHOD, b"0"),
+                (HEARTBT_INT, b"30"),
+                (RESET_SEQ_NUM_FLAG, b"Y"),
+            ],
+        );
+        let actions = with_decoded_message(&inbound, b'|', |message| {
+            connection.handle_inbound_message(message)
+        })
+        .unwrap();
+        assert!(actions.reset_store);
+        if actions.reset_store {
+            block_on(
+                connection
+                    .store
+                    .reset_session(&connection.session_key, connection.state.seq_numbers),
+            )
+            .unwrap();
+        }
+
+        assert_eq!(connection.state.seq_numbers.next_inbound(), 2);
+        assert_eq!(connection.state.seq_numbers.next_outbound(), 2);
+        assert!(block_on(connection.store.load_outbound_app_range(
+            &connection.session_key,
+            1,
+            100,
+        ))
+        .unwrap()
+        .is_empty());
+    }
+
+    #[test]
+    fn persist_before_send_crash_model_at_least_once() {
+        let mut backend = TestBackend::default();
+        backend.fail_on_outbound = true;
+        backend
+            .outbound_queue
+            .push_back(make_outbound_app_message(1));
+        let mut connection = new_connection(backend);
+        connection.state.status = SessionStatus::Active;
+        connection.state.seq_numbers = super::super::SeqNumbers::default();
+
+        let result = block_on(connection.flush_backend_outbound(&mut sink()));
+        assert!(matches!(result, Err(RunError::Backend(()))));
+
+        let persisted = block_on(connection.store.load_outbound_app_range(
+            &connection.session_key,
+            1,
+            1,
+        ))
+        .unwrap();
+        assert_eq!(persisted.len(), 1);
+
+        let store = connection.store;
+        let mut restarted = FixConnection::new(
+            TestBackend::default(),
+            store,
+            super::super::Config::default(),
+        );
+        restarted.state.status = SessionStatus::Active;
+        if let Some(loaded_seq) =
+            block_on(restarted.store.load_seq_numbers(&restarted.session_key)).unwrap()
+        {
+            restarted.state.seq_numbers = loaded_seq;
+        }
+        let inbound = make_inbound_message(b"2", 1, &[(BEGIN_SEQ_NO, b"1"), (END_SEQ_NO, b"1")]);
+        let mut actions = with_decoded_message(&inbound, b'|', |message| {
+            restarted.handle_inbound_message(message)
+        })
+        .unwrap();
+        let mut replay_outbound = Vec::new();
+        for (begin_seq_no, end_seq_no) in actions.resend_requests.drain(..) {
+            replay_outbound.extend(
+                block_on(restarted.build_resend_reply_messages(begin_seq_no, end_seq_no)).unwrap(),
+            );
+        }
+        assert_eq!(replay_outbound.len(), 1);
+        with_decoded_message(&replay_outbound[0], b'\x01', |outbound| {
+            assert_eq!(outbound.get::<u64>(MSG_SEQ_NUM).unwrap(), 1);
+            assert!(outbound.get::<bool>(POSS_DUP_FLAG).unwrap());
+        });
     }
 }

@@ -14,6 +14,11 @@ mod event_loop;
 mod heartbeat_rule;
 mod resend_request_range;
 mod seq_numbers;
+/// Durable session storage primitives.
+///
+/// Includes [`InMemorySessionStore`] and optional sqlite support via
+/// `session-store-sqlite`.
+pub mod store;
 
 use crate::tagvalue::Message;
 use crate::SetField;
@@ -24,10 +29,12 @@ pub use event_loop::*;
 pub use heartbeat_rule::HeartbeatRule;
 pub use resend_request_range::ResendRequestRange;
 pub use seq_numbers::{SeqNumberError, SeqNumbers};
-use std::ops::Range;
+pub use store::{InMemorySessionStore, SessionKey, SessionStore, StoredAppMessage};
+#[cfg(feature = "session-store-sqlite")]
+pub use store::{SqliteSessionStore, SqliteStoreOptions};
 
-/// The owner of a [`FixConnection`]. It can react to events, store incoming
-/// messages, send messages, etc..
+/// The owner of a [`FixConnection`]. It can react to events, handle inbound
+/// application messages, and provide outbound application flow.
 pub trait Backend {
     /// The type of errors that can arise during a [`FixConnection`].
     type Error;
@@ -77,9 +84,6 @@ pub trait Backend {
         }
     }
 
-    /// Callback for processing `ResendRequest` messages.
-    fn on_resend_request(&mut self, range: Range<u64>) -> Result<(), Self::Error>;
-
     /// Callback for additional logic to execute after a valid [`FixConnection`]
     /// is established with the counterparty.
     fn on_successful_handshake(&mut self) -> Result<(), Self::Error>;
@@ -87,7 +91,8 @@ pub trait Backend {
     /// Polls one outbound message to be sent on the wire.
     ///
     /// Outbound messages returned by this callback are expected to be complete,
-    /// serialized FIX messages. The engine sends the bytes as-is.
+    /// serialized FIX messages. The engine sends the bytes as-is and manages
+    /// durable resend/replay semantics via [`SessionStore`].
     fn poll_outbound(&mut self) -> Result<Option<Vec<u8>>, Self::Error> {
         Ok(None)
     }

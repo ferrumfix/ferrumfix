@@ -1,13 +1,13 @@
 use fefix::field_types::Timestamp;
 use fefix::session::{
-    Backend, Config, Environment, FixConnection, HeartbeatRule, RunError, RunOutcome, SessionRole,
+    Backend, Config, Environment, FixConnection, HeartbeatRule, InMemorySessionStore, RunError,
+    RunOutcome, SessionRole,
 };
 use fefix::tagvalue::{Encoder, Message};
 use fefix::{FieldMap, SetField};
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::VecDeque;
 use std::env;
 use std::io;
-use std::ops::Range;
 use std::time::Duration;
 use tokio::net::TcpListener;
 use tokio_util::compat::{TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt};
@@ -128,10 +128,8 @@ struct AcceptanceBackend {
     trace_wire: bool,
     next_outbound_seq: u64,
     outbound_queue: VecDeque<Vec<u8>>,
-    sent_app_messages: BTreeMap<u64, Vec<u8>>,
     inbound_app_messages: usize,
     successful_handshakes: usize,
-    resend_requests: Vec<Range<u64>>,
 }
 
 impl AcceptanceBackend {
@@ -142,10 +140,8 @@ impl AcceptanceBackend {
             trace_wire,
             next_outbound_seq: 1,
             outbound_queue: VecDeque::new(),
-            sent_app_messages: BTreeMap::new(),
             inbound_app_messages: 0,
             successful_handshakes: 0,
-            resend_requests: Vec::new(),
         }
     }
 }
@@ -183,7 +179,6 @@ impl Backend for AcceptanceBackend {
             ) {
                 if let Some(seq) = msg_seq_num(reflected.as_slice()) {
                     self.next_outbound_seq = self.next_outbound_seq.max(seq.saturating_add(1));
-                    self.sent_app_messages.insert(seq, reflected.clone());
                 }
                 self.outbound_queue.push_back(reflected);
             }
@@ -202,21 +197,6 @@ impl Backend for AcceptanceBackend {
         if self.trace_wire {
             eprintln!("[harness] >> {}", pretty_fix(message));
         }
-        Ok(())
-    }
-
-    fn on_resend_request(&mut self, range: Range<u64>) -> Result<(), Self::Error> {
-        let replay_end = if range.end == u64::MAX {
-            u64::MAX
-        } else {
-            range.end.saturating_add(1)
-        };
-        for (_seq, sent_message) in self.sent_app_messages.range(range.start..replay_end) {
-            if let Some(replayed) = possdup_replay_message(sent_message.as_slice()) {
-                self.outbound_queue.push_back(replayed);
-            }
-        }
-        self.resend_requests.push(range);
         Ok(())
     }
 
@@ -267,8 +247,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             options.target_comp_id.clone(),
             options.trace_wire,
         );
+        let store = InMemorySessionStore::default();
         let config = options.to_config();
-        let mut connection = FixConnection::new(backend, config);
+        let mut connection = FixConnection::new(backend, store, config);
 
         let (read_half, write_half) = stream.into_split();
         let run_result = connection
@@ -277,11 +258,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let backend = connection.backend();
         eprintln!(
-            "[harness] session {} stats: handshakes={} inbound_app_messages={} resend_requests={}",
+            "[harness] session {} stats: handshakes={} inbound_app_messages={}",
             sessions_handled,
             backend.successful_handshakes,
             backend.inbound_app_messages,
-            backend.resend_requests.len()
         );
 
         match run_result {
@@ -439,38 +419,6 @@ fn reflected_app_message(
             continue;
         }
         outbound.set(tag, &raw[eq_pos + 1..]);
-    }
-
-    let (all_bytes, offset) = outbound.done();
-    Some(all_bytes[offset..].to_vec())
-}
-
-fn possdup_replay_message(sent_message: &[u8]) -> Option<Vec<u8>> {
-    let fields = parse_raw_fields(sent_message);
-    let begin_string = fields.iter().find(|(tag, _)| *tag == 8)?.1;
-    let msg_type = fields.iter().find(|(tag, _)| *tag == 35)?.1;
-    let msg_seq_num = fields
-        .iter()
-        .find(|(tag, _)| *tag == 34)
-        .and_then(|(_, value)| std::str::from_utf8(value).ok())
-        .and_then(|value| value.parse::<u64>().ok())?;
-    let original_sending_time = fields.iter().find(|(tag, _)| *tag == 52)?.1;
-
-    let mut encoder = Encoder::new();
-    let mut buf = Vec::new();
-    let mut outbound = encoder.start_message(begin_string, &mut buf, msg_type);
-    outbound.set(34, msg_seq_num);
-    outbound.set(43, true);
-    outbound.set(49, fields.iter().find(|(tag, _)| *tag == 49)?.1);
-    outbound.set(52, Timestamp::utc_now());
-    outbound.set(56, fields.iter().find(|(tag, _)| *tag == 56)?.1);
-    outbound.set(122, original_sending_time);
-
-    for (tag, value) in fields.iter().copied() {
-        if matches!(tag, 8 | 9 | 10 | 34 | 35 | 43 | 49 | 52 | 56 | 122) {
-            continue;
-        }
-        outbound.set(tag, value);
     }
 
     let (all_bytes, offset) = outbound.done();
