@@ -220,10 +220,8 @@ where
                 let header_info =
                     HeaderInfo::parse(self.buffer.as_slice(), self.config().separator);
                 if let Some(header_info) = header_info {
-                    let expected_len_of_frame = header_info.field_1.end
-                        + 1
-                        + header_info.nominal_body_len
-                        + 5;
+                    let expected_len_of_frame =
+                        header_info.field_1.end + 1 + header_info.nominal_body_len + 5;
 
                     self.state = ParserState::Header(header_info, expected_len_of_frame);
                     Ok(None)
@@ -315,11 +313,7 @@ impl HeaderInfo {
         if first_eq != 1 || data.first() != Some(&b'8') {
             return None;
         }
-        let first_sep = data[first_eq + 1..]
-            .iter()
-            .position(|b| *b == separator)?
-            + first_eq
-            + 1;
+        let first_sep = data[first_eq + 1..].iter().position(|b| *b == separator)? + first_eq + 1;
         if first_sep <= first_eq + 1 {
             return None;
         }
@@ -328,18 +322,13 @@ impl HeaderInfo {
         if data.get(second_tag_start) != Some(&b'9') {
             return None;
         }
-        let second_eq_rel = data[second_tag_start..]
-            .iter()
-            .position(|b| *b == b'=')?;
+        let second_eq_rel = data[second_tag_start..].iter().position(|b| *b == b'=')?;
         let second_eq = second_tag_start + second_eq_rel;
         if second_eq != second_tag_start + 1 {
             return None;
         }
-        let second_sep = data[second_eq + 1..]
-            .iter()
-            .position(|b| *b == separator)?
-            + second_eq
-            + 1;
+        let second_sep =
+            data[second_eq + 1..].iter().position(|b| *b == separator)? + second_eq + 1;
         if second_sep <= second_eq + 1 {
             return None;
         }

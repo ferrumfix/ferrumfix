@@ -167,10 +167,22 @@ mod test {
     fn config_defaults_match_trait_defaults() {
         let config = Config::default();
         assert_eq!(config.role(), ConfigDefault.role());
-        assert_eq!(config.max_allowed_latency(), ConfigDefault.max_allowed_latency());
-        assert_eq!(config.verify_test_indicator(), ConfigDefault.verify_test_indicator());
-        assert_eq!(config.verify_sending_time(), ConfigDefault.verify_sending_time());
-        assert_eq!(config.enforce_begin_string(), ConfigDefault.enforce_begin_string());
+        assert_eq!(
+            config.max_allowed_latency(),
+            ConfigDefault.max_allowed_latency()
+        );
+        assert_eq!(
+            config.verify_test_indicator(),
+            ConfigDefault.verify_test_indicator()
+        );
+        assert_eq!(
+            config.verify_sending_time(),
+            ConfigDefault.verify_sending_time()
+        );
+        assert_eq!(
+            config.enforce_begin_string(),
+            ConfigDefault.enforce_begin_string()
+        );
         assert_eq!(config.enforce_comp_id(), ConfigDefault.enforce_comp_id());
         assert_eq!(config.heartbeat(), ConfigDefault.heartbeat());
     }
