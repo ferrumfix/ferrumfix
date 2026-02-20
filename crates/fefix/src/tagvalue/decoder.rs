@@ -218,11 +218,30 @@ impl Decoder {
             // We are entering a new group, but we still don't know which tag
             // will be the first one in each entry.
             self.builder.state.set_new_group(tag);
-        } else if let Some(group_info) = self.builder.state.group_information.last_mut() {
-            if group_info.current_entry_i >= group_info.num_entries {
-                self.builder.state.group_information.pop();
-            } else if tag == group_info.first_tag_of_every_group_entry {
-                group_info.current_entry_i += 1;
+        } else {
+            // Check all groups from innermost to outermost to see if we need to:
+            // 1. Exit a completed group
+            // 2. Move to the next entry in a group
+            let mut i = self.builder.state.group_information.len();
+            while i > 0 {
+                i -= 1;
+                let should_pop = {
+                    let group_info = &self.builder.state.group_information[i];
+                    group_info.current_entry_i >= group_info.num_entries
+                };
+
+                if should_pop {
+                    self.builder.state.group_information.remove(i);
+                } else {
+                    let group_info = &mut self.builder.state.group_information[i];
+                    if tag == group_info.first_tag_of_every_group_entry {
+                        group_info.current_entry_i += 1;
+                        // Once we've found the group that this tag starts a new entry for,
+                        // we need to pop any inner groups
+                        self.builder.state.group_information.truncate(i + 1);
+                        break;
+                    }
+                }
             }
         }
         self.message_builder_mut()
@@ -872,5 +891,106 @@ mod test {
             }
             codec.clear();
         }
+    }
+
+    #[test]
+    fn nested_repeating_groups_parsing() {
+        // Test for issue #210: nested repeating groups parsing bug
+        // This test creates a message with a repeating group (NoOrders) where each entry
+        // contains a nested repeating group (NoPartyIDs).
+
+        use crate::tagvalue::Encoder;
+
+        // Create a minimal dictionary for testing
+        let dict_xml = r#"
+        <fix major="4" minor="4" type='FIX' servicepack='0'>
+            <header>
+                <field name="BeginString" required="Y" />
+                <field name="BodyLength" required="Y" />
+                <field name="MsgType" required="Y" />
+                <field name="SenderCompID" required="Y" />
+                <field name="TargetCompID" required="Y" />
+                <field name="MsgSeqNum" required="Y" />
+                <field name="SendingTime" required="Y" />
+            </header>
+            <messages>
+                <message name='NewOrderList' msgcat='app' msgtype='E'>
+                    <group name='NoOrders' required='Y'>
+                        <field name='ClOrdID' required='Y'/>
+                        <field name='OrderQty' required='N'/>
+                        <group name='NoPartyIDs' required='N'>
+                            <field name='PartyID' required='Y'/>
+                            <field name='PartyRole' required='Y'/>
+                        </group>
+                    </group>
+                </message>
+            </messages>
+            <trailer>
+                <field name='CheckSum' required='Y'/>
+            </trailer>
+            <components>
+            </components>
+            <fields>
+                <field number="8" name="BeginString" type="STRING" />
+                <field number="9" name="BodyLength" type="LENGTH" />
+                <field number="10" name="CheckSum" type="STRING" />
+                <field number="35" name="MsgType" type="STRING" />
+                <field number="49" name="SenderCompID" type="STRING" />
+                <field number="56" name="TargetCompID" type="STRING" />
+                <field number="34" name="MsgSeqNum" type="SEQNUM" />
+                <field number="52" name="SendingTime" type="UTCTIMESTAMP" />
+                <field number="73" name="NoOrders" type="NUMINGROUP" />
+                <field number="11" name="ClOrdID" type="STRING" />
+                <field number="38" name="OrderQty" type="QTY" />
+                <field number="453" name="NoPartyIDs" type="NUMINGROUP" />
+                <field number="448" name="PartyID" type="STRING" />
+                <field number="452" name="PartyRole" type="INT" />
+            </fields>
+        </fix>
+        "#;
+
+        let dict = Dictionary::from_quickfix_spec(dict_xml).unwrap();
+        let msg_bytes = b"8=FIX.4.4|9=00000159|35=E|49=SENDER|56=TARGET|34=1|52=20240101-00:00:00.000|73=2|11=ORDER1|38=100|453=1|448=PARTY1|452=1|11=ORDER2|38=200|453=2|448=PARTY2A|452=2|448=PARTY2B|452=3|10=146|";
+
+        // Now decode the message
+        let mut decoder = Decoder::new(dict);
+        decoder.config_mut().separator = b'|';
+        decoder.config_mut().verify_checksum = false;
+        decoder.config_mut().should_decode_associative = true;
+
+        let decoded = decoder.decode(msg_bytes).unwrap();
+
+        // Check that we can access the repeating group
+        let orders_group = decoded.group(73).unwrap();
+        assert_eq!(orders_group.len(), 2);
+
+        // First order entry - should work fine
+        let order1 = orders_group.get(0).unwrap();
+        assert_eq!(order1.get_raw(11), Some(b"ORDER1" as &[u8]));
+        assert_eq!(order1.get::<f64>(38).unwrap(), 100.0);
+
+        // Check nested group in first order
+        let parties1 = order1.group(453).unwrap();
+        assert_eq!(parties1.len(), 1);
+        let party1 = parties1.get(0).unwrap();
+        assert_eq!(party1.get_raw(448), Some(b"PARTY1" as &[u8]));
+        assert_eq!(party1.get::<i64>(452).unwrap(), 1);
+
+        // Second order entry - this is where the bug was occurring
+        let order2 = orders_group.get(1).unwrap();
+        assert_eq!(order2.get_raw(11), Some(b"ORDER2" as &[u8]));
+        assert_eq!(order2.get::<f64>(38).unwrap(), 200.0);
+
+        // Check nested group in second order
+        let parties2 = order2.group(453).unwrap();
+        assert_eq!(parties2.len(), 2);
+
+        let party2a = parties2.get(0).unwrap();
+        assert_eq!(party2a.get_raw(448), Some(b"PARTY2A" as &[u8]));
+        assert_eq!(party2a.get::<i64>(452).unwrap(), 2);
+
+        let party2b = parties2.get(1).unwrap();
+        assert_eq!(party2b.get_raw(448), Some(b"PARTY2B" as &[u8]));
+        assert_eq!(party2b.get::<i64>(452).unwrap(), 3);
     }
 }
