@@ -16,7 +16,7 @@ license.workspace = true
 chrono = { version = "0.4", features = ["std"] }
 fefix-dictionary = { version = "0.7", path = "../fefix-dictionary" }
 fnv = "1"
-heck = "0.4"
+heck = "0.5"
 indoc = "2"
 
 [dev-dependencies]
