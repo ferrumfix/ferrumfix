@@ -93,7 +93,7 @@ chrono = "0.4"
 fefix-codegen = { version = "0.7", path = "../fefix-codegen" }
 fefix-dictionary = { version = "0.7", path = "../fefix-dictionary" }
 lazy_static = "1"
-quick-xml = "0.31"
+quick-xml = "0.39"
 roxmltree = "0.19"
 
 [dev-dependencies]
