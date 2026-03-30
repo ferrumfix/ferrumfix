@@ -34,7 +34,7 @@ fnv = "1"
 roxmltree = "0.19"
 smartstring = "1"
 strum = "0.25"
-strum_macros = "0.26"
+strum_macros = "0.28"
 
 [dev-dependencies]
 arbitrary = { version = "1.0", features = ["derive"] }
