@@ -31,7 +31,7 @@ fixt11 = []
 
 [dependencies]
 fnv = "1"
-roxmltree = "0.19"
+roxmltree = "0.21"
 smartstring = "1"
 strum = "0.25"
 strum_macros = "0.26"
