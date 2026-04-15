@@ -1,0 +1,12 @@
+<at>
+<test name='definitions/server/fix44/14e_IncorrectEnumValue.def' result='failure' >
+  <message>
+    Number of fields do not match
+    <expected><![CDATA[8=FIX.4.4*9=119*35=D*34=4*49=ISLD*52=20020619-16:14:10*56=TW*11=ID*21=1*38=002000.00*40=1*54=1*55=INTC*60=00000000-00:00:00*167=CS*10=0*]]></expected>
+    <received><![CDATA[8=FIX.4.4*9=49*35=0*34=4*49=ISLD*52=20260216-15:27:11.111*56=TW*10=170*]]></received>
+    <line>26</line>
+  </message>
+</test>
+
+<results total='1' failures='1'/>
+</at>

@@ -1,0 +1,5 @@
+<at>
+<test name='definitions/server/fix44/2g_PossDupNoOrigSendingTime.def' result='success'/>
+
+<results total='1' failures='0'/>
+</at>

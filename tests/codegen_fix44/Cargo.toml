@@ -1,0 +1,11 @@
+[package]
+name = "test_codegen_fix44"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[dependencies]
+fefix = { path = "../../crates/fefix", features = ["codegen"] }
+
+[build-dependencies]
+fefix = { path = "../../crates/fefix", features = ["codegen"] }

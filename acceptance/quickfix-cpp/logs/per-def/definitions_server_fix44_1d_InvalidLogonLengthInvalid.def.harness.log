@@ -1,0 +1,13 @@
+[harness] listening on 127.0.0.1:7001 as Acceptor begin_string=FIX.4.4 sender=ISLD target=TW max_sessions=0
+[harness] accepted session 1 from 127.0.0.1:58396
+[harness] session 1 stats: handshakes=0 inbound_app_messages=0 resend_requests=0
+[harness] session 1 outcome: ProtocolViolation(MalformedInboundMessage)
+[harness] accepted session 2 from 127.0.0.1:58397
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 8, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 34, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 35, context: TopLevel }
+[/Users/filippo/repos/ferrumfix/crates/fefix/src/tagvalue/decoder.rs:659] looking for FieldLocator { tag: 43, context: TopLevel }
+
+thread 'main' (68376187) panicked at /Users/filippo/repos/ferrumfix/crates/fefix/src/session/event_loop.rs:98:45:
+range start index 17 out of range for slice of length 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

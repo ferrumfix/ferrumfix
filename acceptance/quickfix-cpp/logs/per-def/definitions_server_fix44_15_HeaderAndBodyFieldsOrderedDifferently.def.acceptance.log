@@ -1,0 +1,12 @@
+<at>
+<test name='definitions/server/fix44/15_HeaderAndBodyFieldsOrderedDifferently.def' result='failure' >
+  <message>
+    Number of fields do not match
+    <expected><![CDATA[8=FIX.4.4*9=99*35=D*34=2*49=ISLD*52=00000000-00:00:00.000*56=TW*11=id*21=3*40=1*54=1*55=MSFT*60=00000000-00:00:00*10=0*]]></expected>
+    <received><![CDATA[8=FIX.4.4*9=49*35=0*34=2*49=ISLD*52=20260216-15:27:19.763*56=TW*10=189*]]></received>
+    <line>17</line>
+  </message>
+</test>
+
+<results total='1' failures='1'/>
+</at>

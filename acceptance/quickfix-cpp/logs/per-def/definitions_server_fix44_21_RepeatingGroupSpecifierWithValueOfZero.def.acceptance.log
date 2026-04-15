@@ -1,0 +1,12 @@
+<at>
+<test name='definitions/server/fix44/21_RepeatingGroupSpecifierWithValueOfZero.def' result='failure' >
+  <message>
+    Number of fields do not match
+    <expected><![CDATA[8=FIX.4.4*9=175*35=d*34=2*49=ISLD*52=00000000-00:00:00.000*56=TW*22=8*55=TBS*58=No Products found for this Class Symbol*167=CS*320=JCD1091-20021011*322=1034356488676*323=6*336=ONE_MAIN*454=0*10=0*]]></expected>
+    <received><![CDATA[8=FIX.4.4*9=49*35=0*34=2*49=ISLD*52=20260216-15:28:19.651*56=TW*10=186*]]></received>
+    <line>17</line>
+  </message>
+</test>
+
+<results total='1' failures='1'/>
+</at>

@@ -1,0 +1,7 @@
+[harness] listening on 127.0.0.1:7001 as Acceptor begin_string=FIX.4.4 sender=ISLD target=TW max_sessions=0
+[harness] accepted session 1 from 127.0.0.1:49316
+[harness] session 1 stats: handshakes=0 inbound_app_messages=0 resend_requests=0
+[harness] session 1 outcome: ProtocolViolation(MalformedInboundMessage)
+[harness] accepted session 2 from 127.0.0.1:49317
+[harness] session 2 stats: handshakes=1 inbound_app_messages=2 resend_requests=1
+[harness] session 2 outcome: PeerLogout

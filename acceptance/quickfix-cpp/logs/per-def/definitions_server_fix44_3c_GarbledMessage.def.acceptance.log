@@ -1,0 +1,12 @@
+<at>
+<test name='definitions/server/fix44/3c_GarbledMessage.def' result='failure' >
+  <message>
+    Number of fields do not match
+    <expected><![CDATA[8=FIX.4.4*9=58*35=2*34=2*49=ISLD*52=00000000-00:00:00.000*56=TW*7=3*16=0*10=0*]]></expected>
+    <received><![CDATA[8=FIX.4.4*9=74*35=5*34=2*49=ISLD*52=20260216-15:29:40.247*56=TW*58=Incorrect BeginString*10=137*]]></received>
+    <line>18</line>
+  </message>
+</test>
+
+<results total='1' failures='1'/>
+</at>

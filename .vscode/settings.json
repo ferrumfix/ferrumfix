@@ -1,0 +1,24 @@
+// In case you're wondering, yes VS Code explicity allows comments in JSON
+// configuration files. See <https://code.visualstudio.com/docs/languages/json#_json-with-comments>.
+{
+	"rust-analyzer.check.overrideCommand": [
+		"cargo",
+		// We can remove this when the parallel rustc frontend gets stabilized.
+		// See <https://blog.rust-lang.org/2023/11/09/parallel-rustc.html>.
+		"+nightly",
+		"check",
+		"--all-targets",
+		"--all-features",
+		"--message-format=json"
+	],
+	"rust-analyzer.rust.analyzerTargetDir": true,
+	"rust-analyzer.procMacro.enable": true,
+	"rust-analyzer.check.extraEnv": {
+		"RUSTFLAGS": "-Z threads=8",
+	},
+	"rust-analyzer.rustfmt.extraArgs": [
+		// Nightly allows us to use unstable rustfmt options, which is pretty
+		// useful. See `rustfmt.toml`.
+		"+nightly"
+	]
+}
